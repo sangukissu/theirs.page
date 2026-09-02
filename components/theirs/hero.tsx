@@ -2,7 +2,7 @@
 
 import { useState } from "react"
 import { useRouter } from "next/navigation"
-import { LifeSphere } from "./life-sphere"
+import { LifePanorama } from "./life-panorama"
 
 export function TheirsHero() {
   const router = useRouter()
@@ -108,9 +108,9 @@ export function TheirsHero() {
       </div>
 
       {/* ========================================================================= */}
-      {/* THE LIFE SPHERE ("A WHOLE LIFE") — Giant celestial arc rising from below  */}
+      {/* THE LIFE PANORAMA — One continuous life story unfolding across time       */}
       {/* ========================================================================= */}
-      <LifeSphere />
+      <LifePanorama />
 
     </section>
   )
