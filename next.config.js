@@ -121,29 +121,14 @@ const nextConfig = {
   // by AI Overviews, so a low CTR at a good position means the SERP changed,
   // not that the page is bad. See SEO_URL_REGISTRY.md for the decision log.
   async redirects() {
-    return [
-      ...Object.entries({
-        ...urlPolicy.retiredKeywordPaths,
-        ...urlPolicy.retiredBlogPaths,
-      }).map(([source, destination]) => ({
-        source,
-        destination,
-        permanent: true,
-      })),
-      // Redirect HTTP to HTTPS in production
-      process.env.NODE_ENV === 'production' ? {
-        source: '/(.*)',
-        has: [
-          {
-            type: 'header',
-            key: 'x-forwarded-proto',
-            value: 'http'
-          }
-        ],
-        destination: 'https://bringback.pro/:path*',
-        permanent: true
-      } : null
-    ].filter(Boolean)
+    return Object.entries({
+      ...urlPolicy.retiredKeywordPaths,
+      ...urlPolicy.retiredBlogPaths,
+    }).map(([source, destination]) => ({
+      source,
+      destination,
+      permanent: true,
+    }))
   },
 
   // Additional security configurations

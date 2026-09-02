@@ -7,13 +7,12 @@ export function securityMiddleware(request: NextRequest) {
   const response = NextResponse.next()
   
   // Force HTTPS in production
-  if (process.env.NODE_ENV === 'production') {
-    const proto = request.headers.get('x-forwarded-proto')
-    if (proto === 'http') {
-      const httpsUrl = new URL(request.url)
-      httpsUrl.protocol = 'https:'
-      return NextResponse.redirect(httpsUrl.toString(), 301)
-    }
+  // Use the public request URL instead of x-forwarded-proto. OpenNext may use
+  // an HTTP hop internally even when the visitor connected over HTTPS.
+  if (process.env.NODE_ENV === 'production' && request.nextUrl.protocol === 'http:') {
+    const httpsUrl = request.nextUrl.clone()
+    httpsUrl.protocol = 'https:'
+    return NextResponse.redirect(httpsUrl, 301)
   }
   
   // Add security headers at runtime (backup to next.config.js)
