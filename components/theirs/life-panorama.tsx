@@ -6,9 +6,9 @@ import { motion, useSpring, useMotionValue, useTransform } from "framer-motion"
 export function LifePanorama() {
   const containerRef = useRef<HTMLDivElement>(null)
 
-  // Very subtle parallax tracking for organic life feel
+  // Subtle parallax tracking on desktop
   const mouseX = useMotionValue(0)
-  const springX = useSpring(useTransform(mouseX, [-0.5, 0.5], [-16, 16]), {
+  const springX = useSpring(useTransform(mouseX, [-0.5, 0.5], [-14, 14]), {
     stiffness: 85,
     damping: 28,
   })
@@ -29,127 +29,102 @@ export function LifePanorama() {
       ref={containerRef}
       onMouseMove={handleMouseMove}
       onMouseLeave={handleMouseLeave}
-      className="relative w-full overflow-hidden select-none flex justify-center items-end pt-2 sm:pt-4 bg-white"
+      className="relative w-full overflow-hidden select-none flex justify-center items-end bg-white"
     >
       {/* ========================================================================= */}
-      {/* THE LIFE RIBBON — One Continuous Panoramic Object Rising from Below       */}
-      {/* Pure White Background Around the Strip · Zero Gray Haze / Zero Gray Blur  */}
+      {/* THE LIFE RIBBON — Responsive Across All Viewports (Mobile to 4K)          */}
+      {/* Full width on mobile, upper corners rounded, bottom sharp                 */}
       {/* ========================================================================= */}
       <motion.div
         style={{ x: springX }}
-        className="relative w-[1140px] sm:w-[1340px] lg:w-[1480px] h-[350px] sm:h-[410px] lg:h-[450px] shrink-0"
+        className="relative w-full max-w-[1480px] h-[190px] xs:h-[230px] sm:h-[370px] lg:h-[440px] shrink-0 [mask-image:linear-gradient(to_bottom,black_0%,black_75%,rgba(0,0,0,0.85)_88%,transparent_100%)]"
       >
         {/* ----------------------------------------------------------------------- */}
-        {/* OUTER ROUNDED GRAY BEZEL STRIP — Perfectly concentric with inner photos */}
+        {/* OUTER ROUNDED GRAY BEZEL STRIP — Rounded top corners, sharp bottom     */}
         {/* ----------------------------------------------------------------------- */}
-        <div className="relative w-full h-full p-2 sm:p-2.5 lg:p-3 rounded-t-[148px] sm:rounded-t-[208px] lg:rounded-t-[268px] bg-[#ebebed] border-t border-x border-black/[0.08] overflow-hidden">
+        <div className="relative w-full h-full p-1.5 sm:p-2.5 lg:p-3 rounded-t-2xl sm:rounded-t-[208px] lg:rounded-t-[268px] rounded-b-none bg-[#ebebed] border-t border-x border-black/[0.08] overflow-hidden">
           
           {/* --------------------------------------------------------------------- */}
-          {/* INNER PHOTO MAIN CARD — Seamless crossfading continuous ribbon        */}
+          {/* INNER PHOTO MAIN CARD — Entire timeline visible across full width     */}
           {/* --------------------------------------------------------------------- */}
-          <div className="relative w-full h-full rounded-t-[138px] sm:rounded-t-[198px] lg:rounded-t-[258px] overflow-hidden bg-neutral-950 flex items-stretch border border-black/[0.08]">
+          <div className="relative w-full h-full rounded-t-xl sm:rounded-t-[198px] lg:rounded-t-[258px] rounded-b-none overflow-hidden bg-neutral-950 flex items-stretch border border-black/[0.08]">
             
-            {/* PHOTO 1 (0% - 24%): 1952 Childhood — B&W Print */}
-            <div className="relative w-[24%] h-full shrink-0 [mask-image:linear-gradient(to_right,black_70%,transparent_100%)] z-10">
+            {/* CHAPTER 1: 1952 Childhood — B&W Print */}
+            <div className="relative w-[28%] h-full shrink-0 [mask-image:linear-gradient(to_right,black_65%,transparent_100%)] z-10">
               <img
                 src="/memorial-family-portrait-son.jpg"
                 alt="Robert Carter Childhood 1952"
-                className="size-full object-cover object-top grayscale contrast-125 brightness-95"
+                className="size-full object-cover object-top grayscale contrast-120 brightness-95"
               />
-              <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-black/20 pointer-events-none" />
+              <div className="absolute inset-0 bg-gradient-to-b from-black/25 via-transparent to-transparent pointer-events-none" />
             </div>
 
-            {/* PHOTO 2 (20% - 44%): 1968 Youth / Young Adult — Sepia-toned Film */}
-            <div className="relative w-[24%] -ml-[5%] h-full shrink-0 [mask-image:linear-gradient(to_right,transparent_0%,black_25%,black_75%,transparent_100%)] z-20">
-              <img
-                src="/memorial-family-portrait-father.jpg"
-                alt="Robert Carter Young Adult 1968"
-                className="size-full object-cover object-top sepia-[0.35] saturate-85 contrast-110 brightness-95"
-              />
-              <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-black/20 pointer-events-none" />
-            </div>
-
-            {/* PHOTO 3 (40% - 64%): 1974 Partnership / Marriage — Warm 1970s Kodachrome (Unified Person) */}
-            <div className="relative w-[26%] -ml-[5%] h-full shrink-0 [mask-image:linear-gradient(to_right,transparent_0%,black_25%,black_75%,transparent_100%)] z-30">
+            {/* CHAPTER 2: 1974 Young Adult — Warm Faded 1970s Film */}
+            <div className="relative w-[28%] -ml-[5%] h-full shrink-0 [mask-image:linear-gradient(to_right,transparent_0%,black_30%,black_70%,transparent_100%)] z-20">
               <img
                 src="/separate-family-portrait-father.jpg"
-                alt="Robert Carter 1974"
-                className="size-full object-cover object-top sepia-[0.18] saturate-110 contrast-105"
+                alt="Robert Carter Young Adult 1974"
+                className="size-full object-cover object-top sepia-[0.25] saturate-95 contrast-105 brightness-95"
               />
-              <div className="absolute inset-0 bg-gradient-to-t from-black/35 via-transparent to-black/20 pointer-events-none" />
+              <div className="absolute inset-0 bg-gradient-to-b from-black/25 via-transparent to-transparent pointer-events-none" />
             </div>
 
-            {/* PHOTO 4 (60% - 84%): 1996 Family Reunion — Authentic 1990s 35mm Color */}
-            <div className="relative w-[25%] -ml-[5%] h-full shrink-0 [mask-image:linear-gradient(to_right,transparent_0%,black_25%,black_75%,transparent_100%)] z-40">
+            {/* CHAPTER 3: 1996 Family Reunion — Authentic 1990s 35mm Color */}
+            <div className="relative w-[28%] -ml-[5%] h-full shrink-0 [mask-image:linear-gradient(to_right,transparent_0%,black_30%,black_70%,transparent_100%)] z-30">
               <img
                 src="/memorial-family-portrait-combined.jpg"
-                alt="Family Reunion 1996"
-                className="size-full object-cover object-center saturate-115 contrast-105"
+                alt="Family Gathering 1996"
+                className="size-full object-cover object-center saturate-110 contrast-105"
               />
-              <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-black/20 pointer-events-none" />
+              <div className="absolute inset-0 bg-gradient-to-b from-black/25 via-transparent to-transparent pointer-events-none" />
             </div>
 
-            {/* PHOTO 5 (80% - 100%): 2024 Elder Portrait — Modern Digital Clarity */}
-            <div className="relative w-[26%] -ml-[5%] h-full shrink-0 [mask-image:linear-gradient(to_right,transparent_0%,black_25%,black_100%)] z-50">
+            {/* CHAPTER 4: 2024 Elder Portrait — Final Dominant Panel */}
+            <div className="relative w-[29%] -ml-[5%] h-full shrink-0 [mask-image:linear-gradient(to_right,transparent_0%,black_25%,black_100%)] z-40">
               <img
                 src="/memorial-family-portrait-grandfather.jpg"
                 alt="Robert Carter 2024"
                 className="size-full object-cover object-top contrast-110 brightness-100"
               />
-              <div className="absolute inset-0 bg-gradient-to-t from-black/45 via-transparent to-black/20 pointer-events-none" />
+              <div className="absolute inset-0 bg-gradient-to-b from-black/25 via-transparent to-transparent pointer-events-none" />
             </div>
 
-            {/* Organic Flowing Blue Timeline Thread crossing through the ribbon */}
+            {/* Subtle, Organic Blue Timeline Hairline (Visible on all screens) */}
             <svg
-              className="absolute inset-0 size-full pointer-events-none stroke-primary/70 fill-none z-60"
-              viewBox="0 0 1480 440"
+              className="absolute inset-0 size-full pointer-events-none stroke-primary/45 fill-none z-50"
+              viewBox="0 0 1000 300"
               preserveAspectRatio="none"
               aria-hidden="true"
             >
               <path
-                d="M 60 270 C 260 210, 480 300, 740 230 C 1000 160, 1220 260, 1420 180"
-                strokeWidth="1.8"
+                d="M 30 225 C 220 205, 450 230, 680 210 C 820 195, 920 220, 970 205"
+                strokeWidth="1.5"
               />
             </svg>
 
-            {/* Inscribed Milestone Years directly on the ribbon canvas */}
-            <div className="absolute inset-x-0 top-1/2 -translate-y-1/2 z-70 pointer-events-none flex justify-between px-10 sm:px-20 text-white/90 font-mono text-xs sm:text-sm font-semibold tracking-wider drop-shadow-md">
-              <span>1952</span>
-              <span className="translate-y-3">1968</span>
-              <span className="-translate-y-2">1974</span>
-              <span className="translate-y-2">1996</span>
-              <span className="-translate-y-4">2024</span>
+            {/* Inscribed Milestone Years Across Lower Curve */}
+            <div className="absolute inset-x-0 bottom-8 sm:bottom-16 z-60 pointer-events-none flex justify-between px-3.5 sm:px-14 lg:px-20 text-white/95 font-mono text-[10px] sm:text-xs lg:text-sm font-medium tracking-wider drop-shadow-md">
+              <span className="translate-y-0.5">1952</span>
+              <span className="-translate-y-1">1974</span>
+              <span className="translate-y-0.5">1996</span>
+              <span className="-translate-y-0.5">2024</span>
             </div>
 
-            {/* One emotional quote etched directly into the ribbon */}
-            <div className="absolute bottom-20 sm:bottom-24 left-1/3 z-70 pointer-events-none text-white/85 italic text-xs sm:text-sm font-serif drop-shadow-md">
+            {/* Emotional Quote Inscribed in Lower Midground */}
+            <div className="absolute bottom-2 sm:bottom-7 left-1/4 sm:left-1/3 z-60 pointer-events-none text-white/90 italic text-[9px] sm:text-xs lg:text-sm font-serif drop-shadow-md">
               “He could fix almost anything.”
             </div>
 
-            {/* Subtle audio waveform chip embedded near later life */}
-            <div className="absolute top-28 right-28 sm:right-36 z-70 pointer-events-none inline-flex items-center gap-2 text-white/90 font-mono text-xs drop-shadow-md">
-              <span className="text-primary font-bold tracking-tighter">━━━━━━</span>
+            {/* Discreet Voicemail Waveform Near Elder Portrait */}
+            <div className="absolute bottom-2 sm:bottom-7 right-3 sm:right-14 lg:right-20 z-60 pointer-events-none inline-flex items-center gap-1.5 text-white/90 font-mono text-[9px] sm:text-xs drop-shadow-md">
+              <span className="text-primary font-semibold tracking-tighter">━━━━━━</span>
               <span>0:14</span>
             </div>
 
           </div>
         </div>
 
-        {/* ----------------------------------------------------------------------- */}
-        {/* DIMENSIONALITY: Later-Life Portrait Breaks Slightly Above Ribbon Rim    */}
-        {/* ----------------------------------------------------------------------- */}
-        <div className="absolute -top-4 sm:-top-6 right-6 sm:right-12 lg:right-16 z-80 w-36 sm:w-48 lg:w-56 aspect-square rounded-full overflow-hidden ring-4 ring-white shadow-2xl pointer-events-none transition-transform duration-500">
-          <img
-            src="/memorial-family-portrait-grandfather.jpg"
-            alt="Robert Carter Dimensional Portrait"
-            className="size-full object-cover object-top contrast-115"
-          />
-        </div>
-
       </motion.div>
-
-      {/* Smooth lower horizon fade into white page */}
-      <div className="absolute inset-x-0 bottom-0 h-28 bg-gradient-to-t from-white via-white/80 to-transparent pointer-events-none z-90" />
     </div>
   )
 }
