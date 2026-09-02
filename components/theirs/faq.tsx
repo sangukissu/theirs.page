@@ -61,6 +61,8 @@ const FAQS: FaqItem[] = [
   },
 ]
 
+import { SectionHeader } from "@/components/theirs/section-header"
+
 export function TheirsFaq() {
   const [openIndex, setOpenIndex] = useState<number | null>(null)
 
@@ -95,12 +97,12 @@ export function TheirsFaq() {
 
       <div className="py-12 sm:py-20">
         {/* Section Heading */}
-        <div className="px-4 sm:px-6">
-          <h2 className="mx-auto max-w-2xl text-balance text-center text-3xl font-medium tracking-tight text-[#454545] sm:text-4xl">
-            Fair questions,{" "}
-            <span className="text-muted-foreground font-normal">straight answers.</span>
-          </h2>
-        </div>
+        <SectionHeader
+          badge="FAQ"
+          title="Fair questions, straight answers."
+          description="Everything you need to know about preservation, privacy, and contributions."
+          className="px-4 sm:px-6"
+        />
 
         {/* Dynamic Morphing Accordion Stack (Exact physics & layout from getopen.so) */}
         <div className="mx-auto mt-12 w-full max-w-2xl px-4 sm:mt-16 sm:px-0">

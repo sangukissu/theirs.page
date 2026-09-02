@@ -55,6 +55,8 @@ const TIERS: PricingTier[] = [
   },
 ]
 
+import { SectionHeader } from "@/components/theirs/section-header"
+
 export function TheirsPricing() {
   const [tierIndex, setTierIndex] = useState(0)
   const currentTier = TIERS[tierIndex]
@@ -62,20 +64,12 @@ export function TheirsPricing() {
   return (
     <section id="pricing" className="py-16 sm:py-24 flex flex-col gap-12 relative overflow-hidden">
       {/* Header */}
-      <div className="w-full max-w-3xl mx-auto px-5 flex flex-col items-center text-center gap-5">
-        <span
-          data-slot="badge"
-          className="flex items-center justify-center border font-medium w-fit whitespace-nowrap border-transparent bg-neutral-100 text-[#666] h-[24px] min-w-[24px] text-xs px-2.5 rounded-full"
-        >
-          Pricing
-        </span>
-        <h2 className="text-4xl text-[#181925] tracking-tight leading-11 font-medium text-balance max-w-md">
-          Simplified pricing
-        </h2>
-        <p className="w-full max-w-md font-medium text-base text-[#666]">
-          No confusing tiers. You pay once for permanent preservation. Everything is included.
-        </p>
-      </div>
+      <SectionHeader
+        badge="Pricing"
+        title="Simplified pricing"
+        description="No confusing tiers. You pay once for permanent preservation. Everything is included."
+        className="px-5 max-w-3xl mx-auto"
+      />
 
       {/* Main Split Pricing Card */}
       <div className="w-full max-w-5xl mx-auto px-5">

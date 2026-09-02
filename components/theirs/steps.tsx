@@ -1,19 +1,17 @@
 "use client"
 
 import { DitherGradient } from "@/components/theirs/dither-gradient"
+import { SectionHeader } from "@/components/theirs/section-header"
 
 export function TheirsSteps() {
   return (
-    <section id="how-it-works" className="py-16 sm:py-24 px-4 max-w-6xl mx-auto">
+    <section id="how-it-works" className="py-16 sm:py-24 px-4 max-w-6xl mx-auto flex flex-col gap-12 sm:gap-16">
       {/* Section Header */}
-      <div className="text-center max-w-2xl mx-auto mb-12 sm:mb-16">
-        <h2 className="text-balance text-3xl font-medium leading-[1.1] tracking-tight text-[#454545] sm:text-4xl">
-          Three steps from a blank screen to a living archive
-        </h2>
-        <p className="mt-3 text-pretty text-base text-muted-foreground">
-          Building a memorial shouldn&apos;t feel like filing administrative paperwork. It should feel like beginning to remember them.
-        </p>
-      </div>
+      <SectionHeader
+        badge="How it works"
+        title="Three steps from a blank screen to a living archive"
+        description="Building a memorial shouldn't feel like filing administrative paperwork. It should feel like beginning to remember them."
+      />
 
       {/* Exact Step Cards from getopen.so with Dither Canvas Glow */}
       <ul className="grid gap-4 sm:gap-6 lg:grid-cols-3">

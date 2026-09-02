@@ -19,6 +19,8 @@ import {
   FileImage,
 } from "lucide-react"
 
+import { SectionHeader } from "@/components/theirs/section-header"
+
 export function FeaturesBento() {
   const [isPlaying, setIsPlaying] = useState(false)
   const [activePrivacy, setActivePrivacy] = useState<"public" | "unlisted" | "pin">("pin")
@@ -26,20 +28,11 @@ export function FeaturesBento() {
   return (
     <section id="features" className="w-full max-w-5xl px-5 mx-auto py-16 sm:py-24 flex flex-col gap-12">
       {/* Section Header */}
-      <div className="flex flex-col items-center text-center gap-5">
-        <span
-          data-slot="badge"
-          className="flex items-center justify-center border font-medium w-fit whitespace-nowrap border-transparent bg-neutral-100 text-[#666] h-[24px] min-w-[24px] text-xs px-2.5 rounded-full"
-        >
-          Features
-        </span>
-        <h2 className="text-4xl tracking-tighter text-[#181925] leading-tight font-medium text-balance max-w-xl">
-          Everything needed to preserve who they were
-        </h2>
-        <p className="w-full max-w-lg font-medium text-lg/6 text-[#666]">
-          From intimate voicemails to childhood stories, assemble the complete texture of a human life.
-        </p>
-      </div>
+      <SectionHeader
+        badge="Features"
+        title="Everything needed to preserve who they were"
+        description="From intimate voicemails to childhood stories, assemble the complete texture of a human life."
+      />
 
       {/* Grid of Bento Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
