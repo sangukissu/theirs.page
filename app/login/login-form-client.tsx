@@ -1,31 +1,68 @@
 "use client"
-import { useActionState } from "react"
+
+import { useActionState, useEffect, useState, Suspense } from "react"
 import { useFormStatus } from "react-dom"
-import { Suspense } from "react"
 import { useSearchParams, useRouter } from "next/navigation"
-import { useEffect, useState } from "react"
 import { Turnstile } from "@marsidev/react-turnstile"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Loader2, Mail } from "lucide-react"
-import { Navbar } from '@/components/landing/Navbar';
-import { Footer } from '@/components/landing/Footer';
+import { Loader2, ArrowRight, Volume2, ShieldCheck, Sparkles } from "lucide-react"
 import Image from "next/image"
 import Link from "next/link"
 import { signInWithMagicLink, signInWithGoogle, type AuthState } from "./actions"
 import { createClient } from "@/utils/supabase/client"
 import { isAuthRetryableFetchError } from "@supabase/supabase-js"
-
-// Route-level metadata is defined in app/login/head.tsx to avoid exporting
-// metadata from a client component. This page remains a client component
-// for interactive login behaviors.
+import { DitherGradient } from "@/components/theirs/dither-gradient"
 
 function MagicLinkSubmit() {
   const { pending } = useFormStatus()
   return (
-    <Button type="submit" disabled={pending} className="w-full bg-black hover:bg-gray-800 text-white py-3 text-base font-medium rounded-lg h-12">
-      {pending ? (<><Loader2 className="mr-2 h-4 w-4 animate-spin" />Sending link...</>) : (<><Mail className="mr-2 h-4 w-4" />Send Magic Link</>)}
-    </Button>
+    <button
+      type="submit"
+      disabled={pending}
+      className="inline-flex items-center justify-center gap-1.5 whitespace-nowrap !rounded-full font-medium transition-all cursor-pointer border border-[color-mix(in_srgb,var(--primary)_80%,#3a3480)] bg-[color-mix(in_srgb,var(--primary)_90%,#3a3480)] text-primary-foreground shadow-[inset_0_1px_0_rgba(255,255,255,0.22),inset_0_-1px_0_rgba(58,52,128,0.30)] transform-gpu hover:bg-primary active:scale-[0.98] h-10 w-full text-sm group select-none disabled:opacity-50 disabled:pointer-events-none"
+    >
+      {pending ? (
+        <>
+          <Loader2 className="size-4 animate-spin" />
+          <span>Sending link...</span>
+        </>
+      ) : (
+        <>
+          <span>Continue with Email</span>
+          <span className="relative size-3.5 overflow-hidden inline-flex items-center">
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              width="14"
+              height="14"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              className="absolute inset-0 size-3.5 transition-transform duration-200 group-hover:translate-x-3 group-hover:opacity-0"
+            >
+              <path d="M5 12h14" />
+              <path d="m12 5 7 7-7 7" />
+            </svg>
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              width="14"
+              height="14"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              className="absolute inset-0 size-3.5 -translate-x-3 opacity-0 transition-transform duration-200 group-hover:translate-x-0 group-hover:opacity-100"
+            >
+              <path d="M5 12h14" />
+              <path d="m12 5 7 7-7 7" />
+            </svg>
+          </span>
+        </>
+      )}
+    </button>
   )
 }
 
@@ -35,45 +72,42 @@ function GoogleSignInButton({ nextPath }: { nextPath: string }) {
   const handleGoogleSignIn = async () => {
     setIsLoading(true)
     try {
-      // Persist last used method for UX badge
-      document.cookie = 'last_auth=google; path=/; max-age=31536000; SameSite=Lax'
+      document.cookie = "last_auth=google; path=/; max-age=31536000; SameSite=Lax"
       await signInWithGoogle(nextPath)
     } catch (error) {
       setIsLoading(false)
-      console.error('Google sign-in error:', error)
+      console.error("Google sign-in error:", error)
     }
   }
 
   return (
-    <Button
+    <button
       type="button"
-      variant="outline"
       disabled={isLoading}
       onClick={handleGoogleSignIn}
-      className="w-full border-gray-300 hover:bg-gray-50 text-black py-3 text-base font-medium rounded-lg h-12 bg-transparent"
+      className="w-full rounded-full border border-black/[0.08] hover:bg-neutral-50 active:scale-[0.98] h-10 text-xs sm:text-sm font-medium text-[#181925] flex items-center justify-center gap-2.5 transition-all cursor-pointer bg-white disabled:opacity-50 select-none"
     >
       {isLoading ? (
         <>
-          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-          Signing in...
+          <Loader2 className="size-4 animate-spin text-[#666]" />
+          <span>Connecting...</span>
         </>
       ) : (
         <>
           <Image
             src="/google.svg"
             alt="Google logo"
-            className="mr-2 h-4 w-4"
-            width={24}
-            height={24}
+            className="size-4"
+            width={16}
+            height={16}
           />
-          Continue with Google
+          <span>Continue with Google</span>
         </>
       )}
-    </Button>
+    </button>
   )
 }
 
-// Separate component for search params logic
 function LoginFormWithSearchParams({ nextPath }: { nextPath: string }) {
   const [state, formAction] = useActionState<AuthState, FormData>(signInWithMagicLink, {} as AuthState)
   const searchParams = useSearchParams()
@@ -81,11 +115,11 @@ function LoginFormWithSearchParams({ nextPath }: { nextPath: string }) {
   const [isCheckingSession, setIsCheckingSession] = useState(true)
   const [urlError, setUrlError] = useState<string | null>(null)
   const [captchaToken, setCaptchaToken] = useState<string | undefined>(undefined)
-  const [lastUsed, setLastUsed] = useState<'google' | 'magic' | null>(null)
+  const [lastUsed, setLastUsed] = useState<"google" | "magic" | null>(null)
   const siteKey = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY || ""
 
-  // Keep the form hidden until the browser confirms that no valid session exists.
-  // The server gate handles the normal case; this closes the short cookie-sync race.
+  const memorialName = searchParams.get("name") || ""
+
   useEffect(() => {
     const checkAuth = async () => {
       const supabase = createClient()
@@ -108,88 +142,130 @@ function LoginFormWithSearchParams({ nextPath }: { nextPath: string }) {
     void checkAuth()
   }, [nextPath, router])
 
-  // Check for error messages in URL parameters (from callback redirects)
   useEffect(() => {
-    const error = searchParams.get('error')
+    const error = searchParams.get("error")
     if (error) {
       setUrlError(error)
-      // Clear the error from URL to prevent it from showing again on refresh
       const url = new URL(window.location.href)
-      url.searchParams.delete('error')
-      window.history.replaceState({}, '', url.toString())
+      url.searchParams.delete("error")
+      window.history.replaceState({}, "", url.toString())
     }
   }, [searchParams])
 
-  // Read the last used auth method from cookie to show badge
   useEffect(() => {
     const match = document.cookie.match(/(?:^|;\s*)last_auth=([^;]+)/)
     if (match) {
       const value = decodeURIComponent(match[1])
-      if (value === 'google' || value === 'magic') {
+      if (value === "google" || value === "magic") {
         setLastUsed(value)
       }
     }
   }, [])
 
-  // Combine form state errors with URL errors
   const displayError = state?.error || urlError
 
   if (isCheckingSession) {
     return (
-      <div className="min-h-screen flex flex-col bg-brand-bg py-24">
-        <Navbar />
-        <main className="flex-1 flex items-center justify-center">
-          <div className="text-center">
-            <Loader2 className="mx-auto h-8 w-8 animate-spin text-gray-600" />
-            <p className="mt-2 text-gray-600">Checking your session...</p>
-          </div>
-        </main>
-        <Footer />
+      <div className="h-screen max-h-screen w-screen overflow-hidden flex items-center justify-center bg-white">
+        <div className="flex flex-col items-center gap-3">
+          <Loader2 className="size-6 animate-spin text-primary" />
+          <p className="text-xs text-[#888] font-mono">Verifying session...</p>
+        </div>
       </div>
     )
   }
 
   return (
-    <div className="flex flex-col bg-brand-bg">
-      <Navbar />
-      <main className="min-h-screen flex-1 flex items-center justify-center px-4 sm:px-6 lg:px-8">
-        <div className="w-full max-w-md space-y-8">
-          <div className="space-y-2 text-center">
-            <h1 className="  text-4xl font-semibold tracking-tight text-black">Welcome to BringBack</h1>
-            <p className="text-lg text-gray-600">Sign in to start restoring your photos</p>
+    <div className="h-screen max-h-screen w-screen overflow-hidden grid grid-cols-1 lg:grid-cols-2 bg-white select-none">
+      
+      {/* LEFT COLUMN: Pure White Form (Zero Scroll) */}
+      <div className="h-full flex flex-col justify-between p-6 sm:p-12 lg:p-16 max-w-lg mx-auto w-full overflow-hidden">
+        {/* Top: Logo & Return Link */}
+        <div className="flex items-center justify-between">
+          <Link
+            href="/"
+            className="group flex items-center gap-2 font-medium tracking-tight text-[#181925] text-lg hover:opacity-80 transition-opacity"
+          >
+            <span className="size-2 rounded-full bg-primary" />
+            <span>theirs</span>
+          </Link>
+
+          <Link
+            href="/"
+            className="text-xs text-[#888] hover:text-[#181925] transition-colors"
+          >
+            Back to overview
+          </Link>
+        </div>
+
+        {/* Center: The High-Converting Auth Form */}
+        <div className="w-full flex flex-col gap-6 my-auto">
+          {/* Headline & Context */}
+          <div className="flex flex-col gap-2">
+            {memorialName ? (
+              <>
+                <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-primary/10 text-primary text-xs font-medium w-fit">
+                  <Sparkles className="size-3" />
+                  <span>Reserving theirs.page/{memorialName.toLowerCase().replace(/[^a-z0-9]+/g, "-")}</span>
+                </div>
+                <h1 className="text-2xl sm:text-3xl font-medium tracking-tight text-[#181925] leading-tight">
+                  Begin {memorialName}&apos;s memorial
+                </h1>
+                <p className="text-xs sm:text-sm text-[#666] leading-relaxed">
+                  Enter your email to preserve this space. It is completely free to draft, and you can invite family immediately.
+                </p>
+              </>
+            ) : (
+              <>
+                <h1 className="text-2xl sm:text-3xl font-medium tracking-tight text-[#181925] leading-tight">
+                  Welcome to Theirs
+                </h1>
+                <p className="text-xs sm:text-sm text-[#666] leading-relaxed">
+                  Sign in or create an account to start assembling a living memorial with family and friends.
+                </p>
+              </>
+            )}
           </div>
 
-          <div className="bg-white border-6 border-gray-200 rounded-xl p-8">
-            {displayError && (
-              <div className="mb-4 px-4 py-3 rounded-lg text-sm bg-red-50 border border-red-200 text-red-700">
-                {displayError}
-                {displayError.includes('expired') && (
-                  <p className="mt-2 text-xs text-red-600">
-                    💡 Simply enter your email below to request a new authentication link.
-                  </p>
-                )}
-              </div>
-            )}
-            {state?.success && (
-              <div className="mb-4 px-4 py-3 rounded-lg text-sm bg-green-50 border border-green-200 text-green-700">{state.success}</div>
-            )}
+          {/* Error & Success States */}
+          {displayError && (
+            <div className="p-3 rounded-xl text-xs bg-rose-50 border border-rose-200/60 text-rose-700 leading-relaxed">
+              {displayError}
+            </div>
+          )}
+          {state?.success && (
+            <div className="p-3 rounded-xl text-xs bg-emerald-50 border border-emerald-200/60 text-emerald-700 leading-relaxed">
+              {state.success}
+            </div>
+          )}
 
+          {/* Form Actions */}
+          <div className="flex flex-col gap-4">
             <form
               action={formAction}
               onSubmit={() => {
-                // Persist last used method for UX badge
-                document.cookie = 'last_auth=magic; path=/; max-age=31536000; SameSite=Lax'
+                document.cookie = "last_auth=magic; path=/; max-age=31536000; SameSite=Lax"
               }}
-              className="space-y-6"
+              className="flex flex-col gap-3"
             >
               <input type="hidden" name="next" value={nextPath} />
-              <div className="space-y-2">
-                <label htmlFor="email" className="block text-sm font-medium text-gray-900">Email</label>
-                <Input id="email" name="email" type="email" placeholder="you@example.com" required className="bg-white border-gray-300 text-black placeholder:text-gray-500 rounded-lg h-12" />
+
+              <div className="flex flex-col gap-1.5">
+                <label htmlFor="email" className="text-xs font-medium text-[#181925]">
+                  Email address
+                </label>
+                <input
+                  id="email"
+                  name="email"
+                  type="email"
+                  placeholder="name@example.com"
+                  required
+                  className="h-10 px-3.5 rounded-xl bg-[#f7f7f8] border border-black/[0.08] text-sm text-[#181925] outline-none transition-colors focus:border-primary focus:bg-white placeholder:text-[#aaa]"
+                />
               </div>
-              {/* Cloudflare Turnstile CAPTCHA */}
+
               {siteKey && (
-                <div className="flex justify-center">
+                <div className="flex justify-center scale-90 -my-1">
                   <Turnstile
                     siteKey={siteKey}
                     onSuccess={(token) => setCaptchaToken(token)}
@@ -199,55 +275,172 @@ function LoginFormWithSearchParams({ nextPath }: { nextPath: string }) {
                 </div>
               )}
               <input type="hidden" name="captchaToken" value={captchaToken ?? ""} />
-              <div className="relative">
+
+              <div className="relative pt-1">
                 <MagicLinkSubmit />
-                {lastUsed === 'magic' && (
-                  <span className="absolute -top-2 right-3 bg-white text-black text-xs px-2  rounded-full border border-purple-600 text-sm">Last used</span>
+                {lastUsed === "magic" && (
+                  <span className="absolute -top-1.5 right-3 bg-white text-[#181925] text-[10px] px-2 py-0.5 rounded-full border border-black/[0.08] font-medium">
+                    Last used
+                  </span>
                 )}
               </div>
             </form>
 
-            <div className="mt-6 space-y-4">
-              <div className="relative">
-                <div className="absolute inset-0 flex items-center"><div className="w-full border-t border-gray-300" /></div>
-                <div className="relative flex justify-center text-sm"><span className="bg-white px-2 text-gray-500">Or</span></div>
+            {/* Subtle Divider */}
+            <div className="relative my-1">
+              <div className="absolute inset-0 flex items-center">
+                <div className="w-full border-t border-black/[0.06]" />
               </div>
-
-              <div className="relative">
-                <GoogleSignInButton nextPath={nextPath} />
-                {lastUsed === 'google' && (
-                  <span className="absolute -top-2 right-3 bg-white text-black text-xs px-2 rounded-full border border-purple-600 text-sm">Last used</span>
-                )}
+              <div className="relative flex justify-center text-[11px]">
+                <span className="bg-white px-2 text-[#888]">or</span>
               </div>
             </div>
 
-            <div className="mt-6 text-center text-gray-600">
-              <p className="text-sm">By continuing, you agree to our <Link href="/terms" className="text-blue-600 hover:text-blue-700">terms of service</Link> and <Link href="/privacy" className="text-blue-600 hover:text-blue-700">privacy policy</Link>.</p>
+            {/* Google OAuth Option */}
+            <div className="relative">
+              <GoogleSignInButton nextPath={nextPath} />
+              {lastUsed === "google" && (
+                <span className="absolute -top-1.5 right-3 bg-white text-[#181925] text-[10px] px-2 py-0.5 rounded-full border border-black/[0.08] font-medium">
+                  Last used
+                </span>
+              )}
             </div>
           </div>
-        </div>
-      </main>
 
-      <Footer />
+          <p className="text-[11px] text-[#888] text-center leading-relaxed">
+            No passwords to remember. We send a secure magic login link directly to your inbox.
+          </p>
+        </div>
+
+        {/* Bottom: Terms & Privacy */}
+        <div className="text-center text-[11px] text-[#888]">
+          <span>By signing in, you agree to our </span>
+          <Link href="/terms" className="underline hover:text-[#181925]">
+            terms
+          </Link>
+          <span> and </span>
+          <Link href="/privacy" className="underline hover:text-[#181925]">
+            privacy policy
+          </Link>
+          .
+        </div>
+      </div>
+
+      {/* RIGHT COLUMN: Dither Gradient Canvas + Elevated Archival Artpiece (Zero Scroll, Zero Text Clutter) */}
+      <div className="hidden lg:flex flex-col justify-between h-full bg-[#f7f7f8] relative overflow-hidden p-12 border-l border-black/[0.06]">
+        {/* Exact Bayer 4x4 Dither Canvas Aura */}
+        <span
+          aria-hidden="true"
+          className="pointer-events-none absolute inset-0 [mask-image:radial-gradient(125%_115%_at_100%_0%,#000_0%,#000_30%,transparent_75%)]"
+        >
+          <DitherGradient from="cyan" bloom="aura" />
+        </span>
+
+        {/* Top Header Badge */}
+        <div className="relative z-10 flex items-center justify-between">
+          <div className="flex items-center gap-2 px-3 py-1 rounded-full bg-white border border-black/[0.06] text-xs font-mono text-[#555]">
+            <span className="size-1.5 rounded-full bg-primary" />
+            <span>theirs.page · Permanent Life Archive</span>
+          </div>
+
+          <span className="font-mono text-[11px] text-[#888]">
+            RAW & UNCOMPRESSED
+          </span>
+        </div>
+
+        {/* Center: Museum-Grade Archival Artifact */}
+        <div className="relative z-10 my-auto max-w-sm w-full mx-auto flex flex-col gap-3.5">
+          
+          {/* Photograph Frame with Film Details */}
+          <div className="relative rounded-2xl overflow-hidden bg-white border border-black/[0.08] p-2 flex flex-col">
+            <div className="relative aspect-[4/3] rounded-xl overflow-hidden bg-neutral-900">
+              <img
+                src="/memorial-family-portrait-grandfather.jpg"
+                alt="Preserved Memorial Portrait"
+                className="size-full object-cover object-top filter grayscale contrast-105"
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/10 to-transparent pointer-events-none" />
+
+              {/* Monospace EXIF Stamp on Photo */}
+              <div className="absolute top-2.5 left-2.5 px-2 py-0.5 rounded bg-black/50 backdrop-blur-md text-[10px] font-mono text-white/90 border border-white/10">
+                4032 × 3024 · RAW PRESERVED
+              </div>
+
+              {/* Person Name & Lifespan Pill on Photo Bottom */}
+              <div className="absolute bottom-2.5 left-2.5 right-2.5 flex items-center justify-between text-white">
+                <div className="flex flex-col">
+                  <span className="text-xs font-medium tracking-tight leading-tight">Robert Edward Carter</span>
+                  <span className="text-[10px] text-white/70 font-mono">1948 — 2024 · Devon, UK</span>
+                </div>
+                <span className="text-[10px] font-mono bg-white/20 backdrop-blur-md px-2 py-0.5 rounded-full border border-white/20">
+                  76 Years
+                </span>
+              </div>
+            </div>
+
+            {/* Studio Audio Waveform Dock */}
+            <div className="mt-2 p-2 rounded-xl bg-[#f7f7f8] border border-black/[0.04] flex items-center gap-2.5">
+              <div className="size-6 rounded-full bg-primary text-white flex items-center justify-center shrink-0">
+                <Volume2 className="size-3" />
+              </div>
+
+              <div className="flex-1 flex items-center gap-[2px] h-4">
+                {[30, 60, 95, 45, 80, 100, 65, 40, 85, 90, 55, 75, 40, 85, 60, 35, 70, 90, 50, 30].map((h, i) => (
+                  <span
+                    key={i}
+                    className={`flex-1 rounded-full ${i < 8 ? "bg-primary" : "bg-neutral-300"}`}
+                    style={{ height: `${h}%` }}
+                  />
+                ))}
+              </div>
+
+              <span className="text-[10px] font-mono text-[#777] shrink-0">0:14 / 0:48</span>
+            </div>
+          </div>
+
+          {/* Lifespan Decades Track Ribbon */}
+          <div className="p-3 rounded-xl bg-white border border-black/[0.06] flex items-center justify-between text-xs">
+            <div className="flex items-center gap-2.5">
+              <span className="font-mono text-xs font-semibold text-primary bg-primary/10 px-2 py-0.5 rounded">
+                1948
+              </span>
+              <div className="flex flex-col">
+                <span className="font-medium text-[#181925] text-xs">Exeter, Devon</span>
+                <span className="text-[10px] text-[#888]">Childhood & Horology Workshop</span>
+              </div>
+            </div>
+
+            <span className="text-[10px] font-mono text-[#888]">Chapter I</span>
+          </div>
+
+        </div>
+
+        {/* Bottom Editorial Statement */}
+        <div className="relative z-10 flex items-center justify-between pt-4 border-t border-black/[0.06] text-xs text-[#666]">
+          <p className="font-medium text-[#181925] max-w-xs leading-relaxed">
+            “It should feel like visiting someone’s life, not visiting their obituary.”
+          </p>
+
+          <span className="font-mono text-[11px] text-[#888]">
+            theirs.page
+          </span>
+        </div>
+
+      </div>
+
     </div>
   )
 }
 
-// Main component with Suspense boundary
 export default function LoginFormClient({ nextPath }: { nextPath: string }) {
   return (
-    <Suspense fallback={
-      <div className="min-h-screen flex flex-col bg-brand-bg py-24">
-        <Navbar />
-        <main className="flex-1 flex items-center justify-center">
-          <div className="text-center">
-            <Loader2 className="mx-auto h-8 w-8 animate-spin text-gray-600" />
-            <p className="mt-2 text-gray-600">Loading...</p>
-          </div>
-        </main>
-        <Footer />
-      </div>
-    }>
+    <Suspense
+      fallback={
+        <div className="h-screen max-h-screen w-screen overflow-hidden flex items-center justify-center bg-white">
+          <Loader2 className="size-6 animate-spin text-primary" />
+        </div>
+      }
+    >
       <LoginFormWithSearchParams nextPath={nextPath} />
     </Suspense>
   )
