@@ -2,7 +2,7 @@ import { Resend } from 'resend'
 
 // Initialize Resend client
 // API key should be set as RESEND_API_KEY environment variable
-export const resend = new Resend(process.env.RESEND_API_KEY)
+export const resend = new Resend(process.env.RESEND_API_KEY || 're_placeholder_for_build')
 
 // Default sender for win-back emails
 export const WINBACK_SENDER = 'Harvansh <support@bringback.pro>'

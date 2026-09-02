@@ -21,7 +21,7 @@ export function MemorialAudio({
   const [isPlaying, setIsPlaying] = useState(false)
 
   return (
-    <section id="voice" className="py-8 sm:py-12 px-4 max-w-3xl mx-auto">
+    <section id="voice" className="py-8 sm:py-12 px-4 max-w-4xl mx-auto">
       <div className="rounded-2xl sm:rounded-3xl bg-[#f7f7f8] border border-black/[0.06] p-6 sm:p-8 flex flex-col gap-5">
         
         {/* Header Ribbon */}

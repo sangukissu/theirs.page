@@ -1,13 +1,11 @@
 import { type NextRequest, NextResponse } from "next/server"
-import { createClient } from "@supabase/supabase-js"
+import { supabaseAdmin as supabase } from "@/utils/supabase/admin"
 import { headers } from "next/headers"
 import crypto from "crypto"
 
-const WEBHOOK_SECRET = (process.env.DODO_WEBHOOK_SECRET || process.env.DODO_PAYMENTS_WEBHOOK_KEY)!
-const supabase = createClient(
-  (process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL)!,
-  (process.env.SUPABASE_SECRET_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY)!
-)
+function getWebhookSecret() {
+  return process.env.DODO_WEBHOOK_SECRET || process.env.DODO_PAYMENTS_WEBHOOK_KEY || ""
+}
 
 export async function POST(request: NextRequest) {
   try {
@@ -24,7 +22,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Verify webhook signature using Standard Webhooks approach
-    const isValid = verifyWebhookSignature(webhookId, webhookTimestamp, body, webhookSignature, WEBHOOK_SECRET)
+    const isValid = verifyWebhookSignature(webhookId, webhookTimestamp, body, webhookSignature, getWebhookSecret())
 
     if (!isValid) {
       return NextResponse.json({ error: "Invalid signature" }, { status: 401 })

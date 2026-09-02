@@ -2,25 +2,26 @@ import { CopyObjectCommand, S3Client, GetObjectCommand } from "@aws-sdk/client-s
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import { PutObjectCommand } from "@aws-sdk/client-s3";
 
-const R2_ACCOUNT_ID = process.env.R2_ACCOUNT_ID as string;
-const R2_ACCESS_KEY_ID = process.env.R2_ACCESS_KEY_ID as string;
-const R2_SECRET_ACCESS_KEY = process.env.R2_SECRET_ACCESS_KEY as string;
-const R2_BUCKET_NAME = process.env.R2_BUCKET_NAME as string;
-
-if (!R2_ACCOUNT_ID || !R2_ACCESS_KEY_ID || !R2_SECRET_ACCESS_KEY || !R2_BUCKET_NAME) {
-  throw new Error("Missing Cloudflare R2 environment variables: R2_ACCOUNT_ID, R2_ACCESS_KEY_ID, R2_SECRET_ACCESS_KEY, R2_BUCKET_NAME");
+function getR2BucketName() {
+  return process.env.R2_BUCKET_NAME || 'theirs';
 }
 
-// Cloudflare R2 S3-compatible endpoint
-const R2_ENDPOINT = `https://${R2_ACCOUNT_ID}.r2.cloudflarestorage.com`;
-
 export function getR2Client() {
+  const accountId = process.env.R2_ACCOUNT_ID;
+  const accessKeyId = process.env.R2_ACCESS_KEY_ID;
+  const secretAccessKey = process.env.R2_SECRET_ACCESS_KEY;
+
+  if (!accountId || !accessKeyId || !secretAccessKey) {
+    throw new Error("Missing Cloudflare R2 environment variables: R2_ACCOUNT_ID, R2_ACCESS_KEY_ID, R2_SECRET_ACCESS_KEY, R2_BUCKET_NAME");
+  }
+
+  const endpoint = `https://${accountId}.r2.cloudflarestorage.com`;
   return new S3Client({
     region: "auto",
-    endpoint: R2_ENDPOINT,
+    endpoint,
     credentials: {
-      accessKeyId: R2_ACCESS_KEY_ID,
-      secretAccessKey: R2_SECRET_ACCESS_KEY,
+      accessKeyId,
+      secretAccessKey,
     },
     forcePathStyle: true,
   });
@@ -29,7 +30,7 @@ export function getR2Client() {
 export async function getR2ObjectStream(key: string, range?: string | null) {
   const client = getR2Client();
   const command = new GetObjectCommand({
-    Bucket: R2_BUCKET_NAME,
+    Bucket: getR2BucketName(),
     Key: key,
     Range: range || undefined,
   });
@@ -51,7 +52,7 @@ export async function getR2ObjectStream(key: string, range?: string | null) {
 export async function getR2ObjectBuffer(key: string) {
   const client = getR2Client()
   const result = await client.send(
-    new GetObjectCommand({ Bucket: R2_BUCKET_NAME, Key: key })
+    new GetObjectCommand({ Bucket: getR2BucketName(), Key: key })
   )
   if (!result.Body) {
     throw new Error("R2 object has no body")
@@ -64,7 +65,7 @@ export async function getR2ObjectBuffer(key: string) {
 }
 export async function getR2SignedUrl(key: string, expiresInSeconds = 900) {
   const client = getR2Client();
-  const command = new GetObjectCommand({ Bucket: R2_BUCKET_NAME, Key: key });
+  const command = new GetObjectCommand({ Bucket: getR2BucketName(), Key: key });
   const signedUrl = await getSignedUrl(client, command, { expiresIn: expiresInSeconds });
   return signedUrl;
 }
@@ -78,7 +79,7 @@ export async function putR2Object(
   const client = getR2Client();
 
   const command = new PutObjectCommand({
-    Bucket: process.env.R2_BUCKET_NAME,
+    Bucket: getR2BucketName(),
     Key: key,
     Body: body,
     ContentType: contentType,
@@ -86,7 +87,7 @@ export async function putR2Object(
   });
 
   await client.send(command);
-  return { bucket: process.env.R2_BUCKET_NAME, key };
+  return { bucket: getR2BucketName(), key };
 }
 
 /**
@@ -184,7 +185,7 @@ export async function deleteVideoFromR2(key: string): Promise<void> {
     const { DeleteObjectCommand } = await import("@aws-sdk/client-s3");
 
     const command = new DeleteObjectCommand({
-      Bucket: R2_BUCKET_NAME,
+      Bucket: getR2BucketName(),
       Key: key,
     });
 
@@ -209,7 +210,7 @@ export async function getR2PresignedUploadUrl(
   try {
     const client = getR2Client();
     const command = new PutObjectCommand({
-      Bucket: R2_BUCKET_NAME,
+      Bucket: getR2BucketName(),
       Key: key,
       ContentType: contentType,
     });
@@ -225,8 +226,8 @@ export async function getR2PresignedUploadUrl(
 export async function copyR2Object(sourceKey: string, destinationKey: string, contentType?: string) {
   const client = getR2Client();
   const command = new CopyObjectCommand({
-    Bucket: R2_BUCKET_NAME,
-    CopySource: `${R2_BUCKET_NAME}/${sourceKey}`,
+    Bucket: getR2BucketName(),
+    CopySource: `\/${sourceKey}`,
     Key: destinationKey,
     ContentType: contentType,
     MetadataDirective: contentType ? "REPLACE" : "COPY",
@@ -247,7 +248,7 @@ export async function deleteR2Object(key: string): Promise<void> {
   const { DeleteObjectCommand } = await import("@aws-sdk/client-s3");
 
   const command = new DeleteObjectCommand({
-    Bucket: R2_BUCKET_NAME,
+    Bucket: getR2BucketName(),
     Key: key,
   });
 
@@ -278,7 +279,7 @@ export async function deleteR2PrefixOlderThan(
   let continuationToken: string | undefined;
   do {
     const listCommand = new ListObjectsV2Command({
-      Bucket: R2_BUCKET_NAME,
+      Bucket: getR2BucketName(),
       Prefix: prefix,
       MaxKeys: 1000,
       ContinuationToken: continuationToken,
@@ -303,7 +304,7 @@ export async function deleteR2PrefixOlderThan(
       try {
         await client.send(
           new DeleteObjectsCommand({
-            Bucket: R2_BUCKET_NAME,
+            Bucket: getR2BucketName(),
             Delete: {
               Objects: batch.map((Key) => ({ Key })),
               Quiet: true,
