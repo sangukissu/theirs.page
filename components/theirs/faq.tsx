@@ -1,70 +1,213 @@
 "use client"
 
 import { useState } from "react"
+import { motion, AnimatePresence } from "framer-motion"
 import { ChevronDown } from "lucide-react"
 
-export function TheirsFaq() {
-  const [openIdx, setOpenIdx] = useState<number | null>(0)
+interface FaqItem {
+  id: string
+  question: string
+  answer: string
+}
 
-  const faqs = [
-    {
-      q: "Do family members or friends need an account to contribute?",
-      a: "No. Grieving family members and busy friends shouldn't have to fill out registration forms or remember passwords. Anyone with your invite link can submit a memory, voicemail, or photo in seconds.",
-    },
-    {
-      q: "Can I approve memories before they appear on the page?",
-      a: "Yes, completely. Every memory submitted by a guest goes into your private curator queue as 'Pending Approval'. Nothing goes public until you approve it.",
-    },
-    {
-      q: "Are photographs kept in their original quality?",
-      a: "Yes. Unlike social platforms that aggressively compress family memories, Theirs saves your full original high-resolution images untouched in Cloudflare R2 storage.",
-    },
-    {
-      q: "How does privacy work?",
-      a: "You choose between three modes: Public (searchable by name), Unlisted (accessible only via private link), or Private (requires a secure family PIN to unlock).",
-    },
-    {
-      q: "What if I want to download all our photos and stories later?",
-      a: "You can download your entire archive in one click anytime — uncompressed original photos, audio files, formatted stories, and an offline HTML viewer that works without internet.",
-    },
-  ]
+const FAQS: FaqItem[] = [
+  {
+    id: "contribute-no-login",
+    question: "Can relatives and friends contribute without creating an account?",
+    answer:
+      "Yes, completely. One share link lets anyone write a story, upload a photo, or record a voice note directly from their phone or browser. No app download, no sign-up forms, and no passwords required.",
+  },
+  {
+    id: "approval-queue",
+    question: "Do memories appear automatically, or can I review them first?",
+    answer:
+      "Nothing goes live without your explicit approval. Every contributed memory, photo, and voice memo lands in your private moderation queue first, giving you full control over what is published.",
+  },
+  {
+    id: "photo-preservation",
+    question: "Are original high-resolution photos preserved, or compressed?",
+    answer:
+      "Always preserved untouched. Unlike social media platforms that compress photos into blurry thumbnails, we store your original 4K and RAW files permanently in dedicated Cloudflare R2 object storage with zero data loss.",
+  },
+  {
+    id: "pricing-subscription",
+    question: "Is there a recurring monthly subscription?",
+    answer:
+      "Never. We believe charging a monthly subscription for grief is predatory. A memorial on Theirs is a one-time activation of $49 for lifetime hosting. It is completely free to draft and assemble; you only pay when you decide to publish.",
+  },
+  {
+    id: "offline-export",
+    question: "Can I download an offline copy if I ever want to leave?",
+    answer:
+      "Yes, at any moment. One click exports a self-contained ZIP archive containing all your original high-resolution photographs, audio recordings, and a standalone offline HTML reader that opens in any browser without an internet connection.",
+  },
+  {
+    id: "privacy-tiers",
+    question: "Who can view their memorial?",
+    answer:
+      "You choose between three privacy tiers: Public (discoverable for old friends, colleagues, and acquaintances), Unlisted (only accessible to people with your private link), or PIN-protected (requiring a family access code).",
+  },
+  {
+    id: "caretaker-delegation",
+    question: "What happens if the creator passes away or can no longer manage the page?",
+    answer:
+      "You can designate a successor caretaker at any time. They receive secondary administrative privileges to approve incoming memories and safeguard the archive across generations.",
+  },
+  {
+    id: "voice-notes",
+    question: "Can we record or upload voice notes and voicemails?",
+    answer:
+      "Yes. Visitors can listen to their actual voice with an integrated audio waveform player. You can upload existing voicemails or voice memos directly from your phone in seconds.",
+  },
+]
+
+export function TheirsFaq() {
+  const [openIndex, setOpenIndex] = useState<number | null>(null)
+
+  const toggle = (idx: number) => {
+    setOpenIndex((prev) => (prev === idx ? null : idx))
+  }
+
+  // Schema.org FAQPage structured data for SEO
+  const jsonLd = {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    mainEntity: FAQS.map((faq) => ({
+      "@type": "Question",
+      name: faq.question,
+      acceptedAnswer: {
+        "@type": "Answer",
+        text: faq.answer,
+      },
+    })),
+  }
 
   return (
-    <section className="py-16 sm:py-24 px-4 max-w-3xl mx-auto">
-      <div className="text-center mb-12">
-        <h2 className="text-balance text-3xl font-medium leading-[1.1] tracking-tight text-[#454545] sm:text-4xl">
-          Frequently asked questions
-        </h2>
-      </div>
+    <section
+      id="faq"
+      className="scroll-mt-16 overflow-visible rounded-none bg-transparent p-0 sm:p-0"
+    >
+      {/* Structured Data */}
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+      />
 
-      <div className="divide-y divide-border rounded-md border border-border bg-white">
-        {faqs.map((faq, i) => {
-          const isOpen = openIdx === i
-          return (
-            <div key={i} className="px-5 py-4">
-              <button
-                type="button"
-                onClick={() => setOpenIdx(isOpen ? null : i)}
-                className="w-full flex items-center justify-between text-left gap-4"
-              >
-                <span className="text-sm font-medium text-[#454545] hover:text-primary transition-colors">
-                  {faq.q}
-                </span>
-                <ChevronDown
-                  className={`size-4 text-muted-foreground shrink-0 transition-transform duration-200 ${
-                    isOpen ? "rotate-180 text-primary" : ""
-                  }`}
-                />
-              </button>
+      <div className="py-12 sm:py-20">
+        {/* Section Heading */}
+        <div className="px-4 sm:px-6">
+          <h2 className="mx-auto max-w-2xl text-balance text-center text-3xl font-medium tracking-tight text-[#454545] sm:text-4xl">
+            Fair questions,{" "}
+            <span className="text-muted-foreground font-normal">straight answers.</span>
+          </h2>
+        </div>
 
-              {isOpen && (
-                <p className="mt-2.5 text-xs sm:text-sm text-muted-foreground leading-relaxed pr-6">
-                  {faq.a}
-                </p>
-              )}
-            </div>
-          )
-        })}
+        {/* Dynamic Morphing Accordion Stack (Exact physics & layout from getopen.so) */}
+        <div className="mx-auto mt-12 w-full max-w-2xl px-4 sm:mt-16 sm:px-0">
+          <div className="flex flex-col">
+            {FAQS.map((item, index) => {
+              const isOpen = openIndex === index
+              const total = FAQS.length
+
+              // Calculate exact border-radius and margins based on open neighbor states
+              const prevIsOpen = index > 0 && index - 1 === openIndex
+              const nextIsOpen = index < total - 1 && index + 1 === openIndex
+
+              const isStartOfClosedGroup = index === 0 || prevIsOpen
+              const isEndOfClosedGroup = index === total - 1 || nextIsOpen
+
+              let borderRadius = "0px"
+              if (isOpen) {
+                borderRadius = "28px"
+              } else if (isStartOfClosedGroup && isEndOfClosedGroup) {
+                borderRadius = "28px"
+              } else if (isStartOfClosedGroup) {
+                borderRadius = "28px 28px 0px 0px"
+              } else if (isEndOfClosedGroup) {
+                borderRadius = "0px 0px 28px 28px"
+              }
+
+              // Margin calculations
+              let marginTop = 0
+              if (isOpen && index > 0) {
+                marginTop = 12
+              } else if (!isOpen && isStartOfClosedGroup && index > 0) {
+                marginTop = 12
+              }
+
+              return (
+                <motion.div
+                  key={item.id}
+                  layout
+                  transition={{
+                    type: "spring",
+                    stiffness: 380,
+                    damping: 32,
+                  }}
+                  style={{
+                    marginTop,
+                    borderRadius,
+                  }}
+                  className="overflow-hidden bg-[#f6f6f6] text-card-foreground will-change-transform"
+                >
+                  <button
+                    type="button"
+                    onClick={() => toggle(index)}
+                    aria-expanded={isOpen}
+                    className="flex min-h-[54px] w-full items-center gap-4 px-6 py-4 text-left outline-none transition-colors hover:bg-black/[0.02] focus-visible:bg-muted/25 cursor-pointer select-none"
+                  >
+                    <span className="min-w-0 flex-1 text-[15px] font-medium text-foreground">
+                      {item.question}
+                    </span>
+                    <motion.span
+                      animate={{ rotate: isOpen ? 180 : 0 }}
+                      transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
+                      className="grid h-6 w-6 shrink-0 place-items-center text-muted-foreground"
+                    >
+                      <ChevronDown className="h-4 w-4" />
+                    </motion.span>
+                  </button>
+
+                  <AnimatePresence initial={false}>
+                    {isOpen && (
+                      <motion.div
+                        key="content"
+                        initial={{ height: 0, opacity: 0 }}
+                        animate={{
+                          height: "auto",
+                          opacity: 1,
+                          transition: {
+                            height: {
+                              type: "spring",
+                              stiffness: 380,
+                              damping: 32,
+                            },
+                            opacity: { duration: 0.2, delay: 0.05 },
+                          },
+                        }}
+                        exit={{
+                          height: 0,
+                          opacity: 0,
+                          transition: {
+                            height: { duration: 0.2, ease: "easeInOut" },
+                            opacity: { duration: 0.15 },
+                          },
+                        }}
+                        className="overflow-hidden"
+                      >
+                        <div className="px-6 pb-6 pt-0">
+                          <div className="text-[15px] leading-relaxed text-muted-foreground">
+                            {item.answer}
+                          </div>
+                        </div>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                </motion.div>
+              )
+            })}
+          </div>
+        </div>
       </div>
     </section>
   )
