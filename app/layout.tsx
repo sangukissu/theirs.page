@@ -67,7 +67,7 @@ export default function RootLayout({
         <meta name="color-scheme" content="light" />
         <link rel="icon" type="image/svg+xml" href="/placeholder-logo.svg" />
       </head>
-      <body className="antialiased bg-[#f6f6f6] text-[#292929] selection:bg-[#305dde]/15 selection:text-[#305dde]">
+      <body className="antialiased bg-white text-[#292929] selection:bg-[#305dde]/15 selection:text-[#305dde]">
         {children}
         <NetworkStatus />
         <Toaster />

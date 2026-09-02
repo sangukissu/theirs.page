@@ -15,11 +15,11 @@ export function TheirsHero() {
   }
 
   return (
-    <section className="relative pt-8 sm:pt-12 pb-0 px-4 text-center overflow-hidden flex flex-col items-center">
+    <section className="relative pt-8 sm:pt-12 pb-0 px-4 text-center overflow-hidden flex flex-col items-center bg-white">
       <div className="max-w-4xl mx-auto flex flex-col items-center w-full">
         
         {/* Eyebrow Pill */}
-        <div className="mb-4 flex justify-center">
+        <div className="mb-3.5 flex justify-center">
           <div className="inline-flex items-center gap-2 rounded-full border border-black/[0.06] bg-white px-3.5 py-1 text-xs text-[#666] select-none shadow-2xs">
             <span className="size-1.5 rounded-full bg-primary" />
             <span>For their story</span>
@@ -27,19 +27,19 @@ export function TheirsHero() {
         </div>
 
         {/* Commanding Two-Line Headline */}
-        <h1 className="text-balance text-4xl sm:text-6xl lg:text-[68px] font-medium tracking-[-0.04em] text-[#181925] leading-[1.04] max-w-[850px] mb-4">
+        <h1 className="text-balance text-4xl sm:text-6xl lg:text-[68px] font-medium tracking-[-0.04em] text-[#181925] leading-[1.04] max-w-[850px] mb-3.5">
           A life is more than
           <br />
           <span className="text-primary">two dates.</span>
         </h1>
 
         {/* Human Subheadline */}
-        <p className="mx-auto max-w-[660px] text-pretty text-base sm:text-xl leading-relaxed text-[#666] mb-6 sm:mb-7">
+        <p className="mx-auto max-w-[660px] text-pretty text-base sm:text-xl leading-relaxed text-[#666] mb-5 sm:mb-6">
           Keep the photos, stories, voices and little things that made them who they were — together in one beautiful page.
         </p>
 
         {/* High-Converting "Create their page" Input Box (Responsive on Mobile & Desktop) */}
-        <div className="w-full max-w-lg flex flex-col items-center gap-2.5 mb-6 sm:mb-8">
+        <div className="w-full max-w-lg flex flex-col items-center gap-2 mb-4 sm:mb-5">
           <form
             onSubmit={handleSubmit}
             className="w-full flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-2 sm:p-1.5 sm:rounded-full sm:bg-[#f7f7f8] sm:border sm:border-black/[0.08] sm:shadow-2xs transition-colors sm:focus-within:border-primary/50"
@@ -108,7 +108,7 @@ export function TheirsHero() {
       </div>
 
       {/* ========================================================================= */}
-      {/* THE LIFE PANORAMA — One continuous life story unfolding across time       */}
+      {/* THE LIFE PANORAMA — One Dense Cinematic Mass of Memories                  */}
       {/* ========================================================================= */}
       <LifePanorama />
 

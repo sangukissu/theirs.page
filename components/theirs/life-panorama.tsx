@@ -6,10 +6,10 @@ import { motion, useSpring, useMotionValue, useTransform } from "framer-motion"
 export function LifePanorama() {
   const containerRef = useRef<HTMLDivElement>(null)
 
-  // Very subtle parallax tilt on mouse move
+  // Very subtle parallax tracking for organic life feel
   const mouseX = useMotionValue(0)
-  const springX = useSpring(useTransform(mouseX, [-0.5, 0.5], [-18, 18]), {
-    stiffness: 90,
+  const springX = useSpring(useTransform(mouseX, [-0.5, 0.5], [-16, 16]), {
+    stiffness: 85,
     damping: 28,
   })
 
@@ -29,176 +29,127 @@ export function LifePanorama() {
       ref={containerRef}
       onMouseMove={handleMouseMove}
       onMouseLeave={handleMouseLeave}
-      className="relative w-full overflow-hidden select-none flex justify-center items-center pt-2 sm:pt-6 pb-4"
+      className="relative w-full overflow-hidden select-none flex justify-center items-end pt-2 sm:pt-4 bg-white"
     >
-      {/* Soft warm atmospheric background glow */}
-      <div className="absolute inset-0 pointer-events-none flex items-center justify-center">
-        <div className="w-full max-w-5xl h-72 rounded-full bg-gradient-to-r from-amber-500/[0.02] via-primary/[0.035] to-amber-500/[0.02] blur-3xl -z-10" />
-      </div>
-
       {/* ========================================================================= */}
-      {/* THE LIFE PANORAMA — One continuous cinematic life unfolding left to right */}
+      {/* THE LIFE RIBBON — One Continuous Panoramic Object Rising from Below       */}
+      {/* Pure White Background Around the Strip · Zero Gray Haze / Zero Gray Blur  */}
       {/* ========================================================================= */}
       <motion.div
         style={{ x: springX }}
-        className="relative w-[1100px] sm:w-[1300px] lg:w-[1450px] h-[340px] sm:h-[400px] lg:h-[440px] flex items-center justify-between shrink-0"
+        className="relative w-[1140px] sm:w-[1340px] lg:w-[1480px] h-[350px] sm:h-[410px] lg:h-[450px] shrink-0"
       >
-        {/* Organic Luminous Timeline Hairline connecting the moments */}
-        <svg
-          className="absolute inset-0 size-full pointer-events-none stroke-primary/30 fill-none z-0"
-          viewBox="0 0 1450 440"
-          preserveAspectRatio="none"
-          aria-hidden="true"
-        >
-          <path
-            d="M 60 260 C 280 210, 480 290, 720 220 C 960 160, 1180 250, 1400 190"
-            strokeWidth="1.5"
-            strokeDasharray="4 6"
-          />
-        </svg>
-
         {/* ----------------------------------------------------------------------- */}
-        {/* CHAPTER 1 (Far Left): 1952 · Childhood on the Devon Moors              */}
+        {/* OUTER ROUNDED GRAY BEZEL STRIP — Perfectly concentric with inner photos */}
         {/* ----------------------------------------------------------------------- */}
-        <div className="relative z-10 flex flex-col items-start gap-2.5 -ml-4 sm:ml-2">
-          {/* Faded 1950s Black & White Photograph */}
-          <div className="relative w-36 sm:w-44 lg:w-48 aspect-4/3 rounded-2xl overflow-hidden shadow-sm ring-1 ring-black/[0.08] rotate-[-3deg] transition-transform duration-500 hover:rotate-0 hover:scale-105">
-            <img
-              src="/old-school-photo.webp"
-              alt="Exeter Childhood 1952"
-              className="size-full object-cover grayscale contrast-115 brightness-95"
-            />
-            {/* Film vignette overlay */}
-            <div className="absolute inset-0 bg-gradient-to-t from-black/30 via-transparent to-transparent pointer-events-none" />
-          </div>
-
-          {/* Inscribed Milestone Metadata directly on canvas (No Box) */}
-          <div className="flex flex-col text-left pl-1">
-            <span className="font-mono text-xs sm:text-sm font-medium text-[#181925]">
-              1952
-            </span>
-            <span className="text-[11px] font-mono text-[#888]">
-              Exeter · Devon Moors
-            </span>
-          </div>
-        </div>
-
-        {/* ----------------------------------------------------------------------- */}
-        {/* CHAPTER 2 (Center-Left): 1974 · Married Meena at St. Jude's             */}
-        {/* ----------------------------------------------------------------------- */}
-        <div className="relative z-10 flex flex-col items-start gap-2 -mt-4 sm:-mt-8">
-          {/* Faint Handwritten Letter Fragment passing behind */}
-          <div className="absolute -top-10 -left-6 z-0 text-[11px] font-serif italic text-[#888] select-none pointer-events-none opacity-60">
-            “my heart only ticks for you...”
-          </div>
-
-          {/* 1970s Warm Wedding Photograph */}
-          <div className="relative z-10 w-44 sm:w-52 lg:w-56 aspect-4/3 rounded-2xl overflow-hidden shadow-md ring-1 ring-black/[0.08] rotate-[2deg] transition-transform duration-500 hover:rotate-0 hover:scale-105">
-            <img
-              src="/historical-wedding-photo.webp"
-              alt="Wedding at St. Jude's 1974"
-              className="size-full object-cover grayscale contrast-105"
-            />
-            <div className="absolute inset-0 bg-gradient-to-t from-black/25 via-transparent to-transparent pointer-events-none" />
-          </div>
-
-          {/* Inscribed Milestone Metadata directly on canvas */}
-          <div className="relative z-10 flex flex-col text-left pl-1">
-            <span className="font-mono text-xs sm:text-sm font-medium text-[#181925]">
-              1974 · Married Meena
-            </span>
-            <span className="text-[11px] font-mono text-[#888]">
-              St. Jude’s Church · Dartmoor
-            </span>
-          </div>
-        </div>
-
-        {/* ----------------------------------------------------------------------- */}
-        {/* CHAPTER 3 (Center): 1981 · The Horology Workshop                        */}
-        {/* ----------------------------------------------------------------------- */}
-        <div className="relative z-10 flex flex-col items-start gap-2 mt-6 sm:mt-10">
-          {/* 1980s Workshop Photograph */}
-          <div className="relative w-40 sm:w-48 lg:w-52 aspect-4/3 rounded-2xl overflow-hidden shadow-sm ring-1 ring-black/[0.08] rotate-[-2deg] transition-transform duration-500 hover:rotate-0 hover:scale-105">
-            <img
-              src="/vintage-family-portraits-colorized.webp"
-              alt="Carter Horology 1981"
-              className="size-full object-cover grayscale contrast-105"
-            />
-            <div className="absolute inset-0 bg-gradient-to-t from-black/25 via-transparent to-transparent pointer-events-none" />
-          </div>
-
-          {/* Inscribed Milestone & Famous Saying */}
-          <div className="flex flex-col text-left pl-1">
-            <span className="font-mono text-xs sm:text-sm font-medium text-[#181925]">
-              1981 · Opened his shop
-            </span>
-            <p className="text-[11px] italic text-[#666] mt-0.5 max-w-[170px] leading-snug">
-              “He could fix almost anything.”
-            </p>
-          </div>
-        </div>
-
-        {/* ----------------------------------------------------------------------- */}
-        {/* CHAPTER 4 (Center-Right): 2007 · Family & Grandchildren                 */}
-        {/* ----------------------------------------------------------------------- */}
-        <div className="relative z-10 flex flex-col items-start gap-2 -mt-6 sm:-mt-10">
-          {/* Family snapshot with kids */}
-          <div className="relative w-40 sm:w-48 lg:w-52 aspect-4/3 rounded-2xl overflow-hidden shadow-sm ring-1 ring-black/[0.08] rotate-[3deg] transition-transform duration-500 hover:rotate-0 hover:scale-105">
-            <img
-              src="/memorial-family-portrait-combined.jpg"
-              alt="Family gathering Devon"
-              className="size-full object-cover grayscale contrast-105"
-            />
-            <div className="absolute inset-0 bg-gradient-to-t from-black/25 via-transparent to-transparent pointer-events-none" />
-          </div>
-
-          {/* Inscribed Milestone */}
-          <div className="flex flex-col text-left pl-1">
-            <span className="font-mono text-xs sm:text-sm font-medium text-[#181925]">
-              2007 · Became a grandfather
-            </span>
-            <span className="text-[11px] font-mono text-[#888]">
-              Devon Garden with Anita & Leo
-            </span>
-          </div>
-        </div>
-
-        {/* ----------------------------------------------------------------------- */}
-        {/* CHAPTER 5 (Far Right): 2024 · Strongest Later-Life Portrait & Voice     */}
-        {/* ----------------------------------------------------------------------- */}
-        <div className="relative z-10 flex flex-col items-start gap-2.5 -mr-4 sm:mr-2">
-          {/* Large, Commanding Final Portrait */}
-          <div className="relative w-44 sm:w-56 lg:w-60 aspect-4/5 rounded-3xl overflow-hidden shadow-xl ring-1 ring-black/[0.1] rotate-[-1deg] transition-transform duration-500 hover:rotate-0 hover:scale-105">
-            <img
-              src="/memorial-family-portrait-grandfather.jpg"
-              alt="Robert Carter 2024"
-              className="size-full object-cover grayscale contrast-115 brightness-100"
-            />
-            <div className="absolute inset-0 bg-gradient-to-t from-black/35 via-transparent to-transparent pointer-events-none" />
-          </div>
-
-          {/* Inscribed Voice Waveform & Year directly on canvas */}
-          <div className="flex flex-col text-left pl-1 w-full">
-            <div className="flex items-baseline justify-between gap-4">
-              <span className="font-mono text-xs sm:text-sm font-medium text-[#181925]">
-                2024
-              </span>
-              {/* Subtle audio waveform chip */}
-              <div className="inline-flex items-center gap-1.5 text-[11px] font-mono text-primary">
-                <span className="font-semibold tracking-tighter">━━━━━━</span>
-                <span>0:14</span>
-              </div>
+        <div className="relative w-full h-full p-2 sm:p-2.5 lg:p-3 rounded-t-[148px] sm:rounded-t-[208px] lg:rounded-t-[268px] bg-[#ebebed] border-t border-x border-black/[0.08] overflow-hidden">
+          
+          {/* --------------------------------------------------------------------- */}
+          {/* INNER PHOTO MAIN CARD — Seamless crossfading continuous ribbon        */}
+          {/* --------------------------------------------------------------------- */}
+          <div className="relative w-full h-full rounded-t-[138px] sm:rounded-t-[198px] lg:rounded-t-[258px] overflow-hidden bg-neutral-950 flex items-stretch border border-black/[0.08]">
+            
+            {/* PHOTO 1 (0% - 24%): 1952 Childhood — B&W Print */}
+            <div className="relative w-[24%] h-full shrink-0 [mask-image:linear-gradient(to_right,black_70%,transparent_100%)] z-10">
+              <img
+                src="/memorial-family-portrait-son.jpg"
+                alt="Robert Carter Childhood 1952"
+                className="size-full object-cover object-top grayscale contrast-125 brightness-95"
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-black/20 pointer-events-none" />
             </div>
-            <span className="text-[11px] font-mono text-[#888]">
-              “Remembering Bob”
-            </span>
+
+            {/* PHOTO 2 (20% - 44%): 1968 Youth / Young Adult — Sepia-toned Film */}
+            <div className="relative w-[24%] -ml-[5%] h-full shrink-0 [mask-image:linear-gradient(to_right,transparent_0%,black_25%,black_75%,transparent_100%)] z-20">
+              <img
+                src="/memorial-family-portrait-father.jpg"
+                alt="Robert Carter Young Adult 1968"
+                className="size-full object-cover object-top sepia-[0.35] saturate-85 contrast-110 brightness-95"
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-black/20 pointer-events-none" />
+            </div>
+
+            {/* PHOTO 3 (40% - 64%): 1974 Partnership / Marriage — Warm 1970s Kodachrome (Unified Person) */}
+            <div className="relative w-[26%] -ml-[5%] h-full shrink-0 [mask-image:linear-gradient(to_right,transparent_0%,black_25%,black_75%,transparent_100%)] z-30">
+              <img
+                src="/separate-family-portrait-father.jpg"
+                alt="Robert Carter 1974"
+                className="size-full object-cover object-top sepia-[0.18] saturate-110 contrast-105"
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-black/35 via-transparent to-black/20 pointer-events-none" />
+            </div>
+
+            {/* PHOTO 4 (60% - 84%): 1996 Family Reunion — Authentic 1990s 35mm Color */}
+            <div className="relative w-[25%] -ml-[5%] h-full shrink-0 [mask-image:linear-gradient(to_right,transparent_0%,black_25%,black_75%,transparent_100%)] z-40">
+              <img
+                src="/memorial-family-portrait-combined.jpg"
+                alt="Family Reunion 1996"
+                className="size-full object-cover object-center saturate-115 contrast-105"
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-black/20 pointer-events-none" />
+            </div>
+
+            {/* PHOTO 5 (80% - 100%): 2024 Elder Portrait — Modern Digital Clarity */}
+            <div className="relative w-[26%] -ml-[5%] h-full shrink-0 [mask-image:linear-gradient(to_right,transparent_0%,black_25%,black_100%)] z-50">
+              <img
+                src="/memorial-family-portrait-grandfather.jpg"
+                alt="Robert Carter 2024"
+                className="size-full object-cover object-top contrast-110 brightness-100"
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-black/45 via-transparent to-black/20 pointer-events-none" />
+            </div>
+
+            {/* Organic Flowing Blue Timeline Thread crossing through the ribbon */}
+            <svg
+              className="absolute inset-0 size-full pointer-events-none stroke-primary/70 fill-none z-60"
+              viewBox="0 0 1480 440"
+              preserveAspectRatio="none"
+              aria-hidden="true"
+            >
+              <path
+                d="M 60 270 C 260 210, 480 300, 740 230 C 1000 160, 1220 260, 1420 180"
+                strokeWidth="1.8"
+              />
+            </svg>
+
+            {/* Inscribed Milestone Years directly on the ribbon canvas */}
+            <div className="absolute inset-x-0 top-1/2 -translate-y-1/2 z-70 pointer-events-none flex justify-between px-10 sm:px-20 text-white/90 font-mono text-xs sm:text-sm font-semibold tracking-wider drop-shadow-md">
+              <span>1952</span>
+              <span className="translate-y-3">1968</span>
+              <span className="-translate-y-2">1974</span>
+              <span className="translate-y-2">1996</span>
+              <span className="-translate-y-4">2024</span>
+            </div>
+
+            {/* One emotional quote etched directly into the ribbon */}
+            <div className="absolute bottom-20 sm:bottom-24 left-1/3 z-70 pointer-events-none text-white/85 italic text-xs sm:text-sm font-serif drop-shadow-md">
+              “He could fix almost anything.”
+            </div>
+
+            {/* Subtle audio waveform chip embedded near later life */}
+            <div className="absolute top-28 right-28 sm:right-36 z-70 pointer-events-none inline-flex items-center gap-2 text-white/90 font-mono text-xs drop-shadow-md">
+              <span className="text-primary font-bold tracking-tighter">━━━━━━</span>
+              <span>0:14</span>
+            </div>
+
           </div>
+        </div>
+
+        {/* ----------------------------------------------------------------------- */}
+        {/* DIMENSIONALITY: Later-Life Portrait Breaks Slightly Above Ribbon Rim    */}
+        {/* ----------------------------------------------------------------------- */}
+        <div className="absolute -top-4 sm:-top-6 right-6 sm:right-12 lg:right-16 z-80 w-36 sm:w-48 lg:w-56 aspect-square rounded-full overflow-hidden ring-4 ring-white shadow-2xl pointer-events-none transition-transform duration-500">
+          <img
+            src="/memorial-family-portrait-grandfather.jpg"
+            alt="Robert Carter Dimensional Portrait"
+            className="size-full object-cover object-top contrast-115"
+          />
         </div>
 
       </motion.div>
 
-      {/* Soft lower gradient fade into page so the next section begins naturally */}
-      <div className="absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-white via-white/70 to-transparent pointer-events-none" />
+      {/* Smooth lower horizon fade into white page */}
+      <div className="absolute inset-x-0 bottom-0 h-28 bg-gradient-to-t from-white via-white/80 to-transparent pointer-events-none z-90" />
     </div>
   )
 }
