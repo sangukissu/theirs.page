@@ -2,8 +2,7 @@
 
 import { useState } from "react"
 import { useRouter } from "next/navigation"
-import Link from "next/link"
-import { Volume2, ArrowRight } from "lucide-react"
+import { LifeSphere } from "./life-sphere"
 
 export function TheirsHero() {
   const router = useRouter()
@@ -106,120 +105,13 @@ export function TheirsHero() {
           </span>
         </div>
 
-        {/* The Mockup with Compact Height & Smooth Low-Opacity Blended Layer in Viewport */}
-        <Link
-          href="/robert-carter"
-          id="example"
-          className="w-full max-w-3xl group block text-left select-none"
-          title="Click to view Robert's full memorial page"
-        >
-          <div className="relative rounded-t-3xl sm:rounded-t-[36px] border-t border-x border-black/[0.08] bg-white p-5 sm:p-7 pb-10 sm:pb-12 transition-all duration-300 group-hover:border-black/[0.16] shadow-xs overflow-hidden">
-            
-            {/* Window Chrome Header Bar */}
-            <div className="flex items-center justify-between border-b border-black/[0.05] pb-3.5 mb-5">
-              <div className="flex items-center gap-2">
-                <span className="size-2 rounded-full bg-primary" />
-                <span className="text-xs font-mono text-[#666]">
-                  theirs.page/robert-carter
-                </span>
-              </div>
-            </div>
-
-            {/* Memorial Header Peek Content */}
-            <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 sm:gap-5">
-              {/* Authentic Restored Portrait */}
-              <div className="size-18 sm:size-22 rounded-2xl overflow-hidden bg-neutral-100 border border-black/[0.06] shrink-0">
-                <img
-                  src="/memorial-family-portrait-grandfather.jpg"
-                  alt="Robert Edward Carter"
-                  className="size-full object-cover grayscale contrast-105"
-                />
-              </div>
-
-              {/* Identity & Epitaph */}
-              <div className="flex flex-col gap-1 flex-1 min-w-0">
-                <div className="flex items-baseline gap-2 flex-wrap">
-                  <h3 className="text-lg sm:text-2xl font-medium tracking-tight text-[#181925]">
-                    Robert Edward Carter
-                  </h3>
-                  <span className="text-xs sm:text-sm font-mono text-[#888]">
-                    1948 — 2024 · 76 years
-                  </span>
-                </div>
-
-                <p className="text-xs sm:text-sm text-[#555] leading-relaxed italic">
-                  “He could fix almost anything, except his habit of telling the same joke twice.”
-                </p>
-
-                {/* Living Content Pills */}
-                <div className="flex items-center gap-2 pt-0.5 text-[11px] font-mono text-[#777] flex-wrap">
-                  <span className="bg-[#f7f7f8] px-2.5 py-0.5 rounded-md border border-black/[0.04]">
-                    14 Memories
-                  </span>
-                  <span className="bg-[#f7f7f8] px-2.5 py-0.5 rounded-md border border-black/[0.04]">
-                    42 Photographs
-                  </span>
-                  <span className="bg-[#f7f7f8] px-2.5 py-0.5 rounded-md border border-black/[0.04]">
-                    His Story
-                  </span>
-                  <span className="inline-flex items-center gap-1 text-primary bg-primary/10 px-2.5 py-0.5 rounded-md font-medium">
-                    <Volume2 className="size-3" />
-                    <span>0:14 Voicemail</span>
-                  </span>
-                </div>
-              </div>
-            </div>
-
-            {/* In-Page Snippets Peeking In Underneath */}
-            <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-2.5 text-left opacity-75">
-              {/* Memory Snippet 1 */}
-              <div className="p-2.5 rounded-xl bg-[#f7f7f8] border border-black/[0.04] flex flex-col justify-between gap-1">
-                <div className="flex items-center justify-between text-[10px]">
-                  <div className="flex items-center gap-1.5">
-                    <div className="size-3.5 rounded-full bg-neutral-200 text-[#181925] text-[8px] font-medium flex items-center justify-center">
-                      A
-                    </div>
-                    <span className="font-medium text-[#181925]">Anita (Daughter)</span>
-                  </div>
-                  <span className="font-mono text-[#888]">1994</span>
-                </div>
-                <p className="text-[11px] text-[#555] leading-relaxed line-clamp-2">
-                  “Dad spent half of Christmas Day fixing Mrs. Higgins&apos; washing machine while everyone was waiting for dinner...”
-                </p>
-              </div>
-
-              {/* Memory Photo Snippet 2 */}
-              <div className="p-2 rounded-xl bg-[#f7f7f8] border border-black/[0.04] flex items-center gap-2.5">
-                <div className="size-10 rounded-lg overflow-hidden bg-neutral-200 border border-black/[0.06] shrink-0">
-                  <img
-                    src="/historical-wedding-photo.webp"
-                    alt="Wedding at St. Jude's"
-                    className="size-full object-cover grayscale"
-                  />
-                </div>
-                <div className="flex flex-col min-w-0">
-                  <span className="text-xs font-medium text-[#181925] truncate">
-                    Wedding at St. Jude&apos;s
-                  </span>
-                  <span className="text-[10px] text-[#888] font-mono">
-                    July 1974 · Dartmoor
-                  </span>
-                </div>
-              </div>
-            </div>
-
-            {/* Smooth Low-Opacity Blended Layer Keeping the Button Comfortably in Viewport */}
-            <div className="absolute inset-x-0 bottom-0 h-20 bg-gradient-to-t from-white via-white/85 to-transparent pointer-events-none flex items-end justify-center pb-2">
-              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-neutral-100 border border-black/[0.06] text-xs font-medium text-[#181925] group-hover:bg-neutral-200 transition-colors shadow-2xs">
-                <span>View Robert&apos;s full page</span>
-                <ArrowRight className="size-3 text-primary group-hover:translate-x-0.5 transition-transform" />
-              </span>
-            </div>
-
-          </div>
-        </Link>
-
       </div>
+
+      {/* ========================================================================= */}
+      {/* THE LIFE SPHERE ("A WHOLE LIFE") — Giant celestial arc rising from below  */}
+      {/* ========================================================================= */}
+      <LifeSphere />
+
     </section>
   )
 }
