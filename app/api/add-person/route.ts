@@ -2,8 +2,8 @@ import { NextRequest, NextResponse } from "next/server"
 import { fal } from "@fal-ai/client"
 import mime from "mime"
 import { GoogleGenAI, Part } from "@google/genai"
-import sharp from "sharp"
 import { createClient } from "@/utils/supabase/server"
+import { transformImage } from "@/lib/cloudflare-images"
 import { uploadImageToR2 } from "@/lib/r2"
 import { uploadR2ObjectToFal, validateOwnedTempAddPersonKey } from "@/lib/restore-helpers"
 
@@ -159,16 +159,12 @@ async function fetchAndCompressImage(url: string): Promise<CompressedImage> {
   const input = Buffer.from(buffer)
   const isPng = contentType ? contentType.includes("png") : false
 
-  const pipeline = sharp(input).rotate().resize({
+  const compressed = await transformImage(input, {
     width: MAX_DIMENSION,
     height: MAX_DIMENSION,
-    fit: "inside",
-    withoutEnlargement: true,
+    format: isPng ? "image/png" : "image/jpeg",
+    ...(!isPng ? { quality: 82 } : {}),
   })
-
-  const compressed = isPng
-    ? await pipeline.png({ compressionLevel: 9 }).toBuffer()
-    : await pipeline.jpeg({ quality: 82, mozjpeg: true }).toBuffer()
 
   return {
     data: compressed,
@@ -193,7 +189,7 @@ export type PrecheckVerdict =
  * Fail-open: returns null if Gemini is unavailable or errors. The caller
  * should fall through to the existing prompt-level safety nets in that case.
  */
-export async function precheckSecondImage(imageUrl: string): Promise<PrecheckVerdict | null> {
+async function precheckSecondImage(imageUrl: string): Promise<PrecheckVerdict | null> {
   const genAI = getGenAI()
   if (!genAI) return null
 

@@ -3,8 +3,11 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "build": "next build",
-    "postbuild": "opennextjs-cloudflare build --skipNextBuild",
+    "build": "opennextjs-cloudflare build",
+    "build:next": "next build --webpack",
+    "preview": "opennextjs-cloudflare build && opennextjs-cloudflare preview",
+    "deploy": "opennextjs-cloudflare build && opennextjs-cloudflare deploy",
+    "cf-typegen": "wrangler types --env-interface CloudflareEnv cloudflare-env.d.ts",
     "dev": "next dev",
     "lint": "next lint",
     "start": "next start"
@@ -75,7 +78,6 @@
     "recharts": "2.15.4",
     "resend": "^6.6.0",
     "rough-notation": "^0.5.1",
-    "sharp": "^0.33.5",
     "sonner": "^1.7.4",
     "tailwind-merge": "^2.5.5",
     "tailwindcss-animate": "^1.0.7",

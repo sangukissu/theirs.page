@@ -51,7 +51,7 @@ function resolveRestoreDestination(pathname: string): string {
   return '/old-photo-restoration'
 }
 
-export async function proxy(request: NextRequest) {
+export async function middleware(request: NextRequest) {
   if (request.nextUrl.pathname === '/restore' || request.nextUrl.pathname.startsWith('/restore/')) {
     const redirectUrl = request.nextUrl.clone()
     redirectUrl.pathname = resolveRestoreDestination(request.nextUrl.pathname)

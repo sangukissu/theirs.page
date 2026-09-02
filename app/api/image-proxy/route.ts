@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/utils/supabase/server";
-import sharp from "sharp";
+import { transformImage } from "@/lib/cloudflare-images";
 import { getR2ObjectBuffer, getR2ObjectStream } from "@/lib/r2";
 
 export const dynamic = "force-dynamic";
@@ -37,11 +37,11 @@ export async function GET(request: Request) {
 
         if (width) {
             const { body } = await getR2ObjectBuffer(key);
-            const resized = await sharp(body, { failOn: "none" })
-                .rotate()
-                .resize({ width, withoutEnlargement: true })
-                .webp({ quality: width === 320 ? 72 : 80 })
-                .toBuffer();
+            const resized = await transformImage(body, {
+                width,
+                format: "image/webp",
+                quality: width === 320 ? 72 : 80,
+            });
 
             return new Response(new Uint8Array(resized), {
                 headers: {

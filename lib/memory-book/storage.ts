@@ -1,5 +1,5 @@
 import { extname } from "node:path"
-import sharp from "sharp"
+import { transformImage } from "@/lib/cloudflare-images"
 import {
   copyR2Object,
   getR2ObjectBuffer,
@@ -83,14 +83,9 @@ export async function createMemoryBookImagePreviews(input: {
     mediaType: "image",
     extension: ".webp",
   })
-  const image = sharp(body, {
-    failOn: "none",
-    limitInputPixels: 60_000_000,
-    sequentialRead: true,
-  }).rotate()
   const [small, medium] = await Promise.all([
-    image.clone().resize({ width: 320, withoutEnlargement: true }).webp({ quality: 72 }).toBuffer(),
-    image.clone().resize({ width: 640, withoutEnlargement: true }).webp({ quality: 80 }).toBuffer(),
+    transformImage(body, { width: 320, format: "image/webp", quality: 72 }),
+    transformImage(body, { width: 640, format: "image/webp", quality: 80 }),
   ])
   await Promise.all([
     putR2Object(smallKey, small, "image/webp", "private, max-age=31536000, immutable"),
@@ -127,14 +122,9 @@ export async function createSharedMediaDerivatives(input: {
 
   const smallKey = sharedMediaDerivativeKey({ ...input, width: 320 })
   const mediumKey = sharedMediaDerivativeKey({ ...input, width: 640 })
-  const image = sharp(body, {
-    failOn: "none",
-    limitInputPixels: 60_000_000,
-    sequentialRead: true,
-  }).rotate()
   const [small, medium] = await Promise.all([
-    image.clone().resize({ width: 320, withoutEnlargement: true }).webp({ quality: 72 }).toBuffer(),
-    image.clone().resize({ width: 640, withoutEnlargement: true }).webp({ quality: 80 }).toBuffer(),
+    transformImage(body, { width: 320, format: "image/webp", quality: 72 }),
+    transformImage(body, { width: 640, format: "image/webp", quality: 80 }),
   ])
   await Promise.all([
     putR2Object(smallKey, small, "image/webp", "private, max-age=31536000, immutable"),
