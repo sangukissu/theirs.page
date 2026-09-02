@@ -1,7 +1,6 @@
 import type { Metadata } from "next"
 import { TheirsNav } from "@/components/theirs/nav"
 import { TheirsHero } from "@/components/theirs/hero"
-import { LiveShowcase } from "@/components/theirs/live-showcase"
 import { TheirsSteps } from "@/components/theirs/steps"
 import { FeaturesBento } from "@/components/theirs/features-bento"
 import { TheirsPricing } from "@/components/theirs/pricing"
@@ -24,11 +23,8 @@ export default function HomePage() {
       {/* Floating Frosted Pill Navbar */}
       <TheirsNav />
 
-      {/* Hero Section */}
+      {/* Hero Section with Interactive Link Box CTA */}
       <TheirsHero />
-
-      {/* Interactive Memorial Showcase */}
-      <LiveShowcase />
 
       {/* Three Steps Section */}
       <TheirsSteps />
@@ -42,7 +38,7 @@ export default function HomePage() {
       {/* FAQ with Fluid Morphing Separation */}
       <TheirsFaq />
 
-      {/* Final Dark Charcoal CTA Banner (Exact from reference) */}
+      {/* Final Dark Charcoal CTA Banner */}
       <CtaBanner />
 
       {/* Footer */}
