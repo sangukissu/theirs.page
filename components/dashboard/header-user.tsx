@@ -1,0 +1,155 @@
+"use client"
+
+import {
+  BadgeCheck,
+  UserX,
+  Coins,
+  Home,
+  LogOut,
+  Sparkles,
+  Plus,
+} from "lucide-react"
+import Link from "next/link"
+import {
+  Avatar,
+  AvatarFallback,
+  AvatarImage,
+} from "@/components/ui/avatar"
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuGroup,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
+import { Button } from "@/components/ui/button"
+import { useCredits } from "@/hooks/use-credits"
+
+interface HeaderUserProps {
+  user: {
+    name: string
+    email: string
+    avatar: string
+    id: string
+  }
+  initialCreditBalance: number
+  onBuyCredits?: () => void
+}
+
+export function HeaderUser({ user, initialCreditBalance, onBuyCredits }: HeaderUserProps) {
+  const { credits } = useCredits(initialCreditBalance)
+  return (
+    <div className="flex items-center gap-3">
+      {/* Credit Display */}
+      <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1.5 px-2 py-1 bg-muted/50 rounded-md">
+          <Coins className="h-4 w-4 text-amber-600" />
+          <span className="text-sm font-medium text-foreground">
+            {new Intl.NumberFormat("en-US").format(Number(credits || 0))}
+          </span>
+        </div>
+        <Button
+          variant="outline"
+          size="sm"
+          className="h-7 px-2 text-xs gap-1 bg-amber-50 text-amber-700 border-amber-200 hover:bg-amber-100 hover:text-amber-800 hover:border-amber-300 transition-colors"
+          onClick={() => {
+            if (onBuyCredits) onBuyCredits()
+          }}
+        >
+          <Plus className="h-3 w-3" />
+          <span className="hidden sm:inline">Buy Credits</span>
+          <span className="sm:hidden">Buy</span>
+        </Button>
+      </div>
+      
+      {/* User Dropdown */}
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <Button
+            id="dashboard-header-user-menu"
+            variant="ghost"
+            className="relative h-8 w-8 rounded-full cursor-pointer"
+          >
+            <Avatar className="h-8 w-8">
+              <AvatarImage src={user.avatar} alt={user.name} />
+              <AvatarFallback>{user.name.charAt(0).toUpperCase()}</AvatarFallback>
+            </Avatar>
+          </Button>
+        </DropdownMenuTrigger>
+      <DropdownMenuContent
+        className="w-56"
+        align="end"
+        forceMount
+      >
+        <DropdownMenuLabel className="font-normal">
+          <div className="flex flex-col space-y-1">
+            <p className="text-sm font-medium leading-none">{user.name}</p>
+            <p className="text-xs leading-none text-muted-foreground">
+              {user.email}
+            </p>
+          </div>
+        </DropdownMenuLabel>
+        <DropdownMenuSeparator />
+        <DropdownMenuGroup>
+          <DropdownMenuItem
+            className="cursor-pointer"
+            onClick={() => {
+              if (onBuyCredits) onBuyCredits()
+            }}
+          >
+            <div className="flex items-center w-full">
+              <Sparkles className="mr-2 h-4 w-4" />
+              Buy Credits
+            </div>
+          </DropdownMenuItem>
+        </DropdownMenuGroup>
+        <DropdownMenuSeparator />
+       
+        <DropdownMenuGroup>
+           <DropdownMenuItem>
+            <Link href="/dashboard" className="flex items-center">
+              <Home className="mr-2 h-4 w-4" />
+              Dashboard
+            </Link>
+          </DropdownMenuItem>
+           <DropdownMenuSeparator />
+         <DropdownMenuItem asChild>
+              <Link
+                href="/dashboard/account/delete"
+                className="cursor-pointer text-[#1f2421]/55 focus:text-[#a14a2b]"
+              >
+                <UserX className="mr-2 h-4 w-4" />
+                Delete account
+              </Link>
+            </DropdownMenuItem>
+        </DropdownMenuGroup>
+        <DropdownMenuSeparator />
+        <DropdownMenuItem
+          onClick={async () => {
+            try {
+              const response = await fetch('/api/auth/signout', {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/json',
+                },
+              })
+
+              if (response.ok) {
+                window.location.href = '/login'
+              }
+            } catch (error) {
+              // no-op
+            }
+          }}
+          className="cursor-pointer text-red-600 focus:text-red-800"
+        >
+          <LogOut className="mr-2 h-4 w-4 text-red-600 focus:text-red-800" />
+          <span>Log out</span>
+        </DropdownMenuItem>
+      </DropdownMenuContent>
+      </DropdownMenu>
+    </div>
+  )
+}

@@ -1,0 +1,152 @@
+
+"use client";
+
+import React, { useState } from 'react';
+import { Plus, Minus } from 'lucide-react';
+
+interface FAQItem {
+  question: string;
+  answer: string;
+}
+
+const FAQS: FAQItem[] = [
+  {
+    question: "How does AI photo restoration actually work?",
+    answer: "Our AI analyzes millions of photo patterns to understand how damage occurs and how to reverse it. It identifies faces, textures, and objects, then intelligently reconstructs missing or damaged areas while preserving the original character of your photo. The process happens in seconds, but the technology behind it represents years of machine learning development."
+  },
+  {
+    question: "How does AI photo animation work?",
+    answer: "Our AI animation technology analyzes facial features and expressions in your photos to create natural, lifelike movements. It can generate subtle animations like smiling, waving, blinking, and head tilts while maintaining the original character and authenticity of the person in the photo."
+  },
+  {
+    question: "What types of photo damage can BringBack fix?",
+    answer: "We can restore virtually any type of damage: tears, scratches, water stains, fading, yellowing, blur, darkness, cracks, and missing pieces. Our AI handles both physical damage (like tears) and quality issues (like blur or low resolution). If you can see some of the original photo, we can likely restore it."
+  },
+  {
+    question: "What animation styles are available?",
+    answer: "We offer three animation presets: Smile + Wave (natural smile with gentle wave gesture), Subtle Blink + Head Tilt (soft blinking with slight head movement), and Smile + Look Around (light smile with curious gaze movement). Each animation is designed to bring your photos to life naturally."
+  },
+  {
+    question: "How much do photo restoration and animation cost?",
+    answer: "Restoration Starter is $4.99 for 4 credits (up to 4 restorations). Value Pack is $9.99 for 20 credits. Family Pack is $21.99 for 60 credits and Memory Book access. Restore costs 1 credit; family portrait / add / remove person cost 2; animation and hug video cost 10 each. The Starter pack cannot fund an animation. Credits never expire."
+  },
+  {
+    question: "Is my personal data and photos safe?",
+    answer: "Photos are processed securely for the feature you request. Generated media stays in your account until you delete it. Memory Book keepsakes are stored only when you explicitly save them. We do not use your family photos to train general-purpose AI models. See our Privacy Policy for processors and retention."
+  },
+  {
+    question: "Will AI change the face of someone I remember?",
+    answer: "When facial detail is missing, damaged, or very low resolution, AI may reconstruct plausible features rather than recover the exact original. Always use side-by-side comparison before you download or print."
+  },
+  {
+    question: "How long does the restoration and animation process take?",
+    answer: "Photo restoration takes under 30 seconds, while photo animation typically takes 30-60 seconds depending on complexity. Both processes happen in real-time with no waiting days or weeks like traditional services."
+  }
+];
+
+const AccordionItem: React.FC<{
+  item: FAQItem;
+  isOpen: boolean;
+  toggle: () => void
+}> = ({ item, isOpen, toggle }) => {
+  return (
+    <div
+      onClick={toggle}
+      className={`bg-white rounded-[1.5rem] overflow-hidden transition-all duration-300 cursor-pointer group ${isOpen ? 'shadow-sm' : 'hover:bg-gray-50'}`}
+    >
+      <div className="p-6 flex justify-between items-center gap-4">
+        <h3 className="text-lg sm:text-xl font-bold text-brand-black leading-tight select-none">
+          {item.question}
+        </h3>
+
+        {/* Toggle Button */}
+        <div className={`w-10 h-10 sm:w-12 sm:h-12 rounded-full flex items-center justify-center shrink-0 transition-colors duration-300 cursor-pointer ${isOpen ? 'bg-brand-orange text-white' : 'bg-gray-100 text-brand-black group-hover:bg-gray-200'
+          }`}>
+          {isOpen ? <Minus size={20} strokeWidth={2.5} /> : <Plus size={20} strokeWidth={2.5} />}
+        </div>
+      </div>
+
+      {/* Content */}
+      <div
+        className={`grid transition-[grid-template-rows] duration-300 ease-out ${isOpen ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0'
+          }`}
+      >
+        <div className="overflow-hidden">
+          <p className="px-6 pb-8 text-gray-600 font-medium leading-relaxed text-base sm:text-lg max-w-3xl">
+            {item.answer}
+          </p>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export interface FAQProps {
+  items?: FAQItem[];
+  title?: React.ReactNode;
+  subtitle?: string;
+  badge?: string;
+}
+
+export const FAQ: React.FC<FAQProps> = ({ 
+  items = FAQS, 
+  title = (
+    <>
+      Questions <br />
+      <span className="text-gray-400">& answers.</span>
+    </>
+  ),
+  subtitle = "Everything you need to know about AI photo restoration and how BringBack works.",
+  badge = "FAQs"
+}) => {
+  const [openIndex, setOpenIndex] = useState<number | null>(0);
+
+  const handleToggle = (index: number) => {
+    setOpenIndex(openIndex === index ? null : index);
+  };
+
+  return (
+    <section id="faqs" className="w-full  px-4 sm:px-8 py-24 bg-brand-bg">
+      <div className="max-w-[1320px] mx-auto">
+
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-20 items-start">
+
+          {/* Header Column */}
+          <div className="lg:col-span-5 sm:sticky top-32">
+            {/* Badge */}
+            <div className="inline-flex items-center gap-1 bg-brand-black text-white px-4 py-1.5 rounded-full text-xs sm:text-sm font-bold uppercase tracking-wider mb-6 shadow-lg shadow-black/10">
+              <span className="text-brand-orange">//</span> {badge} <span className="text-brand-orange">//</span>
+            </div>
+
+            {/* Title */}
+            <h2 className="text-[2.25rem] sm:text-[3.25rem] lg:text-[3.75rem] xl:text-[4rem] font-[850] tracking-tighter leading-[1.05] sm:leading-[0.95] text-brand-black mb-8">
+              {title}
+            </h2>
+
+            {/* Subtitle */}
+            <p className="text-lg text-gray-600 font-medium leading-relaxed max-w-md">
+              {subtitle}
+            </p>
+          </div>
+
+          {/* Questions Column - The Frame */}
+          <div className="lg:col-span-7">
+            <div className="bg-brand-surface p-2 rounded-[1.8rem]">
+              <div className="flex flex-col gap-3">
+                {items.map((faq, index) => (
+                  <AccordionItem
+                    key={index}
+                    item={faq}
+                    isOpen={openIndex === index}
+                    toggle={() => handleToggle(index)}
+                  />
+                ))}
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </section>
+  );
+};

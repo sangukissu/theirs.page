@@ -1,0 +1,141 @@
+"use client";
+
+import Link from "next/link";
+import { ArrowRight, Play, Star } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
+
+function HeroVideo({
+    src,
+    poster,
+    className,
+}: {
+    src: string
+    poster?: string
+    className?: string
+}) {
+    const videoRef = useRef<HTMLVideoElement | null>(null)
+    const containerRef = useRef<HTMLDivElement | null>(null)
+    const [activeSrc, setActiveSrc] = useState<string | null>(null)
+    const [inView, setInView] = useState(false)
+
+    useEffect(() => {
+        const el = containerRef.current
+        if (!el) return
+        const observer = new IntersectionObserver(
+            (entries) => {
+                const entry = entries[0]
+                setInView(entry.isIntersecting)
+            },
+            { rootMargin: "300px 0px", threshold: 0.1 }
+        )
+        observer.observe(el)
+        return () => observer.disconnect()
+    }, [])
+
+    useEffect(() => {
+        const v = videoRef.current
+        if (!v) return
+        if (inView) {
+            if (!activeSrc) setActiveSrc(src)
+            v.play().catch(() => { })
+        } else {
+            v.pause()
+        }
+    }, [inView, src, activeSrc])
+
+    return (
+        <div ref={containerRef} className={className}>
+            <video
+                ref={videoRef}
+                src={activeSrc ?? undefined}
+                poster={poster}
+                loop
+                muted
+                playsInline
+                preload="none"
+                className="h-full w-full object-cover"
+            />
+        </div>
+    )
+}
+
+export default function NostalgicHugHero() {
+    return (
+        <section className="relative w-full max-w-[1320px] mx-auto px-4 sm:px-8 pt-12 pb-24 overflow-visible">
+
+            {/* Background Pattern */}
+            <div className="absolute inset-0 -z-10 opacity-[0.03]" style={{ backgroundImage: 'radial-gradient(#000 1px, transparent 1px)', backgroundSize: '20px 20px' }}></div>
+            <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[800px] h-[400px] bg-brand-orange/5 blur-[120px] -z-10 rounded-full pointer-events-none"></div>
+
+            <div className="flex flex-col items-center text-center z-10 relative">
+
+                {/* Badge */}
+                <div className="inline-flex items-center gap-1 bg-brand-black text-white px-4 py-1.5 rounded-full text-xs sm:text-sm font-bold uppercase tracking-wider mb-8 shadow-lg shadow-black/10">
+                    <span className="text-brand-orange">//</span> Nostalgic Hug Video <span className="text-brand-orange">//</span>
+                </div>
+
+                {/* Heading */}
+                <h1 className="max-w-5xl text-[3.5rem] sm:text-[4rem] md:text-[4.5rem] xl:text-[5.5rem] font-[850] tracking-tighter leading-[0.95] text-brand-black mb-8">
+                    Reunite with a Hug<br />
+                    <span className="text-gray-400">
+                        Across Time and Space
+                    </span>
+                </h1>
+
+                {/* Subheading */}
+                <p className="text-lg sm:text-xl text-gray-600 max-w-2xl mb-12 font-medium leading-relaxed">
+                    Create a heartwarming video of you hugging a loved one who is no longer here, or far away. A respectful, AI-powered reunion.
+                </p>
+
+                {/* CTA Buttons */}
+                <div className="flex flex-col sm:flex-row items-center gap-3 sm:gap-4 mb-16 w-full justify-center">
+
+                    {/* Primary Button */}
+                    <Link href="/dashboard/nostalgic-hug">
+                        <button className="group relative flex items-center justify-between gap-3 sm:gap-6 bg-[#FF4D00] text-white pl-5 pr-1.5 py-1.5 sm:pl-8 sm:pr-2 sm:py-2.5 rounded-full transition-all duration-300 hover:scale-105 active:scale-95 shrink-0 shadow-xl shadow-brand-orange/20 hover:shadow-brand-orange/40">
+                            <span className="font-bold text-sm sm:text-lg tracking-tight whitespace-nowrap">Create Hug Video</span>
+                            <div className="w-8 h-8 sm:w-11 sm:h-11 bg-[#111111] rounded-full flex items-center justify-center group-hover:rotate-45 transition-transform duration-300">
+                                <ArrowRight className="text-[#FF4D00] w-4 h-4 sm:w-5 sm:h-5" strokeWidth={2.5} />
+                            </div>
+                        </button>
+                    </Link>
+
+                    {/* Secondary Button */}
+                    <Link href="#how-it-works">
+                        <button className="group relative flex items-center justify-between gap-3 sm:gap-6 bg-white text-brand-black pl-5 pr-1.5 py-1.5 sm:pl-8 sm:pr-2 sm:py-2.5 rounded-full transition-all duration-300 hover:scale-105 active:scale-95 ring-1 ring-black/5 shrink-0 hover:shadow-lg">
+                            <span className="font-bold text-sm sm:text-lg tracking-tight whitespace-nowrap">How It Works</span>
+                            <div className="w-8 h-8 sm:w-11 sm:h-11 bg-gray-100 rounded-full flex items-center justify-center group-hover:bg-brand-orange/10 group-hover:text-brand-orange transition-colors">
+                                <Play className="text-brand-black fill-brand-black ml-0.5 w-4 h-4 sm:w-5 sm:h-5 group-hover:text-brand-orange group-hover:fill-brand-orange transition-colors" />
+                            </div>
+                        </button>
+                    </Link>
+                </div>
+
+                {/* Visual - Professional Container */}
+                <div className="relative w-full max-w-5xl mx-auto">
+                    <div className="relative rounded-[2rem] overflow-hidden border-[6px] border-white bg-gray-100 shadow-2xl aspect-video">
+                        <HeroVideo
+                            src="/hug/final-video.mp4"
+                            poster="/video-thumbnail.webp"
+                            className="w-full h-full object-cover"
+                        />
+                        {/* Professional Badge Overlay */}
+                        <div className="absolute bottom-6 right-6 bg-black/40 backdrop-blur-md border border-white/10 text-white px-4 py-2 rounded-full text-sm font-medium flex items-center gap-2">
+                            <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse"></div>
+                            Generative AI Video
+                        </div>
+                    </div>
+                </div>
+
+                <div className="mt-16 flex flex-col items-center gap-2 text-center max-w-md mx-auto">
+                    <span className="text-xs font-bold text-gray-500 uppercase tracking-wide">Experimental · 19 credits</span>
+                    <p className="text-sm text-gray-500 font-medium">
+                        Results vary widely. Review quality carefully before promoting or sharing a hug video.
+                    </p>
+                </div>
+
+
+            </div>
+        </section>
+    );
+}
