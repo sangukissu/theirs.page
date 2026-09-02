@@ -16,7 +16,7 @@ export function TheirsSteps() {
       {/* Exact Step Cards from getopen.so with Dither Canvas Glow */}
       <ul className="grid gap-4 sm:gap-6 lg:grid-cols-3">
         {/* Card 01 - Cyan Aura */}
-        <li className="group relative flex flex-col overflow-hidden rounded-md bg-[#f6f6f6] pb-6 sm:pb-8">
+        <li className="group relative flex flex-col overflow-hidden rounded-xl bg-[#f6f6f6] pb-6 sm:pb-8">
           {/* Exact Dither Canvas Background Masks */}
           <span
             aria-hidden="true"
@@ -69,7 +69,7 @@ export function TheirsSteps() {
         </li>
 
         {/* Card 02 - Green Aura */}
-        <li className="group relative flex flex-col overflow-hidden rounded-md bg-[#f6f6f6] pb-6 sm:pb-8">
+        <li className="group relative flex flex-col overflow-hidden rounded-xl bg-[#f6f6f6] pb-6 sm:pb-8">
           {/* Exact Dither Canvas Background Masks */}
           <span
             aria-hidden="true"
@@ -131,7 +131,7 @@ export function TheirsSteps() {
         </li>
 
         {/* Card 03 - Magenta/Rose High Bloom */}
-        <li className="group relative flex flex-col overflow-hidden rounded-md bg-[#f6f6f6] pb-6 sm:pb-8">
+        <li className="group relative flex flex-col overflow-hidden rounded-xl bg-[#f6f6f6] pb-6 sm:pb-8">
           {/* Exact Dither Canvas Background Masks */}
           <span
             aria-hidden="true"
