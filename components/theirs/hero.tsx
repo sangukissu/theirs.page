@@ -123,11 +123,6 @@ export function TheirsHero() {
                   theirs.page/robert-carter
                 </span>
               </div>
-
-              <div className="flex items-center gap-2 text-[11px] font-mono text-emerald-600 bg-emerald-50 px-2.5 py-0.5 rounded-full">
-                <span className="size-1 rounded-full bg-emerald-500" />
-                <span>Live memorial</span>
-              </div>
             </div>
 
             {/* Memorial Header Peek Content */}
