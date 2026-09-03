@@ -25,13 +25,13 @@ export const metadata: Metadata = {
     "unblur old photo ai",
   ],
   alternates: {
-    canonical: "https://bringback.pro/old-photo-restoration",
+    canonical: "https://theirs-page.sangukissu.workers.dev/old-photo-restoration",
   },
   openGraph: {
     title: "AI Old Photo Restoration | BringBack",
     description:
       "Repair torn, faded, and scratched family photos while reviewing reconstructed facial and image details against the original.",
-    url: "https://bringback.pro/old-photo-restoration",
+    url: "https://theirs-page.sangukissu.workers.dev/old-photo-restoration",
     siteName: "BringBack",
     type: "website",
     images: [
@@ -49,17 +49,17 @@ export const metadata: Metadata = {
 const webAppJsonLd = {
   "@context": "https://schema.org",
   "@type": "WebApplication",
-  "@id": "https://bringback.pro/old-photo-restoration#webapp",
+  "@id": "https://theirs-page.sangukissu.workers.dev/old-photo-restoration#webapp",
   name: "BringBack AI Old Photo Restoration",
   description:
     "Generate a repaired digital version of a scratched, torn, stained, blurred, or faded family photograph.",
-  url: "https://bringback.pro/old-photo-restoration",
+  url: "https://theirs-page.sangukissu.workers.dev/old-photo-restoration",
   applicationCategory: "PhotoEditingApplication",
   operatingSystem: "Web",
   offers: {
     "@type": "Offer",
     name: "Restoration Credit Pack",
-    url: "https://bringback.pro/pricing",
+    url: "https://theirs-page.sangukissu.workers.dev/pricing",
     priceCurrency: "USD",
     price: STARTER_PLAN.priceUsd.toFixed(2),
     description: `${STARTER_PLAN.credits} credits — covers ${Math.floor(STARTER_PLAN.credits / FEATURE_CREDIT_COSTS.restore.credits)} photo restorations.`,
@@ -77,28 +77,28 @@ const howToJsonLd = {
       position: 1,
       name: "Upload Faded or Damaged Photo",
       text: "Upload your scanned physical photo, wallet print, or smartphone snapshot.",
-      url: "https://bringback.pro/old-photo-restoration#how-it-works",
+      url: "https://theirs-page.sangukissu.workers.dev/old-photo-restoration#how-it-works",
     },
     {
       "@type": "HowToStep",
       position: 2,
       name: "Choose Restoration Settings",
       text: "Select restore-only to keep original B&W/sepia, or restore + colorize.",
-      url: "https://bringback.pro/old-photo-restoration#how-it-works",
+      url: "https://theirs-page.sangukissu.workers.dev/old-photo-restoration#how-it-works",
     },
     {
       "@type": "HowToStep",
       position: 3,
       name: "AI Repairs Damage Automatically",
       text: "BringBack generates a repaired digital version that reduces visible damage and reconstructs missing areas when needed.",
-      url: "https://bringback.pro/old-photo-restoration#how-it-works",
+      url: "https://theirs-page.sangukissu.workers.dev/old-photo-restoration#how-it-works",
     },
     {
       "@type": "HowToStep",
       position: 4,
       name: "Compare & Download High-Res",
       text: "Review your photo side-by-side with an interactive slider before downloading.",
-      url: "https://bringback.pro/old-photo-restoration#how-it-works",
+      url: "https://theirs-page.sangukissu.workers.dev/old-photo-restoration#how-it-works",
     },
   ],
 }

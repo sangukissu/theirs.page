@@ -20,7 +20,7 @@ export const metadata: Metadata = {
     title: "Compare BringBack to other photo tools",
     description:
       "Browse every BringBack vs competitor comparison for restoration, animation, and family portrait tools.",
-    url: "https://bringback.pro/compare",
+    url: "https://theirs-page.sangukissu.workers.dev/compare",
     type: "website",
     siteName: "BringBack",
   },
@@ -39,7 +39,7 @@ export default function CompareHubPage() {
     name: "BringBack comparison hub",
     description:
       "Comparisons of BringBack with other photo restoration, animation, and family portrait tools.",
-    url: "https://bringback.pro/compare",
+    url: "https://theirs-page.sangukissu.workers.dev/compare",
     mainEntity: {
       "@type": "ItemList",
       numberOfItems: all.length,
@@ -47,7 +47,7 @@ export default function CompareHubPage() {
         "@type": "ListItem",
         position: i + 1,
         name: `BringBack vs ${p.competitor}`,
-        url: `https://bringback.pro${p.href}`,
+        url: `https://theirs-page.sangukissu.workers.dev${p.href}`,
       })),
     },
   }

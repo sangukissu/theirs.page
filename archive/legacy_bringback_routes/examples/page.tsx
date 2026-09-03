@@ -12,7 +12,7 @@ export const metadata: Metadata = {
   openGraph: {
     title: "Restoration examples | BringBack",
     description: "Before/after demo repairs for common family-photo damage.",
-    url: "https://bringback.pro/examples",
+    url: "https://theirs-page.sangukissu.workers.dev/examples",
     siteName: "BringBack",
     type: "website",
     images: [{ url: "/og-image.png", width: 1200, height: 630, alt: "BringBack restoration examples" }],

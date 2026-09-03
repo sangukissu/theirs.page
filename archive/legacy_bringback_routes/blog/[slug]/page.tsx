@@ -106,7 +106,7 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
           height: 630,
           alt: post.featuredImage?.node?.altText || post.title,
         }],
-        url: `https://bringback.pro/blog/${post.slug}`,
+        url: `https://theirs-page.sangukissu.workers.dev/blog/${post.slug}`,
       },
       twitter: {
         card: "summary_large_image",
@@ -115,7 +115,7 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
         images: [ogImage],
       },
       alternates: {
-        canonical: `https://bringback.pro/blog/${post.slug}`,
+        canonical: `https://theirs-page.sangukissu.workers.dev/blog/${post.slug}`,
       },
     }
   } catch (error) {
@@ -153,34 +153,34 @@ function BlogPostContent({ post }: { post: WordPressPost }) {
   const blogPostJsonLd = {
     '@context': 'https://schema.org',
     '@type': 'BlogPosting',
-    '@id': `https://bringback.pro/blog/${post.slug}`,
+    '@id': `https://theirs-page.sangukissu.workers.dev/blog/${post.slug}`,
     headline: post.title,
     description: post.excerpt ? post.excerpt.replace(/<[^>]*>/g, '') : post.title,
-    image: post.featuredImage?.node?.sourceUrl || 'https://bringback.pro/placeholder.svg',
+    image: post.featuredImage?.node?.sourceUrl || 'https://theirs-page.sangukissu.workers.dev/placeholder.svg',
     datePublished: post.date,
     dateModified: post.modified,
     author: {
       '@type': 'Organization',
       name: 'BringBack Team',
-      url: 'https://bringback.pro'
+      url: 'https://theirs-page.sangukissu.workers.dev'
     },
     publisher: {
       '@type': 'Organization',
       name: 'BringBack',
       logo: {
         '@type': 'ImageObject',
-        url: 'https://bringback.pro/bringback-logo.webp'
+        url: 'https://theirs-page.sangukissu.workers.dev/bringback-logo.webp'
       }
     },
     // Use URL string for mainEntityOfPage to avoid emitting a WebPage entity
-    mainEntityOfPage: `https://bringback.pro/blog/${post.slug}`,
+    mainEntityOfPage: `https://theirs-page.sangukissu.workers.dev/blog/${post.slug}`,
     articleSection: category,
     wordCount: post.content.split(' ').length,
     timeRequired: `PT${readTime}M`,
     inLanguage: 'en-US',
     isPartOf: {
       '@type': 'Blog',
-      '@id': 'https://bringback.pro/blog',
+      '@id': 'https://theirs-page.sangukissu.workers.dev/blog',
       name: 'BringBack Blog'
     }
   }
@@ -265,7 +265,7 @@ function BlogPostContent({ post }: { post: WordPressPost }) {
 
                     <ShareButton
                       title={post.title}
-                      url={`https://bringback.pro/blog/${post.slug}`}
+                      url={`https://theirs-page.sangukissu.workers.dev/blog/${post.slug}`}
                       text={post.excerpt || `Check out this article: ${post.title}`}
                     />
                   </div>

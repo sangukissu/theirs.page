@@ -14,13 +14,13 @@ export const metadata: Metadata = {
   description:
     "Organize restored family photos with names, dates, locations, and oral stories into a private digital keepsake. Included with the Family plan.",
   alternates: {
-    canonical: "https://bringback.pro/family-memory-book",
+    canonical: "https://theirs-page.sangukissu.workers.dev/family-memory-book",
   },
   openGraph: {
     title: "Digital Family Memory Book | BringBack AI",
     description:
       "A private place to organize restored photos with names, dates, and family stories so context is preserved for future generations.",
-    url: "https://bringback.pro/family-memory-book",
+    url: "https://theirs-page.sangukissu.workers.dev/family-memory-book",
     siteName: "BringBack",
     type: "website",
     images: [
@@ -38,17 +38,17 @@ export const metadata: Metadata = {
 const webAppJsonLd = {
   "@context": "https://schema.org",
   "@type": "WebApplication",
-  "@id": "https://bringback.pro/family-memory-book#webapp",
+  "@id": "https://theirs-page.sangukissu.workers.dev/family-memory-book#webapp",
   name: "BringBack Digital Family Memory Book",
   description:
     "Organize restored family photos with names, dates, and stories into a private digital keepsake.",
-  url: "https://bringback.pro/family-memory-book",
+  url: "https://theirs-page.sangukissu.workers.dev/family-memory-book",
   applicationCategory: "PhotoEditingApplication",
   operatingSystem: "Web",
   offers: {
     "@type": "Offer",
     name: "Family Pack Access",
-    url: "https://bringback.pro/pricing",
+    url: "https://theirs-page.sangukissu.workers.dev/pricing",
     priceCurrency: "USD",
     price: "19.99",
     description: "Includes Memory Book access and restoration credits.",

@@ -30,7 +30,7 @@ export const metadata: Metadata = {
     title: 'Professional Photo Restoration & Animation | BringBack AI',
     description: 'Transform damaged vintage photographs into stunning high-resolution images and bring your loved ones to life with AI animation.',
     type: 'website',
-    url: 'https://bringback.pro/referral',
+    url: 'https://theirs-page.sangukissu.workers.dev/referral',
     images: [
       {
         url: '/og-image.png',
@@ -47,7 +47,7 @@ export const metadata: Metadata = {
     images: ['/og-image.png']
   },
   alternates: {
-    canonical: 'https://bringback.pro/referral'
+    canonical: 'https://theirs-page.sangukissu.workers.dev/referral'
   }
 }
 

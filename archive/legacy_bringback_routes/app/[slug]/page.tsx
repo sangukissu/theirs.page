@@ -39,7 +39,7 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
       title: socialTitle,
       description: page.meta.description,
       type: 'website',
-      url: `https://bringback.pro${page.slug}`,
+      url: `https://theirs-page.sangukissu.workers.dev${page.slug}`,
       siteName: 'BringBack AI',
       locale: 'en_US',
     },
@@ -49,7 +49,7 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
       description: page.meta.description,
     },
     alternates: {
-      canonical: `https://bringback.pro${page.slug}`,
+      canonical: `https://theirs-page.sangukissu.workers.dev${page.slug}`,
     }
   };
 }
@@ -112,24 +112,24 @@ export default async function AppPage({ params }: { params: Promise<{ slug: stri
     '@graph': [
       {
         '@type': 'WebApplication',
-        '@id': `https://bringback.pro${page.slug}#webapp`,
+        '@id': `https://theirs-page.sangukissu.workers.dev${page.slug}#webapp`,
         name: page.meta.title,
         description: page.meta.description,
-        url: `https://bringback.pro${page.slug}`,
+        url: `https://theirs-page.sangukissu.workers.dev${page.slug}`,
         applicationCategory: 'PhotoEditingApplication',
         operatingSystem: 'Web',
         inLanguage: 'en-US',
         browserRequirements: 'Requires JavaScript. Requires HTML5.',
         offers: {
           '@type': 'Offer',
-          url: 'https://bringback.pro/pricing',
+          url: 'https://theirs-page.sangukissu.workers.dev/pricing',
           priceCurrency: 'USD',
           availability: 'https://schema.org/OnlineOnly'
         }
       },
       ...(page.faq?.length ? [{
         '@type': 'FAQPage',
-        '@id': `https://bringback.pro${page.slug}#faq`,
+        '@id': `https://theirs-page.sangukissu.workers.dev${page.slug}#faq`,
         mainEntity: page.faq.map((item) => ({
           '@type': 'Question',
           name: item.question,

@@ -25,12 +25,12 @@ export async function POST(req: NextRequest) {
   }
 
   const urls = (body.urls || [])
-    .filter((u) => typeof u === "string" && u.startsWith("https://bringback.pro/"))
+    .filter((u) => typeof u === "string" && u.startsWith("https://theirs-page.sangukissu.workers.dev/"))
     .slice(0, 100)
 
   if (urls.length === 0) {
     return NextResponse.json(
-      { error: "Provide urls[] under https://bringback.pro/" },
+      { error: "Provide urls[] under https://theirs-page.sangukissu.workers.dev/" },
       { status: 400 }
     )
   }
@@ -38,7 +38,7 @@ export async function POST(req: NextRequest) {
   const payload = {
     host: "bringback.pro",
     key,
-    keyLocation: `https://bringback.pro/${key}.txt`,
+    keyLocation: `https://theirs-page.sangukissu.workers.dev/${key}.txt`,
     urlList: urls,
   }
 

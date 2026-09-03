@@ -41,7 +41,7 @@ Code: WELCOME10 (10% OFF the Pro and Family Plans)
 
 The Pro Plan unlocks the Reunion Video feature (where you can hug your loved ones) and 20 restorations. I'd love for you to try it.
 
-Upgrade now: ${process.env.NEXT_PUBLIC_APP_URL || 'https://bringback.pro'}/dashboard
+Upgrade now: ${process.env.NEXT_PUBLIC_APP_URL || 'https://theirs-page.sangukissu.workers.dev'}/dashboard
 
 Best,
 Harvansh Chaudhary`,

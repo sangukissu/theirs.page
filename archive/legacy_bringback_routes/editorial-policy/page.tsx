@@ -12,7 +12,7 @@ export const metadata: Metadata = {
   openGraph: {
     title: "Editorial policy | BringBack",
     description: "Standards for honest product and content claims on bringback.pro.",
-    url: "https://bringback.pro/editorial-policy",
+    url: "https://theirs-page.sangukissu.workers.dev/editorial-policy",
     type: "website",
   },
 }

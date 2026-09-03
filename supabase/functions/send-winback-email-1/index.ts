@@ -14,7 +14,7 @@ const SUPABASE_SECRET_KEY = Deno.env.get('SUPABASE_SECRET_KEY')!
 const WINBACK_FROM = Deno.env.get('WINBACK_FROM') || 'Harvansh <harvansh@updates.bringback.pro>'
 const WINBACK_REPLY_TO = Deno.env.get('WINBACK_REPLY_TO') || 'support@bringback.pro'
 const WINBACK_CRON_SECRET = Deno.env.get('WINBACK_CRON_SECRET')
-const APP_URL = Deno.env.get('NEXT_PUBLIC_APP_URL') || 'https://bringback.pro'
+const APP_URL = Deno.env.get('NEXT_PUBLIC_APP_URL') || 'https://theirs-page.sangukissu.workers.dev'
 
 const supabase = createClient(SUPABASE_URL, SUPABASE_SECRET_KEY)
 

@@ -15,13 +15,13 @@ export function SiteBreadcrumbsSchema({ items }: SiteBreadcrumbsSchemaProps) {
       "@type": "ListItem",
       position: 1,
       name: "Home",
-      item: "https://bringback.pro",
+      item: "https://theirs-page.sangukissu.workers.dev",
     },
     ...items.map((item, index) => ({
       "@type": "ListItem",
       position: index + 2,
       name: item.name,
-      ...(item.href ? { item: `https://bringback.pro${item.href}` } : {}),
+      ...(item.href ? { item: `https://theirs-page.sangukissu.workers.dev${item.href}` } : {}),
     })),
   ]
 

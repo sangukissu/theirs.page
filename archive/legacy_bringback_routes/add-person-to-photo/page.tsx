@@ -27,13 +27,13 @@ export const metadata: Metadata = {
     "ai memorial family photo generator",
   ],
   alternates: {
-    canonical: "https://bringback.pro/add-person-to-photo",
+    canonical: "https://theirs-page.sangukissu.workers.dev/add-person-to-photo",
   },
   openGraph: {
     title: "Add a Person to Photo AI | BringBack",
     description:
       "Combine separate photos of relatives into a single cohesive family portrait with natural AI lighting and skin tone matching.",
-    url: "https://bringback.pro/add-person-to-photo",
+    url: "https://theirs-page.sangukissu.workers.dev/add-person-to-photo",
     siteName: "BringBack",
     type: "website",
     images: [
@@ -51,17 +51,17 @@ export const metadata: Metadata = {
 const webAppJsonLd = {
   "@context": "https://schema.org",
   "@type": "WebApplication",
-  "@id": "https://bringback.pro/add-person-to-photo#webapp",
+  "@id": "https://theirs-page.sangukissu.workers.dev/add-person-to-photo#webapp",
   name: "BringBack Add a Person to Photo AI",
   description:
     "Add a missing person or deceased loved one into a wedding, memorial, or family portrait with matched lighting.",
-  url: "https://bringback.pro/add-person-to-photo",
+  url: "https://theirs-page.sangukissu.workers.dev/add-person-to-photo",
   applicationCategory: "PhotoEditingApplication",
   operatingSystem: "Web",
   offers: {
     "@type": "Offer",
     name: "Add Person Credit Pack",
-    url: "https://bringback.pro/pricing",
+    url: "https://theirs-page.sangukissu.workers.dev/pricing",
     priceCurrency: "USD",
     price: "4.99",
     description: "4 credits — covers 2 Add Person compositing runs.",
@@ -79,28 +79,28 @@ const howToJsonLd = {
       position: 1,
       name: "Upload Your Group Photo",
       text: "Select the main family, wedding, or reunion snapshot where you want to add someone.",
-      url: "https://bringback.pro/add-person-to-photo#how-it-works",
+      url: "https://theirs-page.sangukissu.workers.dev/add-person-to-photo#how-it-works",
     },
     {
       "@type": "HowToStep",
       position: 2,
       name: "Upload the Person's Photo",
       text: "Choose a clear reference photo of the missing relative or deceased loved one.",
-      url: "https://bringback.pro/add-person-to-photo#how-it-works",
+      url: "https://theirs-page.sangukissu.workers.dev/add-person-to-photo#how-it-works",
     },
     {
       "@type": "HowToStep",
       position: 3,
       name: "Position & Adjust (Optional)",
       text: "Specify where they should stand or sit (e.g. next to the bride or on the living room sofa).",
-      url: "https://bringback.pro/add-person-to-photo#how-it-works",
+      url: "https://theirs-page.sangukissu.workers.dev/add-person-to-photo#how-it-works",
     },
     {
       "@type": "HowToStep",
       position: 4,
       name: "Download Your Family Memory",
       text: "Review the result side-by-side in your dashboard and download high-res print quality.",
-      url: "https://bringback.pro/add-person-to-photo#how-it-works",
+      url: "https://theirs-page.sangukissu.workers.dev/add-person-to-photo#how-it-works",
     },
   ],
 }

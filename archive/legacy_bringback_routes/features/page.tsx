@@ -15,7 +15,7 @@ export const metadata: Metadata = {
   openGraph: {
     title: "BringBack Features",
     description: POSITIONING.publicPromise,
-    url: "https://bringback.pro/features",
+    url: "https://theirs-page.sangukissu.workers.dev/features",
   },
 }
 

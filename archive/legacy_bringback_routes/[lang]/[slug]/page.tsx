@@ -54,7 +54,7 @@ export async function generateMetadata({ params }: { params: Promise<{ lang: str
       title: page.meta.title,
       description: page.meta.description,
       type: "website",
-      url: `https://bringback.pro${page.slug}`,
+      url: `https://theirs-page.sangukissu.workers.dev${page.slug}`,
       locale: page.locale,
       siteName: "BringBack AI",
     },
@@ -77,7 +77,7 @@ export default async function LocalizedCountryPage({ params }: { params: Promise
     notFound()
   }
 
-  const pageUrl = `https://bringback.pro${page.slug}`
+  const pageUrl = `https://theirs-page.sangukissu.workers.dev${page.slug}`
   const prices = page.pricing?.plans
     ?.map((p) => parseUsdPrice(p.price))
     .filter((p): p is number => typeof p === "number")
@@ -102,7 +102,7 @@ export default async function LocalizedCountryPage({ params }: { params: Promise
           typeof lowPrice === "number" && typeof highPrice === "number"
             ? {
                 "@type": "AggregateOffer",
-                url: "https://bringback.pro/pricing",
+                url: "https://theirs-page.sangukissu.workers.dev/pricing",
                 priceCurrency: "USD",
                 lowPrice: lowPrice.toFixed(2),
                 highPrice: highPrice.toFixed(2),
@@ -110,7 +110,7 @@ export default async function LocalizedCountryPage({ params }: { params: Promise
               }
             : {
                 "@type": "Offer",
-                url: "https://bringback.pro/pricing",
+                url: "https://theirs-page.sangukissu.workers.dev/pricing",
                 priceCurrency: "USD",
                 availability: "https://schema.org/OnlineOnly",
               },

@@ -7,7 +7,7 @@ export const BRAND = {
   name: "BringBack",
   legalName: "BringBack",
   domain: "bringback.pro",
-  url: "https://bringback.pro",
+  url: "https://theirs-page.sangukissu.workers.dev",
   supportEmail: "support@bringback.pro",
   twitter: "https://x.com/AINotSoSmart",
   trustpilot: "https://www.trustpilot.com/review/bringback.pro",

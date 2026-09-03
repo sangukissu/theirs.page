@@ -17,7 +17,7 @@ export const metadata: Metadata = {
     description:
       "How BringBack handles photos, accounts, payments, analytics, and Memory Book keepsakes.",
     type: "website",
-    url: "https://bringback.pro/privacy",
+    url: "https://theirs-page.sangukissu.workers.dev/privacy",
   },
 }
 
@@ -47,7 +47,7 @@ export default function PrivacyPage() {
                   <p className="text-gray-600">
                     BringBack (&quot;we&quot;) provides AI-assisted family photo restoration and
                     related tools at{" "}
-                    <a href="https://bringback.pro" className="underline">
+                    <a href="https://theirs-page.sangukissu.workers.dev" className="underline">
                       bringback.pro
                     </a>
                     . Contact:{" "}

@@ -23,7 +23,7 @@ export const metadata: Metadata = {
     description:
       "Pay-once credit packs with clear feature equivalents. Starter cannot fund animation; Value and Family can.",
     type: "website",
-    url: "https://bringback.pro/pricing",
+    url: "https://theirs-page.sangukissu.workers.dev/pricing",
     siteName: "BringBack",
     images: [
       {
@@ -47,11 +47,11 @@ const pricingJsonLd = {
   "@context": "https://schema.org",
   "@type": "OfferCatalog",
   name: "BringBack Pricing",
-  url: "https://bringback.pro/pricing",
+  url: "https://theirs-page.sangukissu.workers.dev/pricing",
   provider: {
     "@type": "Organization",
     name: "BringBack",
-    url: "https://bringback.pro",
+    url: "https://theirs-page.sangukissu.workers.dev",
   },
   itemListElement: schemaOffers().map((offer, index) => ({
     "@type": "ListItem",

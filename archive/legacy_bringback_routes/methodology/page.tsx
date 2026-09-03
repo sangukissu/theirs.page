@@ -14,7 +14,7 @@ export const metadata: Metadata = {
     title: "Comparison & claims methodology | BringBack",
     description:
       "How we research competitors, verify pricing, and write public claims for AI photo restoration comparisons.",
-    url: "https://bringback.pro/methodology",
+    url: "https://theirs-page.sangukissu.workers.dev/methodology",
     type: "website",
   },
 }

@@ -19,7 +19,7 @@ export const metadata: Metadata = {
     description:
       "Learn about BringBack's 30-day money-back guarantee and refund process for photo restoration services.",
     type: "website",
-    url: "https://bringback.pro/refunds",
+    url: "https://theirs-page.sangukissu.workers.dev/refunds",
     siteName: "BringBack",
     images: [
       {

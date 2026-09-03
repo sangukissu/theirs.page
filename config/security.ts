@@ -71,7 +71,7 @@ const productionConfig: SecurityConfig = {
   ...baseConfig,
   enforceHttps: true,
   allowedOrigins: [
-    'https://bringback.pro',
+    'https://theirs-page.sangukissu.workers.dev',
     'https://www.yourdomain.com'
   ],
   rateLimiting: {

@@ -76,6 +76,6 @@ export default function robots(): MetadataRoute.Robots {
         disallow: "/",
       })),
     ],
-    sitemap: "https://bringback.pro/sitemap.xml",
+    sitemap: "https://theirs-page.sangukissu.workers.dev/sitemap.xml",
   }
 }

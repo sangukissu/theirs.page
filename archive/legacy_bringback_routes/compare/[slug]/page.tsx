@@ -9,7 +9,7 @@ import { Navbar } from "@/components/landing/Navbar"
 import { Footer } from "@/components/landing/Footer"
 import CompareLayout from "@/components/pages/compare-layout"
 
-const SITE_URL = "https://bringback.pro"
+const SITE_URL = "https://theirs-page.sangukissu.workers.dev"
 
 function comparePath(page: ComparePageData) {
   return `/compare/${page.slug}`

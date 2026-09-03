@@ -22,7 +22,7 @@ export const metadata: Metadata = {
     title: "Blog - BringBack | Photo Restoration Tips & Stories",
     description: "Learn about photo restoration, preservation tips, and read inspiring stories of memories brought back to life.",
     type: "website",
-    url: "https://bringback.pro/blog",
+    url: "https://theirs-page.sangukissu.workers.dev/blog",
   },
   twitter: {
     card: "summary_large_image",
