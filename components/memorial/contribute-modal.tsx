@@ -1,14 +1,33 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { motion, AnimatePresence } from "framer-motion"
-import { X, CheckCircle2, Heart, Upload, Sparkles, Loader2 } from "lucide-react"
+import {
+  X,
+  CheckCircle2,
+  Heart,
+  Upload,
+  Sparkles,
+  Loader2,
+  BookOpen,
+  Camera,
+  Clock,
+  Mic,
+  MessageSquare,
+  ArrowLeft,
+  Calendar,
+  MapPin,
+  User,
+} from "lucide-react"
+
+export type ContributionType = "memory" | "photo" | "moment" | "voice" | "message"
 
 interface ContributeModalProps {
   isOpen: boolean
   onClose: () => void
   memorialName: string
   slug: string
+  initialType?: ContributionType | null
 }
 
 export function ContributeModal({
@@ -16,35 +35,84 @@ export function ContributeModal({
   onClose,
   memorialName,
   slug,
+  initialType = null,
 }: ContributeModalProps) {
+  const [selectedType, setSelectedType] = useState<ContributionType | null>(initialType)
   const [authorName, setAuthorName] = useState("")
   const [relationship, setRelationship] = useState("")
-  const [story, setStory] = useState("")
-  const [approxYear, setApproxYear] = useState("")
-  const [location, setLocation] = useState("")
+  const [content, setContent] = useState("")
+  const [extraField, setExtraField] = useState("") // year / album / location / caption
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [isSubmitted, setIsSubmitted] = useState(false)
 
+  // Reset or initialize state whenever modal opens or initialType changes
+  useEffect(() => {
+    if (isOpen) {
+      setSelectedType(initialType)
+      setIsSubmitted(false)
+    }
+  }, [isOpen, initialType])
+
+  const firstName = memorialName.split(" ")[0] || memorialName
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!authorName.trim() || !story.trim()) return
+    if (!authorName.trim() || !content.trim()) return
 
     setIsSubmitting(true)
-    // Simulate brief submission latency (wired to API / pending_approval)
-    await new Promise((r) => setTimeout(r, 900))
+    // Simulate brief submission latency (wired to API / moderation queue)
+    await new Promise((r) => setTimeout(r, 800))
     setIsSubmitting(false)
     setIsSubmitted(true)
   }
 
   const handleReset = () => {
     setIsSubmitted(false)
+    setSelectedType(null)
     setAuthorName("")
     setRelationship("")
-    setStory("")
-    setApproxYear("")
-    setLocation("")
+    setContent("")
+    setExtraField("")
     onClose()
   }
+
+  const contributionOptions = [
+    {
+      type: "memory" as const,
+      icon: BookOpen,
+      title: "Tell a memory",
+      desc: `Something you remember about ${firstName}.`,
+      color: "text-rose-600 bg-rose-50",
+    },
+    {
+      type: "photo" as const,
+      icon: Camera,
+      title: "Add photos",
+      desc: "Share photographs the family may not have seen.",
+      color: "text-amber-600 bg-amber-50",
+    },
+    {
+      type: "moment" as const,
+      icon: Clock,
+      title: "Add a life moment",
+      desc: `Help complete ${firstName}'s life timeline.`,
+      color: "text-emerald-600 bg-emerald-50",
+    },
+    {
+      type: "voice" as const,
+      icon: Mic,
+      title: "Share voice or video",
+      desc: "A voicemail or clip worth keeping forever.",
+      color: "text-primary bg-primary/10",
+    },
+    {
+      type: "message" as const,
+      icon: MessageSquare,
+      title: "Leave a message",
+      desc: "A warm note or condolence for the family.",
+      color: "text-indigo-600 bg-indigo-50",
+    },
+  ]
 
   return (
     <AnimatePresence>
@@ -55,7 +123,7 @@ export function ContributeModal({
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            onClick={onClose}
+            onClick={handleReset}
             className="fixed inset-0 bg-black/40 backdrop-blur-xs cursor-pointer"
           />
 
@@ -65,159 +133,242 @@ export function ContributeModal({
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.96, y: 8 }}
             transition={{ duration: 0.2, ease: [0.16, 1, 0.3, 1] }}
-            className="relative w-full max-w-lg rounded-3xl bg-white border border-black/[0.08] p-6 sm:p-8 overflow-hidden shadow-2xl z-10 select-none"
+            className="relative w-full max-w-lg rounded-3xl bg-white border border-black/[0.08] p-6 sm:p-8 overflow-hidden shadow-2xl z-10 select-none max-h-[90vh] flex flex-col"
           >
-            {/* Close Button */}
-            <button
-              type="button"
-              onClick={onClose}
-              className="absolute top-5 right-5 size-8 rounded-full bg-neutral-100 hover:bg-neutral-200 text-[#666] flex items-center justify-center transition-colors cursor-pointer"
-              aria-label="Close modal"
-            >
-              <X className="size-4" />
-            </button>
-
-            {isSubmitted ? (
-              <div className="py-8 flex flex-col items-center text-center gap-4">
-                <div className="size-12 rounded-full bg-emerald-50 text-emerald-600 flex items-center justify-center border border-emerald-100">
-                  <CheckCircle2 className="size-6" />
-                </div>
-
-                <div className="flex flex-col gap-1.5">
-                  <h3 className="text-xl font-medium text-[#181925]">
-                    Thank you for remembering
-                  </h3>
-                  <p className="text-xs sm:text-sm text-[#666] max-w-sm leading-relaxed">
-                    Your story has been safely sent to {memorialName}&apos;s family moderation queue. It will appear on the memorial once approved.
-                  </p>
-                </div>
-
+            {/* Close / Back Button Bar */}
+            <div className="flex items-center justify-between pb-3">
+              {selectedType && !isSubmitted ? (
                 <button
                   type="button"
-                  onClick={handleReset}
-                  className="mt-4 px-5 py-2 rounded-full bg-neutral-100 hover:bg-neutral-200 text-xs font-medium text-[#181925] transition-colors cursor-pointer"
+                  onClick={() => setSelectedType(null)}
+                  className="inline-flex items-center gap-1.5 text-xs text-[#71717a] hover:text-[#181925] transition-colors cursor-pointer"
                 >
-                  Close
+                  <ArrowLeft className="size-3.5" />
+                  <span>Choose another</span>
                 </button>
-              </div>
-            ) : (
-              <div className="flex flex-col gap-5">
-                {/* Header */}
-                <div className="flex flex-col gap-1 pr-6">
-                  <div className="flex items-center gap-1.5 text-xs text-primary font-medium">
-                    <Sparkles className="size-3" />
-                    <span>No account needed</span>
-                  </div>
-                  <h3 className="text-xl sm:text-2xl font-medium tracking-tight text-[#181925]">
-                    Add a memory of {memorialName}
-                  </h3>
-                  <p className="text-xs text-[#666]">
-                    Share an anecdote, a funny saying, or a quiet moment you never want to forget.
-                  </p>
+              ) : (
+                <div className="inline-flex items-center gap-1.5 text-xs text-primary font-medium">
+                  <Sparkles className="size-3" />
+                  <span>No account needed</span>
                 </div>
+              )}
 
-                {/* Form */}
-                <form onSubmit={handleSubmit} className="flex flex-col gap-3.5">
-                  {/* Name & Relationship */}
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <button
+                type="button"
+                onClick={handleReset}
+                className="size-8 rounded-full bg-neutral-100 hover:bg-neutral-200 text-[#666] flex items-center justify-center transition-colors cursor-pointer ml-auto"
+                aria-label="Close modal"
+              >
+                <X className="size-4" />
+              </button>
+            </div>
+
+            <div className="overflow-y-auto flex-1 pr-1 -mr-1">
+              {/* SUCCESS CONFIRMATION */}
+              {isSubmitted ? (
+                <div className="py-8 flex flex-col items-center text-center gap-4">
+                  <div className="size-14 rounded-full bg-emerald-50 text-emerald-600 flex items-center justify-center border border-emerald-100">
+                    <CheckCircle2 className="size-7" />
+                  </div>
+
+                  <div className="flex flex-col gap-1.5">
+                    <h3 className="text-xl font-medium text-[#181925]">
+                      Thank you for remembering
+                    </h3>
+                    <p className="text-xs sm:text-sm text-[#666] max-w-sm leading-relaxed">
+                      Your contribution has been safely received for {memorialName}&apos;s family archive. It will appear on the memorial once the caretaker reviews it.
+                    </p>
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={handleReset}
+                    className="mt-4 px-6 py-2.5 rounded-full bg-neutral-100 hover:bg-neutral-200 text-xs font-medium text-[#181925] transition-colors cursor-pointer"
+                  >
+                    Close
+                  </button>
+                </div>
+              ) : !selectedType ? (
+                /* STEP 1: CHOICE SHEET */
+                <div className="flex flex-col gap-5 py-2">
+                  <div className="flex flex-col gap-1">
+                    <h3 className="text-xl sm:text-2xl font-medium tracking-tight text-[#181925]">
+                      Add to {memorialName}&apos;s memorial
+                    </h3>
+                    <p className="text-xs text-[#71717a]">
+                      Choose what you would like to share with the family.
+                    </p>
+                  </div>
+
+                  <div className="grid gap-2.5 pt-1">
+                    {contributionOptions.map((opt) => {
+                      const Icon = opt.icon
+                      return (
+                        <button
+                          key={opt.type}
+                          type="button"
+                          onClick={() => setSelectedType(opt.type)}
+                          className="flex items-center gap-4 p-3.5 rounded-2xl border border-black/[0.06] bg-[#f9f9fa] hover:bg-neutral-100 hover:border-black/[0.12] transition-all text-left cursor-pointer group"
+                        >
+                          <div
+                            className={`size-10 rounded-xl flex items-center justify-center shrink-0 ${opt.color} transition-transform group-hover:scale-105`}
+                          >
+                            <Icon className="size-5" />
+                          </div>
+                          <div className="flex flex-col gap-0.5 min-w-0">
+                            <span className="text-sm font-medium text-[#181925] group-hover:text-primary transition-colors">
+                              {opt.title}
+                            </span>
+                            <span className="text-xs text-[#71717a] leading-relaxed">
+                              {opt.desc}
+                            </span>
+                          </div>
+                        </button>
+                      )
+                    })}
+                  </div>
+                </div>
+              ) : (
+                /* STEP 2: FOCUSED CONTRIBUTION FORM */
+                <form onSubmit={handleSubmit} className="flex flex-col gap-4 py-2">
+                  <div className="flex flex-col gap-1">
+                    <h3 className="text-lg sm:text-xl font-medium tracking-tight text-[#181925]">
+                      {selectedType === "memory" && `Share a memory of ${firstName}`}
+                      {selectedType === "photo" && `Add photographs of ${firstName}`}
+                      {selectedType === "moment" && `Suggest a timeline moment`}
+                      {selectedType === "voice" && `Share a voice or video recording`}
+                      {selectedType === "message" && `Leave a message for the family`}
+                    </h3>
+                    <p className="text-xs text-[#71717a]">
+                      {selectedType === "memory" && "Tell an anecdote, a story, or a quiet moment."}
+                      {selectedType === "photo" && "Upload original photographs to preserve in the archive."}
+                      {selectedType === "moment" && "Help record when important milestones took place."}
+                      {selectedType === "voice" && "Upload an audio file or voice memo from your phone."}
+                      {selectedType === "message" && "Short condolences or notes of love for the guestbook."}
+                    </p>
+                  </div>
+
+                  {/* Author Name & Relationship */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
                     <div className="flex flex-col gap-1">
-                      <label className="text-xs font-medium text-[#181925]">
-                        Your name <span className="text-rose-500">*</span>
+                      <label className="text-[11px] font-mono text-[#71717a] uppercase tracking-wider">
+                        Your name *
                       </label>
                       <input
                         type="text"
                         required
                         value={authorName}
                         onChange={(e) => setAuthorName(e.target.value)}
-                        placeholder="e.g. Anita Carter"
-                        className="h-9 px-3 rounded-xl bg-[#f7f7f8] border border-black/[0.08] text-xs text-[#181925] outline-none focus:border-primary focus:bg-white transition-colors"
+                        placeholder="e.g. David Miller"
+                        className="w-full px-3 py-2 rounded-xl bg-[#f7f7f8] border border-black/[0.08] text-sm text-[#181925] placeholder:text-[#aaa] outline-none focus:border-primary/50 transition-colors"
                       />
                     </div>
 
                     <div className="flex flex-col gap-1">
-                      <label className="text-xs font-medium text-[#181925]">
-                        Relationship
+                      <label className="text-[11px] font-mono text-[#71717a] uppercase tracking-wider">
+                        Relationship to {firstName}
                       </label>
                       <input
                         type="text"
                         value={relationship}
                         onChange={(e) => setRelationship(e.target.value)}
-                        placeholder="e.g. Daughter, Old Friend"
-                        className="h-9 px-3 rounded-xl bg-[#f7f7f8] border border-black/[0.08] text-xs text-[#181925] outline-none focus:border-primary focus:bg-white transition-colors"
+                        placeholder="e.g. Daughter, Old neighbour, Colleague"
+                        className="w-full px-3 py-2 rounded-xl bg-[#f7f7f8] border border-black/[0.08] text-sm text-[#181925] placeholder:text-[#aaa] outline-none focus:border-primary/50 transition-colors"
                       />
                     </div>
                   </div>
 
-                  {/* Story Textarea */}
+                  {/* Contextual Extra Field */}
+                  {selectedType === "moment" && (
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                      <div className="flex flex-col gap-1">
+                        <label className="text-[11px] font-mono text-[#71717a] uppercase tracking-wider">
+                          Year / Approx Date
+                        </label>
+                        <input
+                          type="text"
+                          value={extraField}
+                          onChange={(e) => setExtraField(e.target.value)}
+                          placeholder="e.g. 1974 or Summer 1985"
+                          className="w-full px-3 py-2 rounded-xl bg-[#f7f7f8] border border-black/[0.08] text-sm text-[#181925] placeholder:text-[#aaa] outline-none focus:border-primary/50 transition-colors"
+                        />
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Upload Dropzone Preview for Photos or Audio */}
+                  {(selectedType === "photo" || selectedType === "voice") && (
+                    <div className="border-2 border-dashed border-black/[0.08] hover:border-primary/40 rounded-2xl p-5 flex flex-col items-center justify-center gap-2 bg-[#faf9f8] cursor-pointer transition-colors text-center">
+                      <div className="size-10 rounded-full bg-white flex items-center justify-center shadow-xs border border-black/[0.06]">
+                        {selectedType === "photo" ? (
+                          <Upload className="size-4 text-primary" />
+                        ) : (
+                          <Mic className="size-4 text-primary" />
+                        )}
+                      </div>
+                      <div className="flex flex-col">
+                        <span className="text-xs font-medium text-[#181925]">
+                          {selectedType === "photo" ? "Drop photographs here" : "Drop audio file or voice note"}
+                        </span>
+                        <span className="text-[10px] text-[#71717a]">
+                          Original high-resolution preserved untouched
+                        </span>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Main Content Area */}
                   <div className="flex flex-col gap-1">
-                    <label className="text-xs font-medium text-[#181925]">
-                      The memory <span className="text-rose-500">*</span>
+                    <label className="text-[11px] font-mono text-[#71717a] uppercase tracking-wider">
+                      {selectedType === "message" ? "Your message *" : "The story or details *"}
                     </label>
                     <textarea
                       required
                       rows={4}
-                      value={story}
-                      onChange={(e) => setStory(e.target.value)}
-                      placeholder="“I remember when Dad spent half of Christmas Day fixing the neighbor's washing machine...”"
-                      className="p-3 rounded-xl bg-[#f7f7f8] border border-black/[0.08] text-xs text-[#181925] outline-none focus:border-primary focus:bg-white transition-colors leading-relaxed resize-none"
+                      value={content}
+                      onChange={(e) => setContent(e.target.value)}
+                      placeholder={
+                        selectedType === "message"
+                          ? "Write a short note of support or condolence..."
+                          : selectedType === "photo"
+                          ? "Add a caption or tell the story behind this photo..."
+                          : selectedType === "moment"
+                          ? "What happened during this milestone in their life?..."
+                          : selectedType === "voice"
+                          ? "Tell us when or where this was recorded..."
+                          : "“I remember when Dad spent half of Christmas Day fixing the neighbour’s washer...”"
+                      }
+                      className="w-full px-3 py-2.5 rounded-xl bg-[#f7f7f8] border border-black/[0.08] text-sm text-[#181925] placeholder:text-[#aaa] outline-none focus:border-primary/50 transition-colors resize-none leading-relaxed"
                     />
                   </div>
 
-                  {/* Year & Location */}
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    <div className="flex flex-col gap-1">
-                      <label className="text-xs font-medium text-[#181925]">
-                        Rough year (optional)
-                      </label>
-                      <input
-                        type="text"
-                        value={approxYear}
-                        onChange={(e) => setApproxYear(e.target.value)}
-                        placeholder="e.g. 1994"
-                        className="h-9 px-3 rounded-xl bg-[#f7f7f8] border border-black/[0.08] text-xs text-[#181925] outline-none focus:border-primary focus:bg-white transition-colors"
-                      />
-                    </div>
-
-                    <div className="flex flex-col gap-1">
-                      <label className="text-xs font-medium text-[#181925]">
-                        Location (optional)
-                      </label>
-                      <input
-                        type="text"
-                        value={location}
-                        onChange={(e) => setLocation(e.target.value)}
-                        placeholder="e.g. London, Devon cottage"
-                        className="h-9 px-3 rounded-xl bg-[#f7f7f8] border border-black/[0.08] text-xs text-[#181925] outline-none focus:border-primary focus:bg-white transition-colors"
-                      />
-                    </div>
-                  </div>
-
-                  {/* Reassurance note */}
-                  <div className="p-2.5 rounded-xl bg-neutral-50 border border-black/[0.04] text-[11px] text-[#777] leading-relaxed">
-                    🔒 Nothing goes live immediately. The family reviews all memories first to protect the privacy of the memorial.
-                  </div>
-
                   {/* Submit Button */}
-                  <button
-                    type="submit"
-                    disabled={isSubmitting}
-                    className="mt-1 inline-flex items-center justify-center gap-1.5 whitespace-nowrap !rounded-full font-medium transition-all cursor-pointer border border-[color-mix(in_srgb,var(--primary)_80%,#3a3480)] bg-[color-mix(in_srgb,var(--primary)_90%,#3a3480)] text-primary-foreground shadow-[inset_0_1px_0_rgba(255,255,255,0.22),inset_0_-1px_0_rgba(58,52,128,0.30)] transform-gpu hover:bg-primary active:scale-[0.98] h-10 w-full text-xs sm:text-sm group disabled:opacity-50"
-                  >
-                    {isSubmitting ? (
-                      <>
-                        <Loader2 className="size-4 animate-spin" />
-                        <span>Sending to family...</span>
-                      </>
-                    ) : (
-                      <>
-                        <span>Submit memory to family</span>
-                        <span>→</span>
-                      </>
-                    )}
-                  </button>
+                  <div className="pt-2 flex items-center justify-end gap-2.5">
+                    <button
+                      type="button"
+                      onClick={() => setSelectedType(null)}
+                      className="px-4 py-2 rounded-full text-xs font-medium text-[#666] hover:bg-neutral-100 transition-colors cursor-pointer"
+                    >
+                      Back
+                    </button>
+                    <button
+                      type="submit"
+                      disabled={isSubmitting || !authorName.trim() || !content.trim()}
+                      className="inline-flex items-center justify-center gap-1.5 whitespace-nowrap !rounded-full font-medium transition-all cursor-pointer border border-[color-mix(in_srgb,var(--primary)_80%,#3a3480)] bg-[color-mix(in_srgb,var(--primary)_90%,#3a3480)] text-primary-foreground shadow-[inset_0_1px_0_rgba(255,255,255,0.22),inset_0_-1px_0_rgba(58,52,128,0.30)] transform-gpu hover:bg-primary active:scale-[0.98] h-9 px-5 text-xs select-none disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      {isSubmitting ? (
+                        <>
+                          <Loader2 className="size-3.5 animate-spin" />
+                          <span>Sending...</span>
+                        </>
+                      ) : (
+                        <span>Send to Family Archive</span>
+                      )}
+                    </button>
+                  </div>
                 </form>
-              </div>
-            )}
+              )}
+            </div>
           </motion.div>
         </div>
       )}
