@@ -412,65 +412,57 @@ export function FeaturesBento() {
             </a>
           </div>
 
-          {/* ONE Unified Archival Family Continuity Panel (Zero nested boxes, zero pills) */}
+          {/* Full-Height Archival Caretaker & Family Archive (Matches Card 03 rhythm exactly) */}
           <div className="w-full h-[280px] relative overflow-hidden px-6 sm:px-8 flex flex-col justify-between pb-6">
-            <div className="h-full rounded-2xl bg-white border border-black/[0.08] p-5 flex flex-col justify-between text-left">
-              
-              {/* Top: Generational Caretaker Bridge */}
-              <div className="flex items-center justify-between pb-3.5 border-b border-black/[0.06]">
-                <div className="flex flex-col">
-                  <span className="text-[10px] font-mono uppercase tracking-wider text-neutral-400">
-                    Current caretaker
-                  </span>
-                  <div className="flex items-center gap-1.5 mt-0.5">
-                    <span className="size-1.5 rounded-full bg-emerald-500" />
-                    <span className="text-xs font-medium text-[#181925]">You</span>
-                  </div>
+            {/* Top Caretaker Widget (Identical structure and radius to Card 03's audio widget) */}
+            <div className="p-3.5 rounded-xl bg-white border border-black/[0.06] flex flex-col gap-2">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <ShieldCheck className="size-3.5 text-[#ffa600]" />
+                  <span className="text-xs font-medium text-[#181925]">Family caretaker handoff</span>
                 </div>
-
-                <div className="flex items-center gap-2 px-2 text-neutral-300">
-                  <span className="h-px w-6 sm:w-10 bg-neutral-200" />
-                  <span className="text-xs text-neutral-400">→</span>
-                  <span className="h-px w-6 sm:w-10 bg-neutral-200" />
-                </div>
-
-                <div className="flex flex-col text-right">
-                  <span className="text-[10px] font-mono uppercase tracking-wider text-neutral-400">
-                    Next caretaker
-                  </span>
-                  <div className="flex items-center justify-end gap-1.5 mt-0.5">
-                    <span className="text-xs font-medium text-[#181925]">Anita Carter</span>
-                    <span className="size-1.5 rounded-full bg-[#ffa600]" />
-                  </div>
-                </div>
+                <span className="text-[11px] font-mono text-[#888]">Generational</span>
               </div>
 
-              {/* Middle: Clean Family Preservation Registry (No boxes, pure editorial typography) */}
-              <div className="py-2 flex flex-col gap-1.5">
-                <div className="flex items-baseline justify-between">
-                  <span className="text-xs font-medium text-[#181925]">
-                    Your family can download everything
-                  </span>
-                  <span className="text-[10px] font-mono text-neutral-400">
-                    Full archive
-                  </span>
+              {/* The Caretaker Track */}
+              <div className="flex items-center justify-between p-2 px-3 rounded-lg bg-neutral-50 border border-black/[0.04] text-xs">
+                <div className="flex items-center gap-1.5">
+                  <span className="size-2 rounded-full bg-emerald-500 shrink-0" />
+                  <span className="text-neutral-500">Current:</span>
+                  <span className="font-medium text-[#181925]">You</span>
                 </div>
-
-                <p className="text-xs text-neutral-500 leading-relaxed font-serif italic">
-                  Photographs · Family stories · Audio recordings · Home videos · Complete timeline
-                </p>
+                <span className="text-[#888] font-mono text-xs">→</span>
+                <div className="flex items-center gap-1.5">
+                  <span className="size-2 rounded-full bg-[#ffa600] shrink-0" />
+                  <span className="text-neutral-500">Next:</span>
+                  <span className="font-medium text-[#181925]">Anita Carter</span>
+                </div>
               </div>
+            </div>
 
-              {/* Bottom: Single Clean Download Action & Guarantee */}
-              <div className="pt-3 border-t border-black/[0.06] flex items-center justify-between">
-                <span className="text-xs font-medium text-primary hover:underline cursor-pointer flex items-center gap-1">
-                  Download family archive ↓
-                </span>
-                <span className="text-[11px] font-mono text-neutral-400">
-                  Download anytime
-                </span>
+            {/* Bottom Open List (Matches Card 01, 02, and 03 unboxed divide-y list on #f7f7f8) */}
+            <div className="flex flex-col divide-y divide-black/[0.04] pt-1">
+              <div className="py-1.5 flex items-center justify-between text-xs">
+                <div className="flex items-center gap-2">
+                  <Folder className="size-3.5 text-[#888]" />
+                  <span className="font-medium text-[#181925]">Complete family archive</span>
+                </div>
+                <span className="font-mono text-[11px] text-[#888]">1-click download</span>
               </div>
-
+              <div className="py-1.5 flex items-center justify-between text-xs">
+                <div className="flex items-center gap-2">
+                  <FileText className="size-3.5 text-[#888]" />
+                  <span className="text-[#666]">Photos, stories & recordings</span>
+                </div>
+                <span className="text-[11px] text-[#888]">Preserved intact</span>
+              </div>
+              <div className="py-1.5 flex items-center justify-between text-xs">
+                <div className="flex items-center gap-2">
+                  <CheckCircle2 className="size-3.5 text-emerald-600" />
+                  <span className="text-[#666]">Ownership stays yours</span>
+                </div>
+                <span className="text-[11px] text-emerald-700 font-medium">Download anytime</span>
+              </div>
             </div>
           </div>
         </div>
