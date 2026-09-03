@@ -32,7 +32,15 @@ export function FeaturesBento() {
       <SectionHeader
         badge="The memorial"
         title="Everything about them, together in one place."
-        description="From the stories only a sibling remembers to the voice note you never want to lose, every part of their memorial stays connected — and under your family’s control."
+        description={
+          <>
+            From the stories only a sibling remembers to the voice note you never want to lose, every part of their memorial stays connected and{" "}
+            <span className="rounded-md bg-primary/10 box-decoration-clone px-1 py-0.5 text-primary">
+              under your family’s control
+            </span>
+            .
+          </>
+        }
       />
 
       {/* Grid of Bento Cards */}

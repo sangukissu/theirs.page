@@ -2,7 +2,7 @@ import Link from "next/link"
 
 export function TheirsFooter() {
   return (
-    <footer className="border-t border-border bg-white py-12 px-4">
+    <footer className="border-t border-border bg-white py-6 px-4">
       <div className="max-w-5xl mx-auto flex flex-col md:flex-row items-center justify-between gap-6 text-xs text-muted-foreground">
         {/* Brand */}
         <div className="flex items-center gap-2">

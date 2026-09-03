@@ -333,7 +333,15 @@ export function TheirsSteps() {
       <SectionHeader
         badge="How it works"
         title="Create their memorial. Let everyone tell their story."
-        description="You don’t need to have everything ready. Start with the basics, share the page with the people who knew them, and build it together over time."
+        description={
+          <>
+            You don’t need to have everything ready. Start with the basics, share the page with the people who knew them, and{" "}
+            <span className="rounded-md bg-primary/10 box-decoration-clone px-1 py-0.5 text-primary">
+              build it together over time
+            </span>
+            .
+          </>
+        }
       />
 
       {/* 3 Refined, Vibrant Showcase Cards */}

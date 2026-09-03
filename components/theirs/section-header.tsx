@@ -3,7 +3,7 @@ import React from "react"
 interface SectionHeaderProps {
   badge: string
   title: React.ReactNode
-  description: string
+  description: React.ReactNode
   className?: string
 }
 

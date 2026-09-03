@@ -100,7 +100,15 @@ export function TheirsFaq() {
         <SectionHeader
           badge="FAQ"
           title="Fair questions, straight answers."
-          description="Everything you need to know about preservation, privacy, and contributions."
+          description={
+            <>
+              Everything you need to know about preservation, privacy, and contributions,{" "}
+              <span className="rounded-md bg-primary/10 box-decoration-clone px-1 py-0.5 text-primary">
+                without the complexity
+              </span>
+              .
+            </>
+          }
           className="px-4 sm:px-6"
         />
 

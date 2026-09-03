@@ -30,12 +30,12 @@ export function TheirsHero() {
         <h1 className="text-balance text-4xl sm:text-6xl lg:text-[68px] font-medium tracking-[-0.04em] text-[#181925] leading-[1.04] max-w-[850px] mb-3.5">
           A beautiful place to remember
           <br />
-          <span className="text-primary">someone your Love</span>
+          <span className="text-primary">someone you Love</span>
         </h1>
 
-        {/* Human Subheadline */}
         <p className="mx-auto max-w-[660px] text-pretty text-base sm:text-xl leading-relaxed text-[#666] mb-5 sm:mb-6">
-Bring their photos, stories and memories together in one page and invite family and friends to add theirs.        </p>
+          Bring their photos, stories and memories <span className="rounded-md bg-primary/10 box-decoration-clone px-1 py-0.5 text-primary font-medium">together in one page</span> and invite family and friends to add theirs.
+        </p>
 
         {/* High-Converting "Create their page" Input Box (Responsive on Mobile & Desktop) */}
         <div className="w-full max-w-lg flex flex-col items-center gap-2 mb-4 sm:mb-5">
