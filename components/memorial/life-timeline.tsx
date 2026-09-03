@@ -72,7 +72,7 @@ interface LifeTimelineProps {
 
 export function LifeTimeline({ milestones = DEFAULT_MILESTONES }: LifeTimelineProps) {
   return (
-    <section id="timeline" className="py-12 sm:py-16 px-4 max-w-4xl mx-auto">
+    <section id="timeline" className="py-12 sm:py-16 px-4 max-w-4xl mx-auto scroll-mt-24">
       <div className="flex flex-col gap-8">
         
         {/* Section Heading */}

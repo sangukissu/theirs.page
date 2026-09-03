@@ -114,7 +114,7 @@ export function PhotoAlbums({
   }
 
   return (
-    <div className="py-8 sm:py-12 px-4 max-w-4xl mx-auto flex flex-col gap-8">
+    <section id="photos" className="py-12 sm:py-16 px-4 max-w-4xl mx-auto flex flex-col gap-8 scroll-mt-24">
       
       {/* Header & Controls */}
       <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 border-b border-black/[0.06] pb-6">
@@ -315,6 +315,6 @@ export function PhotoAlbums({
         </div>
       )}
 
-    </div>
+    </section>
   )
 }

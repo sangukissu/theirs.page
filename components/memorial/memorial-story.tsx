@@ -9,7 +9,7 @@ export function MemorialStory({ fullName, biography }: MemorialStoryProps) {
   const firstName = fullName.split(" ")[0] || fullName
 
   return (
-    <section id="story" className="py-12 sm:py-16 px-4 max-w-4xl mx-auto">
+    <section id="story" className="py-12 sm:py-16 px-4 max-w-4xl mx-auto scroll-mt-24">
       <div className="flex flex-col gap-8">
         
         {/* Section Heading */}

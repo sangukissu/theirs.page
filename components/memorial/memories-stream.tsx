@@ -148,7 +148,7 @@ export function MemoriesStream({
   }
 
   return (
-    <div className="py-8 sm:py-12 px-4 max-w-3xl mx-auto flex flex-col gap-8">
+    <section id="memories" className="py-12 sm:py-16 px-4 max-w-4xl mx-auto flex flex-col gap-8 scroll-mt-24">
       
       {/* Header & Controls */}
       <div className="flex flex-col gap-5 border-b border-black/[0.06] pb-6">
@@ -349,6 +349,6 @@ export function MemoriesStream({
         </button>
       </div>
 
-    </div>
+    </section>
   )
 }

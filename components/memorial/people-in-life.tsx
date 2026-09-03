@@ -140,7 +140,7 @@ export function PeopleInLife({
   ]
 
   return (
-    <div className="py-8 sm:py-12 px-4 max-w-4xl mx-auto flex flex-col gap-10">
+    <section id="people" className="py-12 sm:py-16 px-4 max-w-4xl mx-auto flex flex-col gap-10 scroll-mt-24">
       
       {/* Header & Action */}
       <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 border-b border-black/[0.06] pb-6">
@@ -325,6 +325,6 @@ export function PeopleInLife({
         </div>
       )}
 
-    </div>
+    </section>
   )
 }

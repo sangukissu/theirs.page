@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useRef, useEffect } from "react"
 import { Play, Pause, Volume2, Mic, CheckCircle2 } from "lucide-react"
 
 interface MemorialAudioProps {
@@ -9,6 +9,7 @@ interface MemorialAudioProps {
   duration?: string
   transcript?: string
   note?: string
+  audioSrc?: string
 }
 
 export function MemorialAudio({
@@ -17,11 +18,70 @@ export function MemorialAudio({
   duration = "0:14",
   transcript = "“Hello darling, it’s Dad. Just ringing to make sure you put enough air in those front tyres before taking the motorway back to London. Give your mother a call when you get in.”",
   note = "Voicemail saved on Anita's phone. You can hear his soft chuckle right at the end.",
+  audioSrc = "/music/scott-buckley-moonlight(chosic.com).mp3",
 }: MemorialAudioProps) {
   const [isPlaying, setIsPlaying] = useState(false)
+  const [progress, setProgress] = useState(0)
+  const [currentTimeStr, setCurrentTimeStr] = useState("0:00")
+  const audioRef = useRef<HTMLAudioElement | null>(null)
+
+  const formatTime = (secs: number) => {
+    if (isNaN(secs)) return "0:00"
+    const m = Math.floor(secs / 60)
+    const s = Math.floor(secs % 60)
+    return `${m}:${s < 10 ? "0" : ""}${s}`
+  }
+
+  const togglePlay = () => {
+    if (!audioRef.current) return
+    if (isPlaying) {
+      audioRef.current.pause()
+      setIsPlaying(false)
+    } else {
+      audioRef.current.play().catch(() => {})
+      setIsPlaying(true)
+    }
+  }
+
+  const handleSeek = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (!audioRef.current || !audioRef.current.duration) return
+    const rect = e.currentTarget.getBoundingClientRect()
+    const clickX = e.clientX - rect.left
+    const pct = Math.max(0, Math.min(1, clickX / rect.width))
+    audioRef.current.currentTime = pct * audioRef.current.duration
+  }
+
+  useEffect(() => {
+    const audio = audioRef.current
+    if (!audio) return
+
+    const handleTimeUpdate = () => {
+      if (!audio.duration) return
+      const pct = (audio.currentTime / audio.duration) * 100
+      setProgress(pct)
+      setCurrentTimeStr(formatTime(audio.currentTime))
+    }
+
+    const handleEnded = () => {
+      setIsPlaying(false)
+      setProgress(0)
+      setCurrentTimeStr("0:00")
+    }
+
+    audio.addEventListener("timeupdate", handleTimeUpdate)
+    audio.addEventListener("ended", handleEnded)
+
+    return () => {
+      audio.removeEventListener("timeupdate", handleTimeUpdate)
+      audio.removeEventListener("ended", handleEnded)
+    }
+  }, [])
 
   return (
-    <section id="voice" className="py-8 sm:py-12 px-4 max-w-4xl mx-auto">
+    <section id="voice" className="py-8 sm:py-12 px-4 max-w-4xl mx-auto scroll-mt-24">
+      {/* Hidden Native Audio Element */}
+      <audio ref={audioRef} src={audioSrc} preload="metadata" />
+
       <div className="rounded-2xl sm:rounded-3xl bg-[#f7f7f8] border border-black/[0.06] p-6 sm:p-8 flex flex-col gap-5">
         
         {/* Header Ribbon */}
@@ -53,32 +113,39 @@ export function MemorialAudio({
           <div className="flex items-center gap-3.5 p-2 sm:p-2.5 rounded-2xl bg-white border border-black/[0.06] select-none">
             <button
               type="button"
-              onClick={() => setIsPlaying(!isPlaying)}
+              onClick={togglePlay}
               className="size-9 rounded-full bg-primary text-white flex items-center justify-center hover:opacity-90 active:scale-95 transition-all cursor-pointer shrink-0 shadow-xs"
               aria-label={isPlaying ? "Pause voice note" : "Play voice note"}
             >
-              {isPlaying ? <Pause className="size-4" /> : <Play className="size-4 ml-0.5" />}
+              {isPlaying ? <Pause className="size-4 fill-white" /> : <Play className="size-4 ml-0.5 fill-white" />}
             </button>
 
-            {/* 30-Bar Frequency Waveform */}
-            <div className="flex-1 flex items-center gap-[2.5px] h-7">
-              {[35, 55, 80, 100, 65, 45, 90, 75, 40, 85, 95, 60, 45, 75, 85, 40, 55, 80, 45, 90, 60, 40, 70, 95, 50, 35, 60, 85, 40, 25].map((h, i) => (
-                <span
-                  key={i}
-                  className={`flex-1 rounded-full transition-all duration-150 ${
-                    isPlaying
-                      ? "bg-primary animate-pulse"
-                      : i < 11
-                      ? "bg-primary"
-                      : "bg-neutral-200"
-                  }`}
-                  style={{ height: `${h}%` }}
-                />
-              ))}
+            {/* 30-Bar Interactive Scrubber Frequency Waveform */}
+            <div
+              onClick={handleSeek}
+              className="flex-1 flex items-center gap-[2.5px] h-7 cursor-pointer"
+              title="Click to seek"
+            >
+              {[35, 55, 80, 100, 65, 45, 90, 75, 40, 85, 95, 60, 45, 75, 85, 40, 55, 80, 45, 90, 60, 40, 70, 95, 50, 35, 60, 85, 40, 25].map((h, i) => {
+                const barPct = (i / 30) * 100
+                const isFilled = barPct <= progress
+
+                return (
+                  <span
+                    key={i}
+                    className={`flex-1 rounded-full transition-all duration-150 ${
+                      isFilled
+                        ? "bg-primary"
+                        : "bg-neutral-200"
+                    } ${isPlaying && isFilled ? "animate-pulse" : ""}`}
+                    style={{ height: `${h}%` }}
+                  />
+                )
+              })}
             </div>
 
             <span className="text-xs font-mono text-[#777] shrink-0 tabular-nums">
-              {isPlaying ? "0:08" : duration}
+              {isPlaying ? `${currentTimeStr} / ${duration}` : duration}
             </span>
           </div>
         </div>
