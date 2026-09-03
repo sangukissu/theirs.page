@@ -112,14 +112,19 @@ export const DEFAULT_MEMORIES: MemoryItem[] = [
 interface MemoriesStreamProps {
   memories?: MemoryItem[]
   fullName?: string
+  isDemo?: boolean
   onOpenContribute: (type?: ContributionType) => void
 }
 
 export function MemoriesStream({
-  memories = DEFAULT_MEMORIES,
+  memories,
   fullName = "Robert Carter",
+  isDemo = false,
   onOpenContribute,
 }: MemoriesStreamProps) {
+  const activeMemories = isDemo
+    ? (memories && memories.length > 0 ? memories : DEFAULT_MEMORIES)
+    : (memories || [])
   const [filter, setFilter] = useState<"all" | "family" | "friend" | "work">("all")
   const [sortOrder, setSortOrder] = useState<"newest" | "oldest" | "chronological">("newest")
   const [likedMap, setLikedMap] = useState<Record<string, boolean>>({})
@@ -127,7 +132,7 @@ export function MemoriesStream({
 
   const firstName = fullName.split(" ")[0] || fullName
 
-  const filtered = memories.filter((m) => {
+  const filtered = activeMemories.filter((m) => {
     if (filter === "all") return true
     return m.category === filter
   })
@@ -161,7 +166,7 @@ export function MemoriesStream({
               Memories of {firstName}
             </h2>
             <p className="text-xs sm:text-sm text-[#71717a]">
-              {memories.length} memories recorded · from {new Set(memories.map((m) => m.authorName)).size} loved ones
+              {activeMemories.length} memories recorded · from {new Set(activeMemories.map((m) => m.authorName)).size} loved ones
             </p>
           </div>
 
@@ -217,8 +222,21 @@ export function MemoriesStream({
       </div>
 
       {/* Editorial Single-Column Reading Stream (Max ~680px for Reading Comfort) */}
-      <div className="flex flex-col gap-6">
-        {sorted.map((item) => {
+      {sorted.length === 0 ? (
+        <div className="py-16 text-center text-sm text-[#71717a] rounded-3xl bg-[#fafafb] border border-black/[0.06] flex flex-col items-center justify-center gap-3">
+          <p>No memories shared yet. Be the first to share a memory of {firstName}.</p>
+          <button
+            type="button"
+            onClick={() => onOpenContribute("memory")}
+            className="inline-flex items-center gap-1.5 text-xs font-medium text-primary hover:underline cursor-pointer"
+          >
+            <Plus className="size-3.5" />
+            <span>Add the first memory</span>
+          </button>
+        </div>
+      ) : (
+        <div className="flex flex-col gap-6">
+          {sorted.map((item) => {
           const isLiked = !!likedMap[item.id]
           const count = (item.heartCount || 0) + (isLiked ? 1 : 0)
           const isAudioPlaying = playingAudioId === item.id
@@ -327,6 +345,7 @@ export function MemoriesStream({
           )
         })}
       </div>
+      )}
 
       {/* Persistent End Action */}
       <div className="flex flex-col items-center justify-center p-8 rounded-3xl bg-[#f9f9fa] border border-black/[0.06] text-center gap-3 mt-4">

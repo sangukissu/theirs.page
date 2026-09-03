@@ -3,9 +3,10 @@
 interface MemorialStoryProps {
   fullName: string
   biography?: string | null
+  isDemo?: boolean
 }
 
-export function MemorialStory({ fullName, biography }: MemorialStoryProps) {
+export function MemorialStory({ fullName, biography, isDemo = false }: MemorialStoryProps) {
   const firstName = fullName.split(" ")[0] || fullName
 
   return (
@@ -25,8 +26,8 @@ export function MemorialStory({ fullName, biography }: MemorialStoryProps) {
         {/* Narrative Body with Generous Editorial Leading */}
         <div className="prose prose-neutral max-w-none text-[15px] sm:text-[17px] leading-7 sm:leading-8 text-[#444] flex flex-col gap-5">
           {biography ? (
-            <p className="whitespace-pre-line">{biography}</p>
-          ) : (
+            <p className="whitespace-pre-line text-balance">{biography}</p>
+          ) : isDemo ? (
             <>
               <p>
                 Robert was born in Exeter during the autumn of 1948, the younger of two brothers raised on the edge of the Devon moors. From his earliest years, he showed an almost mechanical curiosity about the inner workings of things. While other boys were playing football in the lane, Robert could reliably be found on his knees behind his father’s shed, methodically dismantling an old bicycle hub or winding the spring of a broken mantel clock.
@@ -50,6 +51,10 @@ export function MemorialStory({ fullName, biography }: MemorialStoryProps) {
                 In 1983, he opened Carter Clocks & Woodworking on the high street. For over three decades, his workshop became the unofficial town square for anyone who needed a hinge repaired, a pendulum calibrated, or simply twenty minutes of quiet conversation without judgment. He retired in 2018 to tend his rose garden and teach his granddaughter Anita how to identify every native songbird of Devon.
               </p>
             </>
+          ) : (
+            <div className="p-8 rounded-3xl bg-[#fafafb] border border-black/[0.06] text-center text-sm text-[#71717a]">
+              A life story has not been written yet. Stories and memories contributed by family will appear here.
+            </div>
           )}
         </div>
 

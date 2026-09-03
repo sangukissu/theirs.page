@@ -1,37 +1,38 @@
 "use client"
 
 import { useState } from "react"
-import { Users, Heart, Plus, ChevronRight, Image as ImageIcon, BookOpen, Clock, X } from "lucide-react"
+import { Users, Heart, Clock, Image as ImageIcon, Plus, X, ArrowRight } from "lucide-react"
 import { ContributionType } from "./contribute-modal"
 
 export interface PersonConnection {
   id: string
   name: string
   relationship: string
-  circle: "family" | "friends" | "workshop"
-  notes: string
-  contributedMemories?: { title: string; year: string }[]
-  photosPictured?: { title: string; year: string }[]
+  circle?: "family" | "friends" | "workshop" | string
+  notes?: string
+  photoUrl?: string
+  contributedMemories?: { title: string; year?: string }[]
+  photosPictured?: { title: string; year?: string }[]
   timelineMoments?: { year: number; event: string }[]
 }
 
-const PEOPLE_DATA: PersonConnection[] = [
-  // Family
+export const DEFAULT_CONNECTIONS: PersonConnection[] = [
+  // Family Circle
   {
     id: "meena",
     name: "Meena Carter",
     relationship: "Wife of 50 years",
     circle: "family",
-    notes: "Met at Portobello Market in 1972. Shared fifty years of morning tea, Dartmoor walks, and quiet laughter in their Devon cottage.",
+    notes: "Met at Portobello Market in 1971. Shared half a century of mornings, rose gardening, and quiet devotion at Dartmoor Cottage.",
     contributedMemories: [
-      { title: "Morning Assam tea in blue porcelain mugs", year: "1974–2024" },
+      { title: "Morning tea in chipped blue porcelain mugs", year: "1974 — 2024" },
     ],
     photosPictured: [
-      { title: "Wedding at St. Jude’s", year: "1974" },
-      { title: "Three Generations in the Rose Garden", year: "1998" },
+      { title: "First Summer in the Garden", year: "1976" },
+      { title: "Golden Anniversary on the Moors", year: "2024" },
     ],
     timelineMoments: [
-      { year: 1974, event: "Married Meena at St. Jude’s Church, Oxford" },
+      { year: 1974, event: "Married at St. Jude’s Church" },
     ],
   },
   {
@@ -39,12 +40,12 @@ const PEOPLE_DATA: PersonConnection[] = [
     name: "Anita Carter",
     relationship: "Daughter & Primary Caretaker",
     circle: "family",
-    notes: "Designated successor to safeguard this memorial and family archive across generations. Learned to garden English roses and identify Devon songbirds under Robert's guidance.",
+    notes: "Taught by her father how to mend broken clocks and read Dartmoor trail markers. Preserved all family recordings.",
     contributedMemories: [
-      { title: "Dad fixing Mrs. Higgins’ washing machine on Christmas Day", year: "1994" },
+      { title: "The front tyre pressure voicemail", year: "2014" },
     ],
     photosPictured: [
-      { title: "Three Generations in the Rose Garden", year: "1998" },
+      { title: "Building the wooden pram", year: "2004" },
     ],
     timelineMoments: [
       { year: 2004, event: "Welcomed Granddaughter Anita" },
@@ -79,7 +80,6 @@ const PEOPLE_DATA: PersonConnection[] = [
       { title: "Summer on the Moors", year: "2015" },
     ],
   },
-
   // Friends & Community
   {
     id: "thomas",
@@ -88,55 +88,55 @@ const PEOPLE_DATA: PersonConnection[] = [
     circle: "friends",
     notes: "Fifty years of walking the heather trails. Thomas and Robert shared honey jars and repaired drystone walls every autumn.",
     contributedMemories: [
-      { title: "Walking the wild bees down into the valley", year: "2001" },
+      { title: "Fifty years of heather trails and autumn drystone walls", year: "1975 — 2024" },
     ],
     photosPictured: [
-      { title: "Walking the Moorland Trails", year: "2015" },
+      { title: "Sunday walks across the tors", year: "2010" },
     ],
   },
-  {
-    id: "arthur",
-    name: "Arthur Pendleton",
-    relationship: "Grammar School Companion",
-    circle: "friends",
-    notes: "Shared the Exeter school benches in 1960. Remained pen pals and annual visitors for six decades.",
-    photosPictured: [
-      { title: "Exeter Grammar School Cricket XI", year: "1960" },
-    ],
-  },
-
   // Workshop & Apprentices
   {
     id: "sarah",
     name: "Sarah Jenkins",
     relationship: "Senior Apprentice & Successor",
     circle: "workshop",
-    notes: "Trained under Robert for 25 years at Carter Clocks. Took over the workshop keys in 2018, continuing his patient watchmaking tradition.",
+    notes: "Trained under Robert from age 18. Took over high street workshop stewardship upon his retirement in 2018.",
     contributedMemories: [
-      { title: "‘Now you know how much pressure breaks a clock spring’", year: "1998" },
+      { title: "How much pressure it takes to break a clock spring", year: "1998" },
+    ],
+    photosPictured: [
+      { title: "Calibrating the Church clock", year: "2002" },
     ],
     timelineMoments: [
-      { year: 2018, event: "Handed over workshop keys upon retirement" },
+      { year: 2018, event: "Handed over workshop keys to Sarah" },
     ],
   },
 ]
 
 interface PeopleInLifeProps {
   fullName?: string
+  people?: PersonConnection[]
+  isDemo?: boolean
   onOpenContribute: (type?: ContributionType) => void
 }
 
 export function PeopleInLife({
   fullName = "Robert Carter",
+  people,
+  isDemo = false,
   onOpenContribute,
 }: PeopleInLifeProps) {
   const [selectedPerson, setSelectedPerson] = useState<PersonConnection | null>(null)
   const firstName = fullName.split(" ")[0] || fullName
 
+  const activePeople = isDemo
+    ? (people && people.length > 0 ? people : DEFAULT_CONNECTIONS)
+    : (people || [])
+
   const circles = [
-    { key: "family", title: "Family", subtitle: "Wife, children & grandchildren" },
+    { key: "family", title: "Family", subtitle: "Spouse, children, grandchildren & relatives" },
     { key: "friends", title: "Friends & Community", subtitle: "Lifelong companions and neighbours" },
-    { key: "workshop", title: "Workshop & Apprentices", subtitle: "Craftspeople trained under Robert" },
+    { key: "workshop", title: "Colleagues & Mentors", subtitle: "People who shared their work and craft" },
   ]
 
   return (
@@ -152,7 +152,7 @@ export function PeopleInLife({
             People in {firstName}&apos;s life
           </h2>
           <p className="text-xs sm:text-sm text-[#71717a]">
-            The loved ones, apprentices, and lifelong friends who shaped his story.
+            The loved ones, friends, and family who shaped their story.
           </p>
         </div>
 
@@ -162,165 +162,147 @@ export function PeopleInLife({
           className="inline-flex items-center gap-1.5 px-4 py-2 rounded-full bg-[#181925] hover:bg-[#252736] text-white text-xs font-medium transition-all self-start sm:self-auto cursor-pointer shadow-xs active:scale-95"
         >
           <Plus className="size-3.5" />
-          <span>Add someone who knew him</span>
+          <span>Add someone who knew them</span>
         </button>
       </div>
 
-      {/* Relationship Circles */}
-      <div className="flex flex-col gap-10">
-        {circles.map((circle) => {
-          const groupPeople = PEOPLE_DATA.filter((p) => p.circle === circle.key)
-          if (groupPeople.length === 0) return null
+      {/* Relationship Circles / Empty State */}
+      {activePeople.length === 0 ? (
+        <div className="py-12 text-center text-sm text-[#71717a] rounded-3xl bg-[#fafafb] border border-black/[0.06] flex flex-col items-center justify-center gap-3">
+          <p>No family or friends added to this memorial yet.</p>
+          <button
+            type="button"
+            onClick={() => onOpenContribute("message")}
+            className="inline-flex items-center gap-1.5 text-xs font-medium text-primary hover:underline cursor-pointer"
+          >
+            <Plus className="size-3.5" />
+            <span>Add the first person</span>
+          </button>
+        </div>
+      ) : (
+        <div className="flex flex-col gap-10">
+          {circles.map((circle) => {
+            const groupPeople = activePeople.filter((p) => {
+              if (circle.key === "family") {
+                return p.circle === "family" || !p.circle
+              }
+              return p.circle === circle.key
+            })
 
-          return (
-            <div key={circle.key} className="flex flex-col gap-4">
-              <div className="flex items-baseline justify-between border-b border-black/[0.04] pb-2">
-                <h3 className="text-base sm:text-lg font-medium text-[#181925]">
-                  {circle.title}
-                </h3>
-                <span className="text-xs font-mono text-[#888]">
-                  {circle.subtitle}
-                </span>
-              </div>
+            if (groupPeople.length === 0) return null
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3.5">
-                {groupPeople.map((person) => (
-                  <div
-                    key={person.id}
-                    onClick={() => setSelectedPerson(person)}
-                    className="p-4 rounded-2xl bg-[#f7f7f8] border border-black/[0.05] hover:border-black/[0.12] hover:bg-white transition-all cursor-pointer flex flex-col justify-between gap-3 group"
-                  >
-                    <div className="flex items-start gap-3">
-                      <div className="size-10 rounded-full bg-white border border-black/[0.08] flex items-center justify-center font-serif text-sm font-semibold text-[#181925] shrink-0 group-hover:bg-primary/5 transition-colors">
-                        {person.name.charAt(0)}
+            return (
+              <div key={circle.key} className="flex flex-col gap-4">
+                <div className="flex items-baseline justify-between border-b border-black/[0.04] pb-2">
+                  <h3 className="text-base sm:text-lg font-medium text-[#181925]">
+                    {circle.title}
+                  </h3>
+                  <span className="text-xs text-[#888]">
+                    {circle.subtitle}
+                  </span>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
+                  {groupPeople.map((person) => (
+                    <button
+                      key={person.id}
+                      type="button"
+                      onClick={() => setSelectedPerson(person)}
+                      className="p-4 rounded-2xl bg-white border border-black/[0.06] hover:border-black/[0.15] transition-all text-left flex flex-col gap-3 group cursor-pointer shadow-2xs select-none"
+                    >
+                      <div className="flex items-center gap-3">
+                        <div className="size-10 rounded-full bg-neutral-100 border border-black/[0.06] flex items-center justify-center text-[#181925] font-serif font-medium overflow-hidden shrink-0">
+                          {person.photoUrl ? (
+                            <img
+                              src={person.photoUrl}
+                              alt={person.name}
+                              className="size-full object-cover grayscale"
+                            />
+                          ) : (
+                            person.name.charAt(0)
+                          )}
+                        </div>
+
+                        <div className="flex flex-col min-w-0">
+                          <h4 className="text-sm font-medium text-[#181925] truncate group-hover:text-primary transition-colors">
+                            {person.name}
+                          </h4>
+                          <span className="text-xs text-[#71717a] truncate">
+                            {person.relationship}
+                          </span>
+                        </div>
                       </div>
-                      <div className="flex flex-col min-w-0">
-                        <span className="text-sm font-medium text-[#181925] truncate group-hover:text-primary transition-colors">
-                          {person.name}
-                        </span>
-                        <span className="text-xs text-[#71717a] truncate">
-                          {person.relationship}
-                        </span>
-                      </div>
-                    </div>
 
-                    <p className="text-xs text-[#555] leading-relaxed line-clamp-2">
-                      {person.notes}
-                    </p>
-
-                    <div className="pt-2 border-t border-black/[0.04] flex items-center justify-between text-[11px] text-[#888]">
-                      <span>View connections</span>
-                      <ChevronRight className="size-3 text-[#aaa] group-hover:translate-x-0.5 transition-transform" />
-                    </div>
-                  </div>
-                ))}
+                      {person.notes && (
+                        <p className="text-xs text-[#666] line-clamp-2 leading-relaxed">
+                          {person.notes}
+                        </p>
+                      )}
+                    </button>
+                  ))}
+                </div>
               </div>
-            </div>
-          )
-        })}
-      </div>
+            )
+          })}
+        </div>
+      )}
 
-      {/* Person Detail Drawer / Modal */}
+      {/* Person Detail Drawer Modal */}
       {selectedPerson && (
         <div
           onClick={() => setSelectedPerson(null)}
-          className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs p-4 flex items-center justify-center select-none"
+          className="fixed inset-0 z-50 bg-black/40 backdrop-blur-xs flex items-center justify-center p-4 select-none"
         >
           <div
             onClick={(e) => e.stopPropagation()}
-            className="max-w-lg w-full bg-white rounded-3xl p-6 sm:p-8 flex flex-col gap-5 overflow-hidden shadow-2xl relative"
+            className="w-full max-w-lg bg-white rounded-3xl p-6 flex flex-col gap-6 shadow-2xl border border-black/[0.08]"
           >
+            <div className="flex items-start justify-between">
+              <div className="flex items-center gap-4">
+                <div className="size-14 rounded-full bg-neutral-100 border border-black/[0.06] flex items-center justify-center text-xl font-serif font-medium text-[#181925] overflow-hidden shrink-0">
+                  {selectedPerson.photoUrl ? (
+                    <img
+                      src={selectedPerson.photoUrl}
+                      alt={selectedPerson.name}
+                      className="size-full object-cover grayscale"
+                    />
+                  ) : (
+                    selectedPerson.name.charAt(0)
+                  )}
+                </div>
+
+                <div className="flex flex-col">
+                  <h3 className="text-lg font-medium text-[#181925]">
+                    {selectedPerson.name}
+                  </h3>
+                  <span className="text-xs font-mono text-primary font-medium">
+                    {selectedPerson.relationship}
+                  </span>
+                </div>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => setSelectedPerson(null)}
+                className="size-8 rounded-full bg-neutral-100 hover:bg-neutral-200 text-[#666] flex items-center justify-center transition-colors cursor-pointer"
+              >
+                <X className="size-4" />
+              </button>
+            </div>
+
+            {selectedPerson.notes && (
+              <p className="text-sm text-[#555] leading-relaxed italic bg-[#fafafb] p-4 rounded-2xl border border-black/[0.04]">
+                “{selectedPerson.notes}”
+              </p>
+            )}
+
             <button
               type="button"
               onClick={() => setSelectedPerson(null)}
-              className="absolute top-5 right-5 size-8 rounded-full bg-neutral-100 hover:bg-neutral-200 text-[#666] flex items-center justify-center transition-colors cursor-pointer"
-              aria-label="Close details"
+              className="w-full py-2.5 rounded-full bg-[#181925] hover:bg-[#252736] text-white text-xs font-medium transition-colors cursor-pointer"
             >
-              <X className="size-4" />
+              Close
             </button>
-
-            {/* Profile Header */}
-            <div className="flex items-center gap-4 pr-8">
-              <div className="size-14 rounded-2xl bg-neutral-100 border border-black/[0.08] flex items-center justify-center font-serif text-xl font-medium text-[#181925] shrink-0">
-                {selectedPerson.name.charAt(0)}
-              </div>
-              <div className="flex flex-col">
-                <h3 className="text-xl font-medium text-[#181925]">
-                  {selectedPerson.name}
-                </h3>
-                <span className="text-xs text-primary font-medium">
-                  {selectedPerson.relationship}
-                </span>
-              </div>
-            </div>
-
-            <p className="text-sm text-[#444] leading-relaxed">
-              {selectedPerson.notes}
-            </p>
-
-            {/* Connected Memories */}
-            {selectedPerson.contributedMemories && selectedPerson.contributedMemories.length > 0 && (
-              <div className="flex flex-col gap-2 pt-2 border-t border-black/[0.06]">
-                <div className="flex items-center gap-1.5 text-xs font-mono font-medium text-[#71717a] uppercase tracking-wider">
-                  <BookOpen className="size-3 text-primary" />
-                  <span>Memories Contributed</span>
-                </div>
-                <div className="flex flex-col gap-1.5">
-                  {selectedPerson.contributedMemories.map((mem, i) => (
-                    <div
-                      key={i}
-                      className="p-2.5 rounded-xl bg-[#f9f9fa] border border-black/[0.04] flex items-center justify-between text-xs"
-                    >
-                      <span className="font-medium text-[#181925] truncate">“{mem.title}”</span>
-                      <span className="text-[10px] font-mono text-[#888] shrink-0">{mem.year}</span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {/* Photos Together */}
-            {selectedPerson.photosPictured && selectedPerson.photosPictured.length > 0 && (
-              <div className="flex flex-col gap-2 pt-2 border-t border-black/[0.06]">
-                <div className="flex items-center gap-1.5 text-xs font-mono font-medium text-[#71717a] uppercase tracking-wider">
-                  <ImageIcon className="size-3 text-primary" />
-                  <span>Pictured in Photographs</span>
-                </div>
-                <div className="flex flex-col gap-1.5">
-                  {selectedPerson.photosPictured.map((photo, i) => (
-                    <div
-                      key={i}
-                      className="p-2.5 rounded-xl bg-[#f9f9fa] border border-black/[0.04] flex items-center justify-between text-xs"
-                    >
-                      <span className="font-medium text-[#181925] truncate">{photo.title}</span>
-                      <span className="text-[10px] font-mono text-[#888] shrink-0">{photo.year}</span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {/* Shared Milestones */}
-            {selectedPerson.timelineMoments && selectedPerson.timelineMoments.length > 0 && (
-              <div className="flex flex-col gap-2 pt-2 border-t border-black/[0.06]">
-                <div className="flex items-center gap-1.5 text-xs font-mono font-medium text-[#71717a] uppercase tracking-wider">
-                  <Clock className="size-3 text-primary" />
-                  <span>Timeline Milestones</span>
-                </div>
-                <div className="flex flex-col gap-1.5">
-                  {selectedPerson.timelineMoments.map((moment, i) => (
-                    <div
-                      key={i}
-                      className="p-2.5 rounded-xl bg-[#f9f9fa] border border-black/[0.04] flex items-baseline gap-2 text-xs"
-                    >
-                      <span className="font-mono font-semibold text-primary">{moment.year}</span>
-                      <span className="text-[#333]">{moment.event}</span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-
           </div>
         </div>
       )}

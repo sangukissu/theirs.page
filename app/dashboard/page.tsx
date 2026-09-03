@@ -1,13 +1,9 @@
 import { redirect } from "next/navigation"
 import { createClient } from "@/utils/supabase/server"
-import MainDashboardClient from "@/components/main-dashboard-client"
 import { getDashboardIdentity } from "@/lib/auth/dashboard-identity"
+import { TheirsDashboardClient } from "@/components/dashboard/theirs-dashboard-client"
 
-export default async function DashboardPage({
-  searchParams,
-}: {
-  searchParams: Promise<{ payment?: string }>
-}) {
+export default async function DashboardPage() {
   const supabase = await createClient()
   const user = await getDashboardIdentity()
 
@@ -15,22 +11,31 @@ export default async function DashboardPage({
     redirect("/login")
   }
 
-  // Fetch user credits from database
-  const { data: profile } = await supabase
-    .from("user_profiles")
-    .select("credits")
-    .eq("user_id", user.id)
-    .single()
-
-  const credits = profile?.credits || 0
-  const resolvedSearchParams = await searchParams
-  const isPaymentSuccess = resolvedSearchParams.payment === "success"
+  // Fetch memorials owned by user
+  const { data: memorials } = await supabase
+    .from("memorials")
+    .select(`
+      id,
+      slug,
+      full_name,
+      preferred_name,
+      birth_year,
+      death_year,
+      headline,
+      portrait_photo_url,
+      status,
+      privacy,
+      is_paid,
+      created_at
+    `)
+    .eq("owner_id", user.id)
+    .order("created_at", { ascending: false })
 
   return (
-    <MainDashboardClient
-      user={{ email: user.email || "", id: user.id }}
-      initialCredits={credits}
-      isPaymentSuccess={isPaymentSuccess}
+    <TheirsDashboardClient
+      userEmail={user.email || ""}
+      userId={user.id}
+      initialMemorials={(memorials as any[]) || []}
     />
   )
 }

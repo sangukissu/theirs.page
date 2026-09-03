@@ -11,7 +11,7 @@ export interface GuestbookNote {
   message: string
 }
 
-const DEFAULT_GUESTBOOK: GuestbookNote[] = [
+export const DEFAULT_GUESTBOOK: GuestbookNote[] = [
   {
     id: "gb-1",
     author: "Claire & David Wilson",
@@ -37,10 +37,16 @@ const DEFAULT_GUESTBOOK: GuestbookNote[] = [
 
 interface GuestbookStreamProps {
   fullName: string
+  notes?: GuestbookNote[]
+  isDemo?: boolean
 }
 
-export function GuestbookStream({ fullName }: GuestbookStreamProps) {
-  const [notes, setNotes] = useState<GuestbookNote[]>(DEFAULT_GUESTBOOK)
+export function GuestbookStream({ fullName, notes, isDemo = false }: GuestbookStreamProps) {
+  const [guestbookNotes, setGuestbookNotes] = useState<GuestbookNote[]>(
+    isDemo
+      ? (notes && notes.length > 0 ? notes : DEFAULT_GUESTBOOK)
+      : (notes || [])
+  )
   const [authorInput, setAuthorInput] = useState("")
   const [messageInput, setMessageInput] = useState("")
   const [hasSentNote, setHasSentNote] = useState(false)
@@ -57,7 +63,7 @@ export function GuestbookStream({ fullName }: GuestbookStreamProps) {
       date: "Just now",
       message: messageInput.trim(),
     }
-    setNotes([newNote, ...notes])
+    setGuestbookNotes([newNote, ...guestbookNotes])
     setAuthorInput("")
     setMessageInput("")
     setHasSentNote(true)
@@ -123,26 +129,34 @@ export function GuestbookStream({ fullName }: GuestbookStreamProps) {
         </div>
       </form>
 
-      {/* Notes Stream */}
-      <div className="flex flex-col gap-3">
-        {notes.map((note) => (
-          <div
-            key={note.id}
-            className="p-5 rounded-2xl bg-white border border-black/[0.05] flex flex-col gap-2 shadow-2xs"
-          >
-            <div className="flex items-baseline justify-between text-xs">
-              <div className="flex items-baseline gap-2">
-                <span className="font-medium text-[#181925]">{note.author}</span>
-                {note.location && (
-                  <span className="text-[10px] text-[#888] font-mono">({note.location})</span>
-                )}
+      {/* Notes Stream / Empty State */}
+      {guestbookNotes.length === 0 ? (
+        <div className="py-10 text-center text-sm text-[#71717a] rounded-3xl bg-[#fafafb] border border-black/[0.06]">
+          No messages posted yet. Be the first to leave a message for the family.
+        </div>
+      ) : (
+        <div className="flex flex-col gap-3">
+          {guestbookNotes.map((note) => (
+            <div
+              key={note.id}
+              className="p-5 rounded-2xl bg-white border border-black/[0.05] flex flex-col gap-2 shadow-2xs"
+            >
+              <div className="flex items-baseline justify-between text-xs">
+                <div className="flex items-baseline gap-2">
+                  <span className="font-medium text-[#181925]">{note.author}</span>
+                  {note.location && (
+                    <span className="text-[10px] text-[#888] font-mono">({note.location})</span>
+                  )}
+                </div>
+                <span className="text-[10px] text-[#888] font-mono">{note.date}</span>
               </div>
-              <span className="text-[10px] text-[#888] font-mono">{note.date}</span>
+              <p className="text-xs sm:text-sm text-[#444] leading-relaxed">
+                “{note.message}”
+              </p>
             </div>
-            <p className="text-xs sm:text-sm text-[#444] leading-relaxed">{note.message}</p>
-          </div>
-        ))}
-      </div>
+          ))}
+        </div>
+      )}
     </section>
   )
 }

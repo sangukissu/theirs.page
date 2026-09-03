@@ -1,9 +1,8 @@
 import type { Metadata } from "next"
-import Script from "next/script"
 
 export const metadata: Metadata = {
-  title: "Login - BringBack | Sign in to restore photos",
-  description: "Sign in to BringBack to start restoring and enhancing your photos securely.",
+  title: "Sign In — Theirs | Preserve a Life Story",
+  description: "Sign in to Theirs to preserve, steward, and curate memorial pages for the people you love.",
   robots: {
     index: true,
     follow: true,
@@ -16,16 +15,11 @@ export const metadata: Metadata = {
     canonical: "/login",
   },
   openGraph: {
-    title: "Login - BringBack",
-    description: "Sign in to BringBack to start restoring and enhancing your photos securely.",
-    url: "https://bringback.pro/login",
-    siteName: "BringBack",
+    title: "Sign In — Theirs",
+    description: "Sign in to Theirs to preserve, steward, and curate memorial pages for the people you love.",
+    url: "https://theirs.page/login",
+    siteName: "Theirs",
     type: "website",
-  },
-  twitter: {
-    card: "summary",
-    title: "Login - BringBack",
-    description: "Sign in to BringBack to start restoring and enhancing your photos securely.",
   },
 }
 
@@ -33,18 +27,19 @@ export default function LoginLayout({ children }: { children: React.ReactNode })
   const jsonLd = {
     "@context": "https://schema.org",
     "@type": "WebPage",
-    name: "Login",
-    description: "Sign in to BringBack to start restoring photos",
-    isPartOf: { "@type": "WebSite", name: "BringBack" },
-    url: "https://bringback.pro/login",
+    name: "Sign In",
+    description: "Sign in to Theirs to preserve and curate memorial pages.",
+    isPartOf: { "@type": "WebSite", name: "Theirs" },
+    url: "https://theirs.page/login",
   }
 
   return (
     <section>
-      {/* Route-scoped JSON-LD (loads early) */}
-      <Script id="login-jsonld" type="application/ld+json" strategy="beforeInteractive">
-        {JSON.stringify(jsonLd)}
-      </Script>
+      {/* Route-scoped JSON-LD with standard script tag (never crashes nested layouts) */}
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+      />
       {children}
     </section>
   )

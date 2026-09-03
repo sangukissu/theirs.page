@@ -4,16 +4,15 @@ import { useState } from "react"
 import { MemorialNav } from "@/components/memorial/memorial-nav"
 import { MemorialHero } from "@/components/memorial/memorial-hero"
 import { MemorialStory } from "@/components/memorial/memorial-story"
-import { MemorialAudio } from "@/components/memorial/memorial-audio"
-import { MemoriesStream } from "@/components/memorial/memories-stream"
-import { LifeTimeline } from "@/components/memorial/life-timeline"
-import { MemorialGallery } from "@/components/memorial/memorial-gallery"
-import { PeopleInLife } from "@/components/memorial/people-in-life"
-import { GuestbookStream } from "@/components/memorial/guestbook-stream"
+import { MemoriesStream, MemoryItem } from "@/components/memorial/memories-stream"
+import { LifeTimeline, TimelineMilestone } from "@/components/memorial/life-timeline"
+import { MemorialGallery, GalleryItem } from "@/components/memorial/memorial-gallery"
+import { PeopleInLife, PersonConnection } from "@/components/memorial/people-in-life"
+import { GuestbookStream, GuestbookNote } from "@/components/memorial/guestbook-stream"
 import { MemorialFooter } from "@/components/memorial/memorial-footer"
 import { ContributeModal, ContributionType } from "@/components/memorial/contribute-modal"
 
-interface MemorialData {
+export interface MemorialData {
   slug: string
   fullName: string
   preferredName?: string | null
@@ -23,6 +22,15 @@ interface MemorialData {
   epitaph?: string | null
   biography?: string | null
   portraitUrl?: string | null
+  isDemo?: boolean
+  memoriesCount?: number
+  photosCount?: number
+  contributorsCount?: number
+  mediaItems?: GalleryItem[]
+  timelineEvents?: TimelineMilestone[]
+  people?: PersonConnection[]
+  memories?: MemoryItem[]
+  guestbook?: GuestbookNote[]
 }
 
 export function MemorialClientView({ data }: { data: MemorialData }) {
@@ -32,13 +40,6 @@ export function MemorialClientView({ data }: { data: MemorialData }) {
   const handleOpenContribute = (type?: ContributionType) => {
     setContributeType(type || null)
     setIsContributeOpen(true)
-  }
-
-  const scrollToAudio = () => {
-    const el = document.getElementById("voice")
-    if (el) {
-      el.scrollIntoView({ behavior: "smooth" })
-    }
   }
 
   return (
@@ -52,7 +53,7 @@ export function MemorialClientView({ data }: { data: MemorialData }) {
         onOpenContribute={handleOpenContribute}
       />
 
-      {/* 2. Opening Hero & Identity Header (Who Robert was) */}
+      {/* 2. Opening Hero & Identity Header */}
       <MemorialHero
         fullName={data.fullName}
         preferredName={data.preferredName}
@@ -61,56 +62,66 @@ export function MemorialClientView({ data }: { data: MemorialData }) {
         location={data.location}
         epitaph={data.epitaph}
         portraitUrl={data.portraitUrl}
+        memoriesCount={data.memoriesCount ?? 0}
+        photosCount={data.photosCount ?? 0}
+        contributorsCount={data.contributorsCount ?? 0}
         onOpenContribute={() => handleOpenContribute()}
-        onScrollToAudio={scrollToAudio}
       />
 
       {/* 3. The Full Editorial Biography / Story */}
       <MemorialStory
         fullName={data.fullName}
         biography={data.biography}
+        isDemo={data.isDemo}
       />
 
-      {/* 4. Preserved Audio Voice Note */}
-      <MemorialAudio />
-
-      {/* 5. The Collaborative Memories Stream (Filters, Reactions, Reading feed) */}
+      {/* 4. The Collaborative Memories Stream (Filters, Reactions, Reading feed) */}
       <MemoriesStream
         fullName={data.fullName}
+        memories={data.memories}
+        isDemo={data.isDemo}
         onOpenContribute={handleOpenContribute}
       />
 
-      {/* 6. Life Timeline Chapters (Full chronological journey) */}
-      <LifeTimeline />
+      {/* 5. Life Timeline Chapters (Full chronological journey) */}
+      <LifeTimeline
+        milestones={data.timelineEvents}
+        isDemo={data.isDemo}
+      />
 
-      {/* 7. Unified Media Gallery (Photos, Audio recordings & Home video) */}
+      {/* 6. Unified Media Gallery (Photos, Audio recordings & Home video clips) */}
       <MemorialGallery
         fullName={data.fullName}
+        items={data.mediaItems}
+        isDemo={data.isDemo}
         onOpenContribute={handleOpenContribute}
       />
 
-      {/* 8. People in His Life (Connected circles, detail drawers) */}
+      {/* 7. People in Their Life (Connected circles) */}
       <PeopleInLife
         fullName={data.fullName}
+        people={data.people}
+        isDemo={data.isDemo}
         onOpenContribute={handleOpenContribute}
       />
 
-      {/* 9. Dedicated Guestbook & Condolence Stream */}
-      <GuestbookStream fullName={data.fullName} />
+      {/* 8. Dedicated Guestbook & Condolence Stream */}
+      <GuestbookStream
+        fullName={data.fullName}
+        notes={data.guestbook}
+        isDemo={data.isDemo}
+      />
 
-      {/* 10. Permanent Stewardship Footer */}
+      {/* 9. Permanent Stewardship Footer */}
       <MemorialFooter
         fullName={data.fullName}
         slug={data.slug}
       />
 
-      {/* 11. 5-Choice Contribution Chooser Modal */}
+      {/* Guest Contribution Modal */}
       <ContributeModal
         isOpen={isContributeOpen}
-        onClose={() => {
-          setIsContributeOpen(false)
-          setContributeType(null)
-        }}
+        onClose={() => setIsContributeOpen(false)}
         memorialName={data.fullName}
         slug={data.slug}
         initialType={contributeType}

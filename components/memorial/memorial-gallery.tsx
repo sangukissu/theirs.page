@@ -168,13 +168,18 @@ export const DEFAULT_GALLERY_ITEMS: GalleryItem[] = [
 
 interface MemorialGalleryProps {
   fullName?: string
+  items?: GalleryItem[]
+  isDemo?: boolean
   onOpenContribute: (type?: ContributionType) => void
 }
 
 export function MemorialGallery({
   fullName = "Robert Carter",
+  items,
+  isDemo = false,
   onOpenContribute,
 }: MemorialGalleryProps) {
+  const galleryItems = isDemo ? (items && items.length > 0 ? items : DEFAULT_GALLERY_ITEMS) : (items || [])
   const [filter, setFilter] = useState<"all" | "photo" | "audio" | "video">("all")
   const [selectedItem, setSelectedItem] = useState<GalleryItem | null>(null)
   const [identifiedMap, setIdentifiedMap] = useState<Record<string, boolean>>({})
@@ -187,14 +192,14 @@ export function MemorialGallery({
 
   const firstName = fullName.split(" ")[0] || fullName
 
-  const filteredItems = DEFAULT_GALLERY_ITEMS.filter((item) => {
+  const filteredItems = galleryItems.filter((item) => {
     if (filter === "all") return true
     return item.mediaType === filter
   })
 
-  const photoCount = DEFAULT_GALLERY_ITEMS.filter((i) => i.mediaType === "photo").length
-  const audioCount = DEFAULT_GALLERY_ITEMS.filter((i) => i.mediaType === "audio").length
-  const videoCount = DEFAULT_GALLERY_ITEMS.filter((i) => i.mediaType === "video").length
+  const photoCount = galleryItems.filter((i) => i.mediaType === "photo").length
+  const audioCount = galleryItems.filter((i) => i.mediaType === "audio").length
+  const videoCount = galleryItems.filter((i) => i.mediaType === "video").length
 
   const handleIdentify = (id: string) => {
     setIdentifiedMap((prev) => ({ ...prev, [id]: true }))
@@ -319,9 +324,22 @@ export function MemorialGallery({
         })}
       </div>
 
-      {/* Unified Media Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
-        {filteredItems.map((item) => {
+      {/* Unified Media Grid / Empty State */}
+      {filteredItems.length === 0 ? (
+        <div className="py-16 text-center text-sm text-[#71717a] rounded-3xl bg-[#fafafb] border border-black/[0.06] flex flex-col items-center justify-center gap-3">
+          <p>No photographs, voice notes, or videos added to the gallery yet.</p>
+          <button
+            type="button"
+            onClick={() => onOpenContribute("photo")}
+            className="inline-flex items-center gap-1.5 text-xs font-medium text-primary hover:underline cursor-pointer"
+          >
+            <Plus className="size-3.5" />
+            <span>Add the first memory</span>
+          </button>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+          {filteredItems.map((item) => {
           
           // ===================================================================
           // 1. REAL AUDIO CARD (Interactive Waveform Player)
@@ -509,6 +527,7 @@ export function MemorialGallery({
           )
         })}
       </div>
+      )}
 
       {/* =================================================================== */}
       {/* THEATER LIGHTBOX MODAL (Full Video Player or Photo Viewer)          */}

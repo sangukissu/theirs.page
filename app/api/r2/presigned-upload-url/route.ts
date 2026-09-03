@@ -2,6 +2,45 @@ import { NextRequest, NextResponse } from "next/server"
 import { createClient } from "@/utils/supabase/server"
 import { getR2PresignedUploadUrl } from "@/lib/r2"
 
+const ALLOWED_CONTENT_TYPES = [
+  // Images
+  "image/jpeg",
+  "image/jpg",
+  "image/png",
+  "image/webp",
+  "image/heic",
+  "image/gif",
+  "image/avif",
+  // Audio
+  "audio/mpeg",
+  "audio/mp3",
+  "audio/wav",
+  "audio/m4a",
+  "audio/x-m4a",
+  "audio/mp4",
+  "audio/aac",
+  "audio/ogg",
+  "audio/webm",
+  // Video
+  "video/mp4",
+  "video/webm",
+  "video/quicktime",
+  "video/x-matroska",
+  "video/ogg",
+]
+
+const ALLOWED_FOLDERS = [
+  "memorials",
+  "gallery",
+  "portraits",
+  "voice",
+  "family-portraits",
+  "restorations",
+  "add-person",
+  "remove-person",
+  "temp",
+]
+
 export async function POST(req: NextRequest) {
   try {
     // 1. Authenticate the user
@@ -16,33 +55,34 @@ export async function POST(req: NextRequest) {
 
     // 2. Parse request body
     const body = await req.json()
-    const { filename, contentType, folder } = body
+    const { filename, contentType, folder, memorialId } = body
 
     if (!filename || !contentType) {
       return NextResponse.json({ error: "filename and contentType are required" }, { status: 400 })
     }
 
-    // Validate contentType is an image format
-    const allowedTypes = ["image/jpeg", "image/jpg", "image/png", "image/webp"]
-    if (!allowedTypes.includes(contentType)) {
-      return NextResponse.json({ error: "Unsupported file type. Only JPG, PNG, and WebP are allowed." }, { status: 400 })
+    if (!ALLOWED_CONTENT_TYPES.includes(contentType)) {
+      return NextResponse.json(
+        { error: `Unsupported file type (${contentType}). Supported: images, audio, and video.` },
+        { status: 400 }
+      )
     }
 
-    // 3. Generate a unique key/path for the file in R2 under the temp/ prefix.
-    // Allow callers to scope the temp object to a feature folder; default to
-    // family-portraits for backward compatibility.
-    const allowedFolders = ["family-portraits", "restorations", "add-person", "remove-person", "temp"]
-    const safeFolder = typeof folder === "string" && allowedFolders.includes(folder)
+    // 3. Generate a clean storage key
+    const safeFolder = typeof folder === "string" && ALLOWED_FOLDERS.includes(folder)
       ? folder
-      : "family-portraits"
+      : "gallery"
     const timestamp = Date.now()
     const randomId = Math.random().toString(36).substring(2, 10)
-    // Clean filename slightly to avoid S3 key issues
     const cleanFilename = filename.replace(/[^a-zA-Z0-9.-]/g, "_")
-    const key = `temp/${safeFolder}/${user.id}/${timestamp}_${randomId}_${cleanFilename}`
+    
+    // Key format: memorials/{memorialId}/{folder}/{timestamp}_{randomId}_{filename}
+    const key = memorialId
+      ? `memorials/${memorialId}/${safeFolder}/${timestamp}_${randomId}_${cleanFilename}`
+      : `uploads/${user.id}/${safeFolder}/${timestamp}_${randomId}_${cleanFilename}`
 
-    // 4. Generate the presigned PUT URL
-    const uploadUrl = await getR2PresignedUploadUrl(key, contentType)
+    // 4. Generate presigned upload URL (valid for 15 minutes)
+    const uploadUrl = await getR2PresignedUploadUrl(key, contentType, 900)
 
     return NextResponse.json({
       success: true,

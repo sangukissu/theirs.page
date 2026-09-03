@@ -14,7 +14,6 @@ interface MemorialHeroProps {
   photosCount?: number
   contributorsCount?: number
   onOpenContribute: () => void
-  onScrollToAudio: () => void
 }
 
 export function MemorialHero({
@@ -29,7 +28,6 @@ export function MemorialHero({
   photosCount = 42,
   contributorsCount = 8,
   onOpenContribute,
-  onScrollToAudio,
 }: MemorialHeroProps) {
   const yearsSpan = birthYear && deathYear ? `${birthYear} — ${deathYear}` : "In Loving Memory"
   const age = birthYear && deathYear ? deathYear - birthYear : null
@@ -111,16 +109,6 @@ export function MemorialHero({
           >
             <Plus className="size-4" />
             <span>Add a Memory</span>
-          </button>
-
-          {/* Secondary Action: Listen to Voice */}
-          <button
-            type="button"
-            onClick={onScrollToAudio}
-            className="inline-flex items-center justify-center gap-2 rounded-full border border-black/[0.08] hover:bg-neutral-50 active:scale-[0.98] h-10 px-5 text-sm font-medium text-[#181925] bg-white transition-colors cursor-pointer"
-          >
-            <Volume2 className="size-4 text-primary" />
-            <span>Hear his voice</span>
           </button>
         </div>
 
