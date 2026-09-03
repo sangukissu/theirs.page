@@ -22,21 +22,20 @@ export function TheirsHero() {
         <div className="mb-3.5 flex justify-center">
           <div className="inline-flex items-center gap-2 rounded-full border border-black/[0.06] bg-white px-3.5 py-1 text-xs text-[#666] select-none shadow-2xs">
             <span className="size-1.5 rounded-full bg-primary" />
-            <span>For their story</span>
+            <span>Online memorials</span>
           </div>
         </div>
 
         {/* Commanding Two-Line Headline */}
         <h1 className="text-balance text-4xl sm:text-6xl lg:text-[68px] font-medium tracking-[-0.04em] text-[#181925] leading-[1.04] max-w-[850px] mb-3.5">
-          A life is more than
+          A beautiful place to remember
           <br />
-          <span className="text-primary">two dates.</span>
+          <span className="text-primary">someone your Love</span>
         </h1>
 
         {/* Human Subheadline */}
         <p className="mx-auto max-w-[660px] text-pretty text-base sm:text-xl leading-relaxed text-[#666] mb-5 sm:mb-6">
-          Keep the photos, stories, voices and little things that made them who they were — together in one beautiful page.
-        </p>
+Bring their photos, stories and memories together in one page and invite family and friends to add theirs.        </p>
 
         {/* High-Converting "Create their page" Input Box (Responsive on Mobile & Desktop) */}
         <div className="w-full max-w-lg flex flex-col items-center gap-2 mb-4 sm:mb-5">
@@ -63,7 +62,7 @@ export function TheirsHero() {
               type="submit"
               className="inline-flex items-center justify-center gap-1.5 whitespace-nowrap !rounded-full font-medium transition-all cursor-pointer border border-[color-mix(in_srgb,var(--primary)_80%,#3a3480)] bg-[color-mix(in_srgb,var(--primary)_90%,#3a3480)] text-primary-foreground shadow-[inset_0_1px_0_rgba(255,255,255,0.22),inset_0_-1px_0_rgba(58,52,128,0.30)] transform-gpu hover:bg-primary active:scale-[0.98] h-11 sm:h-10 px-5 text-sm group shrink-0 select-none w-full sm:w-auto"
             >
-              <span>Create their page</span>
+              <span>Create their memorial</span>
               <span className="relative size-3.5 overflow-hidden inline-flex items-center">
                 <svg
                   xmlns="http://www.w3.org/2000/svg"

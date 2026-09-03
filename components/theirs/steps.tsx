@@ -2,6 +2,7 @@
 
 import { DitherGradient } from "@/components/theirs/dither-gradient"
 import { SectionHeader } from "@/components/theirs/section-header"
+import { Copy, Volume2 } from "lucide-react"
 
 export function TheirsSteps() {
   return (
@@ -9,15 +10,17 @@ export function TheirsSteps() {
       {/* Section Header */}
       <SectionHeader
         badge="How it works"
-        title="Three steps from a blank screen to a living archive"
-        description="Building a memorial shouldn't feel like filing administrative paperwork. It should feel like beginning to remember them."
+        title="Create their memorial. Let everyone tell their story."
+        description="You don’t need to have everything ready. Start with the basics, share the page with the people who knew them, and build it together over time."
       />
 
-      {/* Exact Step Cards from getopen.so with Dither Canvas Glow */}
+      {/* High-Grade Step Cards */}
       <ul className="grid gap-4 sm:gap-6 lg:grid-cols-3">
-        {/* Card 01 - Cyan Aura */}
+        
+        {/* ===================================================================== */}
+        {/* Card 01 - "Create their page"                                         */}
+        {/* ===================================================================== */}
         <li className="group relative flex flex-col overflow-hidden rounded-xl bg-[#f6f6f6] pb-6 sm:pb-8">
-          {/* Exact Dither Canvas Background Masks */}
           <span
             aria-hidden="true"
             className="pointer-events-none absolute inset-0 [mask-image:radial-gradient(125%_115%_at_0%_0%,#000_0%,#000_18%,transparent_66%)]"
@@ -27,35 +30,43 @@ export function TheirsSteps() {
 
           <div className="relative flex items-baseline gap-2.5 px-6 py-3 sm:px-8">
             <span className="text-base tabular-nums text-muted-foreground font-medium">01</span>
-            <h3 className="text-base font-medium tracking-tight text-[#454545]">Start with what you have</h3>
+            <h3 className="text-base font-medium tracking-tight text-[#454545]">Create their page</h3>
           </div>
 
           <div className="relative flex flex-1 items-center justify-center px-6 py-8 sm:px-8">
             <div className="w-full max-w-[22rem] cursor-default">
-              <div className="relative min-w-0 not-dark:bg-clip-padding text-card-foreground flex flex-col rounded-[32px] border border-border bg-card p-1 shadow-[0_1px_2px_rgba(0,0,0,0.06)]">
-                {/* Window Header */}
-                <div className="relative z-10 flex items-center justify-between gap-2 pb-1.5 pl-3 pr-2 pt-1.5">
-                  <h2 className="ml-1 flex items-center gap-2 text-[13px] font-medium text-foreground/80">
-                    <span aria-hidden="true" className="ml-0.5 flex h-5 items-center gap-1.5">
-                      <span className="size-2.5 rounded-full bg-[#ff5f57]" />
-                      <span className="size-2.5 rounded-full bg-[#febc2e]" />
-                      <span className="size-2.5 rounded-full bg-[#28c840]" />
-                    </span>
-                  </h2>
+              <div className="relative min-w-0 flex flex-col rounded-[32px] border border-border bg-card p-1 shadow-[0_1px_2px_rgba(0,0,0,0.06)]">
+                {/* Clean, Silent Window Header — 3 Minimal Dots */}
+                <div className="relative z-10 flex items-center gap-1.5 pb-2 pl-3.5 pt-2">
+                  <span className="size-2 rounded-full bg-black/15" />
+                  <span className="size-2 rounded-full bg-black/15" />
+                  <span className="size-2 rounded-full bg-black/15" />
                 </div>
 
-                {/* Inner Screen */}
-                <div className="relative flex min-w-0 flex-col not-dark:bg-clip-padding text-card-foreground h-40 overflow-hidden rounded-[28px] border border-border bg-[#f6f6f6] py-2 shadow-[0_1px_2px_rgba(0,0,0,0.06)] justify-center px-4">
-                  <div className="flex flex-col gap-1.5">
-                    <p className="flex items-start gap-1.5 font-mono text-[11px] leading-5">
-                      <span className="text-muted-foreground/60">$</span>
-                      <span className="text-foreground">theirs init &quot;Robert Carter&quot;</span>
-                    </p>
-                    <p className="flex items-center gap-1.5 text-xs text-[#305dde] font-medium">
-                      ✓ Photo attached: portrait.jpg
-                    </p>
-                    <p className="text-[11px] text-muted-foreground">
-                      Draft live at theirs.page/robert-carter
+                {/* Inner Screen: Clean Creation Preview */}
+                <div className="relative flex min-w-0 flex-col h-44 rounded-[28px] border border-border bg-white p-4 justify-between">
+                  <div className="flex items-center gap-3.5">
+                    {/* Portrait Photo */}
+                    <div className="size-16 rounded-2xl overflow-hidden bg-neutral-100 ring-1 ring-black/[0.08] shrink-0 shadow-2xs">
+                      <img
+                        src="/memorial-family-portrait-grandfather.jpg"
+                        alt="Robert Carter"
+                        className="size-full object-cover grayscale contrast-105"
+                      />
+                    </div>
+
+                    {/* Name & Dates */}
+                    <div className="flex flex-col gap-0.5 min-w-0">
+                      <span className="text-sm font-medium text-[#181925] truncate">Robert Carter</span>
+                      <span className="text-xs font-mono text-muted-foreground">1948 — 2024</span>
+                      <span className="text-xs text-muted-foreground">Devon, England</span>
+                    </div>
+                  </div>
+
+                  {/* Handwritten Memory Snippet */}
+                  <div className="p-2.5 rounded-xl bg-[#f8f8f9] border border-black/[0.04]">
+                    <p className="text-xs italic text-[#555] line-clamp-2 leading-relaxed">
+                      “He could make anyone feel unhurried.”
                     </p>
                   </div>
                 </div>
@@ -64,13 +75,14 @@ export function TheirsSteps() {
           </div>
 
           <p className="relative pl-6 pr-6 text-sm leading-6 text-muted-foreground sm:pl-8 sm:pr-14 tracking-tight">
-            One photo, one name. No complex questionnaires, no death certificates to upload. That&apos;s all.
+            Add their name, a favourite photo and a few details. Start simple, you can add more whenever you’re ready.
           </p>
         </li>
 
-        {/* Card 02 - Green Aura */}
+        {/* ===================================================================== */}
+        {/* Card 02 - "Invite family & friends"                                   */}
+        {/* ===================================================================== */}
         <li className="group relative flex flex-col overflow-hidden rounded-xl bg-[#f6f6f6] pb-6 sm:pb-8">
-          {/* Exact Dither Canvas Background Masks */}
           <span
             aria-hidden="true"
             className="pointer-events-none absolute inset-0 [mask-image:radial-gradient(125%_115%_at_0%_0%,#000_0%,#000_18%,transparent_66%)]"
@@ -80,45 +92,48 @@ export function TheirsSteps() {
 
           <div className="relative flex items-baseline gap-2.5 px-6 py-3 sm:px-8">
             <span className="text-base tabular-nums text-muted-foreground font-medium">02</span>
-            <h3 className="text-base font-medium tracking-tight text-[#454545]">The memories start arriving</h3>
+            <h3 className="text-base font-medium tracking-tight text-[#454545]">Invite family & friends</h3>
           </div>
 
           <div className="relative flex flex-1 items-center justify-center px-6 py-8 sm:px-8">
             <div className="w-full max-w-[22rem] cursor-default">
-              <div className="relative min-w-0 not-dark:bg-clip-padding text-card-foreground flex flex-col rounded-[32px] border border-border bg-card p-1 shadow-[0_1px_2px_rgba(0,0,0,0.06)]">
-                {/* Window Header */}
-                <div className="relative z-10 flex items-center justify-between gap-2 pb-1.5 pl-3 pr-2 pt-1.5">
-                  <h2 className="ml-1 flex items-center gap-2 text-[13px] font-medium text-foreground/80">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" color="currentColor" className="size-3.5 text-muted-foreground">
-                      <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="1.5" />
-                      <path d="M8 12C8 18 12 22 12 22C12 22 16 18 16 12C16 6 12 2 12 2C12 2 8 6 8 12Z" stroke="currentColor" strokeLinejoin="round" strokeWidth="1.5" />
-                      <path d="M21 15H3" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" />
-                      <path d="M21 9H3" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" />
-                    </svg>
-                    Family Invite
-                  </h2>
+              <div className="relative min-w-0 flex flex-col rounded-[32px] border border-border bg-card p-1 shadow-[0_1px_2px_rgba(0,0,0,0.06)]">
+                {/* Clean, Silent Window Header — 3 Minimal Dots */}
+                <div className="relative z-10 flex items-center gap-1.5 pb-2 pl-3.5 pt-2">
+                  <span className="size-2 rounded-full bg-black/15" />
+                  <span className="size-2 rounded-full bg-black/15" />
+                  <span className="size-2 rounded-full bg-black/15" />
                 </div>
 
-                {/* Inner Screen */}
-                <div className="relative flex min-w-0 flex-col not-dark:bg-clip-padding text-card-foreground h-40 overflow-hidden rounded-[28px] border border-border bg-[#f6f6f6] py-2 shadow-[0_1px_2px_rgba(0,0,0,0.06)]">
-                  <div className="flex h-full flex-col items-center justify-center gap-2 px-4 text-center">
-                    <div className="flex items-center gap-2">
-                      <div className="flex size-9 items-center justify-center rounded-2xl border border-border bg-white shadow-[0_1px_2px_rgba(0,0,0,0.06)] text-xs font-medium text-[#292929]">
+                {/* Inner Screen: Share Link & Contributors */}
+                <div className="relative flex min-w-0 flex-col h-44 rounded-[28px] border border-border bg-white p-4 justify-between">
+                  {/* The Shareable Link Capsule */}
+                  <div className="flex items-center justify-between py-2 px-3 rounded-full bg-[#f8f8f9] border border-black/[0.06]">
+                    <span className="text-xs font-mono text-muted-foreground truncate">
+                      theirs.page/robert-carter
+                    </span>
+                    <Copy className="size-3 text-muted-foreground/80 shrink-0" />
+                  </div>
+
+                  {/* Contributions Flowing In */}
+                  <div className="flex flex-col gap-2">
+                    <div className="flex items-center gap-2 text-xs">
+                      <span className="size-5 rounded-full bg-rose-100 text-rose-800 text-[10px] font-medium flex items-center justify-center shrink-0">
                         A
-                      </div>
-                      <div className="h-px w-10 bg-border relative">
-                        <span className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 size-1.5 rounded-full bg-primary" />
-                      </div>
-                      <div className="flex size-9 items-center justify-center rounded-2xl border border-border bg-white shadow-[0_1px_2px_rgba(0,0,0,0.06)] text-primary">
-                        <svg viewBox="0 0 24 24" className="size-4" fill="none" stroke="currentColor" strokeWidth="2">
-                          <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
-                        </svg>
-                      </div>
+                      </span>
+                      <span className="text-[#333] truncate">
+                        <strong className="font-medium text-[#181925]">Anita</strong> shared a story
+                      </span>
                     </div>
-                    <p className="text-xs font-medium text-foreground/80 mt-1">Waiting for the first story…</p>
-                    <p className="text-[11px] text-muted-foreground max-w-44 leading-tight">
-                      Send one link to relatives; they add memories without logging in.
-                    </p>
+
+                    <div className="flex items-center gap-2 text-xs">
+                      <span className="size-5 rounded-full bg-blue-100 text-blue-800 text-[10px] font-medium flex items-center justify-center shrink-0">
+                        D
+                      </span>
+                      <span className="text-[#333] truncate">
+                        <strong className="font-medium text-[#181925]">David</strong> added 6 photos
+                      </span>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -126,13 +141,14 @@ export function TheirsSteps() {
           </div>
 
           <p className="relative pl-6 pr-6 text-sm leading-6 text-muted-foreground sm:pl-8 sm:pr-14 tracking-tight">
-            The first memory lands within minutes: no login required for family, and you approve each one before it appears.
+            Share one link so the people who knew them can add their own photos, stories and memories.
           </p>
         </li>
 
-        {/* Card 03 - Magenta/Rose High Bloom */}
+        {/* ===================================================================== */}
+        {/* Card 03 - "Watch their story live"                                    */}
+        {/* ===================================================================== */}
         <li className="group relative flex flex-col overflow-hidden rounded-xl bg-[#f6f6f6] pb-6 sm:pb-8">
-          {/* Exact Dither Canvas Background Masks */}
           <span
             aria-hidden="true"
             className="pointer-events-none absolute inset-0 [mask-image:radial-gradient(125%_115%_at_0%_0%,#000_0%,#000_18%,transparent_66%)]"
@@ -147,52 +163,44 @@ export function TheirsSteps() {
 
           <div className="relative flex flex-1 items-center justify-center px-6 py-8 sm:px-8">
             <div className="w-full max-w-[22rem] cursor-default">
-              <div className="relative min-w-0 not-dark:bg-clip-padding text-card-foreground flex flex-col rounded-[32px] border border-border bg-card p-1 shadow-[0_1px_2px_rgba(0,0,0,0.06)]">
-                {/* Window Header */}
-                <div className="relative z-10 flex items-center justify-between gap-2 pb-1.5 pl-3 pr-2 pt-1.5">
-                  <h2 className="ml-1 flex items-center gap-2 text-[13px] font-medium text-foreground/80">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" color="currentColor" className="size-3.5 text-muted-foreground">
-                      <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="1.5" />
-                      <path d="M8 12C8 18 12 22 12 22C12 22 16 18 16 12C16 6 12 2 12 2C12 2 8 6 8 12Z" stroke="currentColor" strokeLinejoin="round" strokeWidth="1.5" />
-                      <path d="M21 15H3" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" />
-                      <path d="M21 9H3" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" />
-                    </svg>
-                    Contributors
-                  </h2>
+              <div className="relative min-w-0 flex flex-col rounded-[32px] border border-border bg-card p-1 shadow-[0_1px_2px_rgba(0,0,0,0.06)]">
+                {/* Clean, Silent Window Header — 3 Minimal Dots */}
+                <div className="relative z-10 flex items-center gap-1.5 pb-2 pl-3.5 pt-2">
+                  <span className="size-2 rounded-full bg-black/15" />
+                  <span className="size-2 rounded-full bg-black/15" />
+                  <span className="size-2 rounded-full bg-black/15" />
                 </div>
 
-                {/* Inner Screen */}
-                <div className="relative flex min-w-0 flex-col not-dark:bg-clip-padding text-card-foreground h-40 overflow-hidden rounded-[28px] border border-border bg-[#f6f6f6] py-2 shadow-[0_1px_2px_rgba(0,0,0,0.06)]">
-                  <ul>
-                    <li className="flex items-center justify-between gap-4 py-1 pr-4 pl-3.5 text-xs">
-                      <span className="flex items-center gap-2 truncate">
-                        <span className="size-3.5 rounded-full bg-rose-200 text-[9px] font-medium text-rose-800 flex items-center justify-center">A</span>
-                        <span className="truncate text-foreground/80">Anita (Daughter)</span>
-                      </span>
-                      <span className="text-muted-foreground text-[11px] tabular-nums">4 memories</span>
-                    </li>
-                    <li className="flex items-center justify-between gap-4 py-1 pr-4 pl-3.5 text-xs">
-                      <span className="flex items-center gap-2 truncate">
-                        <span className="size-3.5 rounded-full bg-blue-200 text-[9px] font-medium text-blue-800 flex items-center justify-center">D</span>
-                        <span className="truncate text-foreground/80">David (Colleague)</span>
-                      </span>
-                      <span className="text-muted-foreground text-[11px] tabular-nums">2 memories</span>
-                    </li>
-                    <li className="flex items-center justify-between gap-4 py-1 pr-4 pl-3.5 text-xs">
-                      <span className="flex items-center gap-2 truncate">
-                        <span className="size-3.5 rounded-full bg-amber-200 text-[9px] font-medium text-amber-800 flex items-center justify-center">S</span>
-                        <span className="truncate text-foreground/80">Aunt Sarah</span>
-                      </span>
-                      <span className="text-muted-foreground text-[11px] tabular-nums">14 photos</span>
-                    </li>
-                    <li className="flex items-center justify-between gap-4 py-1 pr-4 pl-3.5 text-xs">
-                      <span className="flex items-center gap-2 truncate">
-                        <span className="size-3.5 rounded-full bg-emerald-200 text-[9px] font-medium text-emerald-800 flex items-center justify-center">R</span>
-                        <span className="truncate text-foreground/80">Rahul (Grandson)</span>
-                      </span>
-                      <span className="text-muted-foreground text-[11px] tabular-nums">1 voicemail</span>
-                    </li>
-                  </ul>
+                {/* Inner Screen: Media Together (Story, Photo, Voicemail, Milestone) */}
+                <div className="relative flex min-w-0 flex-col h-44 rounded-[28px] border border-border bg-white p-3.5 justify-between">
+                  {/* Story & Photo */}
+                  <div className="grid grid-cols-2 gap-2">
+                    <div className="p-2 rounded-xl bg-[#f8f8f9] border border-black/[0.04] text-left">
+                      <p className="text-[11px] text-[#444] italic line-clamp-3 leading-snug">
+                        “Dad spent Christmas fixing the neighbour&apos;s washer.”
+                      </p>
+                    </div>
+
+                    <div className="rounded-xl overflow-hidden ring-1 ring-black/[0.06] bg-neutral-100">
+                      <img
+                        src="/historical-wedding-photo.webp"
+                        alt="Wedding 1974"
+                        className="size-full object-cover grayscale contrast-105"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Voicemail & Milestone */}
+                  <div className="flex items-center justify-between pt-1 text-xs">
+                    <div className="inline-flex items-center gap-1.5 text-muted-foreground font-mono text-[11px]">
+                      <Volume2 className="size-3 text-primary shrink-0" />
+                      <span>0:14 Voicemail</span>
+                    </div>
+
+                    <span className="text-[11px] font-mono text-muted-foreground">
+                      1981 · Workshop
+                    </span>
+                  </div>
                 </div>
               </div>
             </div>
