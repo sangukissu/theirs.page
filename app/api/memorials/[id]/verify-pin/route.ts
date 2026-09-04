@@ -3,12 +3,14 @@ import { supabaseAdmin } from "@/utils/supabase/admin"
 import { createClient } from "@/utils/supabase/server"
 
 interface RouteContext {
-  params: Promise<{ slug: string }>
+  params: Promise<{ id: string }>
 }
+
+const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
 
 export async function POST(req: NextRequest, context: RouteContext) {
   try {
-    const { slug } = await context.params
+    const { id } = await context.params
     const body = await req.json()
     const { pin } = body
 
@@ -16,22 +18,23 @@ export async function POST(req: NextRequest, context: RouteContext) {
       return NextResponse.json({ error: "PIN is required" }, { status: 400 })
     }
 
-    // Try admin fetch first, fallback to server client
+    const isUuid = UUID_REGEX.test(id)
     let memorial: any = null
+
     try {
-      const res = await supabaseAdmin
+      let query = supabaseAdmin
         .from("memorials")
-        .select("id, access_pin_hash, privacy")
-        .eq("slug", slug)
-        .maybeSingle()
+        .select("id, slug, access_pin_hash, privacy")
+      query = isUuid ? query.eq("id", id) : query.eq("slug", id)
+      const res = await query.maybeSingle()
       memorial = res.data
     } catch {
       const supabase = await createClient()
-      const res = await supabase
+      let query = supabase
         .from("memorials")
-        .select("id, access_pin_hash, privacy")
-        .eq("slug", slug)
-        .maybeSingle()
+        .select("id, slug, access_pin_hash, privacy")
+      query = isUuid ? query.eq("id", id) : query.eq("slug", id)
+      const res = await query.maybeSingle()
       memorial = res.data
     }
 
@@ -52,8 +55,9 @@ export async function POST(req: NextRequest, context: RouteContext) {
     }
 
     // PIN is correct - set unlock cookie for 30 days
+    const cookieKey = memorial.slug || id
     const response = NextResponse.json({ success: true })
-    response.cookies.set(`theirs_pin_${slug}`, "unlocked", {
+    response.cookies.set(`theirs_pin_${cookieKey}`, "unlocked", {
       path: "/",
       maxAge: 60 * 60 * 24 * 30, // 30 days
       httpOnly: true,

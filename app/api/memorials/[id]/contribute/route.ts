@@ -3,12 +3,14 @@ import { supabaseAdmin } from "@/utils/supabase/admin"
 import { createClient } from "@/utils/supabase/server"
 
 interface RouteContext {
-  params: Promise<{ slug: string }>
+  params: Promise<{ id: string }>
 }
+
+const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
 
 export async function POST(req: NextRequest, context: RouteContext) {
   try {
-    const { slug } = await context.params
+    const { id } = await context.params
     const body = await req.json()
     const {
       type, // "memory" | "guestbook" | "photo" | "moment"
@@ -28,22 +30,20 @@ export async function POST(req: NextRequest, context: RouteContext) {
       return NextResponse.json({ error: "Message or story content is required" }, { status: 400 })
     }
 
-    // 1. Resolve memorial ID from slug
+    // 1. Resolve memorial ID from id or slug
+    const isUuid = UUID_REGEX.test(id)
     let memorialId: string | null = null
+
     try {
-      const { data } = await supabaseAdmin
-        .from("memorials")
-        .select("id, status")
-        .eq("slug", slug)
-        .maybeSingle()
+      let query = supabaseAdmin.from("memorials").select("id, status")
+      query = isUuid ? query.eq("id", id) : query.eq("slug", id)
+      const { data } = await query.maybeSingle()
       if (data) memorialId = data.id
     } catch {
       const supabase = await createClient()
-      const { data } = await supabase
-        .from("memorials")
-        .select("id, status")
-        .eq("slug", slug)
-        .maybeSingle()
+      let query = supabase.from("memorials").select("id, status")
+      query = isUuid ? query.eq("id", id) : query.eq("slug", id)
+      const { data } = await query.maybeSingle()
       if (data) memorialId = data.id
     }
 
