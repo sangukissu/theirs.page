@@ -22,6 +22,8 @@ interface CollaboratorItem {
   id: string
   email: string
   role: "co_admin" | "contributor"
+  invitation_accepted?: boolean
+  inviteLink?: string
   created_at: string
 }
 
@@ -33,6 +35,7 @@ interface SettingsTabProps {
   pin?: string
   successorName: string
   successorEmail: string
+  isPaid?: boolean
   onChange: (field: string, value: any) => void
   onDeleteMemorial: () => void
 }
@@ -45,11 +48,16 @@ export function SettingsTab({
   pin = "",
   successorName,
   successorEmail,
+  isPaid = false,
   onChange,
   onDeleteMemorial,
 }: SettingsTabProps) {
   const [isDeleting, setIsDeleting] = useState(false)
   const [confirmText, setConfirmText] = useState("")
+
+  // Checkout State
+  const [checkingOut, setCheckingOut] = useState(false)
+  const [checkoutError, setCheckoutError] = useState<string | null>(null)
 
   // Live slug checking state
   const [slugChecking, setSlugChecking] = useState(false)
@@ -65,6 +73,14 @@ export function SettingsTab({
   const [collabRole, setCollabRole] = useState<"co_admin" | "contributor">("co_admin")
   const [collabAdding, setCollabAdding] = useState(false)
   const [collabError, setCollabError] = useState<string | null>(null)
+  const [copiedCollabId, setCopiedCollabId] = useState<string | null>(null)
+
+  const handleCopyInvite = (collabId: string, link?: string) => {
+    if (!link) return
+    navigator.clipboard.writeText(link)
+    setCopiedCollabId(collabId)
+    setTimeout(() => setCopiedCollabId(null), 2500)
+  }
 
   // Ownership transfer state
   const [transferring, setTransferring] = useState(false)
@@ -202,7 +218,28 @@ export function SettingsTab({
     }
   }
 
-  // 5. Delete Memorial
+  // 5. Complete Upgrade ($179 One-Time)
+  const handleUpgradeComplete = async () => {
+    setCheckingOut(true)
+    setCheckoutError(null)
+    try {
+      const res = await fetch("/api/checkout/session", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ memorialId }),
+      })
+      const data = await res.json()
+      if (!res.ok || !data.url) {
+        throw new Error(data.error || "Could not start checkout session")
+      }
+      window.location.href = data.url
+    } catch (err: any) {
+      setCheckoutError(err.message || "Failed to launch checkout")
+      setCheckingOut(false)
+    }
+  }
+
+  // 6. Delete Memorial
   const handleDelete = async () => {
     if (confirmText !== "DELETE") return
 
@@ -232,6 +269,65 @@ export function SettingsTab({
           Manage publication status, shareable web address, privacy levels, and long-term family caretaking.
         </p>
       </div>
+
+      {/* Complete Activation Status / Upgrade Card */}
+      {isPaid ? (
+        <div className="flex items-center justify-between p-5 rounded-2xl bg-white border border-emerald-200/80 shadow-2xs">
+          <div className="flex items-center gap-3.5">
+            <div className="size-10 rounded-full bg-emerald-50 text-emerald-600 flex items-center justify-center shrink-0 border border-emerald-200">
+              <CheckCircle2 className="size-5" />
+            </div>
+            <div className="flex flex-col gap-0.5">
+              <div className="flex items-center gap-2">
+                <h3 className="text-sm font-medium text-[#181925]">Theirs Complete Active</h3>
+                <span className="px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 text-[10px] font-mono uppercase font-semibold">
+                  Permanent Archive
+                </span>
+              </div>
+              <p className="text-[11px] text-[#71717a]">
+                Original-quality media preservation, audio recordings, unlimited contributors, and perpetual stewardship are active.
+              </p>
+            </div>
+          </div>
+        </div>
+      ) : (
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-5 p-5 rounded-2xl bg-[#1f1f1f] text-white border border-white/[0.08]">
+          <div className="flex flex-col gap-1.5">
+            <div className="flex items-center gap-2">
+              <span className="font-mono text-[11px] uppercase tracking-wider text-emerald-400 font-semibold">
+                Theirs Complete
+              </span>
+              <span className="text-xs text-[#888]">·</span>
+              <span className="text-sm font-medium text-white">$179 one-time</span>
+            </div>
+            <p className="text-xs text-[#9c9c9c] max-w-md leading-relaxed">
+              Activate permanent preservation, unlimited original-resolution photos, voice notes, video clips, and limitless family collaborators.
+            </p>
+            {checkoutError && (
+              <span className="text-xs text-rose-400 font-medium">{checkoutError}</span>
+            )}
+          </div>
+
+          <button
+            type="button"
+            disabled={checkingOut}
+            onClick={handleUpgradeComplete}
+            className="inline-flex items-center justify-center gap-1.5 px-5 py-2.5 rounded-full bg-white hover:bg-neutral-100 text-[#181925] text-xs font-medium shrink-0 transition-all cursor-pointer disabled:opacity-50"
+          >
+            {checkingOut ? (
+              <>
+                <Loader2 className="size-3.5 animate-spin" />
+                <span>Preparing checkout...</span>
+              </>
+            ) : (
+              <>
+                <Shield className="size-3.5 text-primary" />
+                <span>Upgrade to Complete</span>
+              </>
+            )}
+          </button>
+        </div>
+      )}
 
       {/* 1. Publication Status Switcher */}
       <div className="flex flex-col gap-3 p-5 rounded-2xl bg-white border border-black/[0.07]">
@@ -507,16 +603,38 @@ export function SettingsTab({
                   <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-primary/10 text-primary uppercase font-semibold">
                     {c.role === "co_admin" ? "Co-admin" : "Contributor"}
                   </span>
+                  {c.invitation_accepted === false && (
+                    <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-amber-50 text-amber-700 border border-amber-200">
+                      Pending
+                    </span>
+                  )}
                 </div>
 
-                <button
-                  type="button"
-                  onClick={() => handleRemoveCollaborator(c.id)}
-                  className="text-[#aaa] hover:text-rose-600 transition-colors cursor-pointer"
-                  title="Remove caretaker"
-                >
-                  <Trash2 className="size-3.5" />
-                </button>
+                <div className="flex items-center gap-3">
+                  {c.inviteLink && c.invitation_accepted === false && (
+                    <button
+                      type="button"
+                      onClick={() => handleCopyInvite(c.id, c.inviteLink)}
+                      className="text-[11px] text-[#71717a] hover:text-primary transition-colors cursor-pointer inline-flex items-center gap-1"
+                      title="Copy invitation link"
+                    >
+                      {copiedCollabId === c.id ? (
+                        <span className="text-emerald-600 font-medium">Link copied!</span>
+                      ) : (
+                        <span className="underline">Copy link</span>
+                      )}
+                    </button>
+                  )}
+
+                  <button
+                    type="button"
+                    onClick={() => handleRemoveCollaborator(c.id)}
+                    className="text-[#aaa] hover:text-rose-600 transition-colors cursor-pointer"
+                    title="Remove caretaker"
+                  >
+                    <Trash2 className="size-3.5" />
+                  </button>
+                </div>
               </div>
             ))}
           </div>

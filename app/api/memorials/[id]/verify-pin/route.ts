@@ -1,6 +1,12 @@
 import { NextRequest, NextResponse } from "next/server"
 import { getSupabaseAdminSafe } from "@/utils/supabase/admin"
 import { createClient } from "@/utils/supabase/server"
+import {
+  verifyPin,
+  checkPinRateLimit,
+  recordFailedPinAttempt,
+  clearPinAttempts,
+} from "@/lib/security/pin"
 
 interface RouteContext {
   params: Promise<{ id: string }>
@@ -8,10 +14,19 @@ interface RouteContext {
 
 const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
 
+function getClientIp(req: NextRequest): string {
+  return (
+    req.headers.get("cf-connecting-ip") ||
+    req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ||
+    req.headers.get("x-real-ip") ||
+    "127.0.0.1"
+  )
+}
+
 export async function POST(req: NextRequest, context: RouteContext) {
   try {
     const { id } = await context.params
-    const body = await req.json()
+    const body = await req.json().catch(() => ({}))
     const { pin } = body
 
     if (!pin || typeof pin !== "string") {
@@ -53,15 +68,44 @@ export async function POST(req: NextRequest, context: RouteContext) {
       return NextResponse.json({ success: true, message: "Memorial is not private" })
     }
 
-    // Verify PIN match (trimmed comparison)
-    const expectedPin = memorial.access_pin_hash?.trim()
-    const enteredPin = pin.trim()
+    const clientIp = getClientIp(req)
+    const rateLimitKey = `${clientIp}:${memorial.id}`
 
-    if (!expectedPin || enteredPin !== expectedPin) {
-      return NextResponse.json({ error: "Incorrect PIN code" }, { status: 401 })
+    // Check brute-force lock
+    const rateCheck = checkPinRateLimit(rateLimitKey)
+    if (!rateCheck.allowed) {
+      return NextResponse.json(
+        {
+          error: `Too many failed attempts. Please wait ${rateCheck.remainingSeconds || 900} seconds before trying again.`,
+        },
+        { status: 429 }
+      )
     }
 
-    // PIN is correct - set unlock cookie for 30 days
+    // Verify PIN match (constant-time check with salt)
+    const isMatch = verifyPin(pin, memorial.access_pin_hash || "")
+
+    if (!isMatch) {
+      const attemptResult = recordFailedPinAttempt(rateLimitKey)
+      if (attemptResult.locked) {
+        return NextResponse.json(
+          { error: "Too many failed attempts. Access locked for 15 minutes." },
+          { status: 429 }
+        )
+      }
+
+      return NextResponse.json(
+        {
+          error: `Incorrect PIN code. ${attemptResult.attemptsLeft} attempt${attemptResult.attemptsLeft === 1 ? "" : "s"} remaining.`,
+        },
+        { status: 401 }
+      )
+    }
+
+    // PIN is correct - clear failed attempt tracker
+    clearPinAttempts(rateLimitKey)
+
+    // Set unlock cookie for 30 days
     const cookieKey = memorial.slug || id
     const response = NextResponse.json({ success: true })
     response.cookies.set(`theirs_pin_${cookieKey}`, "unlocked", {

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { createClient } from "@/utils/supabase/server"
 import { getR2PresignedUploadUrl } from "@/lib/r2"
+import { assertMemorialAdmin } from "@/lib/memorial-auth"
 
 const ALLOWED_CONTENT_TYPES = [
   // Images
@@ -54,7 +55,7 @@ export async function POST(req: NextRequest) {
     }
 
     // 2. Parse request body
-    const body = await req.json()
+    const body = await req.json().catch(() => ({}))
     const { filename, contentType, folder, memorialId } = body
 
     if (!filename || !contentType) {
@@ -68,20 +69,51 @@ export async function POST(req: NextRequest) {
       )
     }
 
-    // 3. Generate a clean storage key
-    const safeFolder = typeof folder === "string" && ALLOWED_FOLDERS.includes(folder)
-      ? folder
-      : "gallery"
+    // 3. If target is a memorial, verify admin rights and media quota
+    let resolvedMemorialId = memorialId
+    if (memorialId) {
+      const authCheck = await assertMemorialAdmin(memorialId, user.id)
+      if (!authCheck.authorized || !authCheck.memorial) {
+        return NextResponse.json(
+          { error: authCheck.error || "You do not have permission to upload to this memorial" },
+          { status: 403 }
+        )
+      }
+
+      resolvedMemorialId = authCheck.memorial.id
+
+      // Quota check: free memorials are capped at 200 media items
+      if (!authCheck.memorial.is_paid) {
+        const { count, error: countErr } = await supabase
+          .from("media_items")
+          .select("id", { count: "exact", head: true })
+          .eq("memorial_id", resolvedMemorialId)
+
+        if (!countErr && typeof count === "number" && count >= 200) {
+          return NextResponse.json(
+            {
+              error:
+                "You have reached the free tier limit of 200 photos and recordings. Upgrade to Theirs Complete for unlimited original-resolution storage.",
+            },
+            { status: 403 }
+          )
+        }
+      }
+    }
+
+    // 4. Generate a clean storage key
+    const safeFolder =
+      typeof folder === "string" && ALLOWED_FOLDERS.includes(folder) ? folder : "gallery"
     const timestamp = Date.now()
     const randomId = Math.random().toString(36).substring(2, 10)
     const cleanFilename = filename.replace(/[^a-zA-Z0-9.-]/g, "_")
-    
+
     // Key format: memorials/{memorialId}/{folder}/{timestamp}_{randomId}_{filename}
-    const key = memorialId
-      ? `memorials/${memorialId}/${safeFolder}/${timestamp}_${randomId}_${cleanFilename}`
+    const key = resolvedMemorialId
+      ? `memorials/${resolvedMemorialId}/${safeFolder}/${timestamp}_${randomId}_${cleanFilename}`
       : `uploads/${user.id}/${safeFolder}/${timestamp}_${randomId}_${cleanFilename}`
 
-    // 4. Generate presigned upload URL (valid for 15 minutes)
+    // 5. Generate presigned upload URL (valid for 15 minutes)
     const uploadUrl = await getR2PresignedUploadUrl(key, contentType, 900)
 
     return NextResponse.json({

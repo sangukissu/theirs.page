@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { createClient } from "@/utils/supabase/server"
 import { getSupabaseAdminSafe } from "@/utils/supabase/admin"
+import { assertMemorialAdmin } from "@/lib/memorial-auth"
 
 interface RouteContext {
   params: Promise<{ id: string }>
@@ -17,6 +18,9 @@ export async function POST(req: NextRequest, context: RouteContext) {
     if (!user) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
+
+    const { errorResponse } = await assertMemorialAdmin(memorialId, user.id)
+    if (errorResponse) return errorResponse
 
     const body = await req.json()
     const { name, relationship, photo_url, note } = body
@@ -61,6 +65,9 @@ export async function DELETE(req: NextRequest, context: RouteContext) {
     if (!user) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
+
+    const { errorResponse } = await assertMemorialAdmin(memorialId, user.id)
+    if (errorResponse) return errorResponse
 
     const url = new URL(req.url)
     const personId = url.searchParams.get("personId")

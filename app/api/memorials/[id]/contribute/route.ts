@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { getSupabaseAdminSafe } from "@/utils/supabase/admin"
 import { createClient } from "@/utils/supabase/server"
+import { verifyTurnstileToken, checkContributionRateLimit } from "@/lib/turnstile"
 
 interface RouteContext {
   params: Promise<{ id: string }>
@@ -8,10 +9,19 @@ interface RouteContext {
 
 const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
 
+function getClientIp(req: NextRequest): string {
+  return (
+    req.headers.get("cf-connecting-ip") ||
+    req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ||
+    req.headers.get("x-real-ip") ||
+    "127.0.0.1"
+  )
+}
+
 export async function POST(req: NextRequest, context: RouteContext) {
   try {
     const { id } = await context.params
-    const body = await req.json()
+    const body = await req.json().catch(() => ({}))
     const {
       type, // "memory" | "guestbook" | "photo" | "moment"
       author_name,
@@ -20,8 +30,31 @@ export async function POST(req: NextRequest, context: RouteContext) {
       approx_year,
       location,
       photo_url,
+      turnstile_token,
     } = body
 
+    // 1. IP Rate Limiting
+    const clientIp = getClientIp(req)
+    const rateLimit = checkContributionRateLimit(clientIp)
+    if (!rateLimit.allowed) {
+      return NextResponse.json(
+        {
+          error: `You are contributing very quickly. Please pause for ${rateLimit.remainingSeconds || 60} seconds before submitting another memory.`,
+        },
+        { status: 429 }
+      )
+    }
+
+    // 2. Turnstile Captcha verification
+    const isValidCaptcha = await verifyTurnstileToken(turnstile_token, clientIp)
+    if (!isValidCaptcha) {
+      return NextResponse.json(
+        { error: "Security check failed. Please refresh and try again." },
+        { status: 400 }
+      )
+    }
+
+    // 3. Input validation
     if (!author_name || !author_name.trim()) {
       return NextResponse.json({ error: "Your name is required." }, { status: 400 })
     }
@@ -30,45 +63,64 @@ export async function POST(req: NextRequest, context: RouteContext) {
       return NextResponse.json({ error: "Please write a memory or message to share." }, { status: 400 })
     }
 
-    // 1. Resolve memorial using admin client if available, or SSR public client
+    // 4. Resolve Memorial
     const adminClient = getSupabaseAdminSafe()
     const serverClient = await createClient()
     const db = adminClient || serverClient
 
     const isUuid = UUID_REGEX.test(id)
-    let memorialId: string | null = null
+    let memorial: { id: string; slug: string; status: string; privacy: string } | null = null
 
     try {
-      let query = db.from("memorials").select("id, status")
+      let query = db.from("memorials").select("id, slug, status, privacy")
       query = isUuid ? query.eq("id", id) : query.eq("slug", id)
-      const { data } = await query.maybeSingle()
-      if (data) memorialId = data.id
+      const res = await query.maybeSingle()
+      if (res.data) memorial = res.data
     } catch (lookupErr) {
       console.error("Memorial lookup error:", lookupErr)
     }
 
-    // Fallback lookup using server client if admin failed
-    if (!memorialId && adminClient) {
+    if (!memorial && adminClient) {
       try {
-        let query = serverClient.from("memorials").select("id, status")
+        let query = serverClient.from("memorials").select("id, slug, status, privacy")
         query = isUuid ? query.eq("id", id) : query.eq("slug", id)
-        const { data } = await query.maybeSingle()
-        if (data) memorialId = data.id
+        const res = await query.maybeSingle()
+        if (res.data) memorial = res.data
       } catch (fallbackErr) {
         console.error("Server client lookup error:", fallbackErr)
       }
     }
 
-    if (!memorialId) {
+    if (!memorial) {
       return NextResponse.json({ error: "Memorial not found." }, { status: 404 })
     }
 
-    // 2. Insert into appropriate table with status: pending_approval
+    // 5. Enforce Publication Status: Draft & Archived memorials cannot receive contributions
+    if (memorial.status !== "published") {
+      return NextResponse.json(
+        { error: "This memorial is not currently open for contributions." },
+        { status: 403 }
+      )
+    }
+
+    // 6. Enforce Private Memorial PIN Gate
+    if (memorial.privacy === "private") {
+      const cookieKey = memorial.slug || memorial.id
+      const isUnlocked = req.cookies.get(`theirs_pin_${cookieKey}`)?.value === "unlocked"
+      if (!isUnlocked) {
+        return NextResponse.json(
+          { error: "This memorial is private. Please unlock it with the family PIN before contributing." },
+          { status: 403 }
+        )
+      }
+    }
+
+    // 7. Insert into appropriate table with status: pending_approval
     if (type === "guestbook") {
       const { error } = await db
         .from("guestbook_entries")
         .insert({
-          memorial_id: memorialId,
+          memorial_id: memorial.id,
           author_name: author_name.trim(),
           message: content.trim(),
           status: "pending_approval",
@@ -92,7 +144,7 @@ export async function POST(req: NextRequest, context: RouteContext) {
     const { error } = await db
       .from("memories")
       .insert({
-        memorial_id: memorialId,
+        memorial_id: memorial.id,
         author_name: author_name.trim(),
         author_relationship: author_relationship?.trim() || null,
         story: content.trim(),

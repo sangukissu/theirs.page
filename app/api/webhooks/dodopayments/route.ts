@@ -122,6 +122,70 @@ async function handlePaymentSucceeded(webhookData: any, webhookId: string) {
     const paymentData = webhookData.data
     const paymentId = paymentData.id || paymentData.payment_id
 
+    // 1. Check for Theirs Complete ($179 one-time memorial activation)
+    const isTheirsComplete =
+      paymentData.metadata?.type === "theirs_complete" ||
+      Boolean(paymentData.metadata?.memorial_id)
+
+    if (isTheirsComplete) {
+      const memorialId = paymentData.metadata?.memorial_id
+      const userId = paymentData.metadata?.user_id || null
+      const customerEmail =
+        paymentData.customer?.email ||
+        paymentData.customer_email ||
+        paymentData.metadata?.customer_email ||
+        null
+      const paymentMethod =
+        paymentData.payment_method_type ||
+        paymentData.payment_method ||
+        null
+      const amount = paymentData.total_amount
+        ? Number(paymentData.total_amount) / 100
+        : 179.0
+
+      if (memorialId) {
+        // Record payment in public.payments
+        const { data: paymentRecord } = await supabase
+          .from("payments")
+          .upsert(
+            {
+              payment_id: paymentId,
+              user_id: userId,
+              memorial_id: memorialId,
+              amount: amount,
+              currency: paymentData.currency || "USD",
+              status: "completed",
+              customer_email: customerEmail,
+              payment_method: paymentMethod,
+              metadata: paymentData.metadata || {},
+            },
+            { onConflict: "payment_id" }
+          )
+          .select("id")
+          .single()
+
+        // Activate Theirs Complete on the memorial
+        await supabase
+          .from("memorials")
+          .update({
+            is_paid: true,
+            paid_at: new Date().toISOString(),
+          })
+          .eq("id", memorialId)
+
+        // Log the processed webhook event
+        await logWebhookEvent(
+          webhookId,
+          "theirs_complete_payment_succeeded",
+          paymentRecord?.id || paymentId,
+          webhookData.business_id
+        )
+
+        return
+      }
+    }
+
+    // 2. Fallback: Legacy BringBack credit system
     // Find the payment in our database using the DodoPayments payment ID
     let payment: any
     const { data: existingPayment, error: paymentError } = await supabase

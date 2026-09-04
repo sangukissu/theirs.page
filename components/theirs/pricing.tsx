@@ -203,7 +203,7 @@ export function TheirsPricing() {
                     <path d="M4 0v8M0 4h8" />
                   </svg>
                 </span>
-                VVideo & voice recordings
+                Video & voice recordings
               </li>
               <li className="flex items-start gap-2.5 text-sm leading-6 tracking-tight text-[#e5e5e5]">
                 <span aria-hidden="true" className="mt-2.5 block size-2 shrink-0 text-muted-foreground/50">

@@ -1,11 +1,13 @@
 import { NextRequest, NextResponse } from "next/server"
 import { createClient } from "@/utils/supabase/server"
 import { getSupabaseAdminSafe } from "@/utils/supabase/admin"
+import { assertMemorialAdmin } from "@/lib/memorial-auth"
 import {
   normalizeMemorialSlug,
   memorialSlugSchema,
   RESERVED_MEMORIAL_SLUGS,
 } from "@/lib/memorial-slug"
+import { hashPin } from "@/lib/security/pin"
 
 interface RouteContext {
   params: Promise<{ id: string }>
@@ -23,6 +25,9 @@ export async function GET(req: NextRequest, context: RouteContext) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
+    const { errorResponse } = await assertMemorialAdmin(id, user.id)
+    if (errorResponse) return errorResponse
+
     const db = getSupabaseAdminSafe() || supabase
 
     // 1. Fetch Memorial
@@ -34,20 +39,6 @@ export async function GET(req: NextRequest, context: RouteContext) {
 
     if (memorialError || !memorial) {
       return NextResponse.json({ error: "Memorial not found" }, { status: 404 })
-    }
-
-    // Verify ownership or collaboration
-    if (memorial.owner_id !== user.id) {
-      const { data: collab } = await db
-        .from("collaborators")
-        .select("id")
-        .eq("memorial_id", id)
-        .eq("user_id", user.id)
-        .maybeSingle()
-
-      if (!collab) {
-        return NextResponse.json({ error: "Forbidden" }, { status: 403 })
-      }
     }
 
     // 2. Fetch associated relations in parallel
@@ -85,18 +76,10 @@ export async function PATCH(req: NextRequest, context: RouteContext) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
+    const { errorResponse } = await assertMemorialAdmin(id, user.id)
+    if (errorResponse) return errorResponse
+
     const db = getSupabaseAdminSafe() || supabase
-
-    // Verify ownership
-    const { data: memorial } = await db
-      .from("memorials")
-      .select("owner_id")
-      .eq("id", id)
-      .maybeSingle()
-
-    if (!memorial || memorial.owner_id !== user.id) {
-      return NextResponse.json({ error: "Forbidden" }, { status: 403 })
-    }
 
     const body = await req.json()
     
@@ -129,7 +112,7 @@ export async function PATCH(req: NextRequest, context: RouteContext) {
     }
 
     if (body.pin !== undefined) {
-      updates.access_pin_hash = body.pin ? String(body.pin).trim() : null
+      updates.access_pin_hash = body.pin ? hashPin(String(body.pin).trim()) : null
     }
 
     // If slug update requested, validate and ensure uniqueness

@@ -35,13 +35,26 @@ export async function generateMetadata({ params }: MemorialPageProps): Promise<M
     }
 
     if (memorial) {
+      if (memorial.privacy === "private") {
+        return {
+          title: "Private Memorial | Theirs",
+          description: "A quiet, private memorial protected by the family.",
+          robots: { index: false, follow: false },
+          openGraph: {
+            title: "Private Memorial | Theirs",
+            description: "A quiet, private memorial protected by the family.",
+            url: `https://theirs.page/${slug}`,
+          },
+        }
+      }
+
       const title = `${memorial.full_name} — In Loving Memory | Theirs`
       const description = memorial.headline || `A quiet, permanent place dedicated to the memory and story of ${memorial.full_name}.`
 
       return {
         title,
         description,
-        robots: memorial.privacy === "unlisted" || memorial.privacy === "private"
+        robots: memorial.privacy === "unlisted"
           ? { index: false, follow: false }
           : { index: true, follow: true },
         openGraph: {
@@ -56,14 +69,10 @@ export async function generateMetadata({ params }: MemorialPageProps): Promise<M
     // Graceful fallback
   }
 
-  const capitalized = slug
-    .split("-")
-    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
-    .join(" ")
-
   return {
-    title: `${capitalized} — In Loving Memory | Theirs`,
-    description: `A quiet, permanent place on the internet dedicated to the memory of ${capitalized}.`,
+    title: "Memorial | Theirs",
+    description: "A quiet, permanent place on the internet dedicated to a human life.",
+    robots: { index: false, follow: false },
   }
 }
 

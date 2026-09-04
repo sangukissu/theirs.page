@@ -349,6 +349,11 @@ export function TheirsDashboardClient({
                         >
                           {m.status}
                         </span>
+                        {m.is_paid && (
+                          <span className="px-2 py-0.5 rounded-full text-[10px] font-mono uppercase font-semibold bg-blue-50 text-blue-700 border border-blue-200">
+                            Complete
+                          </span>
+                        )}
                       </div>
 
                       <div className="flex items-center gap-2 text-xs text-[#71717a] font-mono">

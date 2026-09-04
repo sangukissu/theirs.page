@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { createClient } from "@/utils/supabase/server"
 import { getSupabaseAdminSafe } from "@/utils/supabase/admin"
+import { assertMemorialAdmin } from "@/lib/memorial-auth"
 
 interface RouteContext {
   params: Promise<{ id: string }>
@@ -18,18 +19,10 @@ export async function PATCH(req: NextRequest, context: RouteContext) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
+    const { errorResponse } = await assertMemorialAdmin(memorialId, user.id)
+    if (errorResponse) return errorResponse
+
     const db = getSupabaseAdminSafe() || supabase
-
-    // Verify ownership
-    const { data: memorial } = await db
-      .from("memorials")
-      .select("owner_id")
-      .eq("id", memorialId)
-      .maybeSingle()
-
-    if (!memorial || memorial.owner_id !== user.id) {
-      return NextResponse.json({ error: "Forbidden" }, { status: 403 })
-    }
 
     const body = await req.json()
     const { target, targetId, action } = body // target: "memory" | "guestbook", action: "approve" | "reject" | "delete"

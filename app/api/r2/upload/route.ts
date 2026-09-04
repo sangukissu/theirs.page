@@ -1,9 +1,13 @@
 import { NextRequest, NextResponse } from "next/server"
 import { createClient } from "@/utils/supabase/server"
+import { getSupabaseAdminSafe } from "@/utils/supabase/admin"
 import { putR2Object } from "@/lib/r2"
+import { assertMemorialAdmin } from "@/lib/memorial-auth"
 
 const R2_PUBLIC_ENDPOINT =
   process.env.R2_MEDIA_ENDPOINT || "https://pub-3511ae96b3594eecbde1632d4cca06b6.r2.dev"
+
+const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
 
 function detectMediaType(filename: string, mime: string): "image" | "audio" | "video" {
   const lower = filename.toLowerCase()
@@ -54,53 +58,133 @@ function resolveContentType(filename: string, mime: string): string {
 
 export async function POST(req: NextRequest) {
   try {
-    // 1. Authenticate user or allow guest contribution
     const supabase = await createClient()
     const {
       data: { user },
     } = await supabase.auth.getUser()
 
-    // 2. Extract file and metadata from FormData
     const formData = await req.formData()
     const file = formData.get("file") as File | null
     const folder = (formData.get("folder") as string) || "gallery"
-    const memorialId = formData.get("memorialId") as string | null
-
-    if (!user) {
-      // Allow unauthenticated uploads only for memorial contributions
-      const isContribution = folder === "contributions" && Boolean(memorialId)
-      if (!isContribution) {
-        return NextResponse.json({ error: "Authentication required" }, { status: 401 })
-      }
-    }
+    const memorialIdOrSlug = formData.get("memorialId") as string | null
 
     if (!file) {
       return NextResponse.json({ error: "No file provided" }, { status: 400 })
     }
 
-    const MAX_SIZE = 25 * 1024 * 1024
-    if (file.size > MAX_SIZE) {
-      return NextResponse.json({ error: "File size exceeds 25MB limit." }, { status: 400 })
+    let resolvedMemorialId: string | null = null
+
+    // 1. Authenticated Upload vs. Guest Contribution Upload
+    if (user) {
+      if (memorialIdOrSlug) {
+        const authCheck = await assertMemorialAdmin(memorialIdOrSlug, user.id)
+        if (!authCheck.authorized || !authCheck.memorial) {
+          return NextResponse.json(
+            { error: authCheck.error || "You do not have permission to upload to this memorial" },
+            { status: 403 }
+          )
+        }
+
+        resolvedMemorialId = authCheck.memorial.id
+
+        // Check storage quota for unpaid tier
+        if (!authCheck.memorial.is_paid) {
+          const { count, error: countErr } = await supabase
+            .from("media_items")
+            .select("id", { count: "exact", head: true })
+            .eq("memorial_id", resolvedMemorialId)
+
+          if (!countErr && typeof count === "number" && count >= 200) {
+            return NextResponse.json(
+              {
+                error:
+                  "You have reached the free tier limit of 200 media files. Upgrade to Theirs Complete for unlimited original-resolution media.",
+              },
+              { status: 403 }
+            )
+          }
+        }
+      }
+
+      // Max 50MB for authenticated admin uploads
+      const MAX_ADMIN_SIZE = 50 * 1024 * 1024
+      if (file.size > MAX_ADMIN_SIZE) {
+        return NextResponse.json({ error: "File size exceeds 50MB limit." }, { status: 400 })
+      }
+    } else {
+      // Unauthenticated Guest Upload
+      const isContribution = folder === "contributions" && Boolean(memorialIdOrSlug)
+      if (!isContribution || !memorialIdOrSlug) {
+        return NextResponse.json({ error: "Authentication required" }, { status: 401 })
+      }
+
+      // Strict 15MB limit for guest uploads
+      const MAX_GUEST_SIZE = 15 * 1024 * 1024
+      if (file.size > MAX_GUEST_SIZE) {
+        return NextResponse.json(
+          { error: "Guest contribution files must be under 15MB." },
+          { status: 400 }
+        )
+      }
+
+      // Verify memorial exists and is published
+      const admin = getSupabaseAdminSafe() || supabase
+      const isUuid = UUID_REGEX.test(memorialIdOrSlug)
+      let query = admin.from("memorials").select("id, slug, status, privacy")
+      query = isUuid ? query.eq("id", memorialIdOrSlug) : query.eq("slug", memorialIdOrSlug)
+      const { data: memorial } = await query.maybeSingle()
+
+      if (!memorial) {
+        return NextResponse.json({ error: "Memorial not found" }, { status: 404 })
+      }
+
+      if (memorial.status !== "published") {
+        return NextResponse.json(
+          { error: "This memorial is not currently accepting uploads" },
+          { status: 403 }
+        )
+      }
+
+      if (memorial.privacy === "private") {
+        const cookieKey = memorial.slug || memorial.id
+        const isUnlocked = req.cookies.get(`theirs_pin_${cookieKey}`)?.value === "unlocked"
+        if (!isUnlocked) {
+          return NextResponse.json(
+            { error: "This memorial is private. Please enter the family PIN before uploading." },
+            { status: 403 }
+          )
+        }
+      }
+
+      resolvedMemorialId = memorial.id
     }
 
     const mediaType = detectMediaType(file.name, file.type)
     const contentType = resolveContentType(file.name, file.type)
 
-    // 3. Read file into buffer
+    // For unauthenticated guest contributions, only permit image and audio files
+    if (!user && mediaType === "video") {
+      return NextResponse.json(
+        { error: "Video uploads are reserved for memorial caretakers on Theirs Complete." },
+        { status: 400 }
+      )
+    }
+
+    // 2. Read file into buffer
     const arrayBuffer = await file.arrayBuffer()
     const buffer = Buffer.from(arrayBuffer)
 
-    // 4. Generate clean storage key
+    // 3. Generate clean storage key
     const timestamp = Date.now()
     const randomId = Math.random().toString(36).substring(2, 9)
     const cleanFilename = file.name.replace(/[^a-zA-Z0-9.-]/g, "_")
     const safeFolder = folder.replace(/[^a-zA-Z0-9_-]/g, "")
 
-    const key = memorialId
-      ? `memorials/${memorialId}/${safeFolder}/${timestamp}_${randomId}_${cleanFilename}`
+    const key = resolvedMemorialId
+      ? `memorials/${resolvedMemorialId}/${safeFolder}/${timestamp}_${randomId}_${cleanFilename}`
       : `uploads/${user?.id || "guest"}/${safeFolder}/${timestamp}_${randomId}_${cleanFilename}`
 
-    // 5. Upload directly to Cloudflare R2 (server-side, zero CORS issues)
+    // 4. Upload to Cloudflare R2
     await putR2Object(key, buffer, contentType, "public, max-age=31536000, immutable")
 
     const publicUrl = `${R2_PUBLIC_ENDPOINT.replace(/\/$/, "")}/${key}`

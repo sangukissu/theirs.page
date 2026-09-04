@@ -53,6 +53,8 @@ interface InitialMemorialData {
   access_pin_hash?: string | null
   successor_name?: string | null
   successor_email?: string | null
+  is_paid?: boolean
+  paid_at?: string | null
   updated_at?: string
 }
 
@@ -521,6 +523,7 @@ export function MemorialEditorClient({
               pin={form.pin}
               successorName={form.successor_name}
               successorEmail={form.successor_email}
+              isPaid={Boolean(initialMemorial.is_paid)}
               onChange={handleFieldChange}
               onDeleteMemorial={() => router.push("/dashboard")}
             />
