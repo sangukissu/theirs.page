@@ -45,35 +45,35 @@ export function canAccessFeature(
         allowed: false,
         status: 402,
         error:
-          "Life Story Timeline is a feature of Theirs Complete ($179). Upgrade to document milestone life events.",
+          "Life Story Timeline is a feature of Pro Plan ($179). Upgrade to document milestone life events.",
       }
     case "video_audio":
       return {
         allowed: false,
         status: 402,
         error:
-          "Audio notes and video recordings are features of Theirs Complete ($179). Free memorials support up to 5 photographs.",
+          "Audio notes and video recordings are features of Pro Plan ($179). Free memorials support up to 5 photographs.",
       }
     case "private_mode":
       return {
         allowed: false,
         status: 402,
         error:
-          "Private, PIN-protected memorials are a feature of Theirs Complete ($179). Free memorials can be published publicly or unlisted.",
+          "Private, PIN-protected memorials are a feature of Pro Plan ($179). Free memorials can be published publicly or unlisted.",
       }
     case "collaborators":
       return {
         allowed: false,
         status: 402,
         error:
-          "Inviting family caretakers and co-admins is a feature of Theirs Complete ($179).",
+          "Inviting family caretakers and co-admins is a feature of Pro Plan ($179).",
       }
     case "export":
       return {
         allowed: false,
         status: 402,
         error:
-          "Full family archive export with original media binaries is a feature of Theirs Complete ($179).",
+          "Full family archive export with original media binaries is a feature of Pro Plan ($179).",
       }
     case "media_upload":
       return { allowed: true }
@@ -102,7 +102,7 @@ export function assertMediaQuota(
       allowed: false,
       status: 402,
       error:
-        "Audio recordings and video clips require Theirs Complete ($179). Upgrade to preserve voice notes and videos.",
+        "Audio recordings and video clips require Pro Plan ($179). Upgrade to preserve voice notes and videos.",
     }
   }
 
@@ -111,7 +111,7 @@ export function assertMediaQuota(
     return {
       allowed: false,
       status: 402,
-      error: `Free memorials include up to ${FREE_PHOTO_LIMIT} photographs. Upgrade to Theirs Complete ($179) for family photo albums and audio notes.`,
+      error: `Free memorials include up to ${FREE_PHOTO_LIMIT} photographs. Upgrade to Pro Plan ($179) for family photo albums and audio notes.`,
     }
   }
 

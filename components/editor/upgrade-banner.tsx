@@ -60,7 +60,7 @@ export function UpgradeBanner({
             <div className="flex items-center gap-2">
               <span className="text-xs font-medium text-white">{featureTitle}</span>
               <span className="text-[10px] font-mono uppercase font-semibold text-emerald-400 px-1.5 py-0.2 rounded bg-emerald-950/60 border border-emerald-800/40">
-                Complete
+                Pro
               </span>
             </div>
             <span className="text-[11px] text-[#9c9c9c]">{description}</span>
@@ -77,7 +77,7 @@ export function UpgradeBanner({
           ) : (
             <Shield className="size-3 text-primary" />
           )}
-          <span>Upgrade to Complete ($179)</span>
+          <span>Upgrade to Pro ($179)</span>
         </button>
       </div>
     )
@@ -88,7 +88,7 @@ export function UpgradeBanner({
       <div className="flex items-baseline justify-between gap-2 border-b border-white/[0.08] pb-3">
         <div className="flex items-center gap-2">
           <span className="font-mono text-[10px] uppercase tracking-wider text-emerald-400 font-semibold px-2 py-0.5 rounded-full bg-emerald-950/60 border border-emerald-800/40">
-            Theirs Complete
+            Pro Plan
           </span>
           <span className="text-xs text-[#888]">·</span>
           <span className="text-xs text-neutral-300 font-medium">$179 one-time</span>
@@ -132,7 +132,7 @@ export function UpgradeBanner({
           ) : (
             <>
               <Shield className="size-3.5 text-primary" />
-              <span>Upgrade to Complete — $179</span>
+              <span>Upgrade to Pro — $179</span>
               <ArrowRight className="size-3 ml-0.5" />
             </>
           )}

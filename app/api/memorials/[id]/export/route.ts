@@ -58,7 +58,7 @@ export async function GET(req: NextRequest, context: RouteContext) {
 
     const memorial = authCheck.memorial
 
-    // Paywall check: Full archive export requires Theirs Complete
+    // Paywall check: Full archive export requires Pro Plan
     const featureCheck = canAccessFeature(memorial, "export")
     if (!featureCheck.allowed) {
       return NextResponse.json(

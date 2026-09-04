@@ -118,7 +118,7 @@ export function MemorialEditorClient({
   const formRef = useRef(form)
   formRef.current = form
 
-  // Checkout handling for Theirs Complete ($179)
+  // Checkout handling for Pro Plan ($179)
   const [checkingOut, setCheckingOut] = useState(false)
   const handleUpgradeComplete = async () => {
     setCheckingOut(true)
@@ -395,7 +395,7 @@ export function MemorialEditorClient({
             <ExternalLink className="size-3 text-[#888]" />
           </Link>
 
-          {/* Upgrade to Complete CTA (Only shown when not paid yet) */}
+          {/* Upgrade to Pro/Complete CTA (Only shown when not paid yet) */}
           {!initialMemorial.is_paid && (
             <button
               type="button"
@@ -480,7 +480,7 @@ export function MemorialEditorClient({
                           isActive ? "bg-white/20 text-white" : "bg-emerald-50 text-emerald-700 border border-emerald-200"
                         }`}
                       >
-                        Complete
+                        Pro
                       </span>
                     )}
 

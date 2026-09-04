@@ -348,7 +348,7 @@ export function TheirsDashboardClient({
                   </div>
                   <div className="flex flex-col">
                     <div className="flex items-center gap-2">
-                      <span className="text-xs font-medium text-white">Theirs Complete</span>
+                      <span className="text-xs font-medium text-white">Pro Plan</span>
                       <span className="text-[10px] font-mono uppercase font-semibold text-emerald-400 px-1.5 py-0.2 rounded bg-emerald-950/60 border border-emerald-800/40">
                         $179 One-Time
                       </span>
@@ -444,7 +444,7 @@ export function TheirsDashboardClient({
                       <ExternalLink className="size-3 text-[#888]" />
                     </Link>
 
-                    {/* Upgrade to Complete CTA Button (for free memorials) */}
+                    {/* Upgrade to Pro CTA Button (for free memorials) */}
                     {!m.is_paid && (
                       <button
                         type="button"

@@ -1,5 +1,5 @@
 /**
- * lib/payments.ts — Theirs Complete ($179) Payment Configuration & Helpers
+ * lib/payments.ts — Pro Plan  ($179) Payment Configuration & Helpers
  */
 
 export const THEIRS_COMPLETE_PRICE_USD = 179
@@ -24,7 +24,7 @@ export function getDodoBaseURL(): string {
 }
 
 /**
- * Retrieve configured Dodo Payments product ID for Theirs Complete ($179)
+ * Retrieve configured Dodo Payments product ID for Pro Plan ($179)
  */
 export function getDodoCompleteProductId(): string {
   return (

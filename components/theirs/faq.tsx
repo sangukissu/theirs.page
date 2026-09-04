@@ -33,7 +33,7 @@ const FAQS: FaqItem[] = [
     id: "pricing-subscription",
     question: "Is there a recurring monthly subscription?",
     answer:
-      "Never. We believe charging a recurring subscription for remembrance is wrong. Theirs Complete is a one-time $179 payment per memorial, with zero monthly fees. It is completely free to start and share with up to 5 photos, and you only upgrade when your family is ready.",
+      "Never. We believe charging a recurring subscription for remembrance is wrong. Pro Plan is a one-time $179 payment per memorial, with zero monthly fees. It is completely free to start and share with up to 5 photos, and you only upgrade when your family is ready.",
   },
   {
     id: "offline-export",

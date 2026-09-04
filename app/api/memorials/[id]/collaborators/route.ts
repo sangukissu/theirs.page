@@ -85,7 +85,7 @@ export async function POST(req: NextRequest, context: RouteContext) {
       return authCheck.errorResponse || NextResponse.json({ error: "Forbidden" }, { status: 403 })
     }
 
-    // Paywall Check: Caretakers and collaborators require Theirs Complete ($179)
+    // Paywall Check: Caretakers and collaborators require Pro Plan ($179)
     const paywallCheck = canAccessFeature(authCheck.memorial, "collaborators")
     if (!paywallCheck.allowed) {
       return NextResponse.json(

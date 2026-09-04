@@ -25,7 +25,7 @@ export async function POST(req: NextRequest, context: RouteContext) {
       return authCheck.errorResponse || NextResponse.json({ error: "Forbidden" }, { status: 403 })
     }
 
-    // Paywall Check: Life Story timeline requires Theirs Complete ($179)
+    // Paywall Check: Life Story timeline requires Pro Plan ($179)
     const featureCheck = canAccessFeature(authCheck.memorial, "timeline")
     if (!featureCheck.allowed) {
       return NextResponse.json(

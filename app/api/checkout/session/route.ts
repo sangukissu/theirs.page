@@ -53,7 +53,7 @@ export async function POST(request: NextRequest) {
     const country = getCountryFromHeaders(request)
     const baseURL = getDodoBaseURL()
 
-    // 1. PRIMARY PATH: Theirs Complete ($179 One-Time Per-Memorial)
+    // 1. PRIMARY PATH: Theirs Pro Plan ($179 One-Time Per-Memorial)
     if (memorialId) {
       const authCheck = await assertMemorialOwner(memorialId, user.id)
       if (!authCheck.authorized || !authCheck.memorial) {
@@ -65,7 +65,7 @@ export async function POST(request: NextRequest) {
 
       if (authCheck.memorial.is_paid) {
         return NextResponse.json(
-          { error: "This memorial is already upgraded to Theirs Complete" },
+          { error: "This memorial is already upgraded to Pro Plan" },
           { status: 400 }
         )
       }
@@ -73,7 +73,7 @@ export async function POST(request: NextRequest) {
       const productId = getDodoCompleteProductId()
       if (!productId) {
         return NextResponse.json(
-          { error: "Dodo Payments product configuration missing for Theirs Complete" },
+          { error: "Dodo Payments product configuration missing for Pro Plan" },
           { status: 500 }
         )
       }

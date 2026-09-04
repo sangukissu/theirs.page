@@ -93,7 +93,7 @@ export async function POST(req: NextRequest) {
           return NextResponse.json(
             {
               error:
-                "You have reached the free tier limit of 200 photos and recordings. Upgrade to Theirs Complete for unlimited original-resolution storage.",
+                "You have reached the free tier limit of 200 photos and recordings. Upgrade to Pro Plan for unlimited original-resolution storage.",
             },
             { status: 403 }
           )

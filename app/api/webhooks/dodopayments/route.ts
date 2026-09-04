@@ -123,7 +123,7 @@ async function handlePaymentSucceeded(webhookData: any, webhookId: string) {
     const paymentData = webhookData.data
     const paymentId = paymentData.id || paymentData.payment_id
 
-    // 1. Check for Theirs Complete ($179 one-time memorial activation)
+    // 1. Check for Pro Plan ($179 one-time memorial activation)
     const isTheirsComplete =
       paymentData.metadata?.type === "theirs_complete" ||
       Boolean(paymentData.metadata?.memorial_id)
@@ -151,7 +151,7 @@ async function handlePaymentSucceeded(webhookData: any, webhookId: string) {
 
       // Security check: Validate currency
       if (currency !== "USD") {
-        console.error(`Invalid payment currency for Theirs Complete: ${currency}`)
+        console.error(`Invalid payment currency for Pro Plan: ${currency}`)
         throw new Error(`Invalid currency received: ${currency}`)
       }
 
@@ -185,7 +185,7 @@ async function handlePaymentSucceeded(webhookData: any, webhookId: string) {
         throw new Error(`Failed to activate memorial: ${rpcError.message}`)
       }
 
-      console.log("Theirs Complete activated successfully via atomic RPC:", rpcResult)
+      console.log("Pro Plan activated successfully via atomic RPC:", rpcResult)
       return
     }
 

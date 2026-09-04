@@ -2,6 +2,7 @@
 
 import { useState } from "react"
 import { Plus, Trash2, Users } from "lucide-react"
+import { ConfirmDeleteModal } from "../confirm-delete-modal"
 
 export interface EditorPerson {
   id: string
@@ -30,6 +31,8 @@ export function PeopleTab({
   const [relInput, setRelInput] = useState("")
   const [noteInput, setNoteInput] = useState("")
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [personToDelete, setPersonToDelete] = useState<EditorPerson | null>(null)
+  const [isDeleting, setIsDeleting] = useState(false)
 
   const firstName = fullName.split(" ")[0] || "them"
   const DRAFT_KEY = `theirs_people_draft_${memorialId}`
@@ -92,14 +95,24 @@ export function PeopleTab({
     }
   }
 
-  const handleDelete = async (id: string) => {
+  const handleConfirmDelete = async () => {
+    if (!personToDelete) return
+    setIsDeleting(true)
     try {
-      await fetch(`/api/memorials/${memorialId}/people?personId=${id}`, {
+      const res = await fetch(`/api/memorials/${memorialId}/people?personId=${personToDelete.id}`, {
         method: "DELETE",
       })
-      onRemovePerson(id)
+      if (res.ok) {
+        onRemovePerson(personToDelete.id)
+        setPersonToDelete(null)
+      } else {
+        const data = await res.json().catch(() => ({}))
+        console.error("Failed to delete person:", data.error)
+      }
     } catch (err) {
       console.error("Failed to delete person:", err)
+    } finally {
+      setIsDeleting(false)
     }
   }
 
@@ -209,7 +222,7 @@ export function PeopleTab({
 
               <button
                 type="button"
-                onClick={() => handleDelete(p.id)}
+                onClick={() => setPersonToDelete(p)}
                 className="size-7 rounded-full text-[#888] hover:text-rose-600 hover:bg-rose-50 flex items-center justify-center transition-colors cursor-pointer shrink-0"
                 title="Remove person"
               >
@@ -219,6 +232,16 @@ export function PeopleTab({
           ))
         )}
       </div>
+
+      <ConfirmDeleteModal
+        isOpen={!!personToDelete}
+        title="Remove person?"
+        description="This person will be removed from this memorial. This action cannot be undone."
+        itemPreview={personToDelete ? `${personToDelete.name} (${personToDelete.relationship})` : null}
+        isDeleting={isDeleting}
+        onConfirm={handleConfirmDelete}
+        onClose={() => !isDeleting && setPersonToDelete(null)}
+      />
     </div>
   )
 }

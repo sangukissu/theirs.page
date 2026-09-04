@@ -19,6 +19,7 @@ import {
   Sparkles,
 } from "lucide-react"
 import { UpgradeBanner } from "../upgrade-banner"
+import { ConfirmDeleteModal } from "../confirm-delete-modal"
 
 interface CollaboratorItem {
   id: string
@@ -76,6 +77,8 @@ export function SettingsTab({
   const [collabAdding, setCollabAdding] = useState(false)
   const [collabError, setCollabError] = useState<string | null>(null)
   const [copiedCollabId, setCopiedCollabId] = useState<string | null>(null)
+  const [caretakerToDelete, setCaretakerToDelete] = useState<CollaboratorItem | null>(null)
+  const [isRemovingCaretaker, setIsRemovingCaretaker] = useState(false)
 
   const handleCopyInvite = (collabId: string, link?: string) => {
     if (!link) return
@@ -173,17 +176,22 @@ export function SettingsTab({
   }
 
   // 3. Remove Caretaker
-  const handleRemoveCollaborator = async (collabId: string) => {
+  const handleConfirmRemoveCollaborator = async () => {
+    if (!caretakerToDelete) return
+    setIsRemovingCaretaker(true)
     try {
       const res = await fetch(
-        `/api/memorials/${memorialId}/collaborators?collaboratorId=${collabId}`,
+        `/api/memorials/${memorialId}/collaborators?collaboratorId=${caretakerToDelete.id}`,
         { method: "DELETE" }
       )
       if (res.ok) {
-        setCollaborators(collaborators.filter((c) => c.id !== collabId))
+        setCollaborators(collaborators.filter((c) => c.id !== caretakerToDelete.id))
+        setCaretakerToDelete(null)
       }
     } catch (err) {
       console.error("Failed to remove caretaker:", err)
+    } finally {
+      setIsRemovingCaretaker(false)
     }
   }
 
@@ -281,7 +289,7 @@ export function SettingsTab({
             </div>
             <div className="flex flex-col gap-0.5">
               <div className="flex items-center gap-2">
-                <h3 className="text-sm font-medium text-[#181925]">Theirs Complete Active</h3>
+                <h3 className="text-sm font-medium text-[#181925]">Theirs Pro Plan Active</h3>
                 <span className="px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 text-[10px] font-mono uppercase font-semibold">
                   Family Archive
                 </span>
@@ -297,7 +305,7 @@ export function SettingsTab({
           <div className="flex flex-col gap-1.5">
             <div className="flex items-center gap-2">
               <span className="font-mono text-[11px] uppercase tracking-wider text-emerald-400 font-semibold">
-                Theirs Complete
+                Pro Plan
               </span>
               <span className="text-xs text-[#888]">·</span>
               <span className="text-sm font-medium text-white">$179 one-time</span>
@@ -324,7 +332,7 @@ export function SettingsTab({
             ) : (
               <>
                 <Shield className="size-3.5 text-primary" />
-                <span>Upgrade to Complete</span>
+                <span>Upgrade to Pro</span>
               </>
             )}
           </button>
@@ -551,7 +559,7 @@ export function SettingsTab({
               />
               <span className="text-xs text-[#71717a]">
                 {!isPaid ? (
-                  <span className="text-amber-700 font-medium">Upgrade to Complete to activate PIN</span>
+                  <span className="text-amber-700 font-medium">Upgrade to Pro to activate PIN</span>
                 ) : pin && pin.length === 4 ? (
                   <span className="text-emerald-600 font-medium flex items-center gap-1">
                     <CheckCircle2 className="size-3.5" /> PIN active
@@ -579,7 +587,7 @@ export function SettingsTab({
           </div>
           {!isPaid && (
             <span className="text-[10px] font-mono uppercase font-semibold text-emerald-700 px-2 py-0.5 rounded-full bg-emerald-50 border border-emerald-200 shrink-0">
-              Theirs Complete
+              Pro Plan
             </span>
           )}
         </div>
@@ -685,7 +693,7 @@ export function SettingsTab({
 
                   <button
                     type="button"
-                    onClick={() => handleRemoveCollaborator(c.id)}
+                    onClick={() => setCaretakerToDelete(c)}
                     className="text-[#aaa] hover:text-rose-600 transition-colors cursor-pointer"
                     title="Remove caretaker"
                   >
@@ -711,7 +719,7 @@ export function SettingsTab({
           </div>
           {!isPaid && (
             <span className="text-[10px] font-mono uppercase font-semibold text-emerald-700 px-2 py-0.5 rounded-full bg-emerald-50 border border-emerald-200 shrink-0">
-              Theirs Complete
+              Pro Plan
             </span>
           )}
         </div>
@@ -810,7 +818,7 @@ export function SettingsTab({
           </div>
           {!isPaid && (
             <span className="text-[10px] font-mono uppercase font-semibold text-emerald-700 px-2 py-0.5 rounded-full bg-emerald-50 border border-emerald-200 shrink-0">
-              Theirs Complete
+              Pro Plan
             </span>
           )}
         </div>
@@ -879,6 +887,21 @@ export function SettingsTab({
           </div>
         </div>
       </div>
+
+      <ConfirmDeleteModal
+        isOpen={!!caretakerToDelete}
+        title="Remove caretaker?"
+        description="This family caretaker will lose access to collaborate and manage this memorial."
+        itemPreview={
+          caretakerToDelete
+            ? `${caretakerToDelete.email} (${caretakerToDelete.role === "co_admin" ? "Co-admin" : "Contributor"})`
+            : null
+        }
+        confirmLabel="Remove caretaker"
+        isDeleting={isRemovingCaretaker}
+        onConfirm={handleConfirmRemoveCollaborator}
+        onClose={() => !isRemovingCaretaker && setCaretakerToDelete(null)}
+      />
     </div>
   )
 }

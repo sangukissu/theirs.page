@@ -15,6 +15,7 @@ import {
   Sparkles,
 } from "lucide-react"
 import { UpgradeBanner } from "../upgrade-banner"
+import { ConfirmDeleteModal } from "../confirm-delete-modal"
 
 export interface EditorMediaItem {
   id: string
@@ -70,7 +71,7 @@ export function GalleryTab({
 
       if (!isPaid && (isAudio || isVideo)) {
         setUploadError(
-          `Audio voice notes and video clips are available on Theirs Complete. Upgrade to preserve ${file.name}.`
+          `Audio voice notes and video clips are available on Pro Plan. Upgrade to preserve ${file.name}.`
         )
         setIsUploading(false)
         setUploadProgress(null)
@@ -79,7 +80,7 @@ export function GalleryTab({
 
       if (!isPaid && !isAudio && !isVideo && currentPhotoCount >= 5) {
         setUploadError(
-          "Free memorials are limited to 5 photos. Upgrade to Theirs Complete for unlimited photos and media."
+          "Free memorials are limited to 5 photos. Upgrade to Pro Plan for unlimited photos and media."
         )
         setIsUploading(false)
         setUploadProgress(null)
@@ -134,14 +135,27 @@ export function GalleryTab({
     setUploadProgress(null)
   }
 
-  const handleDelete = async (id: string) => {
+  const [itemToDelete, setItemToDelete] = useState<EditorMediaItem | null>(null)
+  const [isDeleting, setIsDeleting] = useState(false)
+
+  const handleConfirmDelete = async () => {
+    if (!itemToDelete) return
+    setIsDeleting(true)
     try {
-      await fetch(`/api/memorials/${memorialId}/media?mediaId=${id}`, {
+      const res = await fetch(`/api/memorials/${memorialId}/media?mediaId=${itemToDelete.id}`, {
         method: "DELETE",
       })
-      onRemoveMedia(id)
+      if (res.ok) {
+        onRemoveMedia(itemToDelete.id)
+        setItemToDelete(null)
+      } else {
+        const data = await res.json().catch(() => ({}))
+        console.error("Failed to delete media:", data.error)
+      }
     } catch (err) {
       console.error("Failed to delete media:", err)
+    } finally {
+      setIsDeleting(false)
     }
   }
 
@@ -228,7 +242,7 @@ export function GalleryTab({
               onClick={onUpgrade}
               className="text-xs font-semibold text-rose-800 underline hover:no-underline cursor-pointer shrink-0"
             >
-              Upgrade to Complete
+              Upgrade to Pro
             </button>
           )}
         </div>
@@ -311,7 +325,7 @@ export function GalleryTab({
 
                   <button
                     type="button"
-                    onClick={() => handleDelete(item.id)}
+                    onClick={() => setItemToDelete(item)}
                     className="absolute top-2 right-2 size-7 rounded-full bg-black/60 hover:bg-rose-600 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all cursor-pointer shadow-sm"
                     title="Remove from gallery"
                   >
@@ -342,6 +356,29 @@ export function GalleryTab({
           </div>
         )}
       </div>
+
+      <ConfirmDeleteModal
+        isOpen={!!itemToDelete}
+        title={
+          itemToDelete?.media_type === "video"
+            ? "Delete this video clip?"
+            : itemToDelete?.media_type === "audio"
+            ? "Delete this voice recording?"
+            : "Delete this photograph?"
+        }
+        description="This item will be permanently removed from this memorial's gallery. This action cannot be undone."
+        itemPreview={
+          itemToDelete?.caption ||
+          (itemToDelete?.media_type === "video"
+            ? "Video clip"
+            : itemToDelete?.media_type === "audio"
+            ? "Audio recording"
+            : "Photograph")
+        }
+        isDeleting={isDeleting}
+        onConfirm={handleConfirmDelete}
+        onClose={() => !isDeleting && setItemToDelete(null)}
+      />
     </div>
   )
 }

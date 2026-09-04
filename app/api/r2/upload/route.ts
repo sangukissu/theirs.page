@@ -154,7 +154,7 @@ export async function POST(req: NextRequest) {
 
       if (mediaType === "video") {
         return NextResponse.json(
-          { error: "Video uploads are reserved for memorial caretakers on Theirs Complete." },
+          { error: "Video uploads are reserved for memorial caretakers on Pro Plan." },
           { status: 400 }
         )
       }

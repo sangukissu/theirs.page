@@ -2,6 +2,7 @@
 
 import { useState } from "react"
 import { Check, X, Trash2, Clock, MessageSquare, Heart } from "lucide-react"
+import { ConfirmDeleteModal } from "../confirm-delete-modal"
 
 export interface EditorMemory {
   id: string
@@ -41,11 +42,18 @@ export function ModerationTab({
   onDeleteGuestbook,
 }: ModerationTabProps) {
   const [subTab, setSubTab] = useState<"memories" | "guestbook">("memories")
+  const [deleteTarget, setDeleteTarget] = useState<{
+    type: "memory" | "guestbook"
+    id: string
+    title: string
+    preview: string
+  } | null>(null)
+  const [isDeleting, setIsDeleting] = useState(false)
 
   const handleModerate = async (
     target: "memory" | "guestbook",
     targetId: string,
-    action: "approve" | "reject" | "delete"
+    action: "approve" | "reject"
   ) => {
     try {
       const res = await fetch(`/api/memorials/${memorialId}/moderation`, {
@@ -56,15 +64,45 @@ export function ModerationTab({
 
       if (res.ok) {
         if (target === "memory") {
-          if (action === "delete") onDeleteMemory(targetId)
-          else onUpdateMemoryStatus(targetId, action === "approve" ? "approved" : "rejected")
+          onUpdateMemoryStatus(targetId, action === "approve" ? "approved" : "rejected")
         } else {
-          if (action === "delete") onDeleteGuestbook(targetId)
-          else onUpdateGuestbookStatus(targetId, action === "approve" ? "approved" : "rejected")
+          onUpdateGuestbookStatus(targetId, action === "approve" ? "approved" : "rejected")
         }
       }
     } catch (err) {
       console.error("Moderation action failed:", err)
+    }
+  }
+
+  const handleConfirmDelete = async () => {
+    if (!deleteTarget) return
+    setIsDeleting(true)
+    try {
+      const res = await fetch(`/api/memorials/${memorialId}/moderation`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          target: deleteTarget.type,
+          targetId: deleteTarget.id,
+          action: "delete",
+        }),
+      })
+
+      if (res.ok) {
+        if (deleteTarget.type === "memory") {
+          onDeleteMemory(deleteTarget.id)
+        } else {
+          onDeleteGuestbook(deleteTarget.id)
+        }
+        setDeleteTarget(null)
+      } else {
+        const data = await res.json().catch(() => ({}))
+        console.error("Failed to delete contribution:", data.error)
+      }
+    } catch (err) {
+      console.error("Moderation action failed:", err)
+    } finally {
+      setIsDeleting(false)
     }
   }
 
@@ -181,7 +219,14 @@ export function ModerationTab({
 
                   <button
                     type="button"
-                    onClick={() => handleModerate("memory", mem.id, "delete")}
+                    onClick={() =>
+                      setDeleteTarget({
+                        type: "memory",
+                        id: mem.id,
+                        title: "Delete memory permanently?",
+                        preview: `By ${mem.author_name}: “${mem.story.slice(0, 70)}${mem.story.length > 70 ? "..." : ""}”`,
+                      })
+                    }
                     className="p-1 rounded-full text-[#aaa] hover:text-rose-600 transition-colors cursor-pointer ml-1"
                     title="Delete permanently"
                   >
@@ -211,7 +256,14 @@ export function ModerationTab({
                   <span className="font-semibold text-[#181925]">{gb.author_name}</span>
                   <button
                     type="button"
-                    onClick={() => handleModerate("guestbook", gb.id, "delete")}
+                    onClick={() =>
+                      setDeleteTarget({
+                        type: "guestbook",
+                        id: gb.id,
+                        title: "Delete guestbook condolence?",
+                        preview: `By ${gb.author_name}: “${gb.message.slice(0, 70)}${gb.message.length > 70 ? "..." : ""}”`,
+                      })
+                    }
                     className="text-[#aaa] hover:text-rose-600 transition-colors cursor-pointer"
                     title="Delete message"
                   >
@@ -224,6 +276,16 @@ export function ModerationTab({
           )}
         </div>
       )}
+
+      <ConfirmDeleteModal
+        isOpen={!!deleteTarget}
+        title={deleteTarget?.title || "Delete item?"}
+        description="This contribution will be permanently removed and cannot be recovered."
+        itemPreview={deleteTarget?.preview}
+        isDeleting={isDeleting}
+        onConfirm={handleConfirmDelete}
+        onClose={() => !isDeleting && setDeleteTarget(null)}
+      />
     </div>
   )
 }

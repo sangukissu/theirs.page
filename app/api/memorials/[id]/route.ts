@@ -108,7 +108,7 @@ export async function PATCH(req: NextRequest, context: RouteContext) {
       )
     }
 
-    // 2. Paywall Check: Private mode requires Theirs Complete ($179)
+    // 2. Paywall Check: Private mode requires Pro Plan ($179)
     if (body.privacy === "private" || (body.pin && body.privacy !== "public")) {
       const paywallCheck = canAccessFeature(authCheck.memorial, "private_mode")
       if (!paywallCheck.allowed) {

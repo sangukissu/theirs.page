@@ -3,6 +3,7 @@
 import { useState } from "react"
 import { Plus, Trash2, Calendar, MapPin, Lock } from "lucide-react"
 import { UpgradeBanner } from "../upgrade-banner"
+import { ConfirmDeleteModal } from "../confirm-delete-modal"
 
 export interface EditorTimelineEvent {
   id: string
@@ -35,6 +36,8 @@ export function TimelineTab({
   const [titleInput, setTitleInput] = useState("")
   const [descInput, setDescInput] = useState("")
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [eventToDelete, setEventToDelete] = useState<EditorTimelineEvent | null>(null)
+  const [isDeleting, setIsDeleting] = useState(false)
 
   const firstName = fullName.split(" ")[0] || "them"
   const DRAFT_KEY = `theirs_timeline_draft_${memorialId}`
@@ -97,14 +100,24 @@ export function TimelineTab({
     }
   }
 
-  const handleDelete = async (id: string) => {
+  const handleConfirmDelete = async () => {
+    if (!eventToDelete) return
+    setIsDeleting(true)
     try {
-      await fetch(`/api/memorials/${memorialId}/timeline?eventId=${id}`, {
+      const res = await fetch(`/api/memorials/${memorialId}/timeline?eventId=${eventToDelete.id}`, {
         method: "DELETE",
       })
-      onRemoveEvent(id)
+      if (res.ok) {
+        onRemoveEvent(eventToDelete.id)
+        setEventToDelete(null)
+      } else {
+        const data = await res.json().catch(() => ({}))
+        console.error("Failed to delete milestone:", data.error)
+      }
     } catch (err) {
       console.error("Failed to delete milestone:", err)
+    } finally {
+      setIsDeleting(false)
     }
   }
 
@@ -148,7 +161,7 @@ export function TimelineTab({
           <span className="text-xs font-medium text-[#181925]">Add a Life Milestone</span>
           {!isPaid && (
             <span className="text-[10px] font-mono uppercase font-semibold text-emerald-700 px-2 py-0.5 rounded-full bg-emerald-50 border border-emerald-200">
-              Theirs Complete
+              Pro Plan
             </span>
           )}
         </div>
@@ -178,7 +191,7 @@ export function TimelineTab({
             }}
             placeholder={
               !isPaid
-                ? "Upgrade to Complete to add milestones"
+                ? "Upgrade to Pro to add milestones"
                 : "What happened? (e.g. Married Meena at St. Jude’s)"
             }
             className="flex-1 px-3.5 py-2 rounded-xl bg-[#fafafb] border border-black/[0.08] text-xs sm:text-sm text-[#181925] outline-none focus:border-primary/50 disabled:bg-neutral-100 disabled:text-neutral-500 disabled:cursor-not-allowed"
@@ -256,7 +269,7 @@ export function TimelineTab({
 
               <button
                 type="button"
-                onClick={() => handleDelete(evt.id)}
+                onClick={() => setEventToDelete(evt)}
                 className="size-7 rounded-full text-[#888] hover:text-rose-600 hover:bg-rose-50 flex items-center justify-center transition-colors cursor-pointer shrink-0"
                 title="Remove milestone"
               >
@@ -266,6 +279,16 @@ export function TimelineTab({
           ))
         )}
       </div>
+
+      <ConfirmDeleteModal
+        isOpen={!!eventToDelete}
+        title="Delete life milestone?"
+        description="This milestone will be permanently removed from the chronology. This action cannot be undone."
+        itemPreview={eventToDelete ? `${eventToDelete.year} · ${eventToDelete.title}` : null}
+        isDeleting={isDeleting}
+        onConfirm={handleConfirmDelete}
+        onClose={() => !isDeleting && setEventToDelete(null)}
+      />
     </div>
   )
 }
