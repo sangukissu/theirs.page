@@ -48,7 +48,6 @@ interface InitialMemorialData {
   headline?: string | null
   biography?: string | null
   portrait_photo_url?: string | null
-  cover_photo_url?: string | null
   status: "draft" | "published" | "archived"
   privacy: "public" | "unlisted" | "private"
   access_pin_hash?: string | null
@@ -278,7 +277,7 @@ export function MemorialEditorClient({
   }, [saveStatus])
 
   // 6. GALLERY MEDIA UPDATES
-  const handleUpdateMedia = async (id: string, field: "caption" | "approx_year", value: any) => {
+  const handleUpdateMedia = async (id: string, field: "caption" | "approx_year" | "location", value: any) => {
     setMediaItems((prev) =>
       prev.map((m) => (m.id === id ? { ...m, [field]: value } : m))
     )

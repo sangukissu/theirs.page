@@ -132,7 +132,6 @@ export async function PATCH(req: NextRequest, context: RouteContext) {
       "headline",
       "biography",
       "portrait_photo_url",
-      "cover_photo_url",
     ]
 
     for (const f of editorialFields) {

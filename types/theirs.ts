@@ -50,15 +50,12 @@ export interface Memorial {
   slug: string
   full_name: string
   preferred_name: string | null
-  birth_date: string | null
-  death_date: string | null
   birth_year: number | null
   death_year: number | null
   headline: string | null
   biography: string | null
   location: string | null
   portrait_photo_url: string | null
-  cover_photo_url: string | null
   privacy: PrivacyMode
   access_pin_hash: string | null
   successor_name: string | null
@@ -89,7 +86,6 @@ export interface Memory {
   story: string
   approx_year: number | null
   location: string | null
-  people_involved: string | null
   photo_url: string | null
   status: MemoryStatus
   visibility: MemoryVisibility
@@ -97,26 +93,14 @@ export interface Memory {
   approved_at: string | null
 }
 
-export interface Album {
-  id: string
-  memorial_id: string
-  title: string
-  description: string | null
-  order_index: number
-  created_at: string
-}
-
 export interface MediaItem {
   id: string
   memorial_id: string
-  album_id: string | null
   media_type: MediaType
   url: string
   caption: string | null
   approx_year: number | null
   location: string | null
-  tagged_people: string | null
-  uploaded_by: string | null
   order_index: number
   created_at: string
 }
@@ -125,11 +109,10 @@ export interface TimelineEvent {
   id: string
   memorial_id: string
   year: number
-  month: number | null
-  day: number | null
   title: string
   description: string | null
   photo_url: string | null
+  location: string | null
   order_index: number
   created_at: string
 }
@@ -141,7 +124,6 @@ export interface PersonInLife {
   relationship: string
   photo_url: string | null
   note: string | null
-  connected_memorial_id: string | null
   order_index: number
   created_at: string
 }
@@ -158,16 +140,15 @@ export interface GuestbookEntry {
 
 export interface ContentReport {
   id: string
-  memorial_id: string
   target_type: ReportTargetType
   target_id: string
-  reporter_email: string | null
   reason: string
+  reporter_email: string | null
   status: ReportStatus
   created_at: string
 }
 
-export interface Payment {
+export interface PaymentRecord {
   id: string
   user_id: string | null
   memorial_id: string | null
@@ -177,7 +158,7 @@ export interface Payment {
   status: PaymentStatus
   customer_email: string | null
   payment_method: string | null
-  metadata: Record<string, unknown>
+  metadata: Record<string, any>
   created_at: string
 }
 
@@ -195,7 +176,7 @@ export interface MemorialWithDetails extends Memorial {
   stats: MemorialSummaryStats
   memories?: Memory[]
   timeline_events?: TimelineEvent[]
-  albums?: (Album & { items: MediaItem[] })[]
+  media_items?: MediaItem[]
   people_in_life?: PersonInLife[]
   guestbook_entries?: GuestbookEntry[]
 }
@@ -211,6 +192,7 @@ export interface CreateMemorialInput {
   headline?: string | null
   birth_year?: number | null
   death_year?: number | null
+  location?: string | null
   successor_name?: string | null
   successor_email?: string | null
   slug?: string
@@ -219,14 +201,12 @@ export interface CreateMemorialInput {
 export interface UpdateMemorialInput {
   full_name?: string
   preferred_name?: string | null
-  birth_date?: string | null
-  death_date?: string | null
   birth_year?: number | null
   death_year?: number | null
   headline?: string | null
   biography?: string | null
+  location?: string | null
   portrait_photo_url?: string | null
-  cover_photo_url?: string | null
   privacy?: PrivacyMode
   status?: MemorialStatus
   successor_name?: string | null
@@ -241,7 +221,6 @@ export interface SubmitMemoryInput {
   story: string
   approx_year?: number | null
   location?: string | null
-  people_involved?: string | null
   photo_url?: string | null
   visibility?: MemoryVisibility
   turnstile_token?: string

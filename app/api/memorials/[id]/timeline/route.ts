@@ -35,7 +35,7 @@ export async function POST(req: NextRequest, context: RouteContext) {
     }
 
     const body = await req.json()
-    const { year, title, description, photo_url } = body
+    const { year, title, description, photo_url, location } = body
 
     if (!year || !title) {
       return NextResponse.json({ error: "Year and title are required" }, { status: 400 })
@@ -49,6 +49,7 @@ export async function POST(req: NextRequest, context: RouteContext) {
         year: Number(year),
         title: title.trim(),
         description: description?.trim() || null,
+        location: location?.trim() || null,
         photo_url: photo_url || null,
       })
       .select()

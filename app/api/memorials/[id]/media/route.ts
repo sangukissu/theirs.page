@@ -70,7 +70,6 @@ export async function POST(req: NextRequest, context: RouteContext) {
         caption: caption?.trim() || null,
         approx_year: approx_year ? Number(approx_year) : null,
         location: location?.trim() || null,
-        uploaded_by: user.id,
       })
       .select()
       .single()

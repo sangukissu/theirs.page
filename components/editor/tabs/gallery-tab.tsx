@@ -34,7 +34,7 @@ interface GalleryTabProps {
   onUpgrade?: () => void
   onAddMedia: (item: EditorMediaItem) => void
   onRemoveMedia: (id: string) => void
-  onUpdateMedia: (id: string, field: "caption" | "approx_year", value: any) => void
+  onUpdateMedia: (id: string, field: "caption" | "approx_year" | "location", value: any) => void
 }
 
 export function GalleryTab({
@@ -334,21 +334,30 @@ export function GalleryTab({
                 </div>
 
                 {/* Optional Inline Metadata */}
-                <div className="flex items-center gap-2">
+                <div className="flex flex-col gap-1.5">
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="text"
+                      defaultValue={item.caption || ""}
+                      onBlur={(e) => onUpdateMedia(item.id, "caption", e.target.value)}
+                      placeholder="Add caption (optional)"
+                      className="flex-1 px-2.5 py-1.5 rounded-lg bg-[#fafafb] border border-black/[0.06] text-xs text-[#181925] placeholder:text-[#aaa] outline-none focus:border-primary/50"
+                    />
+
+                    <input
+                      type="number"
+                      defaultValue={item.approx_year || ""}
+                      onBlur={(e) => onUpdateMedia(item.id, "approx_year", e.target.value ? Number(e.target.value) : null)}
+                      placeholder="Year"
+                      className="w-18 px-2 py-1.5 rounded-lg bg-[#fafafb] border border-black/[0.06] text-xs text-[#181925] font-mono placeholder:text-[#aaa] outline-none focus:border-primary/50 text-center"
+                    />
+                  </div>
                   <input
                     type="text"
-                    defaultValue={item.caption || ""}
-                    onBlur={(e) => onUpdateMedia(item.id, "caption", e.target.value)}
-                    placeholder="Add caption (optional)"
-                    className="flex-1 px-2.5 py-1.5 rounded-lg bg-[#fafafb] border border-black/[0.06] text-xs text-[#181925] placeholder:text-[#aaa] outline-none focus:border-primary/50"
-                  />
-
-                  <input
-                    type="number"
-                    defaultValue={item.approx_year || ""}
-                    onBlur={(e) => onUpdateMedia(item.id, "approx_year", e.target.value ? Number(e.target.value) : null)}
-                    placeholder="Year"
-                    className="w-18 px-2 py-1.5 rounded-lg bg-[#fafafb] border border-black/[0.06] text-xs text-[#181925] font-mono placeholder:text-[#aaa] outline-none focus:border-primary/50 text-center"
+                    defaultValue={item.location || ""}
+                    onBlur={(e) => onUpdateMedia(item.id, "location", e.target.value)}
+                    placeholder="Location (e.g. Cornwall, UK)"
+                    className="w-full px-2.5 py-1.5 rounded-lg bg-[#fafafb] border border-black/[0.06] text-xs text-[#181925] placeholder:text-[#aaa] outline-none focus:border-primary/50"
                   />
                 </div>
               </div>

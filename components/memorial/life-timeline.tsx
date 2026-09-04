@@ -82,15 +82,9 @@ export function LifeTimeline({ milestones, isDemo = false }: LifeTimelineProps) 
         
         {/* Section Heading */}
         <div className="flex flex-col gap-1.5 border-b border-black/[0.06] pb-6">
-          <span className="text-xs font-mono font-medium text-primary uppercase tracking-wider">
-            Chronology
-          </span>
           <h2 className="text-2xl sm:text-3xl font-medium tracking-tight text-[#181925]">
             Life Timeline & Milestones
           </h2>
-          <p className="text-xs sm:text-sm text-[#666]">
-            Anchor every memory to the chapter of life when it happened.
-          </p>
         </div>
 
         {/* Vertical Timeline Hairline Track / Empty State */}

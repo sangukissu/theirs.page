@@ -243,7 +243,7 @@ export default async function MemorialPage({ params }: MemorialPageProps) {
       guestbook = (guestbookRes.data || []).map((gb: any) => ({
         id: gb.id,
         author: gb.author_name,
-        location: gb.author_location || undefined,
+        location: undefined,
         date: new Date(gb.created_at).toLocaleDateString(),
         message: gb.message,
       }))

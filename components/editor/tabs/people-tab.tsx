@@ -1,7 +1,7 @@
 "use client"
 
-import { useState } from "react"
-import { Plus, Trash2, Users } from "lucide-react"
+import { useState, useRef } from "react"
+import { Plus, Trash2, Users, Upload, Image as ImageIcon, X, Loader2 } from "lucide-react"
 import { ConfirmDeleteModal } from "../confirm-delete-modal"
 
 export interface EditorPerson {
@@ -30,6 +30,9 @@ export function PeopleTab({
   const [nameInput, setNameInput] = useState("")
   const [relInput, setRelInput] = useState("")
   const [noteInput, setNoteInput] = useState("")
+  const [photoUrl, setPhotoUrl] = useState<string | null>(null)
+  const [isUploadingPhoto, setIsUploadingPhoto] = useState(false)
+  const fileInputRef = useRef<HTMLInputElement | null>(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [personToDelete, setPersonToDelete] = useState<EditorPerson | null>(null)
   const [isDeleting, setIsDeleting] = useState(false)
@@ -60,6 +63,32 @@ export function PeopleTab({
     }
   }
 
+  const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+
+    setIsUploadingPhoto(true)
+    try {
+      const formData = new FormData()
+      formData.append("file", file)
+      formData.append("folder", "people")
+      formData.append("memorialId", memorialId)
+
+      const res = await fetch("/api/r2/upload", {
+        method: "POST",
+        body: formData,
+      })
+      const data = await res.json()
+      if (res.ok && data.publicUrl) {
+        setPhotoUrl(data.publicUrl)
+      }
+    } catch (err) {
+      console.error("Person photo upload failed:", err)
+    } finally {
+      setIsUploadingPhoto(false)
+    }
+  }
+
   const handleAdd = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!nameInput.trim() || !relInput.trim()) return
@@ -72,6 +101,7 @@ export function PeopleTab({
         body: JSON.stringify({
           name: nameInput.trim(),
           relationship: relInput.trim(),
+          photo_url: photoUrl || null,
           note: noteInput.trim() || null,
         }),
       })
@@ -82,6 +112,7 @@ export function PeopleTab({
         setNameInput("")
         setRelInput("")
         setNoteInput("")
+        setPhotoUrl(null)
         if (typeof window !== "undefined") {
           try {
             localStorage.removeItem(DRAFT_KEY)
@@ -171,7 +202,56 @@ export function PeopleTab({
           className="px-3.5 py-2 rounded-xl bg-[#fafafb] border border-black/[0.08] text-xs text-[#181925] outline-none focus:border-primary/50"
         />
 
-        <div className="flex justify-end pt-1">
+        <div className="flex items-center gap-3 pt-0.5">
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="image/*"
+            disabled={isUploadingPhoto}
+            onChange={handlePhotoUpload}
+            className="hidden"
+          />
+
+          {photoUrl ? (
+            <div className="inline-flex items-center gap-2 p-1.5 pr-2.5 rounded-xl bg-[#fafafb] border border-black/[0.08]">
+              <img
+                src={photoUrl}
+                alt="Person avatar"
+                className="size-7 rounded-full object-cover grayscale"
+              />
+              <span className="text-[11px] text-[#444] font-medium">Photo attached</span>
+              <button
+                type="button"
+                onClick={() => setPhotoUrl(null)}
+                className="size-5 rounded-full hover:bg-rose-50 text-neutral-400 hover:text-rose-600 flex items-center justify-center transition-colors cursor-pointer"
+                title="Remove photo"
+              >
+                <X className="size-3" />
+              </button>
+            </div>
+          ) : (
+            <button
+              type="button"
+              disabled={isUploadingPhoto}
+              onClick={() => fileInputRef.current?.click()}
+              className="inline-flex items-center gap-1.5 text-xs text-[#666] hover:text-[#181925] disabled:opacity-50 cursor-pointer select-none"
+            >
+              {isUploadingPhoto ? (
+                <>
+                  <Loader2 className="size-3.5 animate-spin text-primary" />
+                  <span>Uploading photo...</span>
+                </>
+              ) : (
+                <>
+                  <Upload className="size-3.5" />
+                  <span>Attach a photo (optional)</span>
+                </>
+              )}
+            </button>
+          )}
+
+          <div className="flex-1" />
+
           <button
             type="submit"
             disabled={isSubmitting || !nameInput.trim() || !relInput.trim()}
@@ -200,9 +280,17 @@ export function PeopleTab({
               className="p-4 rounded-2xl bg-white border border-black/[0.06] flex items-center justify-between gap-4 group"
             >
               <div className="flex items-center gap-3 min-w-0">
-                <div className="size-8 rounded-full bg-[#f4f4f6] text-xs font-semibold text-[#181925] flex items-center justify-center shrink-0">
-                  {p.name.charAt(0)}
-                </div>
+                {p.photo_url ? (
+                  <img
+                    src={p.photo_url}
+                    alt={p.name}
+                    className="size-9 rounded-full object-cover grayscale shrink-0 border border-black/[0.08]"
+                  />
+                ) : (
+                  <div className="size-9 rounded-full bg-[#f4f4f6] text-xs font-semibold text-[#181925] flex items-center justify-center shrink-0 border border-black/[0.06]">
+                    {p.name.charAt(0)}
+                  </div>
+                )}
                 <div className="flex flex-col min-w-0">
                   <div className="flex items-baseline gap-2">
                     <span className="text-xs sm:text-sm font-medium text-[#181925] truncate">

@@ -159,15 +159,10 @@ export function MemoriesStream({
       <div className="flex flex-col gap-5 border-b border-black/[0.06] pb-6">
         <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
           <div className="flex flex-col gap-1">
-            <span className="text-xs font-mono font-medium text-primary uppercase tracking-wider">
-              Family & Contributor Archive
-            </span>
+           
             <h2 className="text-2xl sm:text-3xl font-medium tracking-tight text-[#181925]">
               Memories of {firstName}
             </h2>
-            <p className="text-xs sm:text-sm text-[#71717a]">
-              {activeMemories.length} memories recorded · from {new Set(activeMemories.map((m) => m.authorName)).size} loved ones
-            </p>
           </div>
 
           <button
@@ -176,7 +171,7 @@ export function MemoriesStream({
             className="inline-flex items-center gap-1.5 px-4 py-2 rounded-full bg-[#181925] hover:bg-[#252736] text-white text-xs font-medium transition-all self-start sm:self-auto cursor-pointer shadow-xs active:scale-95"
           >
             <Plus className="size-3.5" />
-            <span>Add your memory</span>
+            <span className="hidden sm:block">Add your memory</span>
           </button>
         </div>
 

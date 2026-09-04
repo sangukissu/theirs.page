@@ -123,7 +123,6 @@ export async function GET(req: NextRequest, context: RouteContext) {
         headline: memorial.headline || null,
         biography: memorial.biography || null,
         portrait_photo_url: memorial.portrait_photo_url || null,
-        cover_photo_url: memorial.cover_photo_url || null,
         status: memorial.status,
         privacy: memorial.privacy,
         is_paid_complete: Boolean(memorial.is_paid),
@@ -257,18 +256,11 @@ Thank you for trusting Theirs to help preserve ${memorial.full_name}'s memory.
       }
     }
 
-    // Also download portrait and cover photo if available
+    // Also download portrait if available
     if (memorial.portrait_photo_url && photosFolder) {
       const portraitBuffer = await fetchMediaBuffer(memorial.portrait_photo_url)
       if (portraitBuffer) {
         photosFolder.file("000_portrait_photo.jpg", portraitBuffer)
-      }
-    }
-
-    if (memorial.cover_photo_url && photosFolder) {
-      const coverBuffer = await fetchMediaBuffer(memorial.cover_photo_url)
-      if (coverBuffer) {
-        photosFolder.file("000_cover_photo.jpg", coverBuffer)
       }
     }
 
