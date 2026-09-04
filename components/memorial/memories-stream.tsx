@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useRef } from "react"
+import { useState } from "react"
 import {
   Plus,
   Play,
@@ -9,15 +9,9 @@ import {
   Share2,
   MoreVertical,
   Mail,
-  Check,
-  CheckCircle2,
-  Camera,
-  BookOpen,
-  Sparkles,
 } from "lucide-react"
 import { ContributionType } from "./contribute-modal"
 import { TributeEmblem, TributeType } from "./tribute-emblems"
-import { Turnstile } from "@marsidev/react-turnstile"
 
 export interface MemoryItem {
   id: string
@@ -136,21 +130,6 @@ export function MemoriesStream({
   const [activeMenuId, setActiveMenuId] = useState<string | null>(null)
   const [copiedId, setCopiedId] = useState<string | null>(null)
 
-  // Inline tribute form state
-  const [inlineType, setInlineType] = useState<TributeType>("flower")
-  const [inlineStory, setInlineStory] = useState("")
-  const [inlineAuthor, setInlineAuthor] = useState("")
-  const [inlineRelationship, setInlineRelationship] = useState("")
-  const [inlinePhotoFile, setInlinePhotoFile] = useState<File | null>(null)
-  const [inlinePhotoPreview, setInlinePhotoPreview] = useState<string | null>(null)
-  const [isSubmitting, setIsSubmitting] = useState(false)
-  const [submitSuccess, setSubmitSuccess] = useState(false)
-  const [submitError, setSubmitError] = useState<string | null>(null)
-  const [turnstileToken, setTurnstileToken] = useState("")
-
-  const inlineFileInputRef = useRef<HTMLInputElement | null>(null)
-  const siteKey = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY || ""
-
   const activeMemories = isDemo
     ? (memories && memories.length > 0 ? memories : DEFAULT_MEMORIES)
     : (memories || [])
@@ -183,309 +162,45 @@ export function MemoriesStream({
     setActiveMenuId(null)
   }
 
-  const handleInlinePhotoSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0]
-    if (!file) return
-    setInlinePhotoFile(file)
-    setInlinePhotoPreview(URL.createObjectURL(file))
-  }
-
-  const handleInlineSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    if (!inlineStory.trim() || !inlineAuthor.trim()) {
-      setSubmitError("Please provide your name and words of remembrance.")
-      return
-    }
-
-    if (isDemo || !memorialId) {
-      setSubmitSuccess(true)
-      setInlineStory("")
-      setInlineAuthor("")
-      setInlineRelationship("")
-      setInlinePhotoFile(null)
-      setInlinePhotoPreview(null)
-      return
-    }
-
-    setIsSubmitting(true)
-    setSubmitError(null)
-
-    try {
-      let uploadedUrl: string | null = null
-
-      // If photo was selected, upload first to Cloudflare R2
-      if (inlinePhotoFile) {
-        const formData = new FormData()
-        formData.append("file", inlinePhotoFile)
-        formData.append("folder", "memories")
-        formData.append("memorialId", memorialId)
-
-        const uploadRes = await fetch("/api/r2/upload", {
-          method: "POST",
-          body: formData,
-        })
-        const uploadData = await uploadRes.json().catch(() => ({}))
-        if (!uploadRes.ok) {
-          throw new Error(uploadData.error || "Failed to upload photo")
-        }
-        uploadedUrl = uploadData.publicUrl
-      }
-
-      const res = await fetch(`/api/memorials/${memorialId}/contribute`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          type: "memory",
-          author_name: inlineAuthor.trim(),
-          author_relationship: inlineRelationship.trim() || null,
-          content: inlineStory.trim(),
-          tribute_type: uploadedUrl ? "photo" : inlineType,
-          photo_url: uploadedUrl,
-          turnstile_token: turnstileToken,
-        }),
-      })
-
-      const data = await res.json().catch(() => ({}))
-      if (!res.ok) {
-        throw new Error(data.error || "Failed to submit tribute.")
-      }
-
-      setSubmitSuccess(true)
-      setInlineStory("")
-      setInlineAuthor("")
-      setInlineRelationship("")
-      setInlinePhotoFile(null)
-      setInlinePhotoPreview(null)
-    } catch (err: any) {
-      console.error("Tribute submission error:", err)
-      setSubmitError(err.message || "Something went wrong. Please try again.")
-    } finally {
-      setIsSubmitting(false)
-    }
-  }
-
   return (
-    <section id="memories" className="py-12 sm:py-16 px-4 max-w-4xl mx-auto flex flex-col gap-10 scroll-mt-24">
+    <section id="tributes" className="py-12 sm:py-16 px-4 max-w-4xl mx-auto flex flex-col gap-8 scroll-mt-24">
       
-      {/* Header */}
-      <div className="flex flex-col gap-5 border-b border-black/[0.06] pb-6">
-        <div className="flex items-center justify-between gap-4">
-          <div className="flex flex-col gap-1">
-            <h2 className="text-2xl sm:text-3xl font-medium tracking-tight text-[#181925]">
-              Memories & Tributes of {firstName}
-            </h2>
-            <p className="text-xs sm:text-sm text-[#71717a]">
-              Quiet offerings, remembered laughter, and heartfelt reflections from those who knew them.
-            </p>
-          </div>
-
-          <button
-            type="button"
-            onClick={() => onOpenContribute("memory")}
-            className="inline-flex items-center gap-1.5 px-4 py-2 rounded-full bg-[#181925] hover:bg-[#252736] text-white text-xs font-medium transition-all cursor-pointer shadow-xs active:scale-95 shrink-0"
-          >
-            <Plus className="size-3.5" />
-            <span className="hidden sm:inline">Add full story</span>
-            <span className="sm:hidden">Contribute</span>
-          </button>
-        </div>
-      </div>
-
-      {/* Dignified Inline "Leave a Tribute" Box */}
-      <div className="p-6 sm:p-7 rounded-3xl bg-[#fbfbfa] border border-black/[0.07] shadow-2xs flex flex-col gap-5">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-          <div className="flex flex-col">
-            <h3 className="text-base sm:text-lg font-medium text-[#181925]">
-              Leave a tribute for {firstName}
-            </h3>
-            <span className="text-xs text-[#71717a]">
-              Choose a token of remembrance to accompany your words.
-            </span>
-          </div>
-
-          {/* 3 Ritual Offering Tokens */}
-          <div className="flex items-center gap-1.5 p-1 rounded-2xl bg-[#f0eee9] border border-black/[0.04] self-start sm:self-auto">
-            <button
-              type="button"
-              onClick={() => setInlineType("flower")}
-              className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium transition-all cursor-pointer select-none ${
-                inlineType === "flower"
-                  ? "bg-white text-[#181925] shadow-2xs"
-                  : "text-[#666] hover:text-[#181925]"
-              }`}
-            >
-              <TributeEmblem type="flower" size={16} className="text-[#8b5a45]" />
-              <span>Lay a Flower</span>
-            </button>
-
-            <button
-              type="button"
-              onClick={() => setInlineType("note")}
-              className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium transition-all cursor-pointer select-none ${
-                inlineType === "note"
-                  ? "bg-white text-[#181925] shadow-2xs"
-                  : "text-[#666] hover:text-[#181925]"
-              }`}
-            >
-              <TributeEmblem type="note" size={16} className="text-[#555]" />
-              <span>Leave a Note</span>
-            </button>
-
-            <button
-              type="button"
-              onClick={() => {
-                setInlineType("photo")
-                inlineFileInputRef.current?.click()
-              }}
-              className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium transition-all cursor-pointer select-none ${
-                inlineType === "photo"
-                  ? "bg-white text-[#181925] shadow-2xs"
-                  : "text-[#666] hover:text-[#181925]"
-              }`}
-            >
-              <Camera className="size-3.5 text-[#555]" />
-              <span>Share a Photo</span>
-            </button>
-          </div>
+      {/* Header with single clear CTA */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-black/[0.06] pb-6">
+        <div className="flex flex-col gap-1">
+          <h2 className="text-2xl sm:text-3xl font-medium tracking-tight text-[#181925]">
+            Tributes to {firstName}
+          </h2>
+          <p className="text-xs sm:text-sm text-[#71717a]">
+            Stories, prayers, and words of remembrance from family and friends.
+          </p>
         </div>
 
-        {submitSuccess ? (
-          <div className="p-6 rounded-2xl bg-white border border-emerald-200 text-center flex flex-col items-center gap-2 animate-in fade-in">
-            <CheckCircle2 className="size-8 text-emerald-600" />
-            <p className="text-sm font-medium text-[#181925]">
-              Your tribute has been lovingly received.
-            </p>
-            <p className="text-xs text-[#71717a] max-w-md">
-              Thank you for honoring {firstName}. Your words have been recorded and sent to the family for archival review.
-            </p>
-            <button
-              type="button"
-              onClick={() => setSubmitSuccess(false)}
-              className="mt-2 text-xs font-medium text-primary hover:underline cursor-pointer"
-            >
-              Leave another tribute
-            </button>
-          </div>
-        ) : (
-          <form onSubmit={handleInlineSubmit} className="flex flex-col gap-4">
-            {/* Textarea */}
-            <div className="relative">
-              <textarea
-                required
-                rows={3}
-                value={inlineStory}
-                onChange={(e) => setInlineStory(e.target.value)}
-                placeholder={
-                  inlineType === "flower"
-                    ? `Write your message of remembrance for ${firstName}...`
-                    : inlineType === "photo"
-                    ? `Describe this photo or share the story behind this moment...`
-                    : `Share a treasured story, a favorite phrase, or a memory of ${firstName}...`
-                }
-                className="w-full p-4 rounded-2xl bg-white border border-black/[0.08] text-sm text-[#181925] placeholder:text-[#999] outline-none focus:border-primary/50 focus:ring-1 focus:ring-primary/20 transition-all resize-y min-h-[100px] leading-relaxed"
-              />
-            </div>
-
-            {/* Photo preview if photo selected */}
-            {inlinePhotoPreview && (
-              <div className="flex items-center gap-3 p-3 rounded-2xl bg-white border border-black/[0.06]">
-                <img
-                  src={inlinePhotoPreview}
-                  alt="Preview"
-                  className="size-16 rounded-xl object-cover grayscale contrast-105 border border-black/[0.06]"
-                />
-                <div className="flex-1 flex flex-col">
-                  <span className="text-xs font-medium text-[#181925] truncate">
-                    {inlinePhotoFile?.name}
-                  </span>
-                  <span className="text-[11px] text-[#71717a]">
-                    Photo attached to your tribute
-                  </span>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setInlinePhotoFile(null)
-                    setInlinePhotoPreview(null)
-                    setInlineType("flower")
-                  }}
-                  className="text-xs text-rose-600 hover:underline cursor-pointer px-2 py-1"
-                >
-                  Remove
-                </button>
-              </div>
-            )}
-
-            <input
-              ref={inlineFileInputRef}
-              type="file"
-              accept="image/*"
-              className="hidden"
-              onChange={handleInlinePhotoSelect}
-            />
-
-            {/* Author Attribution & Action Row */}
-            <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 pt-1">
-              <div className="flex flex-col sm:flex-row items-center gap-2.5 flex-1">
-                <input
-                  type="text"
-                  required
-                  value={inlineAuthor}
-                  onChange={(e) => setInlineAuthor(e.target.value)}
-                  placeholder="Your full name"
-                  className="w-full sm:w-56 px-3.5 py-2 rounded-xl bg-white border border-black/[0.08] text-xs text-[#181925] placeholder:text-[#aaa] outline-none focus:border-primary/50"
-                />
-                <input
-                  type="text"
-                  value={inlineRelationship}
-                  onChange={(e) => setInlineRelationship(e.target.value)}
-                  placeholder="Relationship (e.g. Lifelong friend, Daughter)"
-                  className="w-full sm:flex-1 px-3.5 py-2 rounded-xl bg-white border border-black/[0.08] text-xs text-[#181925] placeholder:text-[#aaa] outline-none focus:border-primary/50"
-                />
-              </div>
-
-              <button
-                type="submit"
-                disabled={isSubmitting}
-                className="px-6 py-2.5 rounded-full bg-[#181925] hover:bg-[#292b3a] text-white text-xs font-medium transition-all cursor-pointer shadow-xs active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed shrink-0"
-              >
-                {isSubmitting ? "Publishing..." : "Publish Tribute"}
-              </button>
-            </div>
-
-            {submitError && (
-              <p className="text-xs text-rose-600 font-medium">{submitError}</p>
-            )}
-
-            {/* Cloudflare Turnstile Verification */}
-            {siteKey && (
-              <div className="mt-1 flex justify-start">
-                <Turnstile
-                  siteKey={siteKey}
-                  onSuccess={(token) => setTurnstileToken(token)}
-                  options={{ theme: "light", size: "compact" }}
-                />
-              </div>
-            )}
-          </form>
-        )}
+        <button
+          type="button"
+          onClick={() => onOpenContribute("memory")}
+          className="inline-flex items-center gap-1.5 px-5 py-2.5 rounded-full bg-[#181925] hover:bg-[#252736] text-white text-xs font-medium transition-all cursor-pointer shadow-xs active:scale-95 shrink-0 self-start sm:self-auto"
+        >
+          <Plus className="size-3.5" />
+          <span>Leave a Tribute</span>
+        </button>
       </div>
 
       {/* Reading Stream of Tributes */}
       {sorted.length === 0 ? (
-        <div className="py-16 text-center text-sm text-[#71717a] rounded-3xl bg-[#fafafb] border border-black/[0.06] flex flex-col items-center justify-center gap-3">
-          <p>No tributes shared yet. Be the first to leave a memory of {firstName}.</p>
+        <div className="py-16 text-center text-sm text-[#71717a] rounded-3xl bg-[#f7f7f8] border border-black/[0.06] flex flex-col items-center justify-center gap-3">
+          <p>No tributes shared yet. Be the first to leave words of remembrance for {firstName}.</p>
           <button
             type="button"
             onClick={() => onOpenContribute("memory")}
-            className="inline-flex items-center gap-1.5 text-xs font-medium text-primary hover:underline cursor-pointer"
+            className="inline-flex items-center gap-1.5 px-5 py-2.5 rounded-full bg-[#181925] text-white text-xs font-medium hover:bg-[#252736] transition-all cursor-pointer shadow-xs active:scale-95"
           >
             <Plus className="size-3.5" />
-            <span>Add the first memory</span>
+            <span>Leave a Tribute</span>
           </button>
         </div>
       ) : (
-        <div className="flex flex-col gap-6">
+        <div className="flex flex-col gap-5">
           {sorted.map((item) => {
             const isAudioPlaying = playingAudioId === item.id
             const isExpanded = !!expandedIds[item.id]
@@ -502,13 +217,13 @@ export function MemoriesStream({
             return (
               <article
                 key={item.id}
-                className="p-6 sm:p-7 rounded-3xl bg-white border border-black/[0.07] flex flex-col sm:flex-row items-start gap-4 sm:gap-6 transition-all hover:border-black/[0.12] hover:shadow-2xs relative group"
+                className="p-6 sm:p-7 rounded-3xl bg-[#f7f7f8] border border-black/[0.06] flex flex-col sm:flex-row items-start gap-4 sm:gap-6 transition-all hover:border-black/[0.12] relative group shadow-none"
               >
-                {/* Left Column: Hand-Crafted Linocut Ritual Emblem */}
-                <div className="shrink-0 p-3 rounded-2xl bg-[#faf8f5] border border-black/[0.04] text-[#8b5a45] flex items-center justify-center self-start">
+                {/* Left Column: Linocut Ritual Emblem in clean white badge */}
+                <div className="shrink-0 p-2.5 rounded-2xl bg-white border border-black/[0.06] text-[#8b5a45] flex items-center justify-center self-start shadow-none">
                   <TributeEmblem
                     type={item.tributeType || (item.photoUrl ? "photo" : "flower")}
-                    size={42}
+                    size={40}
                   />
                 </div>
 
@@ -531,7 +246,7 @@ export function MemoriesStream({
                           </>
                         )}
                         {isNew && (
-                          <span className="text-[10px] uppercase font-mono px-2 py-0.5 rounded-full bg-amber-50 text-amber-900 border border-amber-200">
+                          <span className="text-[10px] uppercase font-mono px-2 py-0.5 rounded-full bg-amber-100/70 text-amber-900 border border-amber-200">
                             New
                           </span>
                         )}
@@ -606,7 +321,7 @@ export function MemoriesStream({
 
                   {/* Embedded Audio Memo (if present) */}
                   {item.audioTitle && (
-                    <div className="p-3 rounded-2xl bg-[#fafafb] border border-black/[0.06] flex items-center justify-between gap-3 my-1">
+                    <div className="p-3 rounded-2xl bg-white border border-black/[0.06] flex items-center justify-between gap-3 my-1">
                       <button
                         type="button"
                         onClick={() => setPlayingAudioId(isAudioPlaying ? null : item.id)}
@@ -652,7 +367,7 @@ export function MemoriesStream({
                     </div>
                   )}
 
-                  {/* Bottom Action: Share & Copy feedback */}
+                  {/* Bottom Action: Clean Share link */}
                   <div className="pt-2 border-t border-black/[0.04] flex items-center justify-between text-xs text-[#888]">
                     <button
                       type="button"
@@ -675,26 +390,27 @@ export function MemoriesStream({
         </div>
       )}
 
-      {/* Persistent Quiet Prompt at Bottom */}
-      <div className="flex flex-col items-center justify-center p-8 rounded-3xl bg-[#faf9f7] border border-black/[0.06] text-center gap-3 mt-4">
-        <BookOpen className="size-6 text-[#8b5a45]" />
-        <div className="flex flex-col gap-1">
-          <h3 className="text-base font-medium text-[#181925]">
-            Have a story or photograph of {firstName}?
-          </h3>
-          <p className="text-xs text-[#71717a] max-w-sm">
-            Every memory, short or long, helps the family preserve the complete tapestry of their life.
-          </p>
+      {/* Quiet End Prompt */}
+      {sorted.length > 0 && (
+        <div className="flex flex-col sm:flex-row items-center justify-between gap-4 p-6 sm:p-7 rounded-3xl bg-[#f7f7f8] border border-black/[0.06] text-left mt-2">
+          <div className="flex flex-col gap-0.5">
+            <h3 className="text-sm sm:text-base font-medium text-[#181925]">
+              Have words or a memory of {firstName}?
+            </h3>
+            <p className="text-xs text-[#71717a]">
+              Every tribute helps the family remember the complete person.
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={() => onOpenContribute("memory")}
+            className="inline-flex items-center gap-1.5 px-5 py-2.5 rounded-full bg-[#181925] text-white text-xs font-medium hover:bg-[#252736] transition-all cursor-pointer shadow-xs active:scale-95 shrink-0"
+          >
+            <Plus className="size-3.5" />
+            <span>Leave a Tribute</span>
+          </button>
         </div>
-        <button
-          type="button"
-          onClick={() => onOpenContribute("memory")}
-          className="mt-1 inline-flex items-center gap-1.5 px-4 py-2 rounded-full bg-[#181925] text-white text-xs font-medium hover:bg-[#282a3a] transition-all cursor-pointer shadow-xs active:scale-95"
-        >
-          <Plus className="size-3.5" />
-          <span>Contribute full memory</span>
-        </button>
-      </div>
+      )}
 
     </section>
   )

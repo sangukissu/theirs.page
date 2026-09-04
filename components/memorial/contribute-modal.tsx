@@ -74,42 +74,34 @@ export function ContributeModal({
     {
       type: "memory" as const,
       icon: BookOpen,
-      title: "Tell a memory",
-      desc: `Something you remember about ${firstName}.`,
-      color: "text-rose-600 bg-rose-50",
+      title: "Share a memory",
+      desc: `An anecdote, a shared story, or a reflection about ${firstName}.`,
+      color: "text-[#8b5a45] bg-[#faf8f5]",
+      available: true,
+    },
+    {
+      type: "message" as const,
+      icon: Heart,
+      title: "Words of remembrance",
+      desc: "Condolences, prayers, or loving thoughts for the family.",
+      color: "text-[#8b5a45] bg-[#faf8f5]",
       available: true,
     },
     {
       type: "photo" as const,
       icon: Camera,
-      title: "Add photos",
-      desc: "Share photographs the family may not have seen.",
-      color: "text-amber-600 bg-amber-50",
+      title: "Share a photograph",
+      desc: "Photographs the family and friends may cherish.",
+      color: "text-[#8b5a45] bg-[#faf8f5]",
       available: !isPhotosFull,
-    },
-    {
-      type: "moment" as const,
-      icon: Clock,
-      title: "Add a life moment",
-      desc: `Help complete ${firstName}'s life timeline.`,
-      color: "text-emerald-600 bg-emerald-50",
-      available: Boolean(isPaid),
     },
     {
       type: "voice" as const,
       icon: Mic,
       title: "Share a voice note",
       desc: "A voicemail or spoken story worth keeping forever.",
-      color: "text-primary bg-primary/10",
+      color: "text-[#8b5a45] bg-[#faf8f5]",
       available: Boolean(isPaid),
-    },
-    {
-      type: "message" as const,
-      icon: MessageSquare,
-      title: "Leave a message",
-      desc: "A warm note or condolence for the family.",
-      color: "text-indigo-600 bg-indigo-50",
-      available: true,
     },
   ]
 
@@ -207,13 +199,19 @@ export function ContributeModal({
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          type: selectedType === "message" ? "guestbook" : "memory",
+          type: "memory",
           author_name: authorName.trim(),
           author_relationship: relationship.trim() || null,
           content: effectiveContent,
           approx_year: isNaN(approxYearNum as number) ? null : approxYearNum,
           photo_url: uploadedFileUrl || null,
-          tribute_type: uploadedFileUrl ? "photo" : selectedType === "moment" ? "flower" : "note",
+          tribute_type: uploadedFileUrl
+            ? "photo"
+            : selectedType === "message"
+            ? "flower"
+            : selectedType === "photo"
+            ? "photo"
+            : "note",
           turnstile_token: turnstileToken,
         }),
       })
@@ -329,10 +327,10 @@ export function ContributeModal({
                 <div className="flex flex-col gap-5 py-2">
                   <div className="flex flex-col gap-1">
                     <h3 className="text-xl sm:text-2xl font-medium tracking-tight text-[#181925]">
-                      Add to {memorialName}&apos;s memorial
+                      Leave a tribute for {firstName}
                     </h3>
                     <p className="text-xs text-[#71717a]">
-                      Choose what you would like to share with the family.
+                      Choose how you would like to remember {firstName} with the family.
                     </p>
                   </div>
 
@@ -370,17 +368,17 @@ export function ContributeModal({
                   <div className="flex flex-col gap-1">
                     <h3 className="text-lg sm:text-xl font-medium tracking-tight text-[#181925]">
                       {selectedType === "memory" && `Share a memory of ${firstName}`}
+                      {selectedType === "message" && `Words of remembrance for ${firstName}`}
                       {selectedType === "photo" && `Add photographs of ${firstName}`}
                       {selectedType === "moment" && `Suggest a timeline moment`}
                       {selectedType === "voice" && `Share a voice or video recording`}
-                      {selectedType === "message" && `Leave a message for the family`}
                     </h3>
                     <p className="text-xs text-[#71717a]">
-                      {selectedType === "memory" && "Tell an anecdote, a story, or a quiet moment."}
+                      {selectedType === "memory" && "Tell an anecdote, a story, or a quiet reflection."}
+                      {selectedType === "message" && "Condolences, prayers, or personal thoughts for the family."}
                       {selectedType === "photo" && "Upload original photographs to preserve in the archive."}
                       {selectedType === "moment" && "Help record when important milestones took place."}
                       {selectedType === "voice" && "Upload an audio file or voice memo from your phone."}
-                      {selectedType === "message" && "Short condolences or notes of love for the guestbook."}
                     </p>
                   </div>
 
@@ -523,7 +521,7 @@ export function ContributeModal({
                   {/* Main Content Area */}
                   <div className="flex flex-col gap-1">
                     <label className="text-[11px] font-mono text-[#71717a] uppercase tracking-wider">
-                      {selectedType === "message" ? "Your message *" : selectedType === "photo" && uploadedFileUrl ? "Caption or story behind this photo" : "The story or details *"}
+                      {selectedType === "message" ? "Words of remembrance *" : selectedType === "photo" && uploadedFileUrl ? "Caption or story behind this photo" : "The story or reflection *"}
                     </label>
                     <textarea
                       required={!uploadedFileUrl}
@@ -532,7 +530,7 @@ export function ContributeModal({
                       onChange={(e) => setContent(e.target.value)}
                       placeholder={
                         selectedType === "message"
-                          ? "Write a short note of support or condolence..."
+                          ? "Write a short note of remembrance, prayer, or condolence for the family..."
                           : selectedType === "photo"
                           ? "Add a caption or tell the story behind this photo..."
                           : selectedType === "moment"
@@ -580,10 +578,10 @@ export function ContributeModal({
                       {isSubmitting ? (
                         <>
                           <Loader2 className="size-3.5 animate-spin" />
-                          <span>Sending...</span>
+                          <span>Publishing...</span>
                         </>
                       ) : (
-                        <span>Send to Family Archive</span>
+                        <span>Publish Tribute</span>
                       )}
                     </button>
                   </div>

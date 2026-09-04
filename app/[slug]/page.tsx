@@ -118,7 +118,6 @@ export default async function MemorialPage({ params }: MemorialPageProps) {
   let timelineEvents: any[] = []
   let people: any[] = []
   let memories: any[] = []
-  let guestbook: any[] = []
 
   try {
     const { data: memorial } = await supabaseAdmin
@@ -259,13 +258,39 @@ export default async function MemorialPage({ params }: MemorialPageProps) {
         }
       })
 
-      guestbook = (guestbookRes.data || []).map((gb: any) => ({
-        id: gb.id,
-        author: gb.author_name,
-        location: undefined,
-        date: new Date(gb.created_at).toLocaleDateString(),
-        message: gb.message,
-      }))
+      const guestbookTributes = (guestbookRes.data || []).map((gb: any) => {
+        let dateOrYear = ""
+        if (gb.created_at) {
+          const d = new Date(gb.created_at)
+          const now = new Date()
+          const diffMs = now.getTime() - d.getTime()
+          const diffHours = Math.floor(diffMs / (1000 * 60 * 60))
+          const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24))
+          if (diffHours < 1) dateOrYear = "Just now"
+          else if (diffHours < 24) dateOrYear = `${diffHours} ${diffHours === 1 ? "hour" : "hours"} ago`
+          else if (diffDays === 1) dateOrYear = "Yesterday"
+          else if (diffDays < 7) dateOrYear = `${diffDays} days ago`
+          else dateOrYear = d.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })
+        }
+
+        return {
+          id: `gb-${gb.id}`,
+          authorName: gb.author_name,
+          authorRelationship: "",
+          dateOrYear,
+          story: gb.message,
+          tributeType: "flower" as const,
+          heartCount: 0,
+          createdAt: gb.created_at,
+        }
+      })
+
+      // Unify both memories and past condolence notes into a single, cohesive Tributes stream
+      memories = [...memories, ...guestbookTributes].sort((a, b) => {
+        const timeA = a.createdAt ? new Date(a.createdAt).getTime() : 0
+        const timeB = b.createdAt ? new Date(b.createdAt).getTime() : 0
+        return timeB - timeA
+      })
     } catch (err) {
       console.error("Error fetching child collections:", err)
     }
@@ -328,7 +353,6 @@ export default async function MemorialPage({ params }: MemorialPageProps) {
     timelineEvents: isDemo ? undefined : timelineEvents,
     people: isDemo ? undefined : people,
     memories: isDemo ? undefined : memories,
-    guestbook: isDemo ? undefined : guestbook,
   }
 
   // Schema.org Person & Memorial Structured Data for SEO

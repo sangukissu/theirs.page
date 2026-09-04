@@ -8,7 +8,6 @@ import { MemoriesStream, MemoryItem } from "@/components/memorial/memories-strea
 import { LifeTimeline, TimelineMilestone } from "@/components/memorial/life-timeline"
 import { MemorialGallery, GalleryItem } from "@/components/memorial/memorial-gallery"
 import { PeopleInLife, PersonConnection } from "@/components/memorial/people-in-life"
-import { GuestbookStream, GuestbookNote } from "@/components/memorial/guestbook-stream"
 import { MemorialFooter } from "@/components/memorial/memorial-footer"
 import { ContributeModal, ContributionType } from "@/components/memorial/contribute-modal"
 
@@ -32,7 +31,6 @@ export interface MemorialData {
   timelineEvents?: TimelineMilestone[]
   people?: PersonConnection[]
   memories?: MemoryItem[]
-  guestbook?: GuestbookNote[]
 }
 
 export function MemorialClientView({ data }: { data: MemorialData }) {
@@ -107,15 +105,7 @@ export function MemorialClientView({ data }: { data: MemorialData }) {
         onOpenContribute={handleOpenContribute}
       />
 
-      {/* 8. Dedicated Guestbook & Condolence Stream */}
-      <GuestbookStream
-        fullName={data.fullName}
-        notes={data.guestbook}
-        isDemo={data.isDemo}
-        slug={data.slug}
-      />
-
-      {/* 9. Permanent Stewardship Footer */}
+      {/* 8. Permanent Stewardship Footer */}
       <MemorialFooter
         fullName={data.fullName}
         slug={data.slug}

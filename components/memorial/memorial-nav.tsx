@@ -27,7 +27,7 @@ export function MemorialNav({
 
   const navItems = [
     { id: "story", label: "Story" },
-    { id: "memories", label: "Memories" },
+    { id: "tributes", label: "Tributes" },
     { id: "timeline", label: "Timeline" },
     { id: "gallery", label: "Gallery" },
     { id: "people", label: "People" },
