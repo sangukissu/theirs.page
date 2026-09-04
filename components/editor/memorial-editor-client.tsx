@@ -81,6 +81,8 @@ export function MemorialEditorClient({
   const router = useRouter()
   const [activeTab, setActiveTab] = useState<EditorSectionTab>("identity")
 
+  const isPaid = Boolean(initialMemorial.is_paid)
+
   // Storage key for resilient local-first backup
   const DRAFT_KEY = `theirs_editor_draft_${initialMemorial.id}`
 
@@ -96,8 +98,8 @@ export function MemorialEditorClient({
     portrait_photo_url: initialMemorial.portrait_photo_url || "",
     slug: initialMemorial.slug || "",
     status: initialMemorial.status || "draft",
-    privacy: initialMemorial.privacy || "public",
-    pin: initialMemorial.access_pin_hash || "",
+    privacy: (!isPaid && initialMemorial.privacy === "private") ? "public" : (initialMemorial.privacy || "public"),
+    pin: isPaid ? (initialMemorial.access_pin_hash || "") : "",
     successor_name: initialMemorial.successor_name || "",
     successor_email: initialMemorial.successor_email || "",
   })
@@ -142,14 +144,18 @@ export function MemorialEditorClient({
     }
   }
 
-  // 1. RECOVER UNSAVED DRAFT ON MOUNT (Zero data loss upon refresh!)
+  // 1. Restore local draft on mount if newer and dirty
   useEffect(() => {
-    if (typeof window === "undefined") return
     try {
       const raw = localStorage.getItem(DRAFT_KEY)
       if (raw) {
         const parsed = JSON.parse(raw)
         if (parsed && parsed.form && parsed.isDirty) {
+          if (!isPaid && parsed.form.privacy === "private") {
+            parsed.form.privacy = "public"
+            parsed.form.pin = ""
+          }
+
           const hasUnsavedContent = Object.keys(parsed.form).some(
             (key) => (parsed.form as any)[key] !== (form as any)[key]
           )
@@ -164,12 +170,15 @@ export function MemorialEditorClient({
     } catch (err) {
       console.warn("Could not read local draft:", err)
     }
-  }, [DRAFT_KEY])
+  }, [DRAFT_KEY, isPaid])
 
   // 2. CLOUD PERSISTENCE ENGINE (PATCH to Supabase)
   const saveToCloud = useCallback(
     async (currentForm: typeof form): Promise<boolean> => {
       setSaveStatus("saving")
+      const safePrivacy = (!isPaid && currentForm.privacy === "private") ? "public" : currentForm.privacy
+      const safePin = !isPaid ? null : (currentForm.pin || null)
+
       try {
         const res = await fetch(`/api/memorials/${initialMemorial.id}`, {
           method: "PATCH",
@@ -185,8 +194,8 @@ export function MemorialEditorClient({
             portrait_photo_url: currentForm.portrait_photo_url || null,
             slug: currentForm.slug,
             status: currentForm.status,
-            privacy: currentForm.privacy,
-            pin: currentForm.pin,
+            privacy: safePrivacy,
+            pin: safePin,
             successor_name: currentForm.successor_name || null,
             successor_email: currentForm.successor_email || null,
           }),
@@ -207,6 +216,8 @@ export function MemorialEditorClient({
           } catch {}
           return true
         } else {
+          const errData = await res.json().catch(() => ({}))
+          console.warn("Cloud save error:", res.status, errData)
           setSaveStatus("local-saved")
           return false
         }
@@ -216,7 +227,7 @@ export function MemorialEditorClient({
         return false
       }
     },
-    [initialMemorial.id, DRAFT_KEY]
+    [initialMemorial.id, DRAFT_KEY, isPaid]
   )
 
   // 3. FIELD CHANGE HANDLER (Immediate LocalStorage + Debounced Cloud Sync)

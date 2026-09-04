@@ -112,10 +112,9 @@ export async function PATCH(req: NextRequest, context: RouteContext) {
     if (body.privacy === "private" || (body.pin && body.privacy !== "public")) {
       const paywallCheck = canAccessFeature(authCheck.memorial, "private_mode")
       if (!paywallCheck.allowed) {
-        return NextResponse.json(
-          { error: paywallCheck.error },
-          { status: paywallCheck.status || 402 }
-        )
+        // Prevent free memorials from activating private PIN mode without blocking saving of editorial fields
+        body.privacy = authCheck.memorial.privacy === "private" ? "public" : (authCheck.memorial.privacy || "public")
+        body.pin = null
       }
     }
 

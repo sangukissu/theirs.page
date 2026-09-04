@@ -495,7 +495,13 @@ export function SettingsTab({
             return (
               <div
                 key={mode.id}
-                onClick={() => onChange("privacy", mode.id)}
+                onClick={() => {
+                  if (mode.isPaidOnly && !isPaid) {
+                    handleUpgradeComplete()
+                    return
+                  }
+                  onChange("privacy", mode.id)
+                }}
                 className={`p-3.5 rounded-xl border transition-all cursor-pointer flex flex-col gap-1.5 select-none ${
                   isSelected
                     ? "border-primary bg-primary/5 text-primary"

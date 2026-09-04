@@ -119,10 +119,28 @@ export function RichStoryEditor({
 
   // Word counter
   const [stats, setStats] = useState({ words: 0, characters: 0, readTimeMinutes: 1 })
+  const isInitializedRef = useRef(false)
+
+  const updateStats = (text: string) => {
+    const trimmed = text.trim()
+    const words = trimmed ? trimmed.split(/\s+/).filter(Boolean).length : 0
+    const characters = trimmed.length
+    const readTimeMinutes = Math.max(1, Math.ceil(words / 180))
+    setStats({ words, characters, readTimeMinutes })
+  }
 
   // Initialize and sync editor content
   useEffect(() => {
     if (!editorRef.current) return
+
+    if (!isInitializedRef.current) {
+      const htmlContent = markdownOrPlainToHtml(value || "")
+      editorRef.current.innerHTML = htmlContent
+      lastEmittedValueRef.current = value || ""
+      updateStats(editorRef.current.innerText || "")
+      isInitializedRef.current = true
+      return
+    }
 
     // Only update DOM if the external value changed outside our own onInput
     if (value !== lastEmittedValueRef.current) {
@@ -132,14 +150,6 @@ export function RichStoryEditor({
       updateStats(editorRef.current.innerText || "")
     }
   }, [value])
-
-  const updateStats = (text: string) => {
-    const trimmed = text.trim()
-    const words = trimmed ? trimmed.split(/\s+/).filter(Boolean).length : 0
-    const characters = trimmed.length
-    const readTimeMinutes = Math.max(1, Math.ceil(words / 180))
-    setStats({ words, characters, readTimeMinutes })
-  }
 
   // Update active format state based on current cursor position
   const checkActiveFormats = useCallback(() => {
@@ -205,8 +215,12 @@ export function RichStoryEditor({
 
     const currentHtml = editorRef.current.innerHTML
     const cleaned = cleanSemanticHtml(currentHtml)
-    lastEmittedValueRef.current = cleaned
-    onChange(cleaned)
+
+    // Only notify parent if content actually changed
+    if (cleaned !== lastEmittedValueRef.current) {
+      lastEmittedValueRef.current = cleaned
+      onChange(cleaned)
+    }
 
     updateStats(editorRef.current.innerText || "")
     checkActiveFormats()
@@ -509,7 +523,6 @@ export function RichStoryEditor({
           contentEditable
           onInput={handleInput}
           onPaste={handlePaste}
-          onBlur={handleInput}
           onKeyUp={checkActiveFormats}
           onMouseUp={checkActiveFormats}
           data-placeholder={placeholder}
