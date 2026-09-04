@@ -4,7 +4,7 @@
 
 export const THEIRS_COMPLETE_PRICE_USD = 179
 export const THEIRS_COMPLETE_PRICE_CENTS = 17900
-export const THEIRS_COMPLETE_PRODUCT_NAME = "Theirs Complete — Permanent Memorial"
+export const THEIRS_COMPLETE_PRODUCT_NAME = "Theirs Complete — Family Archive"
 
 /**
  * Infer Dodo Payments base URL based on environment

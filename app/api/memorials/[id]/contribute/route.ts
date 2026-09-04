@@ -35,7 +35,7 @@ export async function POST(req: NextRequest, context: RouteContext) {
 
     // 1. IP Rate Limiting
     const clientIp = getClientIp(req)
-    const rateLimit = checkContributionRateLimit(clientIp)
+    const rateLimit = await checkContributionRateLimit(clientIp)
     if (!rateLimit.allowed) {
       return NextResponse.json(
         {

@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from "next/server"
 import { createClient } from "@/utils/supabase/server"
 import { getSupabaseAdminSafe } from "@/utils/supabase/admin"
-import { assertMemorialAdmin } from "@/lib/memorial-auth"
+import { assertMemorialOwner } from "@/lib/memorial-auth"
+import { canAccessFeature } from "@/lib/paywall"
 import { createInvitationToken } from "@/lib/invitations"
 import { resend } from "@/lib/resend"
 
@@ -21,9 +22,9 @@ export async function GET(req: NextRequest, context: RouteContext) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
-    const authCheck = await assertMemorialAdmin(id, user.id)
+    const authCheck = await assertMemorialOwner(id, user.id)
     if (!authCheck.authorized || !authCheck.memorial) {
-      return NextResponse.json({ error: authCheck.error || "Forbidden" }, { status: 403 })
+      return authCheck.errorResponse || NextResponse.json({ error: "Forbidden" }, { status: 403 })
     }
 
     const db = getSupabaseAdminSafe() || supabase
@@ -79,9 +80,18 @@ export async function POST(req: NextRequest, context: RouteContext) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
-    const authCheck = await assertMemorialAdmin(id, user.id)
+    const authCheck = await assertMemorialOwner(id, user.id)
     if (!authCheck.authorized || !authCheck.memorial) {
-      return NextResponse.json({ error: authCheck.error || "Forbidden" }, { status: 403 })
+      return authCheck.errorResponse || NextResponse.json({ error: "Forbidden" }, { status: 403 })
+    }
+
+    // Paywall Check: Caretakers and collaborators require Theirs Complete ($179)
+    const paywallCheck = canAccessFeature(authCheck.memorial, "collaborators")
+    if (!paywallCheck.allowed) {
+      return NextResponse.json(
+        { error: paywallCheck.error },
+        { status: paywallCheck.status || 402 }
+      )
     }
 
     const body = await req.json().catch(() => ({}))
@@ -220,9 +230,9 @@ export async function DELETE(req: NextRequest, context: RouteContext) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
-    const authCheck = await assertMemorialAdmin(id, user.id)
+    const authCheck = await assertMemorialOwner(id, user.id)
     if (!authCheck.authorized || !authCheck.memorial) {
-      return NextResponse.json({ error: authCheck.error || "Forbidden" }, { status: 403 })
+      return authCheck.errorResponse || NextResponse.json({ error: "Forbidden" }, { status: 403 })
     }
 
     const { searchParams } = new URL(req.url)

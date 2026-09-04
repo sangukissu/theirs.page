@@ -7,6 +7,7 @@ export interface MemorialAuthResult {
   status: number
   error?: string
   memorial?: any
+  role?: "owner" | "co_admin"
 }
 
 export interface AssertAdminResult {
@@ -14,6 +15,69 @@ export interface AssertAdminResult {
   errorResponse: NextResponse | null
   error?: string
   memorial: any | null
+  isOwner?: boolean
+}
+
+/**
+ * Verifies whether a user is the primary owner (steward) of a memorial.
+ */
+export async function verifyMemorialOwner(
+  memorialId: string,
+  userId: string
+): Promise<MemorialAuthResult> {
+  if (!memorialId || !userId) {
+    return { authorized: false, status: 401, error: "Unauthorized" }
+  }
+
+  const db = getSupabaseAdminSafe() || (await createClient())
+
+  try {
+    const { data: memorial, error } = await db
+      .from("memorials")
+      .select("id, owner_id, slug, status, privacy, is_paid")
+      .eq("id", memorialId)
+      .maybeSingle()
+
+    if (error || !memorial) {
+      return { authorized: false, status: 404, error: "Memorial not found" }
+    }
+
+    if (memorial.owner_id === userId) {
+      return { authorized: true, status: 200, memorial, role: "owner" }
+    }
+
+    return {
+      authorized: false,
+      status: 403,
+      error: "Forbidden: Only the primary memorial steward (creator/owner) has permission to manage these core settings.",
+    }
+  } catch (err) {
+    console.error("verifyMemorialOwner error:", err)
+    return { authorized: false, status: 500, error: "Internal server error" }
+  }
+}
+
+export async function assertMemorialOwner(
+  memorialId: string,
+  userId: string
+): Promise<AssertAdminResult> {
+  const result = await verifyMemorialOwner(memorialId, userId)
+  if (!result.authorized) {
+    return {
+      authorized: false,
+      error: result.error,
+      errorResponse: NextResponse.json({ error: result.error }, { status: result.status }),
+      memorial: null,
+      isOwner: false,
+    }
+  }
+  return {
+    authorized: true,
+    errorResponse: null,
+    error: undefined,
+    memorial: result.memorial,
+    isOwner: true,
+  }
 }
 
 /**
@@ -55,6 +119,7 @@ export async function verifyMemorialAdmin(
         authorized: true,
         status: 200,
         memorial,
+        role: "owner",
       }
     }
 
@@ -73,6 +138,7 @@ export async function verifyMemorialAdmin(
         authorized: true,
         status: 200,
         memorial,
+        role: "co_admin",
       }
     }
 
@@ -93,7 +159,7 @@ export async function verifyMemorialAdmin(
 
 /**
  * Guard function that returns an errorResponse if unauthorized,
- * or { authorized: true, errorResponse: null, memorial } if authorized.
+ * or { authorized: true, errorResponse: null, memorial, isOwner } if authorized.
  */
 export async function assertMemorialAdmin(
   memorialId: string,
@@ -106,6 +172,7 @@ export async function assertMemorialAdmin(
       error: result.error,
       errorResponse: NextResponse.json({ error: result.error }, { status: result.status }),
       memorial: null,
+      isOwner: false,
     }
   }
   return {
@@ -113,5 +180,6 @@ export async function assertMemorialAdmin(
     errorResponse: null,
     error: undefined,
     memorial: result.memorial,
+    isOwner: result.role === "owner",
   }
 }

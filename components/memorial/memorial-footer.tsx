@@ -16,8 +16,8 @@ export function MemorialFooter({
   caretakerName = "Anita Carter (Daughter)",
   successorName = "Rahul Carter (Grandson)",
 }: MemorialFooterProps) {
-  const handleExportMock = () => {
-    alert("Offline Archive Export: A self-contained ZIP bundle containing all original uncompressed photos, studio audio, and a standalone offline browser viewer is being generated.")
+  const handleExport = () => {
+    window.location.href = `/api/memorials/${slug}/export`
   }
 
   return (
@@ -29,10 +29,10 @@ export function MemorialFooter({
           <div className="flex flex-col gap-1.5 max-w-md">
             <div className="flex items-center gap-2 text-xs font-semibold text-[#181925] uppercase tracking-wider">
               <ShieldCheck className="size-4 text-emerald-600" />
-              <span>Permanent Stewardship Chain</span>
+              <span>Family Stewardship Chain</span>
             </div>
             <p className="text-xs text-[#666] leading-relaxed">
-              This memorial is permanently funded with lifetime hosting on Theirs. Administered by{" "}
+              This memorial archive is preserved on Theirs with zero recurring fees. Administered by{" "}
               <span className="font-medium text-[#181925]">{caretakerName}</span> with secondary stewardship designated to{" "}
               <span className="font-medium text-[#181925]">{successorName}</span>.
             </p>
@@ -40,11 +40,11 @@ export function MemorialFooter({
 
           <button
             type="button"
-            onClick={handleExportMock}
+            onClick={handleExport}
             className="inline-flex items-center gap-2 rounded-full border border-black/[0.08] hover:bg-neutral-50 px-4 py-2 text-xs font-medium text-[#181925] transition-colors cursor-pointer shrink-0 select-none"
           >
             <Download className="size-3.5 text-[#888]" />
-            <span>Download Offline Archive (.ZIP)</span>
+            <span>Download Family Archive (.ZIP)</span>
           </button>
         </div>
 

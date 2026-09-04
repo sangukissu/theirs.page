@@ -72,7 +72,7 @@ export async function POST(req: NextRequest, context: RouteContext) {
     const rateLimitKey = `${clientIp}:${memorial.id}`
 
     // Check brute-force lock
-    const rateCheck = checkPinRateLimit(rateLimitKey)
+    const rateCheck = await checkPinRateLimit(rateLimitKey)
     if (!rateCheck.allowed) {
       return NextResponse.json(
         {
@@ -86,7 +86,7 @@ export async function POST(req: NextRequest, context: RouteContext) {
     const isMatch = verifyPin(pin, memorial.access_pin_hash || "")
 
     if (!isMatch) {
-      const attemptResult = recordFailedPinAttempt(rateLimitKey)
+      const attemptResult = await recordFailedPinAttempt(rateLimitKey)
       if (attemptResult.locked) {
         return NextResponse.json(
           { error: "Too many failed attempts. Access locked for 15 minutes." },
@@ -103,7 +103,7 @@ export async function POST(req: NextRequest, context: RouteContext) {
     }
 
     // PIN is correct - clear failed attempt tracker
-    clearPinAttempts(rateLimitKey)
+    await clearPinAttempts(rateLimitKey)
 
     // Set unlock cookie for 30 days
     const cookieKey = memorial.slug || id

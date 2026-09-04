@@ -27,13 +27,13 @@ const FAQS: FaqItem[] = [
     id: "photo-preservation",
     question: "Are original high-resolution photos preserved, or compressed?",
     answer:
-      "Always preserved untouched. Unlike social media platforms that compress photos into blurry thumbnails, we store your original 4K and RAW files permanently in dedicated Cloudflare R2 object storage with zero data loss.",
+      "Always preserved untouched. Unlike social media platforms that compress photos into blurry thumbnails, we store your original 4K and RAW files securely in dedicated Cloudflare R2 object storage with zero data loss.",
   },
   {
     id: "pricing-subscription",
     question: "Is there a recurring monthly subscription?",
     answer:
-      "Never. We believe charging a monthly subscription for grief is predatory. A memorial on Theirs is a one-time activation of $49 for lifetime hosting. It is completely free to draft and assemble; you only pay when you decide to publish.",
+      "Never. We believe charging a recurring subscription for remembrance is wrong. Theirs Complete is a one-time $179 payment per memorial, with zero monthly fees. It is completely free to start and share with up to 5 photos, and you only upgrade when your family is ready.",
   },
   {
     id: "offline-export",

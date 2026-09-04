@@ -2,9 +2,18 @@ import { NextRequest, NextResponse } from "next/server"
 import { createClient } from "@/utils/supabase/server"
 import { getSupabaseAdminSafe } from "@/utils/supabase/admin"
 import { assertMemorialAdmin } from "@/lib/memorial-auth"
+import { assertMediaQuota } from "@/lib/paywall"
+import { deleteR2Object } from "@/lib/r2"
 
 interface RouteContext {
   params: Promise<{ id: string }>
+}
+
+function extractR2KeyFromUrl(url: string): string | null {
+  if (!url) return null
+  if (url.startsWith("memorials/")) return url
+  const match = url.match(/memorials\/[^\s"')]+/)
+  return match ? match[0] : null
 }
 
 export async function POST(req: NextRequest, context: RouteContext) {
@@ -19,8 +28,10 @@ export async function POST(req: NextRequest, context: RouteContext) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
-    const { errorResponse } = await assertMemorialAdmin(memorialId, user.id)
-    if (errorResponse) return errorResponse
+    const authCheck = await assertMemorialAdmin(memorialId, user.id)
+    if (!authCheck.authorized || !authCheck.memorial) {
+      return authCheck.errorResponse || NextResponse.json({ error: "Forbidden" }, { status: 403 })
+    }
 
     const body = await req.json()
     const { url, media_type, caption, approx_year, location } = body
@@ -30,6 +41,26 @@ export async function POST(req: NextRequest, context: RouteContext) {
     }
 
     const db = getSupabaseAdminSafe() || supabase
+
+    // Paywall Check: Enforce free tier 5-photo limit and audio/video restriction
+    const { count } = await db
+      .from("media_items")
+      .select("id", { count: "exact", head: true })
+      .eq("memorial_id", memorialId)
+
+    const quotaCheck = assertMediaQuota(
+      authCheck.memorial,
+      count || 0,
+      media_type || "image"
+    )
+
+    if (!quotaCheck.allowed) {
+      return NextResponse.json(
+        { error: quotaCheck.error },
+        { status: quotaCheck.status || 402 }
+      )
+    }
+
     const { data: mediaItem, error } = await db
       .from("media_items")
       .insert({
@@ -68,11 +99,13 @@ export async function PATCH(req: NextRequest, context: RouteContext) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
-    const { errorResponse } = await assertMemorialAdmin(memorialId, user.id)
-    if (errorResponse) return errorResponse
+    const authCheck = await assertMemorialAdmin(memorialId, user.id)
+    if (!authCheck.authorized || !authCheck.memorial) {
+      return authCheck.errorResponse || NextResponse.json({ error: "Forbidden" }, { status: 403 })
+    }
 
     const body = await req.json()
-    const { mediaId, caption, approx_year } = body
+    const { mediaId, caption, approx_year, location } = body
 
     if (!mediaId) {
       return NextResponse.json({ error: "mediaId is required" }, { status: 400 })
@@ -81,6 +114,7 @@ export async function PATCH(req: NextRequest, context: RouteContext) {
     const updates: Record<string, any> = {}
     if (caption !== undefined) updates.caption = caption?.trim() || null
     if (approx_year !== undefined) updates.approx_year = approx_year ? Number(approx_year) : null
+    if (location !== undefined) updates.location = location?.trim() || null
 
     const db = getSupabaseAdminSafe() || supabase
     const { data: updated, error } = await db
@@ -115,8 +149,10 @@ export async function DELETE(req: NextRequest, context: RouteContext) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
-    const { errorResponse } = await assertMemorialAdmin(memorialId, user.id)
-    if (errorResponse) return errorResponse
+    const authCheck = await assertMemorialAdmin(memorialId, user.id)
+    if (!authCheck.authorized || !authCheck.memorial) {
+      return authCheck.errorResponse || NextResponse.json({ error: "Forbidden" }, { status: 403 })
+    }
 
     const url = new URL(req.url)
     const mediaId = url.searchParams.get("mediaId")
@@ -126,6 +162,27 @@ export async function DELETE(req: NextRequest, context: RouteContext) {
     }
 
     const db = getSupabaseAdminSafe() || supabase
+
+    // 1. Fetch media item to extract R2 storage key before deleting row
+    const { data: item } = await db
+      .from("media_items")
+      .select("id, url")
+      .eq("id", mediaId)
+      .eq("memorial_id", memorialId)
+      .maybeSingle()
+
+    if (item?.url) {
+      const key = extractR2KeyFromUrl(item.url)
+      if (key) {
+        try {
+          await deleteR2Object(key)
+        } catch (cleanupErr) {
+          console.warn(`Failed to delete R2 object ${key}:`, cleanupErr)
+        }
+      }
+    }
+
+    // 2. Delete row from database
     const { error } = await db
       .from("media_items")
       .delete()

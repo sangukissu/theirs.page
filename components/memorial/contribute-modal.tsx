@@ -22,6 +22,7 @@ import {
   ImageIcon,
   AlertCircle,
 } from "lucide-react"
+import { Turnstile } from "@marsidev/react-turnstile"
 
 export type ContributionType = "memory" | "photo" | "moment" | "voice" | "message"
 
@@ -48,6 +49,10 @@ export function ContributeModal({
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [isSubmitted, setIsSubmitted] = useState(false)
 
+  // Cloudflare Turnstile state
+  const siteKey = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY || ""
+  const [turnstileToken, setTurnstileToken] = useState("")
+
   // Media upload state
   const fileInputRef = useRef<HTMLInputElement | null>(null)
   const [uploadedFileUrl, setUploadedFileUrl] = useState<string | null>(null)
@@ -73,10 +78,29 @@ export function ContributeModal({
     setMediaUploadError(null)
 
     try {
+      // 1. Request signed Upload Intent token
+      const intentRes = await fetch(`/api/memorials/${slug}/upload-intent`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          turnstile_token: turnstileToken,
+          mime_type: file.type || "application/octet-stream",
+          file_size: file.size,
+          file_name: file.name,
+        }),
+      })
+
+      const intentData = await intentRes.json()
+      if (!intentRes.ok) {
+        throw new Error(intentData.error || "Failed to authorize file upload")
+      }
+
+      // 2. Upload file directly to R2 with upload intent token
       const formData = new FormData()
       formData.append("file", file)
       formData.append("folder", "contributions")
       formData.append("memorialId", slug)
+      formData.append("uploadIntentToken", intentData.uploadIntentToken)
 
       const res = await fetch("/api/r2/upload", {
         method: "POST",
@@ -128,6 +152,7 @@ export function ContributeModal({
           content: effectiveContent,
           approx_year: isNaN(approxYearNum as number) ? null : approxYearNum,
           photo_url: uploadedFileUrl || null,
+          turnstile_token: turnstileToken,
         }),
       })
 
@@ -502,6 +527,17 @@ export function ContributeModal({
                       <span>{error}</span>
                     </div>
                   )}
+
+                  {siteKey ? (
+                    <div className="flex justify-center py-1">
+                      <Turnstile
+                        siteKey={siteKey}
+                        onSuccess={setTurnstileToken}
+                        onExpire={() => setTurnstileToken("")}
+                        onError={() => setTurnstileToken("")}
+                      />
+                    </div>
+                  ) : null}
 
                   {/* Submit Button */}
                   <div className="pt-2 flex items-center justify-end gap-2.5">

@@ -326,3 +326,17 @@ export async function deleteR2PrefixOlderThan(
 
   return { scanned, deleted, skipped, errors };
 }
+
+/**
+ * Deletes all media objects under a memorial prefix in R2 storage.
+ */
+export async function deleteR2MemorialFolder(memorialId: string): Promise<void> {
+  if (!memorialId) return;
+  try {
+    await deleteR2PrefixOlderThan(`memorials/${memorialId}/`, 0);
+  } catch (err) {
+    console.error(`Failed to clean up R2 objects for memorial ${memorialId}:`, err);
+  }
+}
+
+

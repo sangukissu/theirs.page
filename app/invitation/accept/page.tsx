@@ -1,9 +1,9 @@
 import Link from "next/link"
-import { redirect } from "next/navigation"
-import { CheckCircle2, AlertCircle, ArrowRight, Shield, Heart } from "lucide-react"
+import { AlertCircle } from "lucide-react"
 import { createClient } from "@/utils/supabase/server"
 import { getSupabaseAdminSafe } from "@/utils/supabase/admin"
 import { verifyInvitationToken } from "@/lib/invitations"
+import { InvitationAcceptClient } from "./invitation-accept-client"
 
 interface PageProps {
   searchParams: Promise<{ token?: string }>
@@ -89,107 +89,24 @@ export default async function InvitationAcceptPage({ searchParams }: PageProps) 
     )
   }
 
-  // 3. User is NOT logged in: Prompt sign in / account creation
-  if (!user) {
-    const returnUrl = `/invitation/accept?token=${encodeURIComponent(token)}`
-    const loginUrl = `/login?next=${encodeURIComponent(returnUrl)}`
-
-    return (
-      <div className="min-h-screen bg-[#fafafb] flex items-center justify-center p-4">
-        <div className="max-w-md w-full bg-white border border-black/[0.08] rounded-3xl p-8 shadow-xs flex flex-col items-center text-center gap-5">
-          {memorial.portrait_photo_url ? (
-            <div className="size-16 rounded-2xl overflow-hidden border border-black/[0.08]">
-              <img
-                src={memorial.portrait_photo_url}
-                alt={memorial.full_name}
-                className="size-full object-cover grayscale contrast-105"
-              />
-            </div>
-          ) : (
-            <div className="size-14 rounded-2xl bg-[#f4f4f6] text-[#71717a] flex items-center justify-center">
-              <Heart className="size-6" />
-            </div>
-          )}
-
-          <div className="flex flex-col gap-1.5">
-            <span className="text-[11px] font-mono uppercase tracking-wider text-primary font-semibold">
-              Family Caretaker Invitation
-            </span>
-            <h1 className="text-xl sm:text-2xl font-serif font-medium text-[#181925]">
-              {memorial.full_name}
-            </h1>
-            <p className="text-xs text-[#71717a] leading-relaxed max-w-sm">
-              You have been invited as a {payload.role === "co_admin" ? "co-admin" : "collaborator"} to help preserve memories, upload photos, and care for this memorial.
-            </p>
-          </div>
-
-          <div className="w-full pt-2 flex flex-col gap-2.5">
-            <Link
-              href={loginUrl}
-              className="w-full inline-flex items-center justify-center gap-2 px-5 py-3 rounded-full bg-[#181925] hover:bg-[#252736] text-white text-xs font-medium transition-all cursor-pointer"
-            >
-              <span>Sign in to Accept Invitation</span>
-              <ArrowRight className="size-3.5" />
-            </Link>
-
-            <span className="text-[11px] text-[#888]">
-              Invited address: <strong className="font-mono text-[#555]">{payload.email}</strong>
-            </span>
-          </div>
-        </div>
-      </div>
-    )
-  }
-
-  // 4. User is logged in: Complete invitation acceptance and bind user_id
-  const { error: updateErr } = await db
+  // 3. Check if collaborator record is already accepted
+  const { data: collab } = await db
     .from("collaborators")
-    .update({
-      user_id: user.id,
-      invitation_accepted: true,
-    })
+    .select("invitation_accepted, user_id")
     .eq("id", payload.collaboratorId)
-    .eq("memorial_id", payload.memorialId)
+    .maybeSingle()
 
-  if (updateErr) {
-    console.error("Failed to accept collaborator invite:", updateErr)
-  }
+  const alreadyAccepted = Boolean(collab?.invitation_accepted)
 
+  // 4. Render interactive client (no side-effects on GET)
   return (
-    <div className="min-h-screen bg-[#fafafb] flex items-center justify-center p-4">
-      <div className="max-w-md w-full bg-white border border-black/[0.08] rounded-3xl p-8 shadow-xs flex flex-col items-center text-center gap-5">
-        <div className="size-14 rounded-full bg-emerald-50 text-emerald-600 flex items-center justify-center border border-emerald-200">
-          <CheckCircle2 className="size-7" />
-        </div>
-
-        <div className="flex flex-col gap-1.5">
-          <span className="text-[11px] font-mono uppercase tracking-wider text-emerald-600 font-semibold">
-            Invitation Accepted
-          </span>
-          <h1 className="text-xl sm:text-2xl font-serif font-medium text-[#181925]">
-            Welcome to {memorial.full_name}&apos;s Circle
-          </h1>
-          <p className="text-xs text-[#71717a] leading-relaxed max-w-sm">
-            You now have access as a {payload.role === "co_admin" ? "co-admin" : "collaborator"}. You can approve contributions, write stories, and care for this space together.
-          </p>
-        </div>
-
-        <div className="w-full pt-3 flex flex-col sm:flex-row gap-2.5">
-          <Link
-            href={`/${memorial.slug}`}
-            className="flex-1 inline-flex items-center justify-center px-4 py-2.5 rounded-full bg-[#f4f4f6] hover:bg-neutral-200 text-[#181925] text-xs font-medium transition-colors"
-          >
-            View Live Memorial
-          </Link>
-          <Link
-            href={`/dashboard/memorials/${memorial.id}/editor`}
-            className="flex-1 inline-flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-full bg-[#181925] hover:bg-[#252736] text-white text-xs font-medium transition-colors"
-          >
-            <span>Open Studio</span>
-            <ArrowRight className="size-3.5" />
-          </Link>
-        </div>
-      </div>
-    </div>
+    <InvitationAcceptClient
+      token={token}
+      memorial={memorial}
+      invitedEmail={payload.email}
+      role={payload.role}
+      userEmail={user?.email || null}
+      alreadyAccepted={alreadyAccepted}
+    />
   )
 }

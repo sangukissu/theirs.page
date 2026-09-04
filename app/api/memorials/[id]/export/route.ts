@@ -1,10 +1,42 @@
 import { NextRequest, NextResponse } from "next/server"
+import JSZip from "jszip"
 import { createClient } from "@/utils/supabase/server"
 import { getSupabaseAdminSafe } from "@/utils/supabase/admin"
 import { assertMemorialAdmin } from "@/lib/memorial-auth"
+import { canAccessFeature } from "@/lib/paywall"
+import { getR2ObjectBuffer } from "@/lib/r2"
 
 interface RouteContext {
   params: Promise<{ id: string }>
+}
+
+function extractR2Key(url: string): string | null {
+  if (!url) return null
+  const match = url.match(/(memorials\/[^\s?#]+)/)
+  return match ? match[1] : null
+}
+
+async function fetchMediaBuffer(url: string): Promise<Buffer | null> {
+  try {
+    const r2Key = extractR2Key(url)
+    if (r2Key) {
+      const r2Obj = await getR2ObjectBuffer(r2Key)
+      if (r2Obj?.body) return r2Obj.body
+    }
+
+    if (url.startsWith("http://") || url.startsWith("https://")) {
+      const res = await fetch(url, { signal: AbortSignal.timeout(10000) })
+      if (res.ok) {
+        const ab = await res.arrayBuffer()
+        return Buffer.from(ab)
+      }
+    }
+
+    return null
+  } catch (err) {
+    console.warn(`Could not fetch media binary for export from "${url}":`, err)
+    return null
+  }
 }
 
 export async function GET(req: NextRequest, context: RouteContext) {
@@ -25,9 +57,19 @@ export async function GET(req: NextRequest, context: RouteContext) {
     }
 
     const memorial = authCheck.memorial
+
+    // Paywall check: Full archive export requires Theirs Complete
+    const featureCheck = canAccessFeature(memorial, "export")
+    if (!featureCheck.allowed) {
+      return NextResponse.json(
+        { error: featureCheck.error },
+        { status: featureCheck.status || 402 }
+      )
+    }
+
     const db = getSupabaseAdminSafe() || supabase
 
-    // Fetch all collections in parallel
+    // Fetch all memorial data collections in parallel
     const [mediaRes, timelineRes, peopleRes, memoriesRes, guestbookRes, collabsRes] =
       await Promise.all([
         db
@@ -63,12 +105,13 @@ export async function GET(req: NextRequest, context: RouteContext) {
           .eq("memorial_id", memorial.id),
       ])
 
-    // Structured Preservation Package (Theirs Open Family Archive Standard)
-    const archiveData = {
+    const exportTimestamp = new Date().toISOString()
+    const dateStamp = exportTimestamp.split("T")[0]
+
+    // 1. Structured Manifest
+    const archiveManifest = {
       archive_format: "theirs_family_archive_v2",
-      preservation_guarantee:
-        "All memories, timeline milestones, stories, and original media assets are preserved in this open JSON structure. Original media files remain downloadable via direct URLs without platform lock-in.",
-      exported_at: new Date().toISOString(),
+      exported_at: exportTimestamp,
       memorial_identity: {
         id: memorial.id,
         slug: memorial.slug,
@@ -96,7 +139,7 @@ export async function GET(req: NextRequest, context: RouteContext) {
         description: t.description,
         photo_url: t.photo_url,
       })),
-      family_memories_and_stories: (memoriesRes.data || []).map((m) => ({
+      family_memories: (memoriesRes.data || []).map((m) => ({
         author_name: m.author_name,
         author_relationship: m.author_relationship,
         story: m.story,
@@ -116,14 +159,13 @@ export async function GET(req: NextRequest, context: RouteContext) {
         message: g.message,
         date: g.created_at,
       })),
-      media_preservation_manifest: (mediaRes.data || []).map((media) => ({
+      media_catalog: (mediaRes.data || []).map((media) => ({
+        id: media.id,
         media_type: media.media_type,
-        url: media.url,
-        original_url: media.original_url || media.url,
         caption: media.caption,
         approx_year: media.approx_year,
         location: media.location,
-        tagged_people: media.tagged_people,
+        url: media.url,
         uploaded_at: media.created_at,
       })),
       caretakers: (collabsRes.data || []).map((c) => ({
@@ -134,22 +176,124 @@ export async function GET(req: NextRequest, context: RouteContext) {
       })),
     }
 
-    const jsonString = JSON.stringify(archiveData, null, 2)
-    const dateStamp = new Date().toISOString().split("T")[0]
-    const filename = `${memorial.slug || "memorial"}-family-archive-${dateStamp}.json`
+    // 2. Plain-Text Preservation Guide (README.txt)
+    const readmeText = `================================================================================
+THEIRS (theirs.page) — FAMILY ARCHIVE PRESERVATION PACKAGE
+================================================================================
 
-    return new NextResponse(jsonString, {
+Memorial:   ${memorial.full_name}
+Exported:   ${exportTimestamp}
+Web Slug:   ${memorial.slug}
+
+This archive is a complete, standalone snapshot of your family's memorial.
+There is zero vendor lock-in. You own every story, tribute, and photograph.
+
+PACKAGE CONTENTS:
+-----------------
+1. archive-manifest.json
+   Contains the complete structured life story, biography, timeline events,
+   family memories, condolences guestbook, and people in their life.
+
+2. /photos/
+   Original high-resolution photographs preserved untouched in their native
+   formats.
+
+3. /audio/
+   Voice notes and audio memos shared by family and friends.
+
+4. /documents/ & /video/
+   Any additional media or video clips associated with the memorial.
+
+PRESERVATION ADVICE:
+--------------------
+We recommend saving a copy of this ZIP bundle to:
+- A personal computer or home backup hard drive.
+- A physical USB drive kept in a safe family location.
+- Your personal cloud storage (Google Drive, iCloud, OneDrive, Dropbox).
+
+Thank you for trusting Theirs to help preserve ${memorial.full_name}'s memory.
+================================================================================
+`
+
+    // 3. Assemble JSZip archive
+    const zip = new JSZip()
+
+    // Add manifest and README
+    zip.file("archive-manifest.json", JSON.stringify(archiveManifest, null, 2))
+    zip.file("README.txt", readmeText)
+
+    // Folders
+    const photosFolder = zip.folder("photos")
+    const audioFolder = zip.folder("audio")
+    const videoFolder = zip.folder("video")
+
+    // Download and bundle all media items
+    const mediaItems = mediaRes.data || []
+    for (let i = 0; i < mediaItems.length; i++) {
+      const item = mediaItems[i]
+      if (!item.url) continue
+
+      const buffer = await fetchMediaBuffer(item.url)
+      if (!buffer) continue
+
+      const cleanCaption = (item.caption || "media")
+        .replace(/[^a-zA-Z0-9_-]/g, "_")
+        .substring(0, 30)
+      const urlExt = item.url.split("?")[0].split(".").pop()?.toLowerCase() || ""
+      const isExtValid = ["jpg", "jpeg", "png", "webp", "gif", "mp3", "wav", "m4a", "mp4", "mov"].includes(urlExt)
+
+      if (item.media_type === "image" && photosFolder) {
+        const ext = isExtValid ? urlExt : "jpg"
+        const filename = `${String(i + 1).padStart(3, "0")}_${cleanCaption}.${ext}`
+        photosFolder.file(filename, buffer)
+      } else if (item.media_type === "audio" && audioFolder) {
+        const ext = isExtValid ? urlExt : "mp3"
+        const filename = `${String(i + 1).padStart(3, "0")}_${cleanCaption}.${ext}`
+        audioFolder.file(filename, buffer)
+      } else if (item.media_type === "video" && videoFolder) {
+        const ext = isExtValid ? urlExt : "mp4"
+        const filename = `${String(i + 1).padStart(3, "0")}_${cleanCaption}.${ext}`
+        videoFolder.file(filename, buffer)
+      }
+    }
+
+    // Also download portrait and cover photo if available
+    if (memorial.portrait_photo_url && photosFolder) {
+      const portraitBuffer = await fetchMediaBuffer(memorial.portrait_photo_url)
+      if (portraitBuffer) {
+        photosFolder.file("000_portrait_photo.jpg", portraitBuffer)
+      }
+    }
+
+    if (memorial.cover_photo_url && photosFolder) {
+      const coverBuffer = await fetchMediaBuffer(memorial.cover_photo_url)
+      if (coverBuffer) {
+        photosFolder.file("000_cover_photo.jpg", coverBuffer)
+      }
+    }
+
+    // 4. Generate the ZIP file binary
+    const zipBuffer = await zip.generateAsync({
+      type: "nodebuffer",
+      compression: "DEFLATE",
+      compressionOptions: { level: 6 },
+    })
+
+    const zipFilename = `${memorial.slug || "memorial"}-family-archive-${dateStamp}.zip`
+
+    return new Response(zipBuffer as any, {
       status: 200,
       headers: {
-        "Content-Type": "application/json; charset=utf-8",
-        "Content-Disposition": `attachment; filename="${filename}"`,
+        "Content-Type": "application/zip",
+        "Content-Disposition": `attachment; filename="${zipFilename}"`,
+        "Content-Length": String(zipBuffer.length),
         "Cache-Control": "no-store",
       },
     })
   } catch (err: any) {
-    console.error("Export error:", err)
+    console.error("Archive export error:", err)
     return NextResponse.json(
-      { error: "Failed to export archive. Please try again." },
+      { error: "Failed to generate family archive package. Please try again." },
       { status: 500 }
     )
   }

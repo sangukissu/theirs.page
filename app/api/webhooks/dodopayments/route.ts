@@ -2,6 +2,7 @@ import { type NextRequest, NextResponse } from "next/server"
 import { supabaseAdmin as supabase } from "@/utils/supabase/admin"
 import { headers } from "next/headers"
 import crypto from "crypto"
+import { getDodoCompleteProductId } from "@/lib/payments"
 
 function getWebhookSecret() {
   return process.env.DODO_WEBHOOK_SECRET || process.env.DODO_PAYMENTS_WEBHOOK_KEY || ""
@@ -142,47 +143,50 @@ async function handlePaymentSucceeded(webhookData: any, webhookId: string) {
       const amount = paymentData.total_amount
         ? Number(paymentData.total_amount) / 100
         : 179.0
+      const currency = (paymentData.currency || "USD").toUpperCase()
 
-      if (memorialId) {
-        // Record payment in public.payments
-        const { data: paymentRecord } = await supabase
-          .from("payments")
-          .upsert(
-            {
-              payment_id: paymentId,
-              user_id: userId,
-              memorial_id: memorialId,
-              amount: amount,
-              currency: paymentData.currency || "USD",
-              status: "completed",
-              customer_email: customerEmail,
-              payment_method: paymentMethod,
-              metadata: paymentData.metadata || {},
-            },
-            { onConflict: "payment_id" }
-          )
-          .select("id")
-          .single()
-
-        // Activate Theirs Complete on the memorial
-        await supabase
-          .from("memorials")
-          .update({
-            is_paid: true,
-            paid_at: new Date().toISOString(),
-          })
-          .eq("id", memorialId)
-
-        // Log the processed webhook event
-        await logWebhookEvent(
-          webhookId,
-          "theirs_complete_payment_succeeded",
-          paymentRecord?.id || paymentId,
-          webhookData.business_id
-        )
-
-        return
+      if (!memorialId) {
+        throw new Error("Missing memorial_id in payment metadata")
       }
+
+      // Security check: Validate currency
+      if (currency !== "USD") {
+        console.error(`Invalid payment currency for Theirs Complete: ${currency}`)
+        throw new Error(`Invalid currency received: ${currency}`)
+      }
+
+      // Validate configured product ID if present
+      const configuredProductId = getDodoCompleteProductId()
+      if (configuredProductId) {
+        const receivedProductId = paymentData.product_id || paymentData.product_cart?.[0]?.product_id
+        if (receivedProductId && receivedProductId !== configuredProductId) {
+          console.warn(`Product ID mismatch: expected ${configuredProductId}, got ${receivedProductId}`)
+        }
+      }
+
+      // Atomic Postgres transaction: idempotency check -> payment record -> memorial activation -> webhook logging
+      const { data: rpcResult, error: rpcError } = await supabase.rpc(
+        "complete_memorial_purchase",
+        {
+          p_event_id: webhookId,
+          p_payment_id: paymentId,
+          p_memorial_id: memorialId,
+          p_user_id: userId,
+          p_amount: amount,
+          p_currency: currency,
+          p_customer_email: customerEmail,
+          p_payment_method: paymentMethod,
+          p_metadata: paymentData.metadata || {},
+        }
+      )
+
+      if (rpcError) {
+        console.error("complete_memorial_purchase RPC error:", rpcError)
+        throw new Error(`Failed to activate memorial: ${rpcError.message}`)
+      }
+
+      console.log("Theirs Complete activated successfully via atomic RPC:", rpcResult)
+      return
     }
 
     // 2. Fallback: Legacy BringBack credit system
@@ -308,7 +312,8 @@ async function handlePaymentSucceeded(webhookData: any, webhookId: string) {
     )
 
   } catch (error) {
-    // Payment processing failed
+    console.error("Payment succeeded processing error:", error)
+    throw error
   }
 }
 

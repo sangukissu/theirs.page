@@ -1,6 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server"
 import { createClient } from "@/utils/supabase/server"
-import { assertMemorialAdmin } from "@/lib/memorial-auth"
+import { assertMemorialOwner } from "@/lib/memorial-auth"
 import {
   getDodoBaseURL,
   getDodoCompleteProductId,
@@ -55,10 +55,10 @@ export async function POST(request: NextRequest) {
 
     // 1. PRIMARY PATH: Theirs Complete ($179 One-Time Per-Memorial)
     if (memorialId) {
-      const authCheck = await assertMemorialAdmin(memorialId, user.id)
+      const authCheck = await assertMemorialOwner(memorialId, user.id)
       if (!authCheck.authorized || !authCheck.memorial) {
         return NextResponse.json(
-          { error: authCheck.error || "You do not have permission to manage this memorial" },
+          { error: authCheck.error || "Only the primary memorial steward (creator/owner) can upgrade this memorial" },
           { status: 403 }
         )
       }

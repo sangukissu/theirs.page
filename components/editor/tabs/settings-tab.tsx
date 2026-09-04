@@ -281,11 +281,11 @@ export function SettingsTab({
               <div className="flex items-center gap-2">
                 <h3 className="text-sm font-medium text-[#181925]">Theirs Complete Active</h3>
                 <span className="px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 text-[10px] font-mono uppercase font-semibold">
-                  Permanent Archive
+                  Family Archive
                 </span>
               </div>
               <p className="text-[11px] text-[#71717a]">
-                Original-quality media preservation, audio recordings, unlimited contributors, and perpetual stewardship are active.
+                Original-quality media preservation, audio recordings, unlimited contributors, and family collaboration are active.
               </p>
             </div>
           </div>
@@ -301,7 +301,7 @@ export function SettingsTab({
               <span className="text-sm font-medium text-white">$179 one-time</span>
             </div>
             <p className="text-xs text-[#9c9c9c] max-w-md leading-relaxed">
-              Activate permanent preservation, unlimited original-resolution photos, voice notes, video clips, and limitless family collaborators.
+              Unlock original-resolution photos, voice recordings, video clips, private mode, and unlimited family collaborators.
             </p>
             {checkoutError && (
               <span className="text-xs text-rose-400 font-medium">{checkoutError}</span>
@@ -402,7 +402,7 @@ export function SettingsTab({
       {/* 2. Permanent Web Address (Slug) with Live Check */}
       <div className="flex flex-col gap-2 p-5 rounded-2xl bg-white border border-black/[0.07]">
         <label className="text-xs font-medium text-[#181925]">
-          Permanent Web Address
+          Web Address (Link)
         </label>
         <div className="flex items-center px-4 py-2 rounded-xl bg-[#fafafb] border border-black/[0.08] text-xs text-[#888] font-mono">
           <span>theirs.page/</span>

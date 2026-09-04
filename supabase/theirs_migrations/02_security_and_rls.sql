@@ -69,9 +69,10 @@ $$ language plpgsql security definer stable;
 
 -- 3. POLICIES: USER PROFILES
 drop policy if exists "User profiles viewable by self and public" on public.user_profiles;
-create policy "User profiles viewable by self and public"
+drop policy if exists "User profiles viewable only by self" on public.user_profiles;
+create policy "User profiles viewable only by self"
   on public.user_profiles for select
-  using (true);
+  using (auth.uid() = user_id);
 
 drop policy if exists "Users can update their own profile" on public.user_profiles;
 create policy "Users can update their own profile"

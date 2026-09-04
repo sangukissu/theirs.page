@@ -41,59 +41,138 @@ export function verifyPin(pin: string, storedHashOrPlain: string): boolean {
   return false
 }
 
-// In-memory sliding window rate-limiter for PIN attempts
+import { getSupabaseAdminSafe } from "@/utils/supabase/admin"
+
+// In-memory fallback sliding window rate-limiter for PIN attempts
 interface AttemptRecord {
   attempts: number
   lockedUntil: number
 }
 
-const pinAttempts = new Map<string, AttemptRecord>()
+const memoryPinAttempts = new Map<string, AttemptRecord>()
+const PIN_LOCK_WINDOW_SECONDS = 15 * 60 // 15 minutes
+const MAX_PIN_ATTEMPTS = 5
 
 /**
  * Check if the current IP/memorial is locked due to excessive failed attempts
  */
-export function checkPinRateLimit(key: string): { allowed: boolean; remainingSeconds?: number } {
-  const now = Date.now()
-  const record = pinAttempts.get(key)
-  if (!record) return { allowed: true }
+export async function checkPinRateLimit(key: string): Promise<{ allowed: boolean; remainingSeconds?: number }> {
+  const admin = getSupabaseAdminSafe()
 
-  if (record.lockedUntil > now) {
-    return {
-      allowed: false,
-      remainingSeconds: Math.ceil((record.lockedUntil - now) / 1000),
+  if (!admin) {
+    const now = Date.now()
+    const record = memoryPinAttempts.get(key)
+    if (!record) return { allowed: true }
+
+    if (record.lockedUntil > now) {
+      return {
+        allowed: false,
+        remainingSeconds: Math.ceil((record.lockedUntil - now) / 1000),
+      }
     }
+    return { allowed: true }
   }
 
-  return { allowed: true }
+  try {
+    const windowStart = new Date(Date.now() - PIN_LOCK_WINDOW_SECONDS * 1000).toISOString()
+    const { data, count, error } = await admin
+      .from("rate_limit_events")
+      .select("created_at", { count: "exact" })
+      .eq("action", "pin_attempt")
+      .eq("identifier", key)
+      .gte("created_at", windowStart)
+      .order("created_at", { ascending: true })
+
+    if (error) {
+      console.error("Durable PIN rate limit check error:", error.message)
+      return { allowed: true }
+    }
+
+    const total = typeof count === "number" ? count : data?.length || 0
+
+    if (total >= MAX_PIN_ATTEMPTS) {
+      const oldestIso = data && data[0]?.created_at
+      const oldestMs = oldestIso ? new Date(oldestIso).getTime() : Date.now() - PIN_LOCK_WINDOW_SECONDS * 1000
+      const expiresAt = oldestMs + PIN_LOCK_WINDOW_SECONDS * 1000
+      const remainingSeconds = Math.max(1, Math.ceil((expiresAt - Date.now()) / 1000))
+
+      return { allowed: false, remainingSeconds }
+    }
+
+    return { allowed: true }
+  } catch (err) {
+    console.error("Durable PIN rate limit exception:", err)
+    return { allowed: true }
+  }
 }
 
 /**
  * Record a failed attempt. Locks for 15 minutes after 5 failures.
  */
-export function recordFailedPinAttempt(key: string): { locked: boolean; attemptsLeft: number } {
+export async function recordFailedPinAttempt(key: string): Promise<{ locked: boolean; attemptsLeft: number }> {
+  const admin = getSupabaseAdminSafe()
+
+  // Always update memory fallback
   const now = Date.now()
-  const record = pinAttempts.get(key) || { attempts: 0, lockedUntil: 0 }
+  const memRecord = memoryPinAttempts.get(key) || { attempts: 0, lockedUntil: 0 }
+  if (memRecord.lockedUntil > 0 && memRecord.lockedUntil <= now) {
+    memRecord.attempts = 0
+    memRecord.lockedUntil = 0
+  }
+  memRecord.attempts += 1
+  if (memRecord.attempts >= MAX_PIN_ATTEMPTS) {
+    memRecord.lockedUntil = now + PIN_LOCK_WINDOW_SECONDS * 1000
+  }
+  memoryPinAttempts.set(key, memRecord)
 
-  if (record.lockedUntil > 0 && record.lockedUntil <= now) {
-    record.attempts = 0
-    record.lockedUntil = 0
+  if (!admin) {
+    const locked = memRecord.attempts >= MAX_PIN_ATTEMPTS
+    return { locked, attemptsLeft: Math.max(0, MAX_PIN_ATTEMPTS - memRecord.attempts) }
   }
 
-  record.attempts += 1
+  try {
+    // Insert failed attempt event
+    await admin.from("rate_limit_events").insert({
+      action: "pin_attempt",
+      identifier: key,
+    })
 
-  if (record.attempts >= 5) {
-    record.lockedUntil = now + 15 * 60 * 1000 // 15-minute lock
-    pinAttempts.set(key, record)
-    return { locked: true, attemptsLeft: 0 }
+    const windowStart = new Date(Date.now() - PIN_LOCK_WINDOW_SECONDS * 1000).toISOString()
+    const { count, error } = await admin
+      .from("rate_limit_events")
+      .select("id", { count: "exact", head: true })
+      .eq("action", "pin_attempt")
+      .eq("identifier", key)
+      .gte("created_at", windowStart)
+
+    const total = error || typeof count !== "number" ? memRecord.attempts : count
+    const locked = total >= MAX_PIN_ATTEMPTS
+
+    return { locked, attemptsLeft: Math.max(0, MAX_PIN_ATTEMPTS - total) }
+  } catch (err) {
+    console.error("Durable PIN recording exception:", err)
+    const locked = memRecord.attempts >= MAX_PIN_ATTEMPTS
+    return { locked, attemptsLeft: Math.max(0, MAX_PIN_ATTEMPTS - memRecord.attempts) }
   }
-
-  pinAttempts.set(key, record)
-  return { locked: false, attemptsLeft: Math.max(0, 5 - record.attempts) }
 }
 
 /**
  * Reset failed attempts upon successful PIN entry
  */
-export function clearPinAttempts(key: string): void {
-  pinAttempts.delete(key)
+export async function clearPinAttempts(key: string): Promise<void> {
+  memoryPinAttempts.delete(key)
+
+  const admin = getSupabaseAdminSafe()
+  if (!admin) return
+
+  try {
+    await admin
+      .from("rate_limit_events")
+      .delete()
+      .eq("action", "pin_attempt")
+      .eq("identifier", key)
+  } catch (err) {
+    console.error("Failed to clear durable PIN attempts:", err)
+  }
 }
+

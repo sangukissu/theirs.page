@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server"
 import { createClient } from "@/utils/supabase/server"
 import { getSupabaseAdminSafe } from "@/utils/supabase/admin"
 import { assertMemorialAdmin } from "@/lib/memorial-auth"
+import { canAccessFeature } from "@/lib/paywall"
 
 interface RouteContext {
   params: Promise<{ id: string }>
@@ -19,8 +20,19 @@ export async function POST(req: NextRequest, context: RouteContext) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
-    const { errorResponse } = await assertMemorialAdmin(memorialId, user.id)
-    if (errorResponse) return errorResponse
+    const authCheck = await assertMemorialAdmin(memorialId, user.id)
+    if (!authCheck.authorized || !authCheck.memorial) {
+      return authCheck.errorResponse || NextResponse.json({ error: "Forbidden" }, { status: 403 })
+    }
+
+    // Paywall Check: Life Story timeline requires Theirs Complete ($179)
+    const featureCheck = canAccessFeature(authCheck.memorial, "timeline")
+    if (!featureCheck.allowed) {
+      return NextResponse.json(
+        { error: featureCheck.error },
+        { status: featureCheck.status || 402 }
+      )
+    }
 
     const body = await req.json()
     const { year, title, description, photo_url } = body
