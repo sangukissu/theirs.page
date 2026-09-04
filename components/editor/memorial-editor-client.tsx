@@ -17,6 +17,7 @@ import {
   Settings,
   Loader2,
   RotateCcw,
+  Shield,
 } from "lucide-react"
 
 import { IdentityTab } from "./tabs/identity-tab"
@@ -116,6 +117,30 @@ export function MemorialEditorClient({
   const debounceTimerRef = useRef<NodeJS.Timeout | null>(null)
   const formRef = useRef(form)
   formRef.current = form
+
+  // Checkout handling for Theirs Complete ($179)
+  const [checkingOut, setCheckingOut] = useState(false)
+  const handleUpgradeComplete = async () => {
+    setCheckingOut(true)
+    try {
+      const res = await fetch("/api/checkout/session", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ memorialId: initialMemorial.id }),
+      })
+      const data = await res.json()
+      const redirectUrl = data.url || data.checkout_url || data.payment_link
+      if (res.ok && redirectUrl) {
+        window.location.href = redirectUrl
+      } else {
+        alert(data.error || "Could not launch checkout session")
+        setCheckingOut(false)
+      }
+    } catch {
+      alert("Network error launching checkout")
+      setCheckingOut(false)
+    }
+  }
 
   // 1. RECOVER UNSAVED DRAFT ON MOUNT (Zero data loss upon refresh!)
   useEffect(() => {
@@ -281,11 +306,17 @@ export function MemorialEditorClient({
     guestbook.filter((g) => g.status === "pending_approval").length
 
   // Exactly 7 clean, unbloated tabs matching public memorial structure
-  const tabs: { id: EditorSectionTab; label: string; icon: any; count?: number }[] = [
+  const tabs: {
+    id: EditorSectionTab
+    label: string
+    icon: any
+    count?: number
+    isCompleteOnly?: boolean
+  }[] = [
     { id: "identity", label: "Identity & Hero", icon: User },
     { id: "story", label: "Life Story", icon: BookOpen },
     { id: "gallery", label: "Gallery", icon: ImageIcon, count: mediaItems.length },
-    { id: "timeline", label: "Timeline", icon: Calendar, count: timelineEvents.length },
+    { id: "timeline", label: "Timeline", icon: Calendar, count: timelineEvents.length, isCompleteOnly: true },
     { id: "people", label: "People in Life", icon: Users, count: people.length },
     { id: "moderation", label: "Contributions", icon: MessageSquare, count: pendingContributions },
     { id: "settings", label: "Settings", icon: Settings },
@@ -364,6 +395,24 @@ export function MemorialEditorClient({
             <ExternalLink className="size-3 text-[#888]" />
           </Link>
 
+          {/* Upgrade to Complete CTA (Only shown when not paid yet) */}
+          {!initialMemorial.is_paid && (
+            <button
+              type="button"
+              disabled={checkingOut}
+              onClick={handleUpgradeComplete}
+              className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-medium transition-all cursor-pointer shadow-2xs disabled:opacity-50"
+            >
+              {checkingOut ? (
+                <Loader2 className="size-3 animate-spin" />
+              ) : (
+                <Shield className="size-3" />
+              )}
+              <span className="hidden sm:inline">Upgrade ($179)</span>
+              <span className="sm:hidden">Upgrade</span>
+            </button>
+          )}
+
           {/* Manual Save Button */}
           <button
             type="button"
@@ -424,15 +473,27 @@ export function MemorialEditorClient({
                     <span>{tab.label}</span>
                   </div>
 
-                  {tab.count !== undefined && tab.count > 0 && (
-                    <span
-                      className={`text-[10px] font-mono px-1.5 py-0.2 rounded-full ${
-                        isActive ? "bg-white/20 text-white" : "bg-neutral-100 text-[#777]"
-                      }`}
-                    >
-                      {tab.count}
-                    </span>
-                  )}
+                  <div className="flex items-center gap-1.5">
+                    {tab.isCompleteOnly && !initialMemorial.is_paid && (
+                      <span
+                        className={`text-[9px] font-mono uppercase font-semibold px-1.5 py-0.2 rounded-full ${
+                          isActive ? "bg-white/20 text-white" : "bg-emerald-50 text-emerald-700 border border-emerald-200"
+                        }`}
+                      >
+                        Complete
+                      </span>
+                    )}
+
+                    {tab.count !== undefined && tab.count > 0 && (
+                      <span
+                        className={`text-[10px] font-mono px-1.5 py-0.2 rounded-full ${
+                          isActive ? "bg-white/20 text-white" : "bg-neutral-100 text-[#777]"
+                        }`}
+                      >
+                        {tab.count}
+                      </span>
+                    )}
+                  </div>
                 </button>
               )
             })}
@@ -468,6 +529,8 @@ export function MemorialEditorClient({
               memorialId={initialMemorial.id}
               fullName={form.full_name}
               mediaItems={mediaItems}
+              isPaid={Boolean(initialMemorial.is_paid)}
+              onUpgrade={handleUpgradeComplete}
               onAddMedia={(item) => setMediaItems([item, ...mediaItems])}
               onRemoveMedia={(id) => setMediaItems(mediaItems.filter((m) => m.id !== id))}
               onUpdateMedia={handleUpdateMedia}
@@ -479,6 +542,8 @@ export function MemorialEditorClient({
               memorialId={initialMemorial.id}
               fullName={form.full_name}
               events={timelineEvents}
+              isPaid={Boolean(initialMemorial.is_paid)}
+              onUpgrade={handleUpgradeComplete}
               onAddEvent={(evt) => setTimelineEvents([...timelineEvents, evt])}
               onRemoveEvent={(id) => setTimelineEvents(timelineEvents.filter((e) => e.id !== id))}
             />

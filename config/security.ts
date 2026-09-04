@@ -39,7 +39,7 @@ const baseConfig: SecurityConfig = {
       'https://1262a1778d74.ngrok-free.app',
       'https://*.ngrok-free.app'
     ],
-    'media-src': ["'self'", 'blob:'],
+    'media-src': ["'self'", 'blob:', 'https://*.r2.dev', 'https://*.cloudflarestorage.com', 'https://pub-*.r2.dev'],
     'object-src': ["'none'"],
     'base-uri': ["'self'"],
     'form-action': ["'self'"],

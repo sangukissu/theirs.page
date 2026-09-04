@@ -11,7 +11,10 @@ import {
   Plus,
   AlertCircle,
   Check,
+  Lock,
+  Sparkles,
 } from "lucide-react"
+import { UpgradeBanner } from "../upgrade-banner"
 
 export interface EditorMediaItem {
   id: string
@@ -26,6 +29,8 @@ interface GalleryTabProps {
   memorialId: string
   fullName: string
   mediaItems: EditorMediaItem[]
+  isPaid?: boolean
+  onUpgrade?: () => void
   onAddMedia: (item: EditorMediaItem) => void
   onRemoveMedia: (id: string) => void
   onUpdateMedia: (id: string, field: "caption" | "approx_year", value: any) => void
@@ -35,6 +40,8 @@ export function GalleryTab({
   memorialId,
   fullName,
   mediaItems,
+  isPaid = false,
+  onUpgrade,
   onAddMedia,
   onRemoveMedia,
   onUpdateMedia,
@@ -42,6 +49,9 @@ export function GalleryTab({
   const [isUploading, setIsUploading] = useState(false)
   const [uploadProgress, setUploadProgress] = useState<string | null>(null)
   const [uploadError, setUploadError] = useState<string | null>(null)
+
+  const photoCount = mediaItems.filter((m) => m.media_type === "image" || !m.media_type).length
+  const isPhotoQuotaReached = !isPaid && photoCount >= 5
 
   // Multi-file drag and drop upload
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -51,11 +61,32 @@ export function GalleryTab({
     setIsUploading(true)
     setUploadError(null)
 
-    const total = files.length
+    let currentPhotoCount = photoCount
 
-    for (let i = 0; i < total; i++) {
+    for (let i = 0; i < files.length; i++) {
       const file = files[i]
-      setUploadProgress(`Uploading ${i + 1} of ${total}: ${file.name}`)
+      const isAudio = file.type.startsWith("audio/")
+      const isVideo = file.type.startsWith("video/")
+
+      if (!isPaid && (isAudio || isVideo)) {
+        setUploadError(
+          `Audio voice notes and video clips are available on Theirs Complete. Upgrade to preserve ${file.name}.`
+        )
+        setIsUploading(false)
+        setUploadProgress(null)
+        return
+      }
+
+      if (!isPaid && !isAudio && !isVideo && currentPhotoCount >= 5) {
+        setUploadError(
+          "Free memorials are limited to 5 photos. Upgrade to Theirs Complete for unlimited photos and media."
+        )
+        setIsUploading(false)
+        setUploadProgress(null)
+        return
+      }
+
+      setUploadProgress(`Uploading ${i + 1} of ${files.length}: ${file.name}`)
 
       try {
         // 1. Upload to Cloudflare R2 via server endpoint (bypasses browser CORS completely)
@@ -89,6 +120,9 @@ export function GalleryTab({
         const dbData = await dbRes.json()
         if (dbRes.ok && dbData.mediaItem) {
           onAddMedia(dbData.mediaItem)
+          if (uploadData.mediaType === "image") {
+            currentPhotoCount++
+          }
         }
       } catch (err: any) {
         console.error("Upload error for file", file.name, err)
@@ -123,22 +157,102 @@ export function GalleryTab({
         </p>
       </div>
 
+      {/* Complete Plan Upgrade Banner */}
+      {!isPaid && (
+        <UpgradeBanner
+          compact
+          memorialId={memorialId}
+          featureTitle="Unlimited Photos, Voicemails & Videos"
+          description="Free memorials include up to 5 photos. Complete unlocks unlimited high-resolution photos, original audio recordings, and video clips."
+          onUpgrade={onUpgrade}
+        />
+      )}
+
+      {/* Quota & Feature Indicator Bar */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 rounded-2xl bg-white border border-black/[0.06] shadow-2xs">
+        <div className="flex items-center gap-2 flex-wrap">
+          <span className="text-xs font-medium text-[#181925]">Formats:</span>
+          <span className="inline-flex items-center gap-1 text-[11px] px-2.5 py-1 rounded-full bg-neutral-100 text-[#444] border border-black/[0.04]">
+            <ImageIcon className="size-3 text-[#666]" /> Photos
+          </span>
+          <span
+            className={`inline-flex items-center gap-1 text-[11px] px-2.5 py-1 rounded-full border ${
+              isPaid
+                ? "bg-neutral-100 text-[#444] border-black/[0.04]"
+                : "bg-amber-50/70 text-amber-800 border-amber-200"
+            }`}
+          >
+            <Volume2 className="size-3 text-primary" /> Audio Notes{" "}
+            {!isPaid && <Lock className="size-2.5 text-amber-700" />}
+          </span>
+          <span
+            className={`inline-flex items-center gap-1 text-[11px] px-2.5 py-1 rounded-full border ${
+              isPaid
+                ? "bg-neutral-100 text-[#444] border-black/[0.04]"
+                : "bg-amber-50/70 text-amber-800 border-amber-200"
+            }`}
+          >
+            <Video className="size-3 text-primary" /> Video Clips{" "}
+            {!isPaid && <Lock className="size-2.5 text-amber-700" />}
+          </span>
+        </div>
+
+        <div className="flex items-center gap-2">
+          {isPaid ? (
+            <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-emerald-50 text-emerald-700 text-xs font-medium border border-emerald-200">
+              <Sparkles className="size-3" /> Complete · Unlimited
+            </span>
+          ) : (
+            <span
+              className={`px-2.5 py-1 rounded-full text-xs font-mono font-medium border ${
+                isPhotoQuotaReached
+                  ? "bg-rose-50 text-rose-700 border-rose-200"
+                  : "bg-neutral-100 text-[#555] border-black/[0.06]"
+              }`}
+            >
+              {photoCount} / 5 Free Photos Used
+            </span>
+          )}
+        </div>
+      </div>
+
       {uploadError && (
-        <div className="p-3 rounded-xl bg-rose-50 border border-rose-200 text-xs text-rose-700 flex items-center gap-2">
-          <AlertCircle className="size-3.5 shrink-0" />
-          <span>{uploadError}</span>
+        <div className="p-3.5 rounded-xl bg-rose-50 border border-rose-200 text-xs text-rose-700 flex items-center justify-between gap-2">
+          <div className="flex items-center gap-2">
+            <AlertCircle className="size-4 shrink-0" />
+            <span>{uploadError}</span>
+          </div>
+          {!isPaid && (
+            <button
+              type="button"
+              onClick={onUpgrade}
+              className="text-xs font-semibold text-rose-800 underline hover:no-underline cursor-pointer shrink-0"
+            >
+              Upgrade to Complete
+            </button>
+          )}
         </div>
       )}
 
       {/* Low-Friction Bulk Upload Area */}
-      <label className="p-8 sm:p-10 rounded-3xl border-2 border-dashed border-black/[0.12] hover:border-primary/50 bg-white hover:bg-neutral-50/50 transition-all flex flex-col items-center justify-center gap-3 cursor-pointer text-center group">
+      <label
+        className={`p-8 sm:p-10 rounded-3xl border-2 border-dashed transition-all flex flex-col items-center justify-center gap-3 cursor-pointer text-center group ${
+          isPhotoQuotaReached
+            ? "border-amber-300 bg-amber-50/20 hover:bg-amber-50/40"
+            : "border-black/[0.12] hover:border-primary/50 bg-white hover:bg-neutral-50/50"
+        }`}
+      >
         <div className="size-12 rounded-full bg-primary/10 text-primary flex items-center justify-center group-hover:scale-105 transition-transform">
-          <Upload className="size-6" />
+          {isPhotoQuotaReached ? <Lock className="size-6 text-amber-700" /> : <Upload className="size-6" />}
         </div>
 
         <div className="flex flex-col gap-1">
           <span className="text-xs sm:text-sm font-medium text-[#181925]">
-            {isUploading ? (uploadProgress || "Uploading files...") : "Drop photographs, voice notes, or home videos here"}
+            {isUploading
+              ? uploadProgress || "Uploading files..."
+              : isPhotoQuotaReached
+              ? "Free 5-photo limit reached · Drop more files after upgrading"
+              : "Drop photographs, voice notes, or home videos here"}
           </span>
           <span className="text-[11px] text-[#888]">
             Select multiple files at once (JPG, PNG, MP4, MP3, M4A, OGG) · Original quality preserved

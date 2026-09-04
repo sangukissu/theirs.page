@@ -1,7 +1,8 @@
 "use client"
 
 import { useState } from "react"
-import { Plus, Trash2, Calendar, MapPin } from "lucide-react"
+import { Plus, Trash2, Calendar, MapPin, Lock } from "lucide-react"
+import { UpgradeBanner } from "../upgrade-banner"
 
 export interface EditorTimelineEvent {
   id: string
@@ -15,6 +16,8 @@ interface TimelineTabProps {
   memorialId: string
   fullName: string
   events: EditorTimelineEvent[]
+  isPaid?: boolean
+  onUpgrade?: () => void
   onAddEvent: (event: EditorTimelineEvent) => void
   onRemoveEvent: (id: string) => void
 }
@@ -23,6 +26,8 @@ export function TimelineTab({
   memorialId,
   fullName,
   events,
+  isPaid = false,
+  onUpgrade,
   onAddEvent,
   onRemoveEvent,
 }: TimelineTabProps) {
@@ -116,58 +121,103 @@ export function TimelineTab({
         </p>
       </div>
 
+      {/* Complete Plan Upgrade Banner */}
+      {!isPaid && (
+        <UpgradeBanner
+          memorialId={memorialId}
+          featureTitle="Life Chronology & Milestones"
+          description={`Preserve the key chapters, moves, marriages, and turning points of ${firstName}’s journey in chronological order. Chapters and markers are beautifully woven into the memorial.`}
+          bullets={[
+            "Unlimited milestone events & life markers",
+            "Automatic chronological chapter ordering",
+            "Prominently woven into the public memorial",
+            "Included with all other Theirs Complete features",
+          ]}
+          onUpgrade={onUpgrade}
+        />
+      )}
+
       {/* 1. Add Milestone Form (3 fields max) */}
       <form
         onSubmit={handleAdd}
-        className="p-5 rounded-2xl bg-white border border-black/[0.07] flex flex-col gap-3.5 shadow-2xs"
+        className={`p-5 rounded-2xl bg-white border border-black/[0.07] flex flex-col gap-3.5 shadow-2xs ${
+          !isPaid ? "opacity-75" : ""
+        }`}
       >
-        <span className="text-xs font-medium text-[#181925]">Add a Life Milestone</span>
+        <div className="flex items-center justify-between">
+          <span className="text-xs font-medium text-[#181925]">Add a Life Milestone</span>
+          {!isPaid && (
+            <span className="text-[10px] font-mono uppercase font-semibold text-emerald-700 px-2 py-0.5 rounded-full bg-emerald-50 border border-emerald-200">
+              Theirs Complete
+            </span>
+          )}
+        </div>
 
         <div className="flex flex-col sm:flex-row gap-3">
           <input
             type="number"
             required
+            disabled={!isPaid}
             value={yearInput}
             onChange={(e) => {
               setYearInput(e.target.value)
               updateDraft(e.target.value, titleInput, descInput)
             }}
             placeholder="Year (e.g. 1974)"
-            className="w-full sm:w-36 px-3.5 py-2 rounded-xl bg-[#fafafb] border border-black/[0.08] text-xs sm:text-sm text-[#181925] font-mono outline-none focus:border-primary/50"
+            className="w-full sm:w-36 px-3.5 py-2 rounded-xl bg-[#fafafb] border border-black/[0.08] text-xs sm:text-sm text-[#181925] font-mono outline-none focus:border-primary/50 disabled:bg-neutral-100 disabled:text-neutral-500 disabled:cursor-not-allowed"
           />
 
           <input
             type="text"
             required
+            disabled={!isPaid}
             value={titleInput}
             onChange={(e) => {
               setTitleInput(e.target.value)
               updateDraft(yearInput, e.target.value, descInput)
             }}
-            placeholder="What happened? (e.g. Married Meena at St. Jude’s)"
-            className="flex-1 px-3.5 py-2 rounded-xl bg-[#fafafb] border border-black/[0.08] text-xs sm:text-sm text-[#181925] outline-none focus:border-primary/50"
+            placeholder={
+              !isPaid
+                ? "Upgrade to Complete to add milestones"
+                : "What happened? (e.g. Married Meena at St. Jude’s)"
+            }
+            className="flex-1 px-3.5 py-2 rounded-xl bg-[#fafafb] border border-black/[0.08] text-xs sm:text-sm text-[#181925] outline-none focus:border-primary/50 disabled:bg-neutral-100 disabled:text-neutral-500 disabled:cursor-not-allowed"
           />
         </div>
 
         <input
           type="text"
+          disabled={!isPaid}
           value={descInput}
           onChange={(e) => {
             setDescInput(e.target.value)
             updateDraft(yearInput, titleInput, e.target.value)
           }}
           placeholder="Brief note or detail (optional, e.g. Moved to Devon shortly after)"
-          className="px-3.5 py-2 rounded-xl bg-[#fafafb] border border-black/[0.08] text-xs text-[#181925] outline-none focus:border-primary/50"
+          className="px-3.5 py-2 rounded-xl bg-[#fafafb] border border-black/[0.08] text-xs text-[#181925] outline-none focus:border-primary/50 disabled:bg-neutral-100 disabled:text-neutral-500 disabled:cursor-not-allowed"
         />
 
         <div className="flex justify-end pt-1">
           <button
             type="submit"
-            disabled={isSubmitting || !yearInput || !titleInput.trim()}
-            className="inline-flex items-center gap-1.5 px-4 py-1.5 rounded-full bg-[#181925] hover:bg-[#252736] text-white text-xs font-medium transition-colors cursor-pointer disabled:opacity-50"
+            disabled={!isPaid || isSubmitting || !yearInput || !titleInput.trim()}
+            className={`inline-flex items-center gap-1.5 px-4 py-1.5 rounded-full text-xs font-medium transition-colors ${
+              !isPaid
+                ? "bg-neutral-100 text-neutral-500 border border-neutral-200 cursor-not-allowed"
+                : "bg-[#181925] hover:bg-[#252736] text-white cursor-pointer disabled:opacity-50"
+            }`}
           >
-            <Plus className="size-3" />
-            <span>Add milestone</span>
+            {!isPaid ? (
+              <>
+                <Lock className="size-3" />
+                <span>Upgrade to add</span>
+              </>
+            ) : (
+              <>
+                <Plus className="size-3" />
+                <span>Add milestone</span>
+              </>
+            )}
           </button>
         </div>
       </form>

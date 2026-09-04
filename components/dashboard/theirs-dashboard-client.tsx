@@ -18,6 +18,8 @@ import {
   Lock,
   AlertCircle,
   CheckCircle2,
+  Shield,
+  Loader2,
 } from "lucide-react"
 
 interface MemorialSummary {
@@ -67,7 +69,30 @@ export function TheirsDashboardClient({
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [copiedId, setCopiedId] = useState<string | null>(null)
   const [errorMsg, setErrorMsg] = useState<string | null>(null)
+  const [checkingOutId, setCheckingOutId] = useState<string | null>(null)
   const checkDebounceRef = useRef<NodeJS.Timeout | null>(null)
+
+  const handleUpgrade = async (memorialId: string) => {
+    setCheckingOutId(memorialId)
+    try {
+      const res = await fetch("/api/checkout/session", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ memorialId }),
+      })
+      const data = await res.json()
+      const redirectUrl = data.url || data.checkout_url || data.payment_link
+      if (res.ok && redirectUrl) {
+        window.location.href = redirectUrl
+      } else {
+        alert(data.error || "Could not launch checkout session")
+        setCheckingOutId(null)
+      }
+    } catch {
+      alert("Network error launching checkout")
+      setCheckingOutId(null)
+    }
+  }
 
   // Live availability check
   const checkSlugAvailability = (slug: string, name: string) => {
@@ -314,6 +339,31 @@ export function TheirsDashboardClient({
         {/* 2. EXISTING MEMORIALS LIST */}
         {memorials.length > 0 && (
           <div className="flex flex-col gap-4">
+            {/* Complete Highlights Banner if user has unpaid memorials */}
+            {memorials.some((m) => !m.is_paid) && (
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 rounded-2xl bg-[#1f1f1f] text-white border border-white/[0.08] shadow-2xs">
+                <div className="flex items-center gap-3">
+                  <div className="size-8 rounded-full bg-emerald-500/20 text-emerald-400 flex items-center justify-center shrink-0">
+                    <Sparkles className="size-4" />
+                  </div>
+                  <div className="flex flex-col">
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs font-medium text-white">Theirs Complete</span>
+                      <span className="text-[10px] font-mono uppercase font-semibold text-emerald-400 px-1.5 py-0.2 rounded bg-emerald-950/60 border border-emerald-800/40">
+                        $179 One-Time
+                      </span>
+                    </div>
+                    <span className="text-[11px] text-[#9c9c9c]">
+                      Unlock original-resolution photos, voice memos, home video clips, private PIN protection, and full family data export.
+                    </span>
+                  </div>
+                </div>
+                <span className="text-[11px] text-neutral-400 hidden lg:inline font-mono">
+                  Per-memorial · No monthly fees
+                </span>
+              </div>
+            )}
+
             {memorials.map((m) => {
               const yearSpan = m.birth_year && m.death_year ? `${m.birth_year} — ${m.death_year}` : "Memorial"
 
@@ -349,9 +399,13 @@ export function TheirsDashboardClient({
                         >
                           {m.status}
                         </span>
-                        {m.is_paid && (
-                          <span className="px-2 py-0.5 rounded-full text-[10px] font-mono uppercase font-semibold bg-blue-50 text-blue-700 border border-blue-200">
+                        {m.is_paid ? (
+                          <span className="px-2 py-0.5 rounded-full text-[10px] font-mono uppercase font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
                             Complete
+                          </span>
+                        ) : (
+                          <span className="px-2 py-0.5 rounded-full text-[10px] font-mono uppercase font-semibold bg-neutral-100 text-[#666] border border-black/[0.08]">
+                            Free Tier
                           </span>
                         )}
                       </div>
@@ -365,7 +419,7 @@ export function TheirsDashboardClient({
                   </div>
 
                   {/* Right: Actions */}
-                  <div className="flex items-center gap-2 self-end sm:self-auto shrink-0">
+                  <div className="flex items-center gap-2 self-end sm:self-auto shrink-0 flex-wrap sm:flex-nowrap">
                     {/* Share Button */}
                     <button
                       type="button"
@@ -389,6 +443,23 @@ export function TheirsDashboardClient({
                       <span>View live</span>
                       <ExternalLink className="size-3 text-[#888]" />
                     </Link>
+
+                    {/* Upgrade to Complete CTA Button (for free memorials) */}
+                    {!m.is_paid && (
+                      <button
+                        type="button"
+                        disabled={checkingOutId === m.id}
+                        onClick={() => handleUpgrade(m.id)}
+                        className="inline-flex items-center justify-center gap-1.5 px-3.5 py-1.5 rounded-full bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-medium transition-all cursor-pointer shadow-2xs disabled:opacity-50"
+                      >
+                        {checkingOutId === m.id ? (
+                          <Loader2 className="size-3 animate-spin" />
+                        ) : (
+                          <Shield className="size-3" />
+                        )}
+                        <span>Upgrade ($179)</span>
+                      </button>
+                    )}
 
                     {/* Open Editor */}
                     <Link

@@ -184,10 +184,12 @@ export function MemorialGallery({
   const [selectedItem, setSelectedItem] = useState<GalleryItem | null>(null)
   const [identifiedMap, setIdentifiedMap] = useState<Record<string, boolean>>({})
 
-  // Real Audio Playback State
+  // Real Audio & Video Playback State
   const [playingAudioId, setPlayingAudioId] = useState<string | null>(null)
   const [audioProgress, setAudioProgress] = useState<Record<string, number>>({})
   const [audioCurrentTime, setAudioCurrentTime] = useState<Record<string, string>>({})
+  const [audioDurations, setAudioDurations] = useState<Record<string, string>>({})
+  const [videoDurations, setVideoDurations] = useState<Record<string, string>>({})
   const audioElementsRef = useRef<Record<string, HTMLAudioElement>>({})
 
   const firstName = fullName.split(" ")[0] || fullName
@@ -207,11 +209,34 @@ export function MemorialGallery({
 
   // Format seconds to mm:ss
   const formatTime = (secs: number) => {
-    if (isNaN(secs)) return "0:00"
+    if (isNaN(secs) || !isFinite(secs) || secs < 0) return "0:00"
     const m = Math.floor(secs / 60)
     const s = Math.floor(secs % 60)
     return `${m}:${s < 10 ? "0" : ""}${s}`
   }
+
+  // Proactively fetch metadata for audio items so duration is visible immediately
+  useEffect(() => {
+    galleryItems.forEach((item) => {
+      if (item.mediaType === "audio" && item.mediaUrl && !item.duration) {
+        try {
+          const probe = new Audio()
+          probe.preload = "metadata"
+          probe.src = item.mediaUrl
+          probe.onloadedmetadata = () => {
+            if (probe.duration && isFinite(probe.duration)) {
+              setAudioDurations((prev) => ({
+                ...prev,
+                [item.id]: formatTime(probe.duration),
+              }))
+            }
+          }
+        } catch {
+          // Probe error ignored
+        }
+      }
+    })
+  }, [galleryItems])
 
   // Audio Play/Pause handler
   const handleToggleAudio = (item: GalleryItem) => {
@@ -232,10 +257,20 @@ export function MemorialGallery({
     let audio = audioElementsRef.current[item.id]
     if (!audio) {
       audio = new Audio(item.mediaUrl)
+      audio.preload = "metadata"
       audioElementsRef.current[item.id] = audio
 
+      audio.addEventListener("loadedmetadata", () => {
+        if (audio.duration && isFinite(audio.duration)) {
+          setAudioDurations((prev) => ({
+            ...prev,
+            [item.id]: formatTime(audio.duration),
+          }))
+        }
+      })
+
       audio.addEventListener("timeupdate", () => {
-        if (!audio.duration) return
+        if (!audio.duration || isNaN(audio.duration)) return
         const pct = (audio.currentTime / audio.duration) * 100
         setAudioProgress((prev) => ({ ...prev, [item.id]: pct }))
         setAudioCurrentTime((prev) => ({ ...prev, [item.id]: formatTime(audio.currentTime) }))
@@ -246,16 +281,28 @@ export function MemorialGallery({
         setAudioProgress((prev) => ({ ...prev, [item.id]: 0 }))
         setAudioCurrentTime((prev) => ({ ...prev, [item.id]: "0:00" }))
       })
+
+      audio.addEventListener("error", (e) => {
+        console.error("Audio playback error:", e)
+        setPlayingAudioId(null)
+      })
     }
 
-    audio.play().catch(() => {})
-    setPlayingAudioId(item.id)
+    audio
+      .play()
+      .then(() => {
+        setPlayingAudioId(item.id)
+      })
+      .catch((err) => {
+        console.error("Failed to start audio playback:", err)
+        setPlayingAudioId(null)
+      })
   }
 
   // Seek audio via waveform click
   const handleSeekAudio = (item: GalleryItem, e: React.MouseEvent<HTMLDivElement>) => {
     const audio = audioElementsRef.current[item.id]
-    if (!audio || !audio.duration) return
+    if (!audio || !audio.duration || isNaN(audio.duration)) return
     const rect = e.currentTarget.getBoundingClientRect()
     const clickX = e.clientX - rect.left
     const pct = Math.max(0, Math.min(1, clickX / rect.width))
@@ -348,6 +395,9 @@ export function MemorialGallery({
             const isPlaying = playingAudioId === item.id
             const progress = audioProgress[item.id] || 0
             const currentFormattedTime = audioCurrentTime[item.id] || "0:00"
+            const durationDisplay =
+              audioDurations[item.id] ||
+              (item.duration && item.duration !== "undefined" ? item.duration : "")
 
             return (
               <div
@@ -360,7 +410,9 @@ export function MemorialGallery({
                     <span>Voice recording</span>
                   </span>
                   <span className="text-[11px] font-mono text-[#888]">
-                    {isPlaying ? `${currentFormattedTime} / ${item.duration}` : item.duration}
+                    {isPlaying
+                      ? (durationDisplay ? `${currentFormattedTime} / ${durationDisplay}` : currentFormattedTime)
+                      : (durationDisplay || "Audio recording")}
                   </span>
                 </div>
 
@@ -414,9 +466,11 @@ export function MemorialGallery({
                     })}
                   </div>
 
-                  <span className="text-[10px] font-mono text-[#888] shrink-0">
-                    {item.year}
-                  </span>
+                  {item.year && (
+                    <span className="text-[10px] font-mono text-[#888] shrink-0">
+                      {item.year}
+                    </span>
+                  )}
                 </div>
               </div>
             )
@@ -426,6 +480,10 @@ export function MemorialGallery({
           // 2. REAL VIDEO CARD (Opens Theater Video Player Lightbox)
           // ===================================================================
           if (item.mediaType === "video") {
+            const videoDuration =
+              videoDurations[item.id] ||
+              (item.duration && item.duration !== "undefined" ? item.duration : "")
+
             return (
               <div
                 key={item.id}
@@ -433,24 +491,47 @@ export function MemorialGallery({
                 className="group relative rounded-2xl overflow-hidden bg-white border border-black/[0.06] p-2 cursor-pointer transition-all hover:border-black/[0.14] flex flex-col gap-2.5"
               >
                 <div className="aspect-[3/2] rounded-xl overflow-hidden bg-neutral-900 relative">
-                  <img
-                    src={item.posterUrl || "/memorial-family-portrait-combined.jpg"}
-                    alt={item.title}
-                    className="size-full object-cover grayscale contrast-105 group-hover:scale-105 transition-transform duration-300"
-                  />
+                  {item.posterUrl ? (
+                    <img
+                      src={item.posterUrl}
+                      alt={item.title}
+                      className="size-full object-cover grayscale contrast-105 group-hover:scale-105 transition-transform duration-300"
+                    />
+                  ) : (
+                    <video
+                      src={`${item.mediaUrl}#t=0.001`}
+                      preload="metadata"
+                      muted
+                      playsInline
+                      onLoadedMetadata={(e) => {
+                        const dur = e.currentTarget.duration
+                        if (dur && isFinite(dur)) {
+                          setVideoDurations((prev) => ({ ...prev, [item.id]: formatTime(dur) }))
+                        }
+                      }}
+                      className="size-full object-cover grayscale contrast-105 group-hover:scale-105 transition-transform duration-300 pointer-events-none"
+                    />
+                  )}
                   
                   {/* Glowing Video Play Button Overlay */}
-                  <div className="absolute inset-0 bg-black/40 group-hover:bg-black/30 transition-colors flex items-center justify-center">
+                  <div className="absolute inset-0 bg-black/40 group-hover:bg-black/25 transition-colors flex items-center justify-center">
                     <div className="size-11 rounded-full bg-white/95 text-[#181925] flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform">
                       <Play className="size-5 ml-0.5 fill-[#181925]" />
                     </div>
                   </div>
 
                   {/* Video Duration Badge */}
-                  <div className="absolute bottom-2 right-2 inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-black/75 text-white text-[10px] font-mono backdrop-blur-xs">
-                    <Film className="size-2.5" />
-                    <span>{item.duration}</span>
-                  </div>
+                  {videoDuration ? (
+                    <div className="absolute bottom-2 right-2 inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-black/75 text-white text-[10px] font-mono backdrop-blur-xs">
+                      <Film className="size-2.5" />
+                      <span>{videoDuration}</span>
+                    </div>
+                  ) : (
+                    <div className="absolute bottom-2 right-2 inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-black/75 text-white text-[10px] font-mono backdrop-blur-xs">
+                      <Film className="size-2.5" />
+                      <span>Video</span>
+                    </div>
+                  )}
                 </div>
 
                 <div className="px-1 pb-1 flex flex-col gap-0.5">
@@ -458,9 +539,11 @@ export function MemorialGallery({
                     <span className="text-xs font-medium text-[#181925] truncate">
                       {item.title}
                     </span>
-                    <span className="text-[11px] font-mono text-[#888] shrink-0">
-                      {item.year}
-                    </span>
+                    {item.year && (
+                      <span className="text-[11px] font-mono text-[#888] shrink-0">
+                        {item.year}
+                      </span>
+                    )}
                   </div>
                   {item.location && (
                     <span className="text-[11px] text-[#71717a] truncate">
@@ -513,9 +596,11 @@ export function MemorialGallery({
                   <span className="text-xs font-medium text-[#181925] truncate">
                     {item.title}
                   </span>
-                  <span className="text-[11px] font-mono text-[#888] shrink-0">
-                    {item.year}
-                  </span>
+                  {item.year && (
+                    <span className="text-[11px] font-mono text-[#888] shrink-0">
+                      {item.year}
+                    </span>
+                  )}
                 </div>
                 {item.location && (
                   <span className="text-[11px] text-[#71717a] truncate">
@@ -562,9 +647,46 @@ export function MemorialGallery({
                   className="w-full max-h-[60vh] object-contain rounded-2xl"
                   src={selectedItem.mediaUrl}
                   poster={selectedItem.posterUrl}
+                  onLoadedMetadata={(e) => {
+                    const dur = e.currentTarget.duration
+                    if (dur && isFinite(dur)) {
+                      setVideoDurations((prev) => ({
+                        ...prev,
+                        [selectedItem.id]: formatTime(dur),
+                      }))
+                    }
+                  }}
                 >
                   Your browser does not support HTML5 video playback.
                 </video>
+              ) : selectedItem.mediaType === "audio" ? (
+                /* REAL AUDIO PLAYER IN LIGHTBOX */
+                <div className="py-12 px-6 w-full flex flex-col items-center justify-center gap-5 bg-[#181925] text-white rounded-2xl">
+                  <div className="size-16 rounded-full bg-primary/20 flex items-center justify-center text-primary">
+                    <Volume2 className="size-8" />
+                  </div>
+                  <div className="text-center max-w-md">
+                    <h4 className="text-base font-medium">{selectedItem.title}</h4>
+                    {selectedItem.story && (
+                      <p className="text-xs text-neutral-400 mt-1 line-clamp-2">“{selectedItem.story}”</p>
+                    )}
+                  </div>
+                  <audio
+                    controls
+                    autoPlay
+                    className="w-full max-w-md mt-2"
+                    src={selectedItem.mediaUrl}
+                    onLoadedMetadata={(e) => {
+                      const dur = e.currentTarget.duration
+                      if (dur && isFinite(dur)) {
+                        setAudioDurations((prev) => ({
+                          ...prev,
+                          [selectedItem.id]: formatTime(dur),
+                        }))
+                      }
+                    }}
+                  />
+                </div>
               ) : (
                 /* REAL HIGH-RES PHOTOGRAPH VIEWER */
                 <img
@@ -582,14 +704,25 @@ export function MemorialGallery({
                   <h3 className="text-base sm:text-lg font-medium text-[#181925]">
                     {selectedItem.title}
                   </h3>
-                  <span className="text-xs font-mono text-[#888]">
-                    {selectedItem.year}
-                  </span>
-                  {selectedItem.duration && (
-                    <span className="text-[11px] font-mono text-primary bg-primary/10 px-1.5 py-0.5 rounded">
-                      {selectedItem.duration}
+                  {selectedItem.year && (
+                    <span className="text-xs font-mono text-[#888]">
+                      {selectedItem.year}
                     </span>
                   )}
+                  {(() => {
+                    const dur =
+                      videoDurations[selectedItem.id] ||
+                      audioDurations[selectedItem.id] ||
+                      (selectedItem.duration && selectedItem.duration !== "undefined"
+                        ? selectedItem.duration
+                        : null)
+                    if (!dur) return null
+                    return (
+                      <span className="text-[11px] font-mono text-primary bg-primary/10 px-1.5 py-0.5 rounded">
+                        {dur}
+                      </span>
+                    )
+                  })()}
                 </div>
 
                 {selectedItem.location && (

@@ -339,4 +339,21 @@ export async function deleteR2MemorialFolder(memorialId: string): Promise<void> 
   }
 }
 
+/**
+ * Resolves a media URL, ensuring that direct Cloudflare R2 URLs or memorial keys
+ * are routed through the secure, CORS-enabled streaming endpoint (/api/media).
+ */
+export function resolveMediaUrl(rawUrl: string | null | undefined): string {
+  if (!rawUrl) return ""
+  if (rawUrl.startsWith("/") && !rawUrl.startsWith("//")) return rawUrl
+  if (rawUrl.startsWith("data:") || rawUrl.startsWith("blob:")) return rawUrl
+
+  // Check if it's an R2 key or direct R2 public endpoint URL
+  const match = rawUrl.match(/memorials\/[^\s"')]+/)
+  if (match) {
+    return `/api/media?key=${encodeURIComponent(match[0])}`
+  }
+  return rawUrl
+}
+
 

@@ -5,6 +5,7 @@ import { supabaseAdmin } from "@/utils/supabase/admin"
 import { createClient } from "@/utils/supabase/server"
 import { MemorialClientView, MemorialData } from "./memorial-client-view"
 import { MemorialPinGate } from "@/components/memorial/memorial-pin-gate"
+import { resolveMediaUrl } from "@/lib/r2"
 
 interface MemorialPageProps {
   params: Promise<{
@@ -205,7 +206,7 @@ export default async function MemorialPage({ params }: MemorialPageProps) {
         mediaType: m.media_type === "image" ? "photo" : (m.media_type as "photo" | "audio" | "video"),
         year: m.approx_year ? String(m.approx_year) : "",
         location: m.location || undefined,
-        mediaUrl: m.url,
+        mediaUrl: resolveMediaUrl(m.url),
       }))
 
       timelineEvents = (timelineRes.data || []).map((t: any) => ({
@@ -214,7 +215,7 @@ export default async function MemorialPage({ params }: MemorialPageProps) {
         title: t.title,
         description: t.description || "",
         location: t.location || undefined,
-        photoUrl: t.photo_url || undefined,
+        photoUrl: t.photo_url ? resolveMediaUrl(t.photo_url) : undefined,
       }))
 
       people = (peopleRes.data || []).map((p: any) => ({
@@ -223,7 +224,7 @@ export default async function MemorialPage({ params }: MemorialPageProps) {
         relationship: p.relationship,
         circle: "family",
         notes: p.note || undefined,
-        photoUrl: p.photo_url || undefined,
+        photoUrl: p.photo_url ? resolveMediaUrl(p.photo_url) : undefined,
       }))
 
       memories = (memoriesRes.data || []).map((mem: any) => ({
@@ -234,6 +235,7 @@ export default async function MemorialPage({ params }: MemorialPageProps) {
         chronologicalYear: mem.approx_year || undefined,
         location: mem.location || undefined,
         story: mem.story,
+        photoUrl: mem.photo_url ? resolveMediaUrl(mem.photo_url) : undefined,
         category: "family",
         heartCount: 0,
       }))
@@ -265,7 +267,7 @@ export default async function MemorialPage({ params }: MemorialPageProps) {
   const location = dbMemorial?.location || (isDemo ? "Devon, England" : null)
   const epitaph = dbMemorial?.headline || (isDemo ? "Watchmaker, master woodworker, and an unhurried listener. Built grandfather clocks by day, fixed bicycles for neighborhood children by evening." : null)
   const biography = dbMemorial?.biography || null
-  const portraitUrl = dbMemorial?.portrait_photo_url || (isDemo ? "/memorial-family-portrait-grandfather.jpg" : "/memorial-family-portrait-grandfather.jpg")
+  const portraitUrl = dbMemorial?.portrait_photo_url ? resolveMediaUrl(dbMemorial.portrait_photo_url) : (isDemo ? "/memorial-family-portrait-grandfather.jpg" : "/memorial-family-portrait-grandfather.jpg")
 
   // 6. Private PIN Gate Check
   if (dbMemorial && dbMemorial.privacy === "private" && !isOwner) {

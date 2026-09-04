@@ -13,6 +13,8 @@ import {
   LogOut,
   Heart,
   ExternalLink,
+  Film,
+  Video,
 } from "lucide-react"
 
 interface TheirsTopNavProps {
@@ -48,6 +50,8 @@ export function TheirsTopNav({ userEmail }: TheirsTopNavProps) {
     pathname.startsWith("/dashboard/restore") ||
     pathname.startsWith("/dashboard/memory-book") ||
     pathname.startsWith("/dashboard/family-portrait") ||
+    pathname.startsWith("/dashboard/animate") ||
+    pathname.startsWith("/dashboard/nostalgic-hug") ||
     pathname.startsWith("/dashboard/my-media")
 
   return (
@@ -151,6 +155,38 @@ export function TheirsTopNav({ userEmail }: TheirsTopNavProps) {
                     <span className="text-xs font-medium text-[#181925]">Family Portrait</span>
                     <span className="text-[11px] text-[#71717a] leading-tight">
                       Composite across multiple generations
+                    </span>
+                  </div>
+                </Link>
+
+                <Link
+                  href="/dashboard/animate"
+                  onClick={() => setIsStudioOpen(false)}
+                  className="flex items-start gap-3 p-2.5 rounded-xl hover:bg-neutral-50 transition-colors group"
+                >
+                  <div className="size-8 rounded-lg bg-rose-50 text-rose-700 flex items-center justify-center shrink-0 mt-0.5 group-hover:scale-105 transition-transform">
+                    <Film className="size-4" />
+                  </div>
+                  <div className="flex flex-col">
+                    <span className="text-xs font-medium text-[#181925]">Animate Photo</span>
+                    <span className="text-[11px] text-[#71717a] leading-tight">
+                      Bring vintage portraits gently to life
+                    </span>
+                  </div>
+                </Link>
+
+                <Link
+                  href="/dashboard/nostalgic-hug"
+                  onClick={() => setIsStudioOpen(false)}
+                  className="flex items-start gap-3 p-2.5 rounded-xl hover:bg-neutral-50 transition-colors group"
+                >
+                  <div className="size-8 rounded-lg bg-purple-50 text-purple-700 flex items-center justify-center shrink-0 mt-0.5 group-hover:scale-105 transition-transform">
+                    <Video className="size-4" />
+                  </div>
+                  <div className="flex flex-col">
+                    <span className="text-xs font-medium text-[#181925]">Nostalgic Hug</span>
+                    <span className="text-[11px] text-[#71717a] leading-tight">
+                      Reunite two photos in an affectionate hug
                     </span>
                   </div>
                 </Link>

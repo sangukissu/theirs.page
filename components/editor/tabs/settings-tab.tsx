@@ -16,7 +16,9 @@ import {
   Send,
   Loader2,
   Eye,
+  Sparkles,
 } from "lucide-react"
+import { UpgradeBanner } from "../upgrade-banner"
 
 interface CollaboratorItem {
   id: string
@@ -477,6 +479,7 @@ export function SettingsTab({
               title: "Private PIN",
               desc: "Requires a 4-digit PIN code to view memories and stories.",
               icon: Lock,
+              isPaidOnly: true,
             },
           ].map((mode) => {
             const Icon = mode.icon
@@ -491,9 +494,16 @@ export function SettingsTab({
                     : "border-black/[0.08] bg-[#fafafb] text-[#555] hover:border-black/[0.15]"
                 }`}
               >
-                <div className="flex items-center gap-1.5 font-medium text-xs">
-                  <Icon className="size-3.5" />
-                  <span>{mode.title}</span>
+                <div className="flex items-center justify-between gap-1.5 font-medium text-xs">
+                  <div className="flex items-center gap-1.5">
+                    <Icon className="size-3.5" />
+                    <span>{mode.title}</span>
+                  </div>
+                  {mode.isPaidOnly && !isPaid && (
+                    <span className="text-[9px] font-mono uppercase font-semibold text-emerald-700 px-1.5 py-0.2 rounded bg-emerald-50 border border-emerald-200">
+                      Complete
+                    </span>
+                  )}
                 </div>
                 <p className="text-[10px] leading-relaxed text-[#777]">{mode.desc}</p>
               </div>
@@ -504,6 +514,16 @@ export function SettingsTab({
         {/* PIN Code Setup (Only shown when Private PIN is selected) */}
         {privacy === "private" && (
           <div className="mt-2 p-4 rounded-xl bg-neutral-50 border border-black/[0.06] flex flex-col gap-3">
+            {!isPaid && (
+              <UpgradeBanner
+                compact
+                memorialId={memorialId}
+                featureTitle="Private PIN Protection"
+                description="Protect memories and stories behind a 4-digit PIN code for family and close friends."
+                onUpgrade={handleUpgradeComplete}
+              />
+            )}
+
             <div className="flex flex-col gap-0.5">
               <label className="text-xs font-semibold text-[#181925] flex items-center gap-1.5">
                 <Lock className="size-3 text-primary" />
@@ -520,16 +540,19 @@ export function SettingsTab({
                 inputMode="numeric"
                 pattern="[0-9]*"
                 maxLength={4}
+                disabled={!isPaid}
                 value={pin}
                 onChange={(e) => {
                   const cleaned = e.target.value.replace(/\D/g, "").slice(0, 4)
                   onChange("pin", cleaned)
                 }}
                 placeholder="1234"
-                className="w-32 px-3 py-2 rounded-xl bg-white border border-black/[0.12] text-center text-sm font-mono font-bold tracking-widest text-[#181925] outline-none focus:border-primary"
+                className="w-32 px-3 py-2 rounded-xl bg-white border border-black/[0.12] text-center text-sm font-mono font-bold tracking-widest text-[#181925] outline-none focus:border-primary disabled:bg-neutral-100 disabled:text-neutral-500 disabled:cursor-not-allowed"
               />
               <span className="text-xs text-[#71717a]">
-                {pin && pin.length === 4 ? (
+                {!isPaid ? (
+                  <span className="text-amber-700 font-medium">Upgrade to Complete to activate PIN</span>
+                ) : pin && pin.length === 4 ? (
                   <span className="text-emerald-600 font-medium flex items-center gap-1">
                     <CheckCircle2 className="size-3.5" /> PIN active
                   </span>
@@ -544,41 +567,75 @@ export function SettingsTab({
 
       {/* 4. Multiple Family Caretakers & Collaborators (Complete Plan Feature) */}
       <div className="flex flex-col gap-4 p-5 rounded-2xl bg-white border border-black/[0.07]">
-        <div className="flex flex-col gap-0.5">
-          <label className="text-xs font-medium text-[#181925] flex items-center gap-1.5">
-            <Users className="size-3.5 text-primary" />
-            <span>Family Caretakers & Collaborators</span>
-          </label>
-          <p className="text-[11px] text-[#71717a]">
-            Invite family members as co-admins to help approve memories, write stories, and upload photos.
-          </p>
+        <div className="flex items-center justify-between">
+          <div className="flex flex-col gap-0.5">
+            <label className="text-xs font-medium text-[#181925] flex items-center gap-1.5">
+              <Users className="size-3.5 text-primary" />
+              <span>Family Caretakers & Collaborators</span>
+            </label>
+            <p className="text-[11px] text-[#71717a]">
+              Invite family members as co-admins to help approve memories, write stories, and upload photos.
+            </p>
+          </div>
+          {!isPaid && (
+            <span className="text-[10px] font-mono uppercase font-semibold text-emerald-700 px-2 py-0.5 rounded-full bg-emerald-50 border border-emerald-200 shrink-0">
+              Theirs Complete
+            </span>
+          )}
         </div>
 
+        {!isPaid && (
+          <UpgradeBanner
+            compact
+            memorialId={memorialId}
+            featureTitle="Unlimited Family Caretakers"
+            description="Invite children, siblings, and cousins to curate this memorial together without account friction."
+            onUpgrade={handleUpgradeComplete}
+          />
+        )}
+
         {/* Invite Form */}
-        <form onSubmit={handleAddCollaborator} className="flex flex-col sm:flex-row gap-2">
+        <form onSubmit={handleAddCollaborator} className={`flex flex-col sm:flex-row gap-2 ${!isPaid ? "opacity-75" : ""}`}>
           <input
             type="email"
             required
+            disabled={!isPaid}
             value={collabEmail}
             onChange={(e) => setCollabEmail(e.target.value)}
-            placeholder="Family member email..."
-            className="flex-1 px-3.5 py-2 rounded-xl bg-[#fafafb] border border-black/[0.08] text-xs text-[#181925] outline-none focus:border-primary/50"
+            placeholder={!isPaid ? "Upgrade to invite family co-admins..." : "Family member email..."}
+            className="flex-1 px-3.5 py-2 rounded-xl bg-[#fafafb] border border-black/[0.08] text-xs text-[#181925] outline-none focus:border-primary/50 disabled:bg-neutral-100 disabled:text-neutral-500 disabled:cursor-not-allowed"
           />
           <select
+            disabled={!isPaid}
             value={collabRole}
             onChange={(e) => setCollabRole(e.target.value as any)}
-            className="px-3 py-2 rounded-xl bg-[#fafafb] border border-black/[0.08] text-xs text-[#181925] outline-none cursor-pointer"
+            className="px-3 py-2 rounded-xl bg-[#fafafb] border border-black/[0.08] text-xs text-[#181925] outline-none cursor-pointer disabled:bg-neutral-100 disabled:text-neutral-500 disabled:cursor-not-allowed"
           >
             <option value="co_admin">Co-admin (Can moderate)</option>
             <option value="contributor">Contributor</option>
           </select>
           <button
             type="submit"
-            disabled={collabAdding || !collabEmail.trim()}
-            className="inline-flex items-center justify-center gap-1.5 px-4 py-2 rounded-xl bg-[#181925] hover:bg-[#252736] disabled:opacity-50 text-white text-xs font-medium transition-colors cursor-pointer"
+            disabled={!isPaid || collabAdding || !collabEmail.trim()}
+            className={`inline-flex items-center justify-center gap-1.5 px-4 py-2 rounded-xl text-xs font-medium transition-colors ${
+              !isPaid
+                ? "bg-neutral-100 text-neutral-500 border border-neutral-200 cursor-not-allowed"
+                : "bg-[#181925] hover:bg-[#252736] disabled:opacity-50 text-white cursor-pointer"
+            }`}
           >
-            {collabAdding ? <Loader2 className="size-3 animate-spin" /> : <UserPlus className="size-3" />}
-            <span>Invite</span>
+            {!isPaid ? (
+              <>
+                <Lock className="size-3" />
+                <span>Upgrade to invite</span>
+              </>
+            ) : collabAdding ? (
+              <Loader2 className="size-3 animate-spin" />
+            ) : (
+              <>
+                <UserPlus className="size-3" />
+                <span>Invite</span>
+              </>
+            )}
           </button>
         </form>
 
@@ -643,35 +700,54 @@ export function SettingsTab({
 
       {/* 5. Successor Caretaker & Ownership Transfer (Complete Plan Feature) */}
       <div className="flex flex-col gap-4 p-5 rounded-2xl bg-white border border-black/[0.07]">
-        <div className="flex flex-col gap-0.5">
-          <label className="text-xs font-medium text-[#181925]">
-            Successor Caretaker & Rights Transfer
-          </label>
-          <p className="text-[11px] text-[#71717a]">
-            Designate who in your family should have ownership if you are ever unable to manage this memorial.
-          </p>
+        <div className="flex items-center justify-between">
+          <div className="flex flex-col gap-0.5">
+            <label className="text-xs font-medium text-[#181925]">
+              Successor Caretaker & Rights Transfer
+            </label>
+            <p className="text-[11px] text-[#71717a]">
+              Designate who in your family should have ownership if you are ever unable to manage this memorial.
+            </p>
+          </div>
+          {!isPaid && (
+            <span className="text-[10px] font-mono uppercase font-semibold text-emerald-700 px-2 py-0.5 rounded-full bg-emerald-50 border border-emerald-200 shrink-0">
+              Theirs Complete
+            </span>
+          )}
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        {!isPaid && (
+          <UpgradeBanner
+            compact
+            memorialId={memorialId}
+            featureTitle="Successor Stewardship & Transfer"
+            description="Ensure the memorial lives on across generations by designating a successor caretaker and enabling ownership transfers."
+            onUpgrade={handleUpgradeComplete}
+          />
+        )}
+
+        <div className={`grid grid-cols-1 sm:grid-cols-2 gap-3 ${!isPaid ? "opacity-75" : ""}`}>
           <input
             type="text"
+            disabled={!isPaid}
             value={successorName}
             onChange={(e) => onChange("successor_name", e.target.value)}
             placeholder="Successor Name (e.g. Anita Carter)"
-            className="px-3.5 py-2 rounded-xl bg-[#fafafb] border border-black/[0.08] text-xs text-[#181925] outline-none focus:border-primary/50"
+            className="px-3.5 py-2 rounded-xl bg-[#fafafb] border border-black/[0.08] text-xs text-[#181925] outline-none focus:border-primary/50 disabled:bg-neutral-100 disabled:text-neutral-500 disabled:cursor-not-allowed"
           />
 
           <input
             type="email"
+            disabled={!isPaid}
             value={successorEmail}
             onChange={(e) => onChange("successor_email", e.target.value)}
             placeholder="Successor Email"
-            className="px-3.5 py-2 rounded-xl bg-[#fafafb] border border-black/[0.08] text-xs text-[#181925] outline-none focus:border-primary/50"
+            className="px-3.5 py-2 rounded-xl bg-[#fafafb] border border-black/[0.08] text-xs text-[#181925] outline-none focus:border-primary/50 disabled:bg-neutral-100 disabled:text-neutral-500 disabled:cursor-not-allowed"
           />
         </div>
 
         {/* Transfer Ownership Section */}
-        <div className="border-t border-black/[0.05] pt-3 flex flex-col gap-2.5">
+        <div className={`border-t border-black/[0.05] pt-3 flex flex-col gap-2.5 ${!isPaid ? "opacity-75" : ""}`}>
           <span className="text-xs font-medium text-[#181925]">
             Transfer Memorial Ownership Now
           </span>
@@ -682,18 +758,32 @@ export function SettingsTab({
           <div className="flex gap-2">
             <input
               type="email"
+              disabled={!isPaid}
               value={transferTargetEmail}
               onChange={(e) => setTransferTargetEmail(e.target.value)}
               placeholder="New owner's email address..."
-              className="flex-1 px-3.5 py-2 rounded-xl bg-[#fafafb] border border-black/[0.08] text-xs text-[#181925] outline-none focus:border-primary/50"
+              className="flex-1 px-3.5 py-2 rounded-xl bg-[#fafafb] border border-black/[0.08] text-xs text-[#181925] outline-none focus:border-primary/50 disabled:bg-neutral-100 disabled:text-neutral-500 disabled:cursor-not-allowed"
             />
             <button
               type="button"
-              disabled={transferring || !transferTargetEmail.trim()}
+              disabled={!isPaid || transferring || !transferTargetEmail.trim()}
               onClick={handleTransferOwnership}
-              className="px-4 py-2 rounded-xl bg-primary text-white text-xs font-medium hover:bg-primary/95 disabled:opacity-50 transition-all cursor-pointer"
+              className={`px-4 py-2 rounded-xl text-xs font-medium transition-all ${
+                !isPaid
+                  ? "bg-neutral-100 text-neutral-500 border border-neutral-200 cursor-not-allowed"
+                  : "bg-primary text-white hover:bg-primary/95 disabled:opacity-50 cursor-pointer"
+              }`}
             >
-              {transferring ? "Transferring..." : "Transfer Ownership"}
+              {!isPaid ? (
+                <>
+                  <Lock className="size-3 inline mr-1" />
+                  <span>Upgrade to transfer</span>
+                </>
+              ) : transferring ? (
+                "Transferring..."
+              ) : (
+                "Transfer Ownership"
+              )}
             </button>
           </div>
 
@@ -708,24 +798,52 @@ export function SettingsTab({
 
       {/* 6. Preservation & Download Complete Archive (Landing Page Promise) */}
       <div className="flex flex-col gap-3 p-5 rounded-2xl bg-white border border-black/[0.07]">
-        <div className="flex flex-col gap-0.5">
-          <label className="text-xs font-medium text-[#181925] flex items-center gap-1.5">
-            <Download className="size-3.5 text-primary" />
-            <span>Preservation & Data Export</span>
-          </label>
-          <p className="text-[11px] text-[#71717a]">
-            Download the complete family archive. All stories, timeline events, and direct links to original high-res photos and audio are preserved without lock-in.
-          </p>
+        <div className="flex items-center justify-between">
+          <div className="flex flex-col gap-0.5">
+            <label className="text-xs font-medium text-[#181925] flex items-center gap-1.5">
+              <Download className="size-3.5 text-primary" />
+              <span>Preservation & Data Export</span>
+            </label>
+            <p className="text-[11px] text-[#71717a]">
+              Download the complete family archive. All stories, timeline events, and direct links to original high-res photos and audio are preserved without lock-in.
+            </p>
+          </div>
+          {!isPaid && (
+            <span className="text-[10px] font-mono uppercase font-semibold text-emerald-700 px-2 py-0.5 rounded-full bg-emerald-50 border border-emerald-200 shrink-0">
+              Theirs Complete
+            </span>
+          )}
         </div>
 
-        <a
-          href={`/api/memorials/${memorialId}/export`}
-          download
-          className="inline-flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-xl bg-[#fafafb] hover:bg-[#f2f2f4] border border-black/[0.08] text-xs font-medium text-[#181925] transition-colors w-fit cursor-pointer"
-        >
-          <Download className="size-3.5 text-primary" />
-          <span>Download Complete Archive (.json)</span>
-        </a>
+        {!isPaid && (
+          <UpgradeBanner
+            compact
+            memorialId={memorialId}
+            featureTitle="Full Data Export Archive"
+            description="Download all original media, voice memos, and stories in a complete zip archive. Guaranteed preservation without lock-in."
+            onUpgrade={handleUpgradeComplete}
+          />
+        )}
+
+        {isPaid ? (
+          <a
+            href={`/api/memorials/${memorialId}/export`}
+            download
+            className="inline-flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-xl bg-[#fafafb] hover:bg-[#f2f2f4] border border-black/[0.08] text-xs font-medium text-[#181925] transition-colors w-fit cursor-pointer"
+          >
+            <Download className="size-3.5 text-primary" />
+            <span>Download Complete Archive (.zip)</span>
+          </a>
+        ) : (
+          <button
+            type="button"
+            onClick={handleUpgradeComplete}
+            className="inline-flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-xl bg-neutral-100 border border-neutral-200 text-xs font-medium text-neutral-500 transition-colors w-fit cursor-pointer hover:bg-neutral-200"
+          >
+            <Lock className="size-3.5" />
+            <span>Upgrade to Download Archive</span>
+          </button>
+        )}
       </div>
 
       {/* 7. Danger Zone: Delete Memorial */}

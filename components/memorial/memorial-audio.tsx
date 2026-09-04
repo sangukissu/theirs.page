@@ -105,7 +105,7 @@ export function MemorialAudio({
               {title}
             </h3>
             <span className="text-xs font-mono text-[#888]">
-              {date} · {duration}
+              {date ? `${date} · ` : ""}{duration && duration !== "undefined" ? duration : "Voice note"}
             </span>
           </div>
 
@@ -145,7 +145,9 @@ export function MemorialAudio({
             </div>
 
             <span className="text-xs font-mono text-[#777] shrink-0 tabular-nums">
-              {isPlaying ? `${currentTimeStr} / ${duration}` : duration}
+              {isPlaying
+                ? (duration && duration !== "undefined" ? `${currentTimeStr} / ${duration}` : currentTimeStr)
+                : (duration && duration !== "undefined" ? duration : "Voice note")}
             </span>
           </div>
         </div>
