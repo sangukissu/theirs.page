@@ -70,6 +70,7 @@ export function TheirsTopNav({ userEmail }: TheirsTopNavProps) {
         <nav className="flex items-center gap-1 sm:gap-2 text-xs">
           <Link
             href="/dashboard"
+            prefetch={true}
             className={`px-3 py-1.5 rounded-full font-medium transition-colors ${
               isMemorialsActive && !isStudioActive
                 ? "bg-black/[0.05] text-[#181925]"

@@ -4,6 +4,8 @@ import { Inter_Tight, Inter } from "next/font/google"
 import { GeistMono } from "geist/font/mono"
 import { Toaster } from "@/components/ui/toast"
 import NetworkStatus from "@/components/network-status"
+import { Suspense } from "react"
+import { NavigationProgress } from "@/components/navigation-progress"
 import "./globals.css"
 
 const interTight = Inter_Tight({
@@ -68,6 +70,9 @@ export default function RootLayout({
         <link rel="icon" type="image/svg+xml" href="/placeholder-logo.svg" />
       </head>
       <body className="antialiased bg-white text-[#292929] selection:bg-[#305dde]/15 selection:text-[#305dde]">
+        <Suspense fallback={null}>
+          <NavigationProgress />
+        </Suspense>
         {children}
         <NetworkStatus />
         <Toaster />

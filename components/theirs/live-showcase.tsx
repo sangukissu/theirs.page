@@ -1,6 +1,7 @@
 "use client"
 
 import { useState } from "react"
+import { useRouter } from "next/navigation"
 import { motion } from "framer-motion"
 import {
   Sparkles,
@@ -19,6 +20,7 @@ import {
 } from "lucide-react"
 
 export function LiveShowcase() {
+  const router = useRouter()
   const [name, setName] = useState("Robert Carter")
   const [approvedCount, setApprovedCount] = useState(3)
   const [hasApprovedAll, setHasApprovedAll] = useState(false)
@@ -58,7 +60,8 @@ export function LiveShowcase() {
           <form
             onSubmit={(e) => {
               e.preventDefault()
-              window.location.href = `/login?name=${encodeURIComponent(name)}`
+              if (!name.trim()) return
+              router.push(`/login?name=${encodeURIComponent(name.trim())}`)
             }}
             className="w-full max-w-xl mt-2 flex flex-col sm:flex-row items-stretch sm:items-center gap-2 p-1.5 rounded-2xl bg-[#f7f7f8] border border-black/[0.08]"
           >
@@ -68,6 +71,7 @@ export function LiveShowcase() {
                 type="text"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
+                onFocus={() => router.prefetch("/login")}
                 placeholder="Enter their name..."
                 className="w-full bg-transparent font-medium text-[#181925] outline-none placeholder:text-[#aaa] text-sm"
               />

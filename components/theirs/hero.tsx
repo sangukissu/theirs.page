@@ -52,6 +52,7 @@ export function TheirsHero() {
                 type="text"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
+                onFocus={() => router.prefetch("/login")}
                 placeholder="Robert Carter"
                 className="w-full bg-transparent font-medium text-[#181925] outline-none placeholder:text-[#aaa] text-sm"
               />

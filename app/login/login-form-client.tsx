@@ -108,39 +108,17 @@ function GoogleSignInButton({ nextPath }: { nextPath: string }) {
   )
 }
 
-function LoginFormWithSearchParams({ nextPath }: { nextPath: string }) {
+function LoginFormWithSearchParams({ nextPath: propNextPath }: { nextPath?: string }) {
   const [state, formAction] = useActionState<AuthState, FormData>(signInWithMagicLink, {} as AuthState)
   const searchParams = useSearchParams()
   const router = useRouter()
-  const [isCheckingSession, setIsCheckingSession] = useState(true)
   const [urlError, setUrlError] = useState<string | null>(null)
   const [captchaToken, setCaptchaToken] = useState<string | undefined>(undefined)
   const [lastUsed, setLastUsed] = useState<"google" | "magic" | null>(null)
   const siteKey = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY || ""
 
+  const nextPath = propNextPath || searchParams.get("next") || "/dashboard"
   const memorialName = searchParams.get("name") || ""
-
-  useEffect(() => {
-    const checkAuth = async () => {
-      const supabase = createClient()
-      const { data, error } = await supabase.auth.getClaims()
-
-      if (data?.claims?.sub) {
-        router.replace(nextPath)
-        return
-      }
-
-      if (error && isAuthRetryableFetchError(error)) {
-        const query = new URLSearchParams({ next: nextPath })
-        window.location.replace(`/auth/session-check?${query.toString()}`)
-        return
-      }
-
-      setIsCheckingSession(false)
-    }
-
-    void checkAuth()
-  }, [nextPath, router])
 
   useEffect(() => {
     const error = searchParams.get("error")
@@ -163,17 +141,6 @@ function LoginFormWithSearchParams({ nextPath }: { nextPath: string }) {
   }, [])
 
   const displayError = state?.error || urlError
-
-  if (isCheckingSession) {
-    return (
-      <div className="h-screen max-h-screen w-screen overflow-hidden flex items-center justify-center bg-white">
-        <div className="flex flex-col items-center gap-3">
-          <Loader2 className="size-6 animate-spin text-primary" />
-          <p className="text-xs text-[#888] font-mono">Verifying session...</p>
-        </div>
-      </div>
-    )
-  }
 
   return (
     <div className="h-screen max-h-screen w-screen overflow-hidden grid grid-cols-1 lg:grid-cols-2 bg-white select-none">
@@ -432,7 +399,7 @@ function LoginFormWithSearchParams({ nextPath }: { nextPath: string }) {
   )
 }
 
-export default function LoginFormClient({ nextPath }: { nextPath: string }) {
+export default function LoginFormClient({ nextPath }: { nextPath?: string } = {}) {
   return (
     <Suspense
       fallback={
