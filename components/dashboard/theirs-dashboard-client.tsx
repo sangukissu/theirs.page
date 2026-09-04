@@ -159,30 +159,7 @@ export function TheirsDashboardClient({
   }
 
   return (
-    <div className="min-h-screen bg-[#fafafb] text-[#181925] flex flex-col">
-      {/* Top Bar */}
-      <header className="h-16 border-b border-black/[0.06] bg-white/80 backdrop-blur-md px-4 sm:px-8 flex items-center justify-between sticky top-0 z-30">
-        <div className="flex items-center gap-3">
-          <Link href="/" className="font-semibold tracking-tight text-[#181925] text-lg flex items-center gap-1.5">
-            <span className="size-2 rounded-full bg-primary" />
-            <span>Theirs<span className="text-primary">.</span></span>
-          </Link>
-          <span className="text-black/[0.15] hidden sm:inline">/</span>
-          <span className="text-xs font-mono text-[#888] hidden sm:inline">Dashboard</span>
-        </div>
-
-        <div className="flex items-center gap-4 text-xs">
-          <span className="text-[#71717a] hidden sm:inline">{userEmail}</span>
-          <form action="/api/auth/signout" method="POST">
-            <button
-              type="submit"
-              className="text-[#666] hover:text-[#181925] font-medium transition-colors cursor-pointer"
-            >
-              Sign out
-            </button>
-          </form>
-        </div>
-      </header>
+    <div className="flex-1 w-full flex flex-col">
 
       {/* Main Container */}
       <main className="max-w-4xl w-full mx-auto px-4 sm:px-6 py-10 sm:py-14 flex-1 flex flex-col gap-10">
