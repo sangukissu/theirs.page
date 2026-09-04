@@ -66,11 +66,9 @@ export function IdentityTab({
     <div className="flex flex-col gap-8 max-w-2xl">
       <div className="flex flex-col gap-1 border-b border-black/[0.06] pb-4">
         <h2 className="text-lg sm:text-xl font-medium text-[#181925]">
-          Identity & Primary Details
+          This memorial is dedicated to:
         </h2>
-        <p className="text-xs sm:text-sm text-[#71717a]">
-          The first thing visitors see when visiting their page. Keep it simple and authentic.
-        </p>
+       
       </div>
 
       {/* 1. Portrait Photo Upload */}
@@ -149,7 +147,7 @@ export function IdentityTab({
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         <div className="flex flex-col gap-1.5">
           <label className="text-xs font-medium text-[#181925]">
-            Birth Year
+            Born
           </label>
           <input
             type="number"
@@ -162,7 +160,7 @@ export function IdentityTab({
 
         <div className="flex flex-col gap-1.5">
           <label className="text-xs font-medium text-[#181925]">
-            Passing Year
+            Passed Away
           </label>
           <input
             type="number"
