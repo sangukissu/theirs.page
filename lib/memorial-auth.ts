@@ -21,6 +21,8 @@ export interface AssertAdminResult {
 /**
  * Verifies whether a user is the primary owner (steward) of a memorial.
  */
+const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+
 export async function verifyMemorialOwner(
   memorialId: string,
   userId: string
@@ -32,11 +34,12 @@ export async function verifyMemorialOwner(
   const db = getSupabaseAdminSafe() || (await createClient())
 
   try {
-    const { data: memorial, error } = await db
+    const isUuid = UUID_REGEX.test(memorialId)
+    let query = db
       .from("memorials")
       .select("id, owner_id, slug, status, privacy, is_paid")
-      .eq("id", memorialId)
-      .maybeSingle()
+    query = isUuid ? query.eq("id", memorialId) : query.eq("slug", memorialId)
+    const { data: memorial, error } = await query.maybeSingle()
 
     if (error || !memorial) {
       return { authorized: false, status: 404, error: "Memorial not found" }
@@ -100,11 +103,12 @@ export async function verifyMemorialAdmin(
 
   try {
     // 1. Check if user is the direct owner of the memorial
-    const { data: memorial, error: memorialError } = await db
+    const isUuid = UUID_REGEX.test(memorialId)
+    let query = db
       .from("memorials")
       .select("id, owner_id, slug, status, privacy, is_paid")
-      .eq("id", memorialId)
-      .maybeSingle()
+    query = isUuid ? query.eq("id", memorialId) : query.eq("slug", memorialId)
+    const { data: memorial, error: memorialError } = await query.maybeSingle()
 
     if (memorialError || !memorial) {
       return {
@@ -127,7 +131,7 @@ export async function verifyMemorialAdmin(
     const { data: collaborator } = await db
       .from("collaborators")
       .select("id, role, invitation_accepted")
-      .eq("memorial_id", memorialId)
+      .eq("memorial_id", memorial.id)
       .eq("user_id", userId)
       .eq("role", "co_admin")
       .eq("invitation_accepted", true)

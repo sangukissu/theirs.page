@@ -83,8 +83,115 @@ export async function POST(req: NextRequest) {
     const contentType = resolveContentType(file.name, file.type)
     let resolvedMemorialId: string | null = null
 
-    // 1. Authenticated Upload vs. Guest Contribution Upload
-    if (user) {
+    // 1. Contribution Upload (Guest or Logged-in Contributor with signed intent) vs. Admin Dashboard Upload
+    const isContribution = Boolean(uploadIntentToken) || folder === "contributions"
+
+    if (isContribution) {
+      if (!uploadIntentToken) {
+        return NextResponse.json(
+          { error: "Upload authorization required for contributions." },
+          { status: 401 }
+        )
+      }
+
+      const verifiedIntent = verifyUploadIntent(uploadIntentToken)
+      if (!verifiedIntent) {
+        return NextResponse.json(
+          { error: "Upload authorization expired or invalid. Please refresh and try again." },
+          { status: 403 }
+        )
+      }
+
+      // Guest / contributor file must be within 15MB
+      if (file.size > MAX_GUEST_UPLOAD_BYTES || file.size > verifiedIntent.maxBytes) {
+        return NextResponse.json(
+          { error: "Contribution files must be under 15MB." },
+          { status: 400 }
+        )
+      }
+
+      // Contribution only permits whitelisted image & audio MIME types
+      if (!ALLOWED_GUEST_MIME_TYPES.has(contentType) && !ALLOWED_GUEST_MIME_TYPES.has(file.type)) {
+        return NextResponse.json(
+          { error: "Contribution uploads only accept photo and audio files." },
+          { status: 400 }
+        )
+      }
+
+      // Verify memorial exists and matches intent
+      const admin = getSupabaseAdminSafe() || supabase
+      const isUuid = UUID_REGEX.test(verifiedIntent.memorialId)
+      let query = admin.from("memorials").select("id, slug, status, privacy, is_paid")
+      query = isUuid ? query.eq("id", verifiedIntent.memorialId) : query.eq("slug", verifiedIntent.memorialId)
+      const { data: memorial } = await query.maybeSingle()
+
+      if (!memorial) {
+        return NextResponse.json({ error: "Memorial not found" }, { status: 404 })
+      }
+
+      if (memorial.id !== verifiedIntent.memorialId) {
+        return NextResponse.json(
+          { error: "Upload authorization does not match the target memorial." },
+          { status: 403 }
+        )
+      }
+
+      if (memorial.status !== "published") {
+        return NextResponse.json(
+          { error: "This memorial is not currently accepting uploads" },
+          { status: 403 }
+        )
+      }
+
+      if (memorial.privacy === "private") {
+        const cookieKey = memorial.slug || memorial.id
+        const isUnlocked = req.cookies.get(`theirs_pin_${cookieKey}`)?.value === "unlocked"
+        if (!isUnlocked) {
+          return NextResponse.json(
+            { error: "This memorial is private. Please enter the family PIN before uploading." },
+            { status: 403 }
+          )
+        }
+      }
+
+      // Tier check for contributions
+      const isPaid = Boolean(memorial.is_paid)
+      if (!isPaid) {
+        if (mediaType === "audio" || mediaType === "video") {
+          return NextResponse.json(
+            { error: "Voice notes and video clips require Pro Plan." },
+            { status: 403 }
+          )
+        }
+
+        const { count, error: countErr } = await admin
+          .from("media_items")
+          .select("id", { count: "exact", head: true })
+          .eq("memorial_id", memorial.id)
+
+        const currentCount = !countErr && typeof count === "number" ? count : 0
+        if (currentCount >= 5) {
+          return NextResponse.json(
+            { error: "This memorial has reached its photograph limit on the free tier." },
+            { status: 403 }
+          )
+        }
+      } else {
+        if (mediaType === "video") {
+          return NextResponse.json(
+            { error: "Video uploads are reserved for memorial caretakers in the dashboard." },
+            { status: 400 }
+          )
+        }
+      }
+
+      resolvedMemorialId = memorial.id
+    } else {
+      // Admin Dashboard Upload Flow
+      if (!user) {
+        return NextResponse.json({ error: "Authentication required" }, { status: 401 })
+      }
+
       if (memorialIdOrSlug) {
         const authCheck = await assertMemorialAdmin(memorialIdOrSlug, user.id)
         if (!authCheck.authorized || !authCheck.memorial) {
@@ -114,88 +221,6 @@ export async function POST(req: NextRequest) {
       if (file.size > MAX_ADMIN_SIZE) {
         return NextResponse.json({ error: "File size exceeds 50MB limit." }, { status: 400 })
       }
-    } else {
-      // Unauthenticated Guest Upload: Requires verified uploadIntentToken
-      const isContribution = folder === "contributions" && Boolean(memorialIdOrSlug)
-      if (!isContribution || !memorialIdOrSlug) {
-        return NextResponse.json({ error: "Authentication required" }, { status: 401 })
-      }
-
-      if (!uploadIntentToken) {
-        return NextResponse.json(
-          { error: "Upload intent token required for guest contributions." },
-          { status: 401 }
-        )
-      }
-
-      const verifiedIntent = verifyUploadIntent(uploadIntentToken)
-      if (!verifiedIntent) {
-        return NextResponse.json(
-          { error: "Upload authorization expired or invalid. Please refresh and try again." },
-          { status: 403 }
-        )
-      }
-
-      // Guest file must be within 15MB
-      if (file.size > MAX_GUEST_UPLOAD_BYTES || file.size > verifiedIntent.maxBytes) {
-        return NextResponse.json(
-          { error: "Guest contribution files must be under 15MB." },
-          { status: 400 }
-        )
-      }
-
-      // Guest contribution only permits whitelisted image & audio MIME types
-      if (!ALLOWED_GUEST_MIME_TYPES.has(contentType) && !ALLOWED_GUEST_MIME_TYPES.has(file.type)) {
-        return NextResponse.json(
-          { error: "Guest contributions only accept photo and audio files." },
-          { status: 400 }
-        )
-      }
-
-      if (mediaType === "video") {
-        return NextResponse.json(
-          { error: "Video uploads are reserved for memorial caretakers on Pro Plan." },
-          { status: 400 }
-        )
-      }
-
-      // Verify memorial exists and matches intent
-      const admin = getSupabaseAdminSafe() || supabase
-      const isUuid = UUID_REGEX.test(memorialIdOrSlug)
-      let query = admin.from("memorials").select("id, slug, status, privacy")
-      query = isUuid ? query.eq("id", memorialIdOrSlug) : query.eq("slug", memorialIdOrSlug)
-      const { data: memorial } = await query.maybeSingle()
-
-      if (!memorial) {
-        return NextResponse.json({ error: "Memorial not found" }, { status: 404 })
-      }
-
-      if (memorial.id !== verifiedIntent.memorialId) {
-        return NextResponse.json(
-          { error: "Upload intent does not match the target memorial." },
-          { status: 403 }
-        )
-      }
-
-      if (memorial.status !== "published") {
-        return NextResponse.json(
-          { error: "This memorial is not currently accepting uploads" },
-          { status: 403 }
-        )
-      }
-
-      if (memorial.privacy === "private") {
-        const cookieKey = memorial.slug || memorial.id
-        const isUnlocked = req.cookies.get(`theirs_pin_${cookieKey}`)?.value === "unlocked"
-        if (!isUnlocked) {
-          return NextResponse.json(
-            { error: "This memorial is private. Please enter the family PIN before uploading." },
-            { status: 403 }
-          )
-        }
-      }
-
-      resolvedMemorialId = memorial.id
     }
 
     // 2. Read file into buffer

@@ -31,6 +31,9 @@ interface ContributeModalProps {
   onClose: () => void
   memorialName: string
   slug: string
+  memorialId?: string
+  isPaid?: boolean
+  photoCount?: number
   initialType?: ContributionType | null
 }
 
@@ -39,6 +42,9 @@ export function ContributeModal({
   onClose,
   memorialName,
   slug,
+  memorialId,
+  isPaid = false,
+  photoCount = 0,
   initialType = null,
 }: ContributeModalProps) {
   const [selectedType, setSelectedType] = useState<ContributionType | null>(initialType)
@@ -60,15 +66,68 @@ export function ContributeModal({
   const [isUploadingMedia, setIsUploadingMedia] = useState(false)
   const [mediaUploadError, setMediaUploadError] = useState<string | null>(null)
 
+  const isPhotosFull = !isPaid && (photoCount ?? 0) >= 5
+
+  const firstName = memorialName.split(" ")[0] || memorialName
+
+  const allContributionOptions = [
+    {
+      type: "memory" as const,
+      icon: BookOpen,
+      title: "Tell a memory",
+      desc: `Something you remember about ${firstName}.`,
+      color: "text-rose-600 bg-rose-50",
+      available: true,
+    },
+    {
+      type: "photo" as const,
+      icon: Camera,
+      title: "Add photos",
+      desc: "Share photographs the family may not have seen.",
+      color: "text-amber-600 bg-amber-50",
+      available: !isPhotosFull,
+    },
+    {
+      type: "moment" as const,
+      icon: Clock,
+      title: "Add a life moment",
+      desc: `Help complete ${firstName}'s life timeline.`,
+      color: "text-emerald-600 bg-emerald-50",
+      available: Boolean(isPaid),
+    },
+    {
+      type: "voice" as const,
+      icon: Mic,
+      title: "Share a voice note",
+      desc: "A voicemail or spoken story worth keeping forever.",
+      color: "text-primary bg-primary/10",
+      available: Boolean(isPaid),
+    },
+    {
+      type: "message" as const,
+      icon: MessageSquare,
+      title: "Leave a message",
+      desc: "A warm note or condolence for the family.",
+      color: "text-indigo-600 bg-indigo-50",
+      available: true,
+    },
+  ]
+
+  const contributionOptions = allContributionOptions.filter((opt) => opt.available)
+
   // Reset or initialize state whenever modal opens or initialType changes
   useEffect(() => {
     if (isOpen) {
-      setSelectedType(initialType)
+      if (initialType && allContributionOptions.find((o) => o.type === initialType)?.available) {
+        setSelectedType(initialType)
+      } else {
+        setSelectedType(null)
+      }
       setIsSubmitted(false)
+      setError(null)
+      setMediaUploadError(null)
     }
-  }, [isOpen, initialType])
-
-  const firstName = memorialName.split(" ")[0] || memorialName
+  }, [isOpen, initialType, isPaid, photoCount])
 
   const [error, setError] = useState<string | null>(null)
 
@@ -78,8 +137,9 @@ export function ContributeModal({
     setMediaUploadError(null)
 
     try {
-      // 1. Request signed Upload Intent token
-      const intentRes = await fetch(`/api/memorials/${slug}/upload-intent`, {
+      // 1. Request signed Upload Intent token using slug or memorialId
+      const targetIdentifier = slug || memorialId
+      const intentRes = await fetch(`/api/memorials/${targetIdentifier}/upload-intent`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -99,7 +159,7 @@ export function ContributeModal({
       const formData = new FormData()
       formData.append("file", file)
       formData.append("folder", "contributions")
-      formData.append("memorialId", slug)
+      formData.append("memorialId", intentData.memorialId || memorialId || slug)
       formData.append("uploadIntentToken", intentData.uploadIntentToken)
 
       const res = await fetch("/api/r2/upload", {
@@ -141,8 +201,9 @@ export function ContributeModal({
     setError(null)
 
     try {
+      const targetIdentifier = memorialId || slug
       const approxYearNum = extraField ? parseInt(extraField.replace(/\D/g, ""), 10) : null
-      const res = await fetch(`/api/memorials/${slug}/contribute`, {
+      const res = await fetch(`/api/memorials/${targetIdentifier}/contribute`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -187,44 +248,6 @@ export function ContributeModal({
     setError(null)
     onClose()
   }
-
-  const contributionOptions = [
-    {
-      type: "memory" as const,
-      icon: BookOpen,
-      title: "Tell a memory",
-      desc: `Something you remember about ${firstName}.`,
-      color: "text-rose-600 bg-rose-50",
-    },
-    {
-      type: "photo" as const,
-      icon: Camera,
-      title: "Add photos",
-      desc: "Share photographs the family may not have seen.",
-      color: "text-amber-600 bg-amber-50",
-    },
-    {
-      type: "moment" as const,
-      icon: Clock,
-      title: "Add a life moment",
-      desc: `Help complete ${firstName}'s life timeline.`,
-      color: "text-emerald-600 bg-emerald-50",
-    },
-    {
-      type: "voice" as const,
-      icon: Mic,
-      title: "Share voice or video",
-      desc: "A voicemail or clip worth keeping forever.",
-      color: "text-primary bg-primary/10",
-    },
-    {
-      type: "message" as const,
-      icon: MessageSquare,
-      title: "Leave a message",
-      desc: "A warm note or condolence for the family.",
-      color: "text-indigo-600 bg-indigo-50",
-    },
-  ]
 
   return (
     <AnimatePresence>
@@ -414,7 +437,7 @@ export function ContributeModal({
                       <input
                         ref={fileInputRef}
                         type="file"
-                        accept={selectedType === "voice" ? "audio/*,video/*" : "image/*"}
+                        accept={selectedType === "voice" ? "audio/*" : "image/*"}
                         className="hidden"
                         disabled={isUploadingMedia}
                         onChange={(e) => {

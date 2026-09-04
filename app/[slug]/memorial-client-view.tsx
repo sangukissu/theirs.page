@@ -13,6 +13,7 @@ import { MemorialFooter } from "@/components/memorial/memorial-footer"
 import { ContributeModal, ContributionType } from "@/components/memorial/contribute-modal"
 
 export interface MemorialData {
+  id?: string
   slug: string
   fullName: string
   preferredName?: string | null
@@ -23,6 +24,7 @@ export interface MemorialData {
   biography?: string | null
   portraitUrl?: string | null
   isDemo?: boolean
+  isPaid?: boolean
   memoriesCount?: number
   photosCount?: number
   contributorsCount?: number
@@ -94,6 +96,7 @@ export function MemorialClientView({ data }: { data: MemorialData }) {
         fullName={data.fullName}
         items={data.mediaItems}
         isDemo={data.isDemo}
+        isPaid={data.isPaid}
         onOpenContribute={handleOpenContribute}
       />
 
@@ -125,6 +128,9 @@ export function MemorialClientView({ data }: { data: MemorialData }) {
         onClose={() => setIsContributeOpen(false)}
         memorialName={data.fullName}
         slug={data.slug}
+        memorialId={data.id}
+        isPaid={data.isPaid}
+        photoCount={data.photosCount}
         initialType={contributeType}
       />
     </main>

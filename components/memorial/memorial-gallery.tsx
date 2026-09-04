@@ -170,6 +170,7 @@ interface MemorialGalleryProps {
   fullName?: string
   items?: GalleryItem[]
   isDemo?: boolean
+  isPaid?: boolean
   onOpenContribute: (type?: ContributionType) => void
 }
 
@@ -177,6 +178,7 @@ export function MemorialGallery({
   fullName = "Robert Carter",
   items,
   isDemo = false,
+  isPaid = false,
   onOpenContribute,
 }: MemorialGalleryProps) {
   const galleryItems = isDemo ? (items && items.length > 0 ? items : DEFAULT_GALLERY_ITEMS) : (items || [])
@@ -333,56 +335,66 @@ export function MemorialGallery({
           </p>
         </div>
 
-        <button
-          type="button"
-          onClick={() => onOpenContribute("photo")}
-          className="inline-flex items-center gap-1.5 px-4 py-2 rounded-full bg-[#181925] hover:bg-[#252736] text-white text-xs font-medium transition-all self-start sm:self-auto cursor-pointer shadow-xs active:scale-95"
-        >
-          <Plus className="size-3.5" />
-          <span>Add to gallery</span>
-        </button>
+        {!isPaid && photoCount >= 5 ? (
+          <div className="text-xs text-[#71717a] bg-[#f4f4f6] px-3.5 py-1.5 rounded-full font-medium self-start sm:self-auto select-none">
+            Photo limit reached ({photoCount}/5)
+          </div>
+        ) : (
+          <button
+            type="button"
+            onClick={() => onOpenContribute("photo")}
+            className="inline-flex items-center gap-1.5 px-4 py-2 rounded-full bg-[#181925] hover:bg-[#252736] text-white text-xs font-medium transition-all self-start sm:self-auto cursor-pointer shadow-xs active:scale-95"
+          >
+            <Plus className="size-3.5" />
+            <span>Add to gallery</span>
+          </button>
+        )}
       </div>
 
       {/* Format Filter Chips */}
       <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar py-0.5 select-none">
         {[
-          { key: "all", label: `All (${DEFAULT_GALLERY_ITEMS.length})` },
-          { key: "photo", label: `Photos (${photoCount})`, icon: ImageIcon },
-          { key: "audio", label: `Voice & Audio (${audioCount})`, icon: Volume2 },
-          { key: "video", label: `Home Video (${videoCount})`, icon: Film },
-        ].map((tab) => {
-          const Icon = tab.icon
-          const isActive = filter === tab.key
-          return (
-            <button
-              key={tab.key}
-              type="button"
-              onClick={() => setFilter(tab.key as any)}
-              className={`inline-flex items-center gap-1.5 text-xs px-3.5 py-1.5 rounded-full font-medium transition-all cursor-pointer ${
-                isActive
-                  ? "bg-[#181925] text-white shadow-2xs"
-                  : "bg-[#f4f4f6] text-[#666] hover:text-[#181925]"
-              }`}
-            >
-              {Icon && <Icon className="size-3 shrink-0" />}
-              <span>{tab.label}</span>
-            </button>
-          )
-        })}
+          { key: "all", label: `All (${galleryItems.length})`, show: true },
+          { key: "photo", label: `Photos (${photoCount})`, icon: ImageIcon, show: true },
+          { key: "audio", label: `Voice & Audio (${audioCount})`, icon: Volume2, show: Boolean(isPaid || audioCount > 0) },
+          { key: "video", label: `Home Video (${videoCount})`, icon: Film, show: Boolean(isPaid || videoCount > 0) },
+        ]
+          .filter((tab) => tab.show)
+          .map((tab) => {
+            const Icon = tab.icon
+            const isActive = filter === tab.key
+            return (
+              <button
+                key={tab.key}
+                type="button"
+                onClick={() => setFilter(tab.key as any)}
+                className={`inline-flex items-center gap-1.5 text-xs px-3.5 py-1.5 rounded-full font-medium transition-all cursor-pointer ${
+                  isActive
+                    ? "bg-[#181925] text-white shadow-2xs"
+                    : "bg-[#f4f4f6] text-[#666] hover:text-[#181925]"
+                }`}
+              >
+                {Icon && <Icon className="size-3 shrink-0" />}
+                <span>{tab.label}</span>
+              </button>
+            )
+          })}
       </div>
 
       {/* Unified Media Grid / Empty State */}
       {filteredItems.length === 0 ? (
         <div className="py-16 text-center text-sm text-[#71717a] rounded-3xl bg-[#fafafb] border border-black/[0.06] flex flex-col items-center justify-center gap-3">
           <p>No photographs, voice notes, or videos added to the gallery yet.</p>
-          <button
-            type="button"
-            onClick={() => onOpenContribute("photo")}
-            className="inline-flex items-center gap-1.5 text-xs font-medium text-primary hover:underline cursor-pointer"
-          >
-            <Plus className="size-3.5" />
-            <span>Add the first memory</span>
-          </button>
+          {!isPaid && photoCount >= 5 ? null : (
+            <button
+              type="button"
+              onClick={() => onOpenContribute("photo")}
+              className="inline-flex items-center gap-1.5 text-xs font-medium text-primary hover:underline cursor-pointer"
+            >
+              <Plus className="size-3.5" />
+              <span>Add the first memory</span>
+            </button>
+          )}
         </div>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">

@@ -290,6 +290,7 @@ export default async function MemorialPage({ params }: MemorialPageProps) {
   const contributorsCount = isDemo ? 8 : (new Set(memories.map((m) => m.authorName)).size || (dbMemorial ? 1 : 0))
 
   const memorialData: MemorialData = {
+    id: dbMemorial?.id,
     slug,
     fullName,
     preferredName,
@@ -300,6 +301,7 @@ export default async function MemorialPage({ params }: MemorialPageProps) {
     biography,
     portraitUrl,
     isDemo,
+    isPaid: isDemo ? true : Boolean(dbMemorial?.is_paid),
     memoriesCount,
     photosCount,
     contributorsCount,

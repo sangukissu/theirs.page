@@ -81,7 +81,7 @@ export async function POST(req: NextRequest, context: RouteContext) {
     const db = adminClient || serverClient
 
     const isUuid = UUID_REGEX.test(id)
-    let query = db.from("memorials").select("id, slug, status, privacy")
+    let query = db.from("memorials").select("id, slug, status, privacy, is_paid, owner_id")
     query = isUuid ? query.eq("id", id) : query.eq("slug", id)
     const { data: memorial } = await query.maybeSingle()
 
@@ -96,7 +96,42 @@ export async function POST(req: NextRequest, context: RouteContext) {
       )
     }
 
-    // 5. Enforce Private Memorial PIN Gate
+    // 5. Enforce Tier Restrictions for Guest Contributions
+    const isPaid = Boolean(memorial.is_paid)
+    if (!isPaid) {
+      // Audio is not available on free tier
+      if (normalizedMime.startsWith("audio/") || normalizedMime.startsWith("video/")) {
+        return NextResponse.json(
+          { error: "Voice notes and audio files require Pro Plan." },
+          { status: 403 }
+        )
+      }
+
+      // Check 5-photo limit on free tier
+      if (normalizedMime.startsWith("image/")) {
+        const { count, error: countErr } = await db
+          .from("media_items")
+          .select("id", { count: "exact", head: true })
+          .eq("memorial_id", memorial.id)
+
+        const currentPhotos = !countErr && typeof count === "number" ? count : 0
+        if (currentPhotos >= 5) {
+          return NextResponse.json(
+            { error: "This memorial has reached its photograph limit (5 photos) on the free tier." },
+            { status: 403 }
+          )
+        }
+      }
+    } else {
+      if (normalizedMime.startsWith("video/")) {
+        return NextResponse.json(
+          { error: "Video uploads are reserved for memorial caretakers in the dashboard." },
+          { status: 400 }
+        )
+      }
+    }
+
+    // 6. Enforce Private Memorial PIN Gate
     if (memorial.privacy === "private") {
       const cookieKey = memorial.slug || memorial.id
       const isUnlocked = req.cookies.get(`theirs_pin_${cookieKey}`)?.value === "unlocked"
@@ -109,12 +144,7 @@ export async function POST(req: NextRequest, context: RouteContext) {
 
         let isOwnerOrAdmin = false
         if (user) {
-          const { data: memOwner } = await db
-            .from("memorials")
-            .select("user_id")
-            .eq("id", memorial.id)
-            .single()
-          if (memOwner?.user_id === user.id) {
+          if (memorial.owner_id === user.id) {
             isOwnerOrAdmin = true
           } else {
             const { data: collab } = await db
