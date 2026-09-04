@@ -78,6 +78,8 @@ export function MemorialClientView({ data }: { data: MemorialData }) {
       <MemoriesStream
         fullName={data.fullName}
         memories={data.memories}
+        memorialId={data.id}
+        slug={data.slug}
         isDemo={data.isDemo}
         onOpenContribute={handleOpenContribute}
       />

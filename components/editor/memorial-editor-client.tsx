@@ -323,7 +323,7 @@ export function MemorialEditorClient({
     count?: number
     isCompleteOnly?: boolean
   }[] = [
-    { id: "identity", label: "Identity & Hero", icon: User },
+    { id: "identity", label: "Identity", icon: User },
     { id: "story", label: "Life Story", icon: BookOpen },
     { id: "gallery", label: "Gallery", icon: ImageIcon, count: mediaItems.length },
     { id: "timeline", label: "Timeline", icon: Calendar, count: timelineEvents.length, isCompleteOnly: true },

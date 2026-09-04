@@ -227,18 +227,37 @@ export default async function MemorialPage({ params }: MemorialPageProps) {
         photoUrl: p.photo_url ? resolveMediaUrl(p.photo_url) : undefined,
       }))
 
-      memories = (memoriesRes.data || []).map((mem: any) => ({
-        id: mem.id,
-        authorName: mem.author_name,
-        authorRelationship: mem.author_relationship || "Friend",
-        dateOrYear: mem.approx_year ? String(mem.approx_year) : "Remembered with love",
-        chronologicalYear: mem.approx_year || undefined,
-        location: mem.location || undefined,
-        story: mem.story,
-        photoUrl: mem.photo_url ? resolveMediaUrl(mem.photo_url) : undefined,
-        heartCount: 0,
-        createdAt: mem.created_at,
-      }))
+      memories = (memoriesRes.data || []).map((mem: any) => {
+        let dateOrYear = ""
+        if (mem.approx_year) {
+          dateOrYear = String(mem.approx_year)
+        } else if (mem.created_at) {
+          const d = new Date(mem.created_at)
+          const now = new Date()
+          const diffMs = now.getTime() - d.getTime()
+          const diffHours = Math.floor(diffMs / (1000 * 60 * 60))
+          const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24))
+          if (diffHours < 1) dateOrYear = "Just now"
+          else if (diffHours < 24) dateOrYear = `${diffHours} ${diffHours === 1 ? "hour" : "hours"} ago`
+          else if (diffDays === 1) dateOrYear = "Yesterday"
+          else if (diffDays < 7) dateOrYear = `${diffDays} days ago`
+          else dateOrYear = d.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })
+        }
+
+        return {
+          id: mem.id,
+          authorName: mem.author_name,
+          authorRelationship: mem.author_relationship || "",
+          dateOrYear,
+          chronologicalYear: mem.approx_year || undefined,
+          location: mem.location || undefined,
+          story: mem.story,
+          photoUrl: mem.photo_url ? resolveMediaUrl(mem.photo_url) : undefined,
+          tributeType: mem.tribute_type || (mem.photo_url ? "photo" : "flower"),
+          heartCount: 0,
+          createdAt: mem.created_at,
+        }
+      })
 
       guestbook = (guestbookRes.data || []).map((gb: any) => ({
         id: gb.id,

@@ -30,6 +30,7 @@ export async function POST(req: NextRequest, context: RouteContext) {
       approx_year,
       location,
       photo_url,
+      tribute_type,
       turnstile_token,
     } = body
 
@@ -140,6 +141,13 @@ export async function POST(req: NextRequest, context: RouteContext) {
       })
     }
 
+    // Determine tribute type: flower, note, photo, or candle
+    const safeTributeType = photo_url
+      ? "photo"
+      : ["flower", "note", "photo", "candle"].includes(tribute_type)
+      ? tribute_type
+      : "flower"
+
     // Otherwise, treat as a memory contribution (stories, photos, moments)
     const { error } = await db
       .from("memories")
@@ -151,6 +159,7 @@ export async function POST(req: NextRequest, context: RouteContext) {
         approx_year: approx_year ? Number(approx_year) : null,
         location: location?.trim() || null,
         photo_url: photo_url || null,
+        tribute_type: safeTributeType,
         status: "pending_approval",
         visibility: "everyone",
       })

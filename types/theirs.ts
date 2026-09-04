@@ -87,6 +87,7 @@ export interface Memory {
   approx_year: number | null
   location: string | null
   photo_url: string | null
+  tribute_type?: 'flower' | 'note' | 'photo' | 'candle'
   status: MemoryStatus
   visibility: MemoryVisibility
   created_at: string
@@ -222,6 +223,7 @@ export interface SubmitMemoryInput {
   approx_year?: number | null
   location?: string | null
   photo_url?: string | null
+  tribute_type?: 'flower' | 'note' | 'photo' | 'candle'
   visibility?: MemoryVisibility
   turnstile_token?: string
 }

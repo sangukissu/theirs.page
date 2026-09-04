@@ -213,6 +213,7 @@ export function ContributeModal({
           content: effectiveContent,
           approx_year: isNaN(approxYearNum as number) ? null : approxYearNum,
           photo_url: uploadedFileUrl || null,
+          tribute_type: uploadedFileUrl ? "photo" : selectedType === "moment" ? "flower" : "note",
           turnstile_token: turnstileToken,
         }),
       })
@@ -311,7 +312,7 @@ export function ContributeModal({
                       Thank you for remembering
                     </h3>
                     <p className="text-xs sm:text-sm text-[#666] max-w-sm leading-relaxed">
-                      Your contribution has been safely received for {memorialName}&apos;s family archive. It will appear on the memorial once the caretaker reviews it.
+                      Your contribution has been safely received for {memorialName}&apos;s Memorial. It will appear here once the caretaker reviews it.
                     </p>
                   </div>
 
