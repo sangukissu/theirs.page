@@ -106,12 +106,14 @@ export async function PATCH(req: NextRequest, context: RouteContext) {
       "preferred_name",
       "birth_year",
       "death_year",
+      "location",
       "headline",
       "biography",
       "portrait_photo_url",
       "cover_photo_url",
       "status",
       "privacy",
+      "access_pin_hash",
       "successor_name",
       "successor_email",
     ]
@@ -120,6 +122,10 @@ export async function PATCH(req: NextRequest, context: RouteContext) {
       if (body[f] !== undefined) {
         updates[f] = body[f]
       }
+    }
+
+    if (body.pin !== undefined) {
+      updates.access_pin_hash = body.pin ? String(body.pin).trim() : null
     }
 
     // If slug update requested, validate and ensure uniqueness

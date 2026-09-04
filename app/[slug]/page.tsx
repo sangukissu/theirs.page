@@ -1,7 +1,10 @@
 import { Metadata } from "next"
 import { notFound } from "next/navigation"
+import { cookies } from "next/headers"
 import { supabaseAdmin } from "@/utils/supabase/admin"
+import { createClient } from "@/utils/supabase/server"
 import { MemorialClientView, MemorialData } from "./memorial-client-view"
+import { MemorialPinGate } from "@/components/memorial/memorial-pin-gate"
 
 interface MemorialPageProps {
   params: Promise<{
@@ -13,11 +16,23 @@ export async function generateMetadata({ params }: MemorialPageProps): Promise<M
   const { slug } = await params
 
   try {
-    const { data: memorial } = await supabaseAdmin
-      .from("memorials")
-      .select("full_name, headline, portrait_photo_url")
-      .eq("slug", slug)
-      .maybeSingle()
+    let memorial: any = null
+    try {
+      const res = await supabaseAdmin
+        .from("memorials")
+        .select("full_name, headline, portrait_photo_url, privacy")
+        .eq("slug", slug)
+        .maybeSingle()
+      memorial = res.data
+    } catch {
+      const supabase = await createClient()
+      const res = await supabase
+        .from("memorials")
+        .select("full_name, headline, portrait_photo_url, privacy")
+        .eq("slug", slug)
+        .maybeSingle()
+      memorial = res.data
+    }
 
     if (memorial) {
       const title = `${memorial.full_name} — In Loving Memory | Theirs`
@@ -26,6 +41,9 @@ export async function generateMetadata({ params }: MemorialPageProps): Promise<M
       return {
         title,
         description,
+        robots: memorial.privacy === "unlisted" || memorial.privacy === "private"
+          ? { index: false, follow: false }
+          : { index: true, follow: true },
         openGraph: {
           title,
           description,
@@ -74,8 +92,18 @@ export default async function MemorialPage({ params }: MemorialPageProps) {
 
   const isDemo = slug === "robert-carter"
 
-  // Query memorial from Supabase using supabaseAdmin (bypasses RLS token drops for public readers)
+  // 1. Check current visitor session
+  let currentUserId: string | null = null
+  let serverSupabase: any = null
+  try {
+    serverSupabase = await createClient()
+    const { data: { user } } = await serverSupabase.auth.getUser()
+    currentUserId = user?.id || null
+  } catch {}
+
+  // 2. Resilient Database Query (attempts admin first, falls back to server client)
   let dbMemorial: any = null
+  let activeClient: any = null
   let mediaItems: any[] = []
   let timelineEvents: any[] = []
   let people: any[] = []
@@ -91,37 +119,73 @@ export default async function MemorialPage({ params }: MemorialPageProps) {
 
     if (memorial) {
       dbMemorial = memorial
+      activeClient = supabaseAdmin
+    }
+  } catch (err) {
+    // Admin query failed or secret key is absent in host env
+  }
 
-      // Fetch all related collections concurrently
+  if (!dbMemorial && serverSupabase) {
+    try {
+      const { data: memorial } = await serverSupabase
+        .from("memorials")
+        .select("*")
+        .eq("slug", slug)
+        .maybeSingle()
+
+      if (memorial) {
+        dbMemorial = memorial
+        activeClient = serverSupabase
+      }
+    } catch (err) {
+      console.error("Server client memorial fetch error:", err)
+    }
+  }
+
+  // 3. If not found in database and not the curated demo slug, 404
+  if (!dbMemorial && !isDemo) {
+    notFound()
+  }
+
+  const isOwner = currentUserId && dbMemorial && currentUserId === dbMemorial.owner_id
+
+  // 4. Draft check: If memorial is in draft, only the owner can preview it
+  if (dbMemorial && dbMemorial.status === "draft" && !isOwner) {
+    notFound()
+  }
+
+  // 5. Fetch related collections using whichever client succeeded
+  if (dbMemorial && activeClient) {
+    try {
       const [mediaRes, timelineRes, peopleRes, memoriesRes, guestbookRes] = await Promise.all([
-        supabaseAdmin
+        activeClient
           .from("media_items")
           .select("*")
-          .eq("memorial_id", memorial.id)
+          .eq("memorial_id", dbMemorial.id)
           .order("order_index", { ascending: true })
           .order("created_at", { ascending: true }),
-        supabaseAdmin
+        activeClient
           .from("timeline_events")
           .select("*")
-          .eq("memorial_id", memorial.id)
+          .eq("memorial_id", dbMemorial.id)
           .order("year", { ascending: true })
           .order("order_index", { ascending: true }),
-        supabaseAdmin
+        activeClient
           .from("people_in_life")
           .select("*")
-          .eq("memorial_id", memorial.id)
+          .eq("memorial_id", dbMemorial.id)
           .order("order_index", { ascending: true })
           .order("created_at", { ascending: true }),
-        supabaseAdmin
+        activeClient
           .from("memories")
           .select("*")
-          .eq("memorial_id", memorial.id)
+          .eq("memorial_id", dbMemorial.id)
           .eq("status", "approved")
           .order("created_at", { ascending: false }),
-        supabaseAdmin
+        activeClient
           .from("guestbook_entries")
           .select("*")
-          .eq("memorial_id", memorial.id)
+          .eq("memorial_id", dbMemorial.id)
           .eq("status", "approved")
           .order("created_at", { ascending: false }),
       ])
@@ -172,14 +236,9 @@ export default async function MemorialPage({ params }: MemorialPageProps) {
         date: new Date(gb.created_at).toLocaleDateString(),
         message: gb.message,
       }))
+    } catch (err) {
+      console.error("Error fetching child collections:", err)
     }
-  } catch (err) {
-    console.error("Error fetching memorial data:", err)
-  }
-
-  // If not found in database and not the curated demo slug, 404
-  if (!dbMemorial && !isDemo) {
-    notFound()
   }
 
   const fullName =
@@ -198,6 +257,22 @@ export default async function MemorialPage({ params }: MemorialPageProps) {
   const epitaph = dbMemorial?.headline || (isDemo ? "Watchmaker, master woodworker, and an unhurried listener. Built grandfather clocks by day, fixed bicycles for neighborhood children by evening." : null)
   const biography = dbMemorial?.biography || null
   const portraitUrl = dbMemorial?.portrait_photo_url || (isDemo ? "/memorial-family-portrait-grandfather.jpg" : "/memorial-family-portrait-grandfather.jpg")
+
+  // 6. Private PIN Gate Check
+  if (dbMemorial && dbMemorial.privacy === "private" && !isOwner) {
+    const cookieStore = await cookies()
+    const isPinUnlocked = cookieStore.get(`theirs_pin_${slug}`)?.value === "unlocked"
+
+    if (!isPinUnlocked) {
+      return (
+        <MemorialPinGate
+          fullName={fullName}
+          portraitUrl={portraitUrl}
+          slug={slug}
+        />
+      )
+    }
+  }
 
   const photosCount = isDemo ? 42 : mediaItems.filter((m) => m.mediaType === "photo").length
   const memoriesCount = isDemo ? 14 : memories.length
@@ -241,6 +316,17 @@ export default async function MemorialPage({ params }: MemorialPageProps) {
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
       />
+      {dbMemorial && dbMemorial.status === "draft" && isOwner && (
+        <div className="bg-amber-500 text-black px-4 py-2 text-xs font-medium text-center sticky top-0 z-50 shadow-xs flex items-center justify-center gap-2">
+          <span>⚠️ <strong>Draft Preview Mode</strong> — This memorial is private and not yet published to visitors.</span>
+          <a
+            href={`/dashboard/memorials/${dbMemorial.id}/editor`}
+            className="underline font-bold hover:text-black/80"
+          >
+            Publish in Settings &rarr;
+          </a>
+        </div>
+      )}
       <MemorialClientView data={memorialData} />
     </>
   )

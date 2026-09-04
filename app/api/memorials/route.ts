@@ -126,7 +126,7 @@ export async function POST(req: NextRequest) {
         owner_id: user.id,
         slug: finalSlug,
         full_name: full_name.trim(),
-        status: "draft",
+        status: "published",
         privacy: "public",
       })
       .select()
@@ -142,7 +142,7 @@ export async function POST(req: NextRequest) {
           owner_id: user.id,
           slug: fallbackSlug,
           full_name: full_name.trim(),
-          status: "draft",
+          status: "published",
           privacy: "public",
         })
         .select()

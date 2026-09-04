@@ -39,9 +39,10 @@ interface GuestbookStreamProps {
   fullName: string
   notes?: GuestbookNote[]
   isDemo?: boolean
+  slug?: string
 }
 
-export function GuestbookStream({ fullName, notes, isDemo = false }: GuestbookStreamProps) {
+export function GuestbookStream({ fullName, notes, isDemo = false, slug }: GuestbookStreamProps) {
   const [guestbookNotes, setGuestbookNotes] = useState<GuestbookNote[]>(
     isDemo
       ? (notes && notes.length > 0 ? notes : DEFAULT_GUESTBOOK)
@@ -50,24 +51,47 @@ export function GuestbookStream({ fullName, notes, isDemo = false }: GuestbookSt
   const [authorInput, setAuthorInput] = useState("")
   const [messageInput, setMessageInput] = useState("")
   const [hasSentNote, setHasSentNote] = useState(false)
+  const [isSubmitting, setIsSubmitting] = useState(false)
 
   const firstName = fullName.split(" ")[0] || fullName
 
-  const handleSendGuestbook = (e: React.FormEvent) => {
+  const handleSendGuestbook = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!authorInput.trim() || !messageInput.trim()) return
 
+    const trimmedAuthor = authorInput.trim()
+    const trimmedMessage = messageInput.trim()
+
+    setIsSubmitting(true)
+
+    if (slug) {
+      try {
+        await fetch(`/api/memorials/${slug}/contribute`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            type: "guestbook",
+            author_name: trimmedAuthor,
+            content: trimmedMessage,
+          }),
+        })
+      } catch (err) {
+        console.error("Guestbook post error:", err)
+      }
+    }
+
     const newNote: GuestbookNote = {
       id: `gb-${Date.now()}`,
-      author: authorInput.trim(),
-      date: "Just now",
-      message: messageInput.trim(),
+      author: trimmedAuthor,
+      date: "Pending approval",
+      message: trimmedMessage,
     }
     setGuestbookNotes([newNote, ...guestbookNotes])
     setAuthorInput("")
     setMessageInput("")
+    setIsSubmitting(false)
     setHasSentNote(true)
-    setTimeout(() => setHasSentNote(false), 3500)
+    setTimeout(() => setHasSentNote(false), 4500)
   }
 
   return (
@@ -113,18 +137,19 @@ export function GuestbookStream({ fullName, notes, isDemo = false }: GuestbookSt
           {hasSentNote ? (
             <span className="inline-flex items-center gap-1.5 text-xs text-emerald-600 font-medium">
               <CheckCircle2 className="size-3.5" />
-              <span>Message added to guestbook</span>
+              <span>Message submitted to family for approval</span>
             </span>
           ) : (
-            <span className="text-[11px] text-[#888]">No account required · Added immediately</span>
+            <span className="text-[11px] text-[#888]">No account required · Reviewed by family</span>
           )}
 
           <button
             type="submit"
-            className="inline-flex items-center gap-1.5 px-5 py-2 rounded-full bg-[#181925] hover:bg-[#252736] text-white text-xs font-medium transition-colors cursor-pointer shadow-xs active:scale-95"
+            disabled={isSubmitting}
+            className="inline-flex items-center gap-1.5 px-5 py-2 rounded-full bg-[#181925] hover:bg-[#252736] disabled:opacity-50 text-white text-xs font-medium transition-colors cursor-pointer shadow-xs active:scale-95"
           >
             <Send className="size-3" />
-            <span>Post message</span>
+            <span>{isSubmitting ? "Posting..." : "Post message"}</span>
           </button>
         </div>
       </form>

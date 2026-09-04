@@ -110,6 +110,7 @@ export function MemorialClientView({ data }: { data: MemorialData }) {
         fullName={data.fullName}
         notes={data.guestbook}
         isDemo={data.isDemo}
+        slug={data.slug}
       />
 
       {/* 9. Permanent Stewardship Footer */}

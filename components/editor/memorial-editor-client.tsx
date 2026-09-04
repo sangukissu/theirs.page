@@ -50,6 +50,7 @@ interface InitialMemorialData {
   cover_photo_url?: string | null
   status: "draft" | "published" | "archived"
   privacy: "public" | "unlisted" | "private"
+  access_pin_hash?: string | null
   successor_name?: string | null
   successor_email?: string | null
   updated_at?: string
@@ -93,6 +94,7 @@ export function MemorialEditorClient({
     slug: initialMemorial.slug || "",
     status: initialMemorial.status || "draft",
     privacy: initialMemorial.privacy || "public",
+    pin: initialMemorial.access_pin_hash || "",
     successor_name: initialMemorial.successor_name || "",
     successor_email: initialMemorial.successor_email || "",
   })
@@ -157,6 +159,7 @@ export function MemorialEditorClient({
             slug: currentForm.slug,
             status: currentForm.status,
             privacy: currentForm.privacy,
+            pin: currentForm.pin,
             successor_name: currentForm.successor_name || null,
             successor_email: currentForm.successor_email || null,
           }),
@@ -271,7 +274,9 @@ export function MemorialEditorClient({
     }
   }
 
-  const pendingContributions = memories.filter((m) => m.status === "pending_approval").length
+  const pendingContributions =
+    memories.filter((m) => m.status === "pending_approval").length +
+    guestbook.filter((g) => g.status === "pending_approval").length
 
   // Exactly 7 clean, unbloated tabs matching public memorial structure
   const tabs: { id: EditorSectionTab; label: string; icon: any; count?: number }[] = [
@@ -511,7 +516,9 @@ export function MemorialEditorClient({
             <SettingsTab
               memorialId={initialMemorial.id}
               slug={form.slug}
+              status={form.status}
               privacy={form.privacy}
+              pin={form.pin}
               successorName={form.successor_name}
               successorEmail={form.successor_email}
               onChange={handleFieldChange}

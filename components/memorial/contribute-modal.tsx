@@ -55,15 +55,40 @@ export function ContributeModal({
 
   const firstName = memorialName.split(" ")[0] || memorialName
 
+  const [error, setError] = useState<string | null>(null)
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!authorName.trim() || !content.trim()) return
 
     setIsSubmitting(true)
-    // Simulate brief submission latency (wired to API / moderation queue)
-    await new Promise((r) => setTimeout(r, 800))
-    setIsSubmitting(false)
-    setIsSubmitted(true)
+    setError(null)
+
+    try {
+      const approxYearNum = extraField ? parseInt(extraField.replace(/\D/g, ""), 10) : null
+      const res = await fetch(`/api/memorials/${slug}/contribute`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          type: selectedType === "message" ? "guestbook" : "memory",
+          author_name: authorName.trim(),
+          author_relationship: relationship.trim() || null,
+          content: content.trim(),
+          approx_year: isNaN(approxYearNum as number) ? null : approxYearNum,
+        }),
+      })
+
+      if (!res.ok) {
+        const data = await res.json()
+        throw new Error(data.error || "Failed to submit contribution")
+      }
+
+      setIsSubmitted(true)
+    } catch (err: any) {
+      setError(err.message || "Could not submit contribution. Please try again.")
+    } finally {
+      setIsSubmitting(false)
+    }
   }
 
   const handleReset = () => {
@@ -341,6 +366,12 @@ export function ContributeModal({
                       className="w-full px-3 py-2.5 rounded-xl bg-[#f7f7f8] border border-black/[0.08] text-sm text-[#181925] placeholder:text-[#aaa] outline-none focus:border-primary/50 transition-colors resize-none leading-relaxed"
                     />
                   </div>
+
+                  {error && (
+                    <div className="p-2.5 rounded-xl bg-rose-50 border border-rose-200 text-xs text-rose-700 font-medium">
+                      {error}
+                    </div>
+                  )}
 
                   {/* Submit Button */}
                   <div className="pt-2 flex items-center justify-end gap-2.5">
