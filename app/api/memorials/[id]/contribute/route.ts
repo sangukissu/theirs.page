@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server"
-import { supabaseAdmin } from "@/utils/supabase/admin"
+import { getSupabaseAdminSafe } from "@/utils/supabase/admin"
 import { createClient } from "@/utils/supabase/server"
 
 interface RouteContext {
@@ -23,37 +23,49 @@ export async function POST(req: NextRequest, context: RouteContext) {
     } = body
 
     if (!author_name || !author_name.trim()) {
-      return NextResponse.json({ error: "Author name is required" }, { status: 400 })
+      return NextResponse.json({ error: "Your name is required." }, { status: 400 })
     }
 
     if (!content || !content.trim()) {
-      return NextResponse.json({ error: "Message or story content is required" }, { status: 400 })
+      return NextResponse.json({ error: "Please write a memory or message to share." }, { status: 400 })
     }
 
-    // 1. Resolve memorial ID from id or slug
+    // 1. Resolve memorial using admin client if available, or SSR public client
+    const adminClient = getSupabaseAdminSafe()
+    const serverClient = await createClient()
+    const db = adminClient || serverClient
+
     const isUuid = UUID_REGEX.test(id)
     let memorialId: string | null = null
 
     try {
-      let query = supabaseAdmin.from("memorials").select("id, status")
+      let query = db.from("memorials").select("id, status")
       query = isUuid ? query.eq("id", id) : query.eq("slug", id)
       const { data } = await query.maybeSingle()
       if (data) memorialId = data.id
-    } catch {
-      const supabase = await createClient()
-      let query = supabase.from("memorials").select("id, status")
-      query = isUuid ? query.eq("id", id) : query.eq("slug", id)
-      const { data } = await query.maybeSingle()
-      if (data) memorialId = data.id
+    } catch (lookupErr) {
+      console.error("Memorial lookup error:", lookupErr)
+    }
+
+    // Fallback lookup using server client if admin failed
+    if (!memorialId && adminClient) {
+      try {
+        let query = serverClient.from("memorials").select("id, status")
+        query = isUuid ? query.eq("id", id) : query.eq("slug", id)
+        const { data } = await query.maybeSingle()
+        if (data) memorialId = data.id
+      } catch (fallbackErr) {
+        console.error("Server client lookup error:", fallbackErr)
+      }
     }
 
     if (!memorialId) {
-      return NextResponse.json({ error: "Memorial not found" }, { status: 404 })
+      return NextResponse.json({ error: "Memorial not found." }, { status: 404 })
     }
 
     // 2. Insert into appropriate table with status: pending_approval
     if (type === "guestbook") {
-      const { data: entry, error } = await supabaseAdmin
+      const { error } = await db
         .from("guestbook_entries")
         .insert({
           memorial_id: memorialId,
@@ -61,22 +73,23 @@ export async function POST(req: NextRequest, context: RouteContext) {
           message: content.trim(),
           status: "pending_approval",
         })
-        .select()
-        .single()
 
       if (error) {
-        return NextResponse.json({ error: error.message }, { status: 500 })
+        console.error("Guestbook submission error:", error)
+        return NextResponse.json(
+          { error: "Unable to submit your message right now. Please try again in a moment." },
+          { status: 500 }
+        )
       }
 
       return NextResponse.json({
         success: true,
-        entry,
         message: "Your message of remembrance has been submitted to the family for approval.",
       })
     }
 
     // Otherwise, treat as a memory contribution (stories, photos, moments)
-    const { data: mem, error } = await supabaseAdmin
+    const { error } = await db
       .from("memories")
       .insert({
         memorial_id: memorialId,
@@ -89,20 +102,24 @@ export async function POST(req: NextRequest, context: RouteContext) {
         status: "pending_approval",
         visibility: "everyone",
       })
-      .select()
-      .single()
 
     if (error) {
-      return NextResponse.json({ error: error.message }, { status: 500 })
+      console.error("Memory submission error:", error)
+      return NextResponse.json(
+        { error: "Unable to submit your memory right now. Please try again in a moment." },
+        { status: 500 }
+      )
     }
 
     return NextResponse.json({
       success: true,
-      memory: mem,
       message: "Your memory has been lovingly received and sent to the family for approval.",
     })
   } catch (err: any) {
-    console.error("Contribution submission error:", err)
-    return NextResponse.json({ error: err.message || "Failed to submit contribution" }, { status: 500 })
+    console.error("Contribution submission unhandled error:", err)
+    return NextResponse.json(
+      { error: "Unable to submit your contribution right now. Please try again in a moment." },
+      { status: 500 }
+    )
   }
 }

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server"
-import { supabaseAdmin } from "@/utils/supabase/admin"
+import { getSupabaseAdminSafe } from "@/utils/supabase/admin"
 import { createClient } from "@/utils/supabase/server"
 
 interface RouteContext {
@@ -21,14 +21,21 @@ export async function POST(req: NextRequest, context: RouteContext) {
     const isUuid = UUID_REGEX.test(id)
     let memorial: any = null
 
-    try {
-      let query = supabaseAdmin
-        .from("memorials")
-        .select("id, slug, access_pin_hash, privacy")
-      query = isUuid ? query.eq("id", id) : query.eq("slug", id)
-      const res = await query.maybeSingle()
-      memorial = res.data
-    } catch {
+    const admin = getSupabaseAdminSafe()
+    if (admin) {
+      try {
+        let query = admin
+          .from("memorials")
+          .select("id, slug, access_pin_hash, privacy")
+        query = isUuid ? query.eq("id", id) : query.eq("slug", id)
+        const res = await query.maybeSingle()
+        memorial = res.data
+      } catch (adminErr) {
+        console.error("Admin pin query error:", adminErr)
+      }
+    }
+
+    if (!memorial) {
       const supabase = await createClient()
       let query = supabase
         .from("memorials")
@@ -67,6 +74,7 @@ export async function POST(req: NextRequest, context: RouteContext) {
 
     return response
   } catch (err: any) {
-    return NextResponse.json({ error: err.message || "Failed to verify PIN" }, { status: 500 })
+    console.error("PIN verification error:", err)
+    return NextResponse.json({ error: "Unable to verify PIN. Please try again." }, { status: 500 })
   }
 }

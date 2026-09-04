@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 import { motion, AnimatePresence } from "framer-motion"
 import {
   X,
@@ -18,6 +18,9 @@ import {
   Calendar,
   MapPin,
   User,
+  Trash2,
+  ImageIcon,
+  AlertCircle,
 } from "lucide-react"
 
 export type ContributionType = "memory" | "photo" | "moment" | "voice" | "message"
@@ -45,6 +48,13 @@ export function ContributeModal({
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [isSubmitted, setIsSubmitted] = useState(false)
 
+  // Media upload state
+  const fileInputRef = useRef<HTMLInputElement | null>(null)
+  const [uploadedFileUrl, setUploadedFileUrl] = useState<string | null>(null)
+  const [uploadedFileName, setUploadedFileName] = useState<string | null>(null)
+  const [isUploadingMedia, setIsUploadingMedia] = useState(false)
+  const [mediaUploadError, setMediaUploadError] = useState<string | null>(null)
+
   // Reset or initialize state whenever modal opens or initialType changes
   useEffect(() => {
     if (isOpen) {
@@ -57,9 +67,51 @@ export function ContributeModal({
 
   const [error, setError] = useState<string | null>(null)
 
+  const handleFileSelect = async (file: File) => {
+    if (!file) return
+    setIsUploadingMedia(true)
+    setMediaUploadError(null)
+
+    try {
+      const formData = new FormData()
+      formData.append("file", file)
+      formData.append("folder", "contributions")
+      formData.append("memorialId", slug)
+
+      const res = await fetch("/api/r2/upload", {
+        method: "POST",
+        body: formData,
+      })
+
+      const data = await res.json()
+      if (!res.ok) {
+        throw new Error(data.error || "Failed to upload file")
+      }
+
+      setUploadedFileUrl(data.publicUrl)
+      setUploadedFileName(file.name)
+    } catch (err: any) {
+      console.error("Media upload error:", err)
+      setMediaUploadError(err.message || "Failed to upload file. Please try again.")
+    } finally {
+      setIsUploadingMedia(false)
+    }
+  }
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault()
+    if (e.dataTransfer.files && e.dataTransfer.files[0]) {
+      handleFileSelect(e.dataTransfer.files[0])
+    }
+  }
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!authorName.trim() || !content.trim()) return
+    if (!authorName.trim()) return
+
+    // If photo is uploaded, story is optional (fallback to caption or default note)
+    const effectiveContent = content.trim() || (uploadedFileUrl ? `Photograph shared by ${authorName.trim()}` : "")
+    if (!effectiveContent) return
 
     setIsSubmitting(true)
     setError(null)
@@ -73,19 +125,24 @@ export function ContributeModal({
           type: selectedType === "message" ? "guestbook" : "memory",
           author_name: authorName.trim(),
           author_relationship: relationship.trim() || null,
-          content: content.trim(),
+          content: effectiveContent,
           approx_year: isNaN(approxYearNum as number) ? null : approxYearNum,
+          photo_url: uploadedFileUrl || null,
         }),
       })
 
+      const data = await res.json()
       if (!res.ok) {
-        const data = await res.json()
         throw new Error(data.error || "Failed to submit contribution")
       }
 
       setIsSubmitted(true)
     } catch (err: any) {
-      setError(err.message || "Could not submit contribution. Please try again.")
+      const userMessage =
+        err.message?.includes("fetch") || err.message?.includes("Network")
+          ? "Could not submit contribution. Please check your connection and try again."
+          : err.message || "Could not submit contribution. Please try again."
+      setError(userMessage)
     } finally {
       setIsSubmitting(false)
     }
@@ -98,6 +155,11 @@ export function ContributeModal({
     setRelationship("")
     setContent("")
     setExtraField("")
+    setUploadedFileUrl(null)
+    setUploadedFileName(null)
+    setIsUploadingMedia(false)
+    setMediaUploadError(null)
+    setError(null)
     onClose()
   }
 
@@ -323,32 +385,99 @@ export function ContributeModal({
 
                   {/* Upload Dropzone Preview for Photos or Audio */}
                   {(selectedType === "photo" || selectedType === "voice") && (
-                    <div className="border-2 border-dashed border-black/[0.08] hover:border-primary/40 rounded-2xl p-5 flex flex-col items-center justify-center gap-2 bg-[#faf9f8] cursor-pointer transition-colors text-center">
-                      <div className="size-10 rounded-full bg-white flex items-center justify-center shadow-xs border border-black/[0.06]">
-                        {selectedType === "photo" ? (
-                          <Upload className="size-4 text-primary" />
-                        ) : (
-                          <Mic className="size-4 text-primary" />
-                        )}
-                      </div>
-                      <div className="flex flex-col">
-                        <span className="text-xs font-medium text-[#181925]">
-                          {selectedType === "photo" ? "Drop photographs here" : "Drop audio file or voice note"}
-                        </span>
-                        <span className="text-[10px] text-[#71717a]">
-                          Original high-resolution preserved untouched
-                        </span>
-                      </div>
+                    <div className="flex flex-col gap-2">
+                      <input
+                        ref={fileInputRef}
+                        type="file"
+                        accept={selectedType === "voice" ? "audio/*,video/*" : "image/*"}
+                        className="hidden"
+                        disabled={isUploadingMedia}
+                        onChange={(e) => {
+                          if (e.target.files?.[0]) {
+                            handleFileSelect(e.target.files[0])
+                          }
+                        }}
+                      />
+
+                      {uploadedFileUrl ? (
+                        <div className="relative rounded-2xl border border-black/[0.1] bg-[#fafafb] p-3 flex items-center gap-3">
+                          {selectedType === "photo" ? (
+                            <div className="size-16 rounded-xl overflow-hidden bg-neutral-100 shrink-0 border border-black/[0.08]">
+                              <img src={uploadedFileUrl} alt="Preview" className="size-full object-cover" />
+                            </div>
+                          ) : (
+                            <div className="size-12 rounded-xl bg-primary/10 flex items-center justify-center shrink-0 text-primary">
+                              <Mic className="size-6" />
+                            </div>
+                          )}
+                          <div className="flex flex-col min-w-0 flex-1">
+                            <span className="text-xs font-medium text-[#181925] truncate">
+                              {uploadedFileName || "Uploaded attachment"}
+                            </span>
+                            <span className="text-[11px] text-emerald-600 font-medium inline-flex items-center gap-1">
+                              <CheckCircle2 className="size-3" /> Ready to submit with memory
+                            </span>
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setUploadedFileUrl(null)
+                              setUploadedFileName(null)
+                              if (fileInputRef.current) fileInputRef.current.value = ""
+                            }}
+                            className="size-8 rounded-full hover:bg-rose-50 text-neutral-400 hover:text-rose-600 flex items-center justify-center transition-colors cursor-pointer"
+                            title="Remove attachment"
+                          >
+                            <Trash2 className="size-4" />
+                          </button>
+                        </div>
+                      ) : isUploadingMedia ? (
+                        <div className="border-2 border-dashed border-primary/40 rounded-2xl p-6 flex flex-col items-center justify-center gap-2 bg-primary/5 text-center">
+                          <Loader2 className="size-6 animate-spin text-primary" />
+                          <span className="text-xs font-medium text-[#181925]">Uploading original file...</span>
+                          <span className="text-[10px] text-[#71717a]">Preserving untouched archival quality</span>
+                        </div>
+                      ) : (
+                        <div
+                          onClick={() => fileInputRef.current?.click()}
+                          onDragOver={(e) => e.preventDefault()}
+                          onDrop={handleDrop}
+                          className="border-2 border-dashed border-black/[0.08] hover:border-primary/40 rounded-2xl p-5 flex flex-col items-center justify-center gap-2 bg-[#faf9f8] cursor-pointer transition-colors text-center group"
+                        >
+                          <div className="size-10 rounded-full bg-white flex items-center justify-center shadow-xs border border-black/[0.06] group-hover:scale-105 transition-transform">
+                            {selectedType === "photo" ? (
+                              <Camera className="size-4 text-primary" />
+                            ) : (
+                              <Mic className="size-4 text-primary" />
+                            )}
+                          </div>
+                          <div className="flex flex-col">
+                            <span className="text-xs font-medium text-[#181925] group-hover:text-primary transition-colors">
+                              {selectedType === "photo" ? "Choose or drop a photograph" : "Choose or drop an audio file"}
+                            </span>
+                            <span className="text-[10px] text-[#71717a]">
+                              Original high-resolution preserved untouched
+                            </span>
+                          </div>
+                        </div>
+                      )}
+
+                      {mediaUploadError && (
+                        <div className="p-2.5 rounded-xl bg-rose-50 border border-rose-200 text-xs text-rose-700 flex items-center gap-2">
+                          <AlertCircle className="size-3.5 shrink-0" />
+                          <span>{mediaUploadError}</span>
+                        </div>
+                      )}
                     </div>
                   )}
 
                   {/* Main Content Area */}
                   <div className="flex flex-col gap-1">
                     <label className="text-[11px] font-mono text-[#71717a] uppercase tracking-wider">
-                      {selectedType === "message" ? "Your message *" : "The story or details *"}
+                      {selectedType === "message" ? "Your message *" : selectedType === "photo" && uploadedFileUrl ? "Caption or story behind this photo" : "The story or details *"}
                     </label>
                     <textarea
-                      required
+                      required={!uploadedFileUrl}
                       rows={4}
                       value={content}
                       onChange={(e) => setContent(e.target.value)}
@@ -368,8 +497,9 @@ export function ContributeModal({
                   </div>
 
                   {error && (
-                    <div className="p-2.5 rounded-xl bg-rose-50 border border-rose-200 text-xs text-rose-700 font-medium">
-                      {error}
+                    <div className="p-2.5 rounded-xl bg-rose-50 border border-rose-200 text-xs text-rose-700 font-medium flex items-center gap-2">
+                      <AlertCircle className="size-3.5 shrink-0" />
+                      <span>{error}</span>
                     </div>
                   )}
 
@@ -384,7 +514,7 @@ export function ContributeModal({
                     </button>
                     <button
                       type="submit"
-                      disabled={isSubmitting || !authorName.trim() || !content.trim()}
+                      disabled={isSubmitting || isUploadingMedia || !authorName.trim() || (!content.trim() && !uploadedFileUrl)}
                       className="inline-flex items-center justify-center gap-1.5 whitespace-nowrap !rounded-full font-medium transition-all cursor-pointer border border-[color-mix(in_srgb,var(--primary)_80%,#3a3480)] bg-[color-mix(in_srgb,var(--primary)_90%,#3a3480)] text-primary-foreground shadow-[inset_0_1px_0_rgba(255,255,255,0.22),inset_0_-1px_0_rgba(58,52,128,0.30)] transform-gpu hover:bg-primary active:scale-[0.98] h-9 px-5 text-xs select-none disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                       {isSubmitting ? (

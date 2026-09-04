@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
 import { createClient } from "@/utils/supabase/server"
-import { supabaseAdmin } from "@/utils/supabase/admin"
+import { getSupabaseAdminSafe } from "@/utils/supabase/admin"
 import {
   normalizeMemorialSlug,
   memorialSlugSchema,
@@ -19,8 +19,10 @@ export async function GET() {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
-    // Fetch memorials owned by user using admin client
-    const { data: memorials, error } = await supabaseAdmin
+    const db = getSupabaseAdminSafe() || supabase
+
+    // Fetch memorials owned by user
+    const { data: memorials, error } = await db
       .from("memorials")
       .select(`
         id,
@@ -42,13 +44,13 @@ export async function GET() {
 
     if (error) {
       console.error("Error fetching memorials:", error)
-      return NextResponse.json({ error: error.message }, { status: 500 })
+      return NextResponse.json({ error: "Failed to load memorials." }, { status: 500 })
     }
 
     return NextResponse.json({ memorials })
   } catch (err: any) {
     console.error("Memorials GET error:", err)
-    return NextResponse.json({ error: err.message || "Internal error" }, { status: 500 })
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 })
   }
 }
 
@@ -70,6 +72,8 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Full name is required" }, { status: 400 })
     }
 
+    const db = getSupabaseAdminSafe() || supabase
+
     // Normalize and validate candidate slug
     const rawRequested = desired_slug?.trim() ? desired_slug : full_name
     let normalized = normalizeMemorialSlug(rawRequested)
@@ -84,7 +88,7 @@ export async function POST(req: NextRequest) {
     let isTaken = isReserved
 
     if (!isReserved) {
-      const { data: existing } = await supabaseAdmin
+      const { data: existing } = await db
         .from("memorials")
         .select("id")
         .eq("slug", finalSlug)
@@ -100,7 +104,7 @@ export async function POST(req: NextRequest) {
 
       for (const candidate of candidates) {
         if (candidate === finalSlug || RESERVED_MEMORIAL_SLUGS.has(candidate)) continue
-        const { data: check } = await supabaseAdmin
+        const { data: check } = await db
           .from("memorials")
           .select("id")
           .eq("slug", candidate)
@@ -119,8 +123,8 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    // 3. Create the memorial record using supabaseAdmin (bypassing PostgREST RLS token mismatch)
-    const { data: newMemorial, error } = await supabaseAdmin
+    // 3. Create the memorial record
+    const { data: newMemorial, error } = await db
       .from("memorials")
       .insert({
         owner_id: user.id,
@@ -136,7 +140,7 @@ export async function POST(req: NextRequest) {
       // Catch concurrent unique collision
       const suffix = Math.floor(10000 + Math.random() * 90000)
       const fallbackSlug = `${normalized.slice(0, 48)}-${suffix}`
-      const retry = await supabaseAdmin
+      const retry = await db
         .from("memorials")
         .insert({
           owner_id: user.id,
@@ -149,19 +153,19 @@ export async function POST(req: NextRequest) {
         .single()
 
       if (retry.error) {
-        return NextResponse.json({ error: "Could not create memorial address. Please try again." }, { status: 409 })
+        return NextResponse.json({ error: "Could not create memorial address. Please try another name." }, { status: 409 })
       }
       return NextResponse.json({ success: true, memorial: retry.data })
     }
 
     if (error) {
       console.error("Error creating memorial:", error)
-      return NextResponse.json({ error: error.message }, { status: 500 })
+      return NextResponse.json({ error: "Failed to create memorial." }, { status: 500 })
     }
 
     return NextResponse.json({ success: true, memorial: newMemorial })
   } catch (err: any) {
     console.error("Memorials POST error:", err)
-    return NextResponse.json({ error: err.message || "Internal error" }, { status: 500 })
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 })
   }
 }

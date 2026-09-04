@@ -54,15 +54,11 @@ function resolveContentType(filename: string, mime: string): string {
 
 export async function POST(req: NextRequest) {
   try {
-    // 1. Authenticate user
+    // 1. Authenticate user or allow guest contribution
     const supabase = await createClient()
     const {
       data: { user },
     } = await supabase.auth.getUser()
-
-    if (!user) {
-      return NextResponse.json({ error: "Authentication required" }, { status: 401 })
-    }
 
     // 2. Extract file and metadata from FormData
     const formData = await req.formData()
@@ -70,8 +66,21 @@ export async function POST(req: NextRequest) {
     const folder = (formData.get("folder") as string) || "gallery"
     const memorialId = formData.get("memorialId") as string | null
 
+    if (!user) {
+      // Allow unauthenticated uploads only for memorial contributions
+      const isContribution = folder === "contributions" && Boolean(memorialId)
+      if (!isContribution) {
+        return NextResponse.json({ error: "Authentication required" }, { status: 401 })
+      }
+    }
+
     if (!file) {
       return NextResponse.json({ error: "No file provided" }, { status: 400 })
+    }
+
+    const MAX_SIZE = 25 * 1024 * 1024
+    if (file.size > MAX_SIZE) {
+      return NextResponse.json({ error: "File size exceeds 25MB limit." }, { status: 400 })
     }
 
     const mediaType = detectMediaType(file.name, file.type)
@@ -89,7 +98,7 @@ export async function POST(req: NextRequest) {
 
     const key = memorialId
       ? `memorials/${memorialId}/${safeFolder}/${timestamp}_${randomId}_${cleanFilename}`
-      : `uploads/${user.id}/${safeFolder}/${timestamp}_${randomId}_${cleanFilename}`
+      : `uploads/${user?.id || "guest"}/${safeFolder}/${timestamp}_${randomId}_${cleanFilename}`
 
     // 5. Upload directly to Cloudflare R2 (server-side, zero CORS issues)
     await putR2Object(key, buffer, contentType, "public, max-age=31536000, immutable")
@@ -108,7 +117,7 @@ export async function POST(req: NextRequest) {
   } catch (err: any) {
     console.error("Server upload error:", err)
     return NextResponse.json(
-      { error: err?.message || "Failed to upload file to storage" },
+      { error: "Failed to upload file to storage. Please try again in a moment." },
       { status: 500 }
     )
   }

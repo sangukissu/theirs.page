@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
-import { supabaseAdmin } from "@/utils/supabase/admin"
+import { getSupabaseAdminSafe } from "@/utils/supabase/admin"
+import { createClient } from "@/utils/supabase/server"
 import {
   normalizeMemorialSlug,
   memorialSlugSchema,
@@ -42,8 +43,9 @@ export async function GET(req: NextRequest) {
       })
     }
 
-    // Check database availability using admin client to check across all drafts/memorials
-    let query = supabaseAdmin.from("memorials").select("id").eq("slug", slug)
+    // Check database availability
+    const db = getSupabaseAdminSafe() || (await createClient())
+    let query = db.from("memorials").select("id").eq("slug", slug)
     if (excludeMemorialId) {
       query = query.neq("id", excludeMemorialId)
     }
@@ -57,7 +59,7 @@ export async function GET(req: NextRequest) {
 
       for (const candidate of candidates) {
         if (candidate === slug) continue
-        const { data: check } = await supabaseAdmin
+        const { data: check } = await db
           .from("memorials")
           .select("id")
           .eq("slug", candidate)
@@ -92,6 +94,6 @@ export async function GET(req: NextRequest) {
     })
   } catch (err: any) {
     console.error("Check slug error:", err)
-    return NextResponse.json({ error: err.message || "Internal error" }, { status: 500 })
+    return NextResponse.json({ error: "Unable to check address availability." }, { status: 500 })
   }
 }

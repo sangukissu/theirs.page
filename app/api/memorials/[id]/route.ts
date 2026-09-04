@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
 import { createClient } from "@/utils/supabase/server"
-import { supabaseAdmin } from "@/utils/supabase/admin"
+import { getSupabaseAdminSafe } from "@/utils/supabase/admin"
 import {
   normalizeMemorialSlug,
   memorialSlugSchema,
@@ -23,12 +23,14 @@ export async function GET(req: NextRequest, context: RouteContext) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
+    const db = getSupabaseAdminSafe() || supabase
+
     // 1. Fetch Memorial
-    const { data: memorial, error: memorialError } = await supabaseAdmin
+    const { data: memorial, error: memorialError } = await db
       .from("memorials")
       .select("*")
       .eq("id", id)
-      .single()
+      .maybeSingle()
 
     if (memorialError || !memorial) {
       return NextResponse.json({ error: "Memorial not found" }, { status: 404 })
@@ -36,7 +38,7 @@ export async function GET(req: NextRequest, context: RouteContext) {
 
     // Verify ownership or collaboration
     if (memorial.owner_id !== user.id) {
-      const { data: collab } = await supabaseAdmin
+      const { data: collab } = await db
         .from("collaborators")
         .select("id")
         .eq("memorial_id", id)
@@ -50,11 +52,11 @@ export async function GET(req: NextRequest, context: RouteContext) {
 
     // 2. Fetch associated relations in parallel
     const [mediaRes, timelineRes, peopleRes, memoriesRes, guestbookRes] = await Promise.all([
-      supabaseAdmin.from("media_items").select("*").eq("memorial_id", id).order("order_index", { ascending: true }),
-      supabaseAdmin.from("timeline_events").select("*").eq("memorial_id", id).order("year", { ascending: true }),
-      supabaseAdmin.from("people_in_life").select("*").eq("memorial_id", id).order("order_index", { ascending: true }),
-      supabaseAdmin.from("memories").select("*").eq("memorial_id", id).order("created_at", { ascending: false }),
-      supabaseAdmin.from("guestbook_entries").select("*").eq("memorial_id", id).order("created_at", { ascending: false }),
+      db.from("media_items").select("*").eq("memorial_id", id).order("order_index", { ascending: true }),
+      db.from("timeline_events").select("*").eq("memorial_id", id).order("year", { ascending: true }),
+      db.from("people_in_life").select("*").eq("memorial_id", id).order("order_index", { ascending: true }),
+      db.from("memories").select("*").eq("memorial_id", id).order("created_at", { ascending: false }),
+      db.from("guestbook_entries").select("*").eq("memorial_id", id).order("created_at", { ascending: false }),
     ])
 
     return NextResponse.json({
@@ -67,7 +69,7 @@ export async function GET(req: NextRequest, context: RouteContext) {
     })
   } catch (err: any) {
     console.error("Memorial detail error:", err)
-    return NextResponse.json({ error: err.message || "Internal error" }, { status: 500 })
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 })
   }
 }
 
@@ -83,12 +85,14 @@ export async function PATCH(req: NextRequest, context: RouteContext) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
+    const db = getSupabaseAdminSafe() || supabase
+
     // Verify ownership
-    const { data: memorial } = await supabaseAdmin
+    const { data: memorial } = await db
       .from("memorials")
       .select("owner_id")
       .eq("id", id)
-      .single()
+      .maybeSingle()
 
     if (!memorial || memorial.owner_id !== user.id) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 })
@@ -147,7 +151,7 @@ export async function PATCH(req: NextRequest, context: RouteContext) {
         )
       }
 
-      const { data: slugCheck } = await supabaseAdmin
+      const { data: slugCheck } = await db
         .from("memorials")
         .select("id")
         .eq("slug", cleanSlug)
@@ -160,7 +164,7 @@ export async function PATCH(req: NextRequest, context: RouteContext) {
       updates.slug = cleanSlug
     }
 
-    const { data: updated, error } = await supabaseAdmin
+    const { data: updated, error } = await db
       .from("memorials")
       .update(updates)
       .eq("id", id)
@@ -175,13 +179,14 @@ export async function PATCH(req: NextRequest, context: RouteContext) {
     }
 
     if (error) {
-      return NextResponse.json({ error: error.message }, { status: 500 })
+      console.error("Memorial update error:", error)
+      return NextResponse.json({ error: "Failed to update memorial settings." }, { status: 500 })
     }
 
     return NextResponse.json({ success: true, memorial: updated })
   } catch (err: any) {
     console.error("Memorial update error:", err)
-    return NextResponse.json({ error: err.message || "Internal error" }, { status: 500 })
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 })
   }
 }
 
@@ -197,30 +202,33 @@ export async function DELETE(req: NextRequest, context: RouteContext) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
+    const db = getSupabaseAdminSafe() || supabase
+
     // Verify ownership
-    const { data: memorial } = await supabaseAdmin
+    const { data: memorial } = await db
       .from("memorials")
       .select("owner_id")
       .eq("id", id)
-      .single()
+      .maybeSingle()
 
     if (!memorial || memorial.owner_id !== user.id) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 })
     }
 
     // Delete memorial (cascades to all child relations)
-    const { error } = await supabaseAdmin
+    const { error } = await db
       .from("memorials")
       .delete()
       .eq("id", id)
 
     if (error) {
-      return NextResponse.json({ error: error.message }, { status: 500 })
+      console.error("Memorial delete error:", error)
+      return NextResponse.json({ error: "Failed to delete memorial." }, { status: 500 })
     }
 
     return NextResponse.json({ success: true })
   } catch (err: any) {
     console.error("Memorial delete error:", err)
-    return NextResponse.json({ error: err.message || "Internal error" }, { status: 500 })
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 })
   }
 }

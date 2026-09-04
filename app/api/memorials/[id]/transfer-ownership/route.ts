@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
 import { createClient } from "@/utils/supabase/server"
-import { supabaseAdmin } from "@/utils/supabase/admin"
+import { getSupabaseAdminSafe } from "@/utils/supabase/admin"
 
 interface RouteContext {
   params: Promise<{ id: string }>
@@ -18,11 +18,13 @@ export async function POST(req: NextRequest, context: RouteContext) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
-    const { data: memorial } = await supabaseAdmin
+    const db = getSupabaseAdminSafe() || supabase
+
+    const { data: memorial } = await db
       .from("memorials")
       .select("owner_id, slug")
       .eq("id", id)
-      .single()
+      .maybeSingle()
 
     if (!memorial || memorial.owner_id !== user.id) {
       return NextResponse.json({ error: "Forbidden: Only the owner can transfer ownership." }, { status: 403 })
@@ -38,7 +40,7 @@ export async function POST(req: NextRequest, context: RouteContext) {
     const cleanEmail = targetEmail.trim().toLowerCase()
 
     // 1. Check if recipient exists in user_profiles
-    const { data: targetProfile } = await supabaseAdmin
+    const { data: targetProfile } = await db
       .from("user_profiles")
       .select("user_id, email")
       .eq("email", cleanEmail)
@@ -46,7 +48,7 @@ export async function POST(req: NextRequest, context: RouteContext) {
 
     if (targetProfile?.user_id) {
       // Direct transfer of ownership to registered user
-      const { error: transferError } = await supabaseAdmin
+      const { error: transferError } = await db
         .from("memorials")
         .update({
           owner_id: targetProfile.user_id,
@@ -57,11 +59,12 @@ export async function POST(req: NextRequest, context: RouteContext) {
         .eq("id", id)
 
       if (transferError) {
-        return NextResponse.json({ error: transferError.message }, { status: 500 })
+        console.error("Transfer error:", transferError)
+        return NextResponse.json({ error: "Failed to transfer ownership." }, { status: 500 })
       }
 
       // Keep previous owner as a co-admin collaborator so they aren't completely removed
-      await supabaseAdmin
+      await db
         .from("collaborators")
         .upsert({
           memorial_id: id,
@@ -79,7 +82,7 @@ export async function POST(req: NextRequest, context: RouteContext) {
     }
 
     // 2. If target is not yet registered, designate as designated successor
-    const { error: designateError } = await supabaseAdmin
+    const { error: designateError } = await db
       .from("memorials")
       .update({
         successor_email: cleanEmail,
@@ -89,11 +92,12 @@ export async function POST(req: NextRequest, context: RouteContext) {
       .eq("id", id)
 
     if (designateError) {
-      return NextResponse.json({ error: designateError.message }, { status: 500 })
+      console.error("Designate error:", designateError)
+      return NextResponse.json({ error: "Failed to designate successor." }, { status: 500 })
     }
 
     // Also invite them as co_admin collaborator
-    await supabaseAdmin
+    await db
       .from("collaborators")
       .upsert({
         memorial_id: id,
@@ -108,6 +112,7 @@ export async function POST(req: NextRequest, context: RouteContext) {
       message: `${cleanEmail} has been designated as the successor caretaker and invited as co-admin.`,
     })
   } catch (err: any) {
-    return NextResponse.json({ error: err.message || "Failed to transfer ownership" }, { status: 500 })
+    console.error("Transfer ownership POST error:", err)
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 })
   }
 }

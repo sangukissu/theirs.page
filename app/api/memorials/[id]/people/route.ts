@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
 import { createClient } from "@/utils/supabase/server"
-import { supabaseAdmin } from "@/utils/supabase/admin"
+import { getSupabaseAdminSafe } from "@/utils/supabase/admin"
 
 interface RouteContext {
   params: Promise<{ id: string }>
@@ -25,7 +25,8 @@ export async function POST(req: NextRequest, context: RouteContext) {
       return NextResponse.json({ error: "Name and relationship are required" }, { status: 400 })
     }
 
-    const { data: person, error } = await supabaseAdmin
+    const db = getSupabaseAdminSafe() || supabase
+    const { data: person, error } = await db
       .from("people_in_life")
       .insert({
         memorial_id: memorialId,
@@ -38,12 +39,14 @@ export async function POST(req: NextRequest, context: RouteContext) {
       .single()
 
     if (error) {
-      return NextResponse.json({ error: error.message }, { status: 500 })
+      console.error("People insert error:", error)
+      return NextResponse.json({ error: "Failed to add person." }, { status: 500 })
     }
 
     return NextResponse.json({ success: true, person })
   } catch (err: any) {
-    return NextResponse.json({ error: err.message || "Internal error" }, { status: 500 })
+    console.error("People POST error:", err)
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 })
   }
 }
 
@@ -66,18 +69,21 @@ export async function DELETE(req: NextRequest, context: RouteContext) {
       return NextResponse.json({ error: "personId query param required" }, { status: 400 })
     }
 
-    const { error } = await supabaseAdmin
+    const db = getSupabaseAdminSafe() || supabase
+    const { error } = await db
       .from("people_in_life")
       .delete()
       .eq("id", personId)
       .eq("memorial_id", memorialId)
 
     if (error) {
-      return NextResponse.json({ error: error.message }, { status: 500 })
+      console.error("People delete error:", error)
+      return NextResponse.json({ error: "Failed to delete person." }, { status: 500 })
     }
 
     return NextResponse.json({ success: true })
   } catch (err: any) {
-    return NextResponse.json({ error: err.message || "Internal error" }, { status: 500 })
+    console.error("People DELETE error:", err)
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 })
   }
 }
