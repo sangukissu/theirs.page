@@ -57,9 +57,6 @@ export function MemorialStory({ fullName, biography, isDemo = false }: MemorialS
         
         {/* Section Heading */}
         <div className="flex flex-col gap-2">
-          <span className="text-xs font-mono font-medium text-primary uppercase tracking-wider">
-            Life & Memory
-          </span>
           <h2 className="text-2xl sm:text-3xl font-medium tracking-tight text-[#181925]">
             The Story of {firstName}
           </h2>
