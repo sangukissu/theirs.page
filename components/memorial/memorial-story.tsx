@@ -56,7 +56,7 @@ export function MemorialStory({ fullName, biography, isDemo = false }: MemorialS
       <div className="flex flex-col gap-8">
         
         {/* Section Heading */}
-        <div className="flex flex-col gap-2">
+        <div className="flex flex-col gap-2 border-b border-black/[0.06] pb-4">
           <h2 className="text-2xl sm:text-3xl font-medium tracking-tight text-[#181925]">
             The Story of {firstName}
           </h2>

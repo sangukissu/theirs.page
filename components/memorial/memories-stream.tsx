@@ -9,7 +9,6 @@ import {
   MapPin,
   Play,
   Pause,
-  ArrowUpDown,
   BookOpen,
 } from "lucide-react"
 import { ContributionType } from "./contribute-modal"
@@ -25,9 +24,9 @@ export interface MemoryItem {
   photoCaption?: string
   audioTitle?: string
   audioDuration?: string
-  category: "family" | "friend" | "work"
   chronologicalYear?: number
   heartCount?: number
+  createdAt?: string
 }
 
 export const DEFAULT_MEMORIES: MemoryItem[] = [
@@ -42,7 +41,6 @@ export const DEFAULT_MEMORIES: MemoryItem[] = [
       "Dad couldn’t walk past a broken appliance without trying to repair it. Once he spent half of Christmas Day fixing Mrs. Higgins’ washing machine while everyone was waiting for dinner. He wouldn’t leave until it spun without rattling, then ate cold turkey with greasy hands and a giant grin.",
     photoUrl: "/historical-wedding-photo.webp",
     photoCaption: "Christmas morning in the kitchen, 1994",
-    category: "family",
     heartCount: 8,
   },
   {
@@ -56,7 +54,6 @@ export const DEFAULT_MEMORIES: MemoryItem[] = [
       "When we took the old Morris Minor across the moors in dense fog without telling Grandad. The clutch was slipping and the windscreen wipers barely twitched, but Bob hummed Beatles songs the whole way without fear. He knew every cow track in Devon.",
     audioTitle: "David recounting the Morris Minor trip",
     audioDuration: "0:42",
-    category: "family",
     heartCount: 5,
   },
   {
@@ -68,7 +65,6 @@ export const DEFAULT_MEMORIES: MemoryItem[] = [
     location: "Devon Cottage",
     story:
       "For fifty years, Bob brought two cups of Assam tea upstairs at 6:30 every morning in the chipped blue porcelain mugs we bought on Portobello Road. Even in his last week at the cottage, he reminded Anita where the good tea leaves were kept.",
-    category: "family",
     heartCount: 14,
   },
   {
@@ -80,7 +76,6 @@ export const DEFAULT_MEMORIES: MemoryItem[] = [
     location: "Carter Workshop",
     story:
       "Thirty years at the bench and I never once heard him raise his voice. Whenever an apprentice broke a delicate clock spring, Bob would just pour a fresh cup of tea, smile, and say: ‘Well, now you know exactly how much pressure it takes to break one. That’s called learning.’",
-    category: "work",
     heartCount: 6,
   },
   {
@@ -92,7 +87,6 @@ export const DEFAULT_MEMORIES: MemoryItem[] = [
     location: "Back Porch, Devon",
     story:
       "He spent three months carving a miniature wooden chess set for my tenth birthday. Every piece was carved from spare oak offcuts from the grandfather clocks. I still keep the King in my desk drawer at university.",
-    category: "family",
     heartCount: 7,
   },
   {
@@ -104,7 +98,6 @@ export const DEFAULT_MEMORIES: MemoryItem[] = [
     location: "Dartmoor Valleys",
     story:
       "Whenever the wild bees nested in the cottage eaves, Bob wouldn't call pest control. He'd put on his old tweed jacket, gently smoke them into a wooden box, and walk them three miles down into the valley so they'd pollinate the heather.",
-    category: "friend",
     heartCount: 4,
   },
 ]
@@ -125,27 +118,17 @@ export function MemoriesStream({
   const activeMemories = isDemo
     ? (memories && memories.length > 0 ? memories : DEFAULT_MEMORIES)
     : (memories || [])
-  const [filter, setFilter] = useState<"all" | "family" | "friend" | "work">("all")
-  const [sortOrder, setSortOrder] = useState<"newest" | "oldest" | "chronological">("newest")
   const [likedMap, setLikedMap] = useState<Record<string, boolean>>({})
   const [playingAudioId, setPlayingAudioId] = useState<string | null>(null)
 
   const firstName = fullName.split(" ")[0] || fullName
 
-  const filtered = activeMemories.filter((m) => {
-    if (filter === "all") return true
-    return m.category === filter
-  })
-
-  const sorted = [...filtered].sort((a, b) => {
-    if (sortOrder === "chronological") {
-      return (a.chronologicalYear || 0) - (b.chronologicalYear || 0)
+  // Always show newest first
+  const sorted = [...activeMemories].sort((a, b) => {
+    if (a.createdAt && b.createdAt) {
+      return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
     }
-    if (sortOrder === "oldest") {
-      return a.id.localeCompare(b.id)
-    }
-    // newest default
-    return b.id.localeCompare(a.id)
+    return 0
   })
 
   const toggleLike = (id: string) => {
@@ -155,64 +138,21 @@ export function MemoriesStream({
   return (
     <section id="memories" className="py-12 sm:py-16 px-4 max-w-4xl mx-auto flex flex-col gap-8 scroll-mt-24">
       
-      {/* Header & Controls */}
+      {/* Header */}
       <div className="flex flex-col gap-5 border-b border-black/[0.06] pb-6">
-        <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
-          <div className="flex flex-col gap-1">
-           
-            <h2 className="text-2xl sm:text-3xl font-medium tracking-tight text-[#181925]">
-              Memories of {firstName}
-            </h2>
-          </div>
+        <div className="flex items-center justify-between gap-4">
+          <h2 className="text-2xl sm:text-3xl font-medium tracking-tight text-[#181925]">
+            Memories of {firstName}
+          </h2>
 
           <button
             type="button"
             onClick={() => onOpenContribute("memory")}
-            className="inline-flex items-center gap-1.5 px-4 py-2 rounded-full bg-[#181925] hover:bg-[#252736] text-white text-xs font-medium transition-all self-start sm:self-auto cursor-pointer shadow-xs active:scale-95"
+            className="inline-flex items-center gap-1.5 px-4 py-2 rounded-full bg-[#181925] hover:bg-[#252736] text-white text-xs font-medium transition-all cursor-pointer shadow-xs active:scale-95"
           >
             <Plus className="size-3.5" />
             <span className="hidden sm:block">Add your memory</span>
           </button>
-        </div>
-
-        {/* Filter Chips & Sort Controls */}
-        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 pt-2 select-none">
-          {/* Categories */}
-          <div className="flex items-center gap-1 overflow-x-auto no-scrollbar py-0.5">
-            {[
-              { id: "all", label: "All" },
-              { id: "family", label: "Family" },
-              { id: "friend", label: "Friends" },
-              { id: "work", label: "Work" },
-            ].map((tab) => (
-              <button
-                key={tab.id}
-                type="button"
-                onClick={() => setFilter(tab.id as any)}
-                className={`text-xs px-3 py-1.5 rounded-full font-medium transition-all cursor-pointer ${
-                  filter === tab.id
-                    ? "bg-[#181925] text-white shadow-2xs"
-                    : "bg-[#f4f4f6] text-[#666] hover:text-[#181925]"
-                }`}
-              >
-                {tab.label}
-              </button>
-            ))}
-          </div>
-
-          {/* Sort Selector */}
-          <div className="inline-flex items-center gap-1.5 text-xs text-[#71717a]">
-            <ArrowUpDown className="size-3.5 text-[#999]" />
-            <select
-              value={sortOrder}
-              onChange={(e) => setSortOrder(e.target.value as any)}
-              className="bg-transparent font-medium text-[#181925] outline-none cursor-pointer text-xs"
-            >
-              <option value="newest">Newest first</option>
-              <option value="oldest">Oldest first</option>
-              <option value="chronological">Life chronological order</option>
-            </select>
-          </div>
         </div>
       </div>
 

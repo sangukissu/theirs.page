@@ -64,9 +64,6 @@ export function MemorialClientView({ data }: { data: MemorialData }) {
         location={data.location}
         epitaph={data.epitaph}
         portraitUrl={data.portraitUrl}
-        memoriesCount={data.memoriesCount ?? 0}
-        photosCount={data.photosCount ?? 0}
-        contributorsCount={data.contributorsCount ?? 0}
         onOpenContribute={() => handleOpenContribute()}
       />
 

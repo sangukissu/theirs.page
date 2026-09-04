@@ -10,9 +10,6 @@ interface MemorialHeroProps {
   location?: string | null
   epitaph?: string | null
   portraitUrl?: string | null
-  memoriesCount?: number
-  photosCount?: number
-  contributorsCount?: number
   onOpenContribute: () => void
 }
 
@@ -24,9 +21,6 @@ export function MemorialHero({
   location = "Devon, England",
   epitaph,
   portraitUrl = "/memorial-family-portrait-grandfather.jpg",
-  memoriesCount = 14,
-  photosCount = 42,
-  contributorsCount = 8,
   onOpenContribute,
 }: MemorialHeroProps) {
   const yearsSpan = birthYear && deathYear ? `${birthYear} — ${deathYear}` : "In Loving Memory"
@@ -45,11 +39,7 @@ export function MemorialHero({
           />
           {/* Subtle bottom vignette */}
           <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent pointer-events-none" />
-          
-          {/* Monospace film stamp */}
-          <span className="absolute bottom-2 left-2 text-[9px] font-mono text-white/90 bg-black/40 backdrop-blur-xs px-1.5 py-0.5 rounded">
-            ORIGINAL ARCHIVE
-          </span>
+ 
         </div>
       </div>
 
@@ -90,17 +80,10 @@ export function MemorialHero({
           </p>
         )}
 
-        {/* Living Metrics Ribbon */}
-        <div className="flex items-center gap-3 mt-4 text-xs font-medium text-[#777] flex-wrap justify-center select-none">
-          <span>{memoriesCount} memories gathered</span>
-          <span className="text-black/[0.15]">·</span>
-          <span>{photosCount} photographs</span>
-          <span className="text-black/[0.15]">·</span>
-          <span>{contributorsCount} family contributors</span>
-        </div>
+
 
         {/* Call-to-Action Action Buttons */}
-        <div className="mt-8 flex flex-col sm:flex-row items-center gap-3 select-none">
+        <div className="mt-4 flex flex-col sm:flex-row items-center gap-3 select-none">
           {/* Primary Action: Add Memory */}
           <button
             type="button"

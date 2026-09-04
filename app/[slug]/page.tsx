@@ -236,8 +236,8 @@ export default async function MemorialPage({ params }: MemorialPageProps) {
         location: mem.location || undefined,
         story: mem.story,
         photoUrl: mem.photo_url ? resolveMediaUrl(mem.photo_url) : undefined,
-        category: "family",
         heartCount: 0,
+        createdAt: mem.created_at,
       }))
 
       guestbook = (guestbookRes.data || []).map((gb: any) => ({
