@@ -56,6 +56,7 @@ export interface Memorial {
   death_year: number | null
   headline: string | null
   biography: string | null
+  location: string | null
   portrait_photo_url: string | null
   cover_photo_url: string | null
   privacy: PrivacyMode

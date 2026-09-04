@@ -57,6 +57,7 @@ create table if not exists public.memorials (
   death_year integer,
   headline text, -- Defining quote or essence: "He could fix almost anything..."
   biography text, -- Narrative life story
+  location text, -- Home or defining region ("Devon, England", "Inverness, Scotland")
   portrait_photo_url text, -- Primary portrait
   cover_photo_url text, -- Optional banner or ambient photo
   privacy text not null default 'public' check (privacy in ('public', 'unlisted', 'private')),
