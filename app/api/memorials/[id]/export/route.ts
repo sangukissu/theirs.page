@@ -70,7 +70,7 @@ export async function GET(req: NextRequest, context: RouteContext) {
     const db = getSupabaseAdminSafe() || supabase
 
     // Fetch all memorial data collections in parallel
-    const [mediaRes, timelineRes, peopleRes, memoriesRes, guestbookRes, collabsRes] =
+    const [mediaRes, timelineRes, memoriesRes, guestbookRes, collabsRes] =
       await Promise.all([
         db
           .from("media_items")
@@ -82,11 +82,6 @@ export async function GET(req: NextRequest, context: RouteContext) {
           .select("*")
           .eq("memorial_id", memorial.id)
           .order("year", { ascending: true }),
-        db
-          .from("people_in_life")
-          .select("*")
-          .eq("memorial_id", memorial.id)
-          .order("order_index", { ascending: true }),
         db
           .from("memories")
           .select("*")
@@ -147,12 +142,6 @@ export async function GET(req: NextRequest, context: RouteContext) {
         photo_url: m.photo_url,
         contributed_at: m.created_at,
       })),
-      people_in_life: (peopleRes.data || []).map((p) => ({
-        name: p.name,
-        relationship: p.relationship,
-        photo_url: p.photo_url,
-        note: p.note,
-      })),
       guestbook_messages: (guestbookRes.data || []).map((g) => ({
         author_name: g.author_name,
         message: g.message,
@@ -191,7 +180,7 @@ PACKAGE CONTENTS:
 -----------------
 1. archive-manifest.json
    Contains the complete structured life story, biography, timeline events,
-   family memories, condolences guestbook, and people in their life.
+   family memories, and condolences guestbook.
 
 2. /photos/
    Original high-resolution photographs preserved untouched in their native

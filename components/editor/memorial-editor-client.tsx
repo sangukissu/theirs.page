@@ -12,7 +12,6 @@ import {
   BookOpen,
   Image as ImageIcon,
   Calendar,
-  Users,
   MessageSquare,
   Settings,
   Loader2,
@@ -24,7 +23,6 @@ import { IdentityTab } from "./tabs/identity-tab"
 import { StoryTab } from "./tabs/story-tab"
 import { GalleryTab, EditorMediaItem } from "./tabs/gallery-tab"
 import { TimelineTab, EditorTimelineEvent } from "./tabs/timeline-tab"
-import { PeopleTab, EditorPerson } from "./tabs/people-tab"
 import { ModerationTab, EditorMemory, EditorGuestbookEntry } from "./tabs/moderation-tab"
 import { SettingsTab } from "./tabs/settings-tab"
 
@@ -33,7 +31,6 @@ export type EditorSectionTab =
   | "story"
   | "gallery"
   | "timeline"
-  | "people"
   | "moderation"
   | "settings"
 
@@ -62,7 +59,6 @@ interface MemorialEditorClientProps {
   initialMemorial: InitialMemorialData
   initialMediaItems: EditorMediaItem[]
   initialTimelineEvents: EditorTimelineEvent[]
-  initialPeople: EditorPerson[]
   initialMemories: EditorMemory[]
   initialGuestbook: EditorGuestbookEntry[]
 }
@@ -73,7 +69,6 @@ export function MemorialEditorClient({
   initialMemorial,
   initialMediaItems,
   initialTimelineEvents,
-  initialPeople,
   initialMemories,
   initialGuestbook,
 }: MemorialEditorClientProps) {
@@ -106,7 +101,6 @@ export function MemorialEditorClient({
   // Relational Collections
   const [mediaItems, setMediaItems] = useState<EditorMediaItem[]>(initialMediaItems)
   const [timelineEvents, setTimelineEvents] = useState<EditorTimelineEvent[]>(initialTimelineEvents)
-  const [people, setPeople] = useState<EditorPerson[]>(initialPeople)
   const [memories, setMemories] = useState<EditorMemory[]>(initialMemories)
   const [guestbook, setGuestbook] = useState<EditorGuestbookEntry[]>(initialGuestbook)
 
@@ -327,7 +321,6 @@ export function MemorialEditorClient({
     { id: "story", label: "Life Story", icon: BookOpen },
     { id: "gallery", label: "Gallery", icon: ImageIcon, count: mediaItems.length },
     { id: "timeline", label: "Timeline", icon: Calendar, count: timelineEvents.length, isCompleteOnly: true },
-    { id: "people", label: "People in Life", icon: Users, count: people.length },
     { id: "moderation", label: "Contributions", icon: MessageSquare, count: pendingContributions },
     { id: "settings", label: "Settings", icon: Settings },
   ]
@@ -556,16 +549,6 @@ export function MemorialEditorClient({
               onUpgrade={handleUpgradeComplete}
               onAddEvent={(evt) => setTimelineEvents([...timelineEvents, evt])}
               onRemoveEvent={(id) => setTimelineEvents(timelineEvents.filter((e) => e.id !== id))}
-            />
-          )}
-
-          {activeTab === "people" && (
-            <PeopleTab
-              memorialId={initialMemorial.id}
-              fullName={form.full_name}
-              people={people}
-              onAddPerson={(p) => setPeople([...people, p])}
-              onRemovePerson={(id) => setPeople(people.filter((p) => p.id !== id))}
             />
           )}
 

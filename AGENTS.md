@@ -56,7 +56,7 @@ All database migrations for `theirs.page` live in **[`supabase/theirs_migrations
 
 | File | Description |
 | :--- | :--- |
-| `01_core_schema.sql` | `user_profiles`, `memorials`, `collaborators`, `memories`, `albums`, `media_items`, `timeline_events`, `people_in_life`, `guestbook_entries`, `reports`, `payments` |
+| `01_core_schema.sql` | `user_profiles`, `memorials`, `collaborators`, `memories`, `albums`, `media_items`, `timeline_events`, `guestbook_entries`, `reports`, `payments` |
 | `02_security_and_rls.sql` | Row Level Security policies with guest submission (`pending_approval`) and admin moderation |
 | `03_storage_setup.sql` | `theirs-media` public storage bucket and upload policies |
 

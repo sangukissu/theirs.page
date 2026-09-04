@@ -37,6 +37,10 @@ Run these SQL scripts in numerical order in your new Supabase project's **SQL Ed
    - Establishes RLS policies for uploads and public reads.
    - *(Note: Can be used alongside Cloudflare R2 for zero-egress large media archival).*
 
+4. **`06_drop_people_in_life.sql`**
+   - Safely drops the `people_in_life` table, foreign keys, and RLS policies.
+   - Relationships now emerge organically in memories, captions, and timeline stories rather than a rigid list.
+
 ---
 
 ## Environment Variables Mapping
@@ -74,7 +78,6 @@ RESEND_API_KEY=
 | **"Memories are the heart"** | `memories` table with `story`, `approx_year`, `location`, `people_involved`, `photo_url`, `status` |
 | **"Collaborative by design"** | Open insert policy with `status = 'pending_approval'` for family contributions |
 | **"Life Timeline"** | `timeline_events` sorted by `year`, `month`, `order_index` |
-| **"People matter"** | `people_in_life` with relationships and future `connected_memorial_id` support |
 | **"Albums rather than one giant gallery"** | `albums` and `media_items` structure |
 | **"Long-term Stewardship"** | `memorials.successor_name` and `successor_email` |
 | **"3 Privacy Modes"** | `memorials.privacy` (`'public'`, `'unlisted'`, `'private'`) + `access_pin_hash` |

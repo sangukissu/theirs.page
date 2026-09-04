@@ -116,7 +116,6 @@ export default async function MemorialPage({ params }: MemorialPageProps) {
   let activeClient: any = null
   let mediaItems: any[] = []
   let timelineEvents: any[] = []
-  let people: any[] = []
   let memories: any[] = []
 
   try {
@@ -166,7 +165,7 @@ export default async function MemorialPage({ params }: MemorialPageProps) {
   // 5. Fetch related collections using whichever client succeeded
   if (dbMemorial && activeClient) {
     try {
-      const [mediaRes, timelineRes, peopleRes, memoriesRes, guestbookRes] = await Promise.all([
+      const [mediaRes, timelineRes, memoriesRes, guestbookRes] = await Promise.all([
         activeClient
           .from("media_items")
           .select("*")
@@ -179,12 +178,6 @@ export default async function MemorialPage({ params }: MemorialPageProps) {
           .eq("memorial_id", dbMemorial.id)
           .order("year", { ascending: true })
           .order("order_index", { ascending: true }),
-        activeClient
-          .from("people_in_life")
-          .select("*")
-          .eq("memorial_id", dbMemorial.id)
-          .order("order_index", { ascending: true })
-          .order("created_at", { ascending: true }),
         activeClient
           .from("memories")
           .select("*")
@@ -215,15 +208,6 @@ export default async function MemorialPage({ params }: MemorialPageProps) {
         description: t.description || "",
         location: t.location || undefined,
         photoUrl: t.photo_url ? resolveMediaUrl(t.photo_url) : undefined,
-      }))
-
-      people = (peopleRes.data || []).map((p: any) => ({
-        id: p.id,
-        name: p.name,
-        relationship: p.relationship,
-        circle: "family",
-        notes: p.note || undefined,
-        photoUrl: p.photo_url ? resolveMediaUrl(p.photo_url) : undefined,
       }))
 
       memories = (memoriesRes.data || []).map((mem: any) => {
@@ -351,7 +335,6 @@ export default async function MemorialPage({ params }: MemorialPageProps) {
     contributorsCount,
     mediaItems: isDemo ? undefined : mediaItems,
     timelineEvents: isDemo ? undefined : timelineEvents,
-    people: isDemo ? undefined : people,
     memories: isDemo ? undefined : memories,
   }
 

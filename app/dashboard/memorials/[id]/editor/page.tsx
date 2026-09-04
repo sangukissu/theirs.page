@@ -28,10 +28,9 @@ export default async function MemorialEditorPage({ params }: PageProps) {
   }
 
   // 2. Fetch associated relations
-  const [mediaRes, timelineRes, peopleRes, memoriesRes, guestbookRes] = await Promise.all([
+  const [mediaRes, timelineRes, memoriesRes, guestbookRes] = await Promise.all([
     supabase.from("media_items").select("*").eq("memorial_id", id).order("order_index", { ascending: true }),
     supabase.from("timeline_events").select("*").eq("memorial_id", id).order("year", { ascending: true }),
-    supabase.from("people_in_life").select("*").eq("memorial_id", id).order("order_index", { ascending: true }),
     supabase.from("memories").select("*").eq("memorial_id", id).order("created_at", { ascending: false }),
     supabase.from("guestbook_entries").select("*").eq("memorial_id", id).order("created_at", { ascending: false }),
   ])
@@ -41,7 +40,6 @@ export default async function MemorialEditorPage({ params }: PageProps) {
       initialMemorial={memorial}
       initialMediaItems={(mediaRes.data as any[]) || []}
       initialTimelineEvents={(timelineRes.data as any[]) || []}
-      initialPeople={(peopleRes.data as any[]) || []}
       initialMemories={(memoriesRes.data as any[]) || []}
       initialGuestbook={(guestbookRes.data as any[]) || []}
     />

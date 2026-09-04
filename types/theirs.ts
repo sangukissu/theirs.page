@@ -118,17 +118,6 @@ export interface TimelineEvent {
   created_at: string
 }
 
-export interface PersonInLife {
-  id: string
-  memorial_id: string
-  name: string
-  relationship: string
-  photo_url: string | null
-  note: string | null
-  order_index: number
-  created_at: string
-}
-
 export interface GuestbookEntry {
   id: string
   memorial_id: string
@@ -178,7 +167,6 @@ export interface MemorialWithDetails extends Memorial {
   memories?: Memory[]
   timeline_events?: TimelineEvent[]
   media_items?: MediaItem[]
-  people_in_life?: PersonInLife[]
   guestbook_entries?: GuestbookEntry[]
 }
 

@@ -7,7 +7,6 @@ import { MemorialStory } from "@/components/memorial/memorial-story"
 import { MemoriesStream, MemoryItem } from "@/components/memorial/memories-stream"
 import { LifeTimeline, TimelineMilestone } from "@/components/memorial/life-timeline"
 import { MemorialGallery, GalleryItem } from "@/components/memorial/memorial-gallery"
-import { PeopleInLife, PersonConnection } from "@/components/memorial/people-in-life"
 import { MemorialFooter } from "@/components/memorial/memorial-footer"
 import { ContributeModal, ContributionType } from "@/components/memorial/contribute-modal"
 
@@ -29,7 +28,6 @@ export interface MemorialData {
   contributorsCount?: number
   mediaItems?: GalleryItem[]
   timelineEvents?: TimelineMilestone[]
-  people?: PersonConnection[]
   memories?: MemoryItem[]
 }
 
@@ -97,15 +95,7 @@ export function MemorialClientView({ data }: { data: MemorialData }) {
         onOpenContribute={handleOpenContribute}
       />
 
-      {/* 7. People in Their Life (Connected circles) */}
-      <PeopleInLife
-        fullName={data.fullName}
-        people={data.people}
-        isDemo={data.isDemo}
-        onOpenContribute={handleOpenContribute}
-      />
-
-      {/* 8. Permanent Stewardship Footer */}
+      {/* 7. Permanent Stewardship Footer */}
       <MemorialFooter
         fullName={data.fullName}
         slug={data.slug}
