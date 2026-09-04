@@ -1,7 +1,8 @@
 "use client"
 
 import { useState } from "react"
-import { Sparkles, Check, AlertCircle } from "lucide-react"
+import { Sparkles, AlertCircle } from "lucide-react"
+import { RichStoryEditor } from "../rich-story-editor"
 
 interface StoryTabProps {
   fullName: string
@@ -15,7 +16,9 @@ export function StoryTab({ fullName, biography, onChange }: StoryTabProps) {
   const firstName = fullName.split(" ")[0] || "them"
 
   const handleAiPolish = async () => {
-    if (!biography || biography.trim().length < 20) {
+    // Strip tags to check length
+    const plainText = biography.replace(/<[^>]*>/g, "").trim()
+    if (!plainText || plainText.length < 20) {
       setPolishError("Please write at least a sentence or two of rough notes first.")
       return
     }
@@ -24,7 +27,7 @@ export function StoryTab({ fullName, biography, onChange }: StoryTabProps) {
     setPolishError(null)
 
     try {
-      const res = await fetch("/api/memory-books/polish", {
+      const res = await fetch("/api/story/polish", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -34,8 +37,8 @@ export function StoryTab({ fullName, biography, onChange }: StoryTabProps) {
       })
 
       if (!res.ok) {
-        // Fallback: simple client-side gentle formatting if endpoint not available
-        throw new Error("Unable to connect to editor service right now.")
+        const errData = await res.json().catch(() => ({}))
+        throw new Error(errData.error || "Unable to connect to editor service right now.")
       }
 
       const data = await res.json()
@@ -50,7 +53,7 @@ export function StoryTab({ fullName, biography, onChange }: StoryTabProps) {
   }
 
   return (
-    <div className="flex flex-col gap-6 max-w-2xl">
+    <div className="flex flex-col gap-6 max-w-3xl">
       <div className="flex flex-col gap-1 border-b border-black/[0.06] pb-4">
         <div className="flex items-center justify-between">
           <h2 className="text-lg sm:text-xl font-medium text-[#181925]">
@@ -69,7 +72,7 @@ export function StoryTab({ fullName, biography, onChange }: StoryTabProps) {
           </button>
         </div>
         <p className="text-xs sm:text-sm text-[#71717a]">
-          Write about {firstName} in your own words. Focus on the quirks, values, and memories that made them who they were.
+          Write about {firstName} in your own words. Use headings for life chapters, bold for emphasis, and pull quotes for their favorite sayings.
         </p>
       </div>
 
@@ -80,20 +83,11 @@ export function StoryTab({ fullName, biography, onChange }: StoryTabProps) {
         </div>
       )}
 
-      <div className="flex flex-col gap-2">
-        <textarea
-          rows={14}
-          value={biography}
-          onChange={(e) => onChange(e.target.value)}
-          placeholder={`Write ${firstName}’s story here...\n\ne.g. Robert was born in Exeter during the autumn of 1948, the younger of two brothers raised on the edge of the Devon moors. He spent fifty years repairing antique clocks on the high street, but his true joy was Sunday afternoon tea in the garden with Meena...`}
-          className="w-full px-4 py-3 rounded-2xl bg-white border border-black/[0.08] text-sm text-[#222] placeholder:text-[#aaa] outline-none focus:border-primary/60 transition-colors resize-y leading-relaxed font-sans"
-        />
-
-        <div className="flex items-center justify-between text-[11px] text-[#888] px-1">
-          <span>Formatted into readable editorial paragraphs on the live page.</span>
-          <span>{biography ? biography.split(/\s+/).filter(Boolean).length : 0} words</span>
-        </div>
-      </div>
+      <RichStoryEditor
+        value={biography}
+        onChange={onChange}
+        placeholder={`Write ${firstName}’s story here...\n\ne.g. ${firstName} was born during the autumn of 1948, the younger of two brothers raised on the edge of the Devon moors. They spent fifty years repairing antique clocks on the high street, but their true joy was Sunday afternoon tea in the garden...`}
+      />
     </div>
   )
 }
