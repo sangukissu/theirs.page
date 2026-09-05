@@ -1,9 +1,9 @@
 "use client"
 
-import { useActionState, useEffect, useState, Suspense } from "react"
+import { useActionState, useEffect, useRef, useState, Suspense } from "react"
 import { useFormStatus } from "react-dom"
 import { useSearchParams, useRouter } from "next/navigation"
-import { Turnstile } from "@marsidev/react-turnstile"
+import { Turnstile, type TurnstileInstance } from "@marsidev/react-turnstile"
 import { Loader2, ArrowRight, Volume2, ShieldCheck, Sparkles } from "lucide-react"
 import Image from "next/image"
 import Link from "next/link"
@@ -115,8 +115,20 @@ function LoginFormWithSearchParams({ nextPath: propNextPath }: { nextPath?: stri
   const router = useRouter()
   const [urlError, setUrlError] = useState<string | null>(null)
   const [captchaToken, setCaptchaToken] = useState<string | undefined>(undefined)
+  const turnstileRef = useRef<TurnstileInstance>(null)
   const [lastUsed, setLastUsed] = useState<"google" | "magic" | null>(null)
   const siteKey = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY || ""
+
+  const resetTurnstile = () => {
+    setCaptchaToken(undefined)
+    turnstileRef.current?.reset()
+  }
+
+  useEffect(() => {
+    if (state?.error) {
+      resetTurnstile()
+    }
+  }, [state?.error])
 
   const queryName = searchParams.get("name")?.trim() || ""
   const querySlug = searchParams.get("slug")?.trim() || ""
@@ -300,13 +312,14 @@ function LoginFormWithSearchParams({ nextPath: propNextPath }: { nextPath?: stri
               {siteKey && (
                 <div className="flex justify-center empty:hidden">
                   <Turnstile
+                    ref={turnstileRef}
                     siteKey={siteKey}
                     options={{
                       appearance: "interaction-only",
                       refreshExpired: "auto",
                     }}
                     onSuccess={(token) => setCaptchaToken(token)}
-                    onExpire={() => setCaptchaToken(undefined)}
+                    onExpire={resetTurnstile}
                     onError={() => setCaptchaToken(undefined)}
                   />
                 </div>

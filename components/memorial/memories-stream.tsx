@@ -15,7 +15,7 @@ import {
   TributeEmblem,
   TributeType,
 } from "./tribute-emblems"
-import { Turnstile } from "@marsidev/react-turnstile"
+import { Turnstile, type TurnstileInstance } from "@marsidev/react-turnstile"
 import { TributeShareMenu } from "./tribute-share-menu"
 import { ContactCaretakerModal } from "./contact-caretaker-modal"
 import { useOptimisticReceipts, saveLocalReceipt } from "@/lib/memorial/optimistic-receipts"
@@ -126,10 +126,16 @@ export function MemoriesStream({
   const [relationship, setRelationship] = useState("")
   const [content, setContent] = useState("")
   const [turnstileToken, setTurnstileToken] = useState("")
+  const turnstileRef = useRef<TurnstileInstance>(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [isSubmitted, setIsSubmitted] = useState(false)
   const [formError, setFormError] = useState<string | null>(null)
   const formNameInputRef = useRef<HTMLInputElement>(null)
+
+  const resetTurnstile = () => {
+    setTurnstileToken("")
+    turnstileRef.current?.reset()
+  }
 
   const siteKey = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY || ""
   const firstName = fullName.split(" ")[0] || fullName
@@ -214,8 +220,9 @@ export function MemoriesStream({
         }),
       })
 
-      const data = await res.json()
+      const data = await res.json().catch(() => ({}))
       if (!res.ok) {
+        resetTurnstile()
         throw new Error(data.error || "Failed to submit tribute")
       }
 
@@ -253,6 +260,7 @@ export function MemoriesStream({
       setItems((prev) => [newTribute, ...prev])
       setIsSubmitted(true)
     } catch (err: any) {
+      resetTurnstile()
       console.error("Open tribute form submit error:", err)
       setFormError(err.message || "Failed to submit tribute. Please try again.")
     } finally {
@@ -518,7 +526,7 @@ export function MemoriesStream({
               onClick={() => {
                 setContent("")
                 setIsSubmitted(false)
-                setTurnstileToken("")
+                resetTurnstile()
               }}
               className="mt-2 text-xs font-semibold text-primary hover:underline cursor-pointer"
             >
@@ -634,6 +642,7 @@ export function MemoriesStream({
             <div className="pt-1 flex flex-col sm:flex-row items-center justify-between gap-4">
               {siteKey ? (
                 <Turnstile
+                  ref={turnstileRef}
                   siteKey={siteKey}
                   options={{
                     appearance: "interaction-only",
@@ -641,7 +650,7 @@ export function MemoriesStream({
                     action: "contribution",
                   }}
                   onSuccess={setTurnstileToken}
-                  onExpire={() => setTurnstileToken("")}
+                  onExpire={resetTurnstile}
                   onError={() => setTurnstileToken("")}
                 />
               ) : (

@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react"
 import { AlertCircle, Check, Loader2, Mail, X } from "lucide-react"
-import { Turnstile } from "@marsidev/react-turnstile"
+import { Turnstile, type TurnstileInstance } from "@marsidev/react-turnstile"
 
 interface ContactCaretakerModalProps {
   isOpen: boolean
@@ -20,7 +20,13 @@ export function ContactCaretakerModal({ isOpen, onClose, memorialId, memorialNam
   const [isSent, setIsSent] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const nameRef = useRef<HTMLInputElement>(null)
+  const turnstileRef = useRef<TurnstileInstance>(null)
   const siteKey = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY || ""
+
+  const resetTurnstile = () => {
+    setTurnstileToken("")
+    turnstileRef.current?.reset()
+  }
 
   useEffect(() => {
     if (!isOpen) return
@@ -55,9 +61,13 @@ export function ContactCaretakerModal({ isOpen, onClose, memorialId, memorialNam
         }),
       })
       const result = await response.json().catch(() => ({}))
-      if (!response.ok) throw new Error(result.error || "Your message could not be sent.")
+      if (!response.ok) {
+        resetTurnstile()
+        throw new Error(result.error || "Your message could not be sent.")
+      }
       setIsSent(true)
     } catch (reason) {
+      resetTurnstile()
       setError(reason instanceof Error ? reason.message : "Your message could not be sent.")
     } finally {
       setIsSending(false)
@@ -104,6 +114,7 @@ export function ContactCaretakerModal({ isOpen, onClose, memorialId, memorialNam
             {siteKey ? (
               <div className="mt-4 flex justify-center empty:hidden">
                 <Turnstile
+                  ref={turnstileRef}
                   siteKey={siteKey}
                   options={{
                     appearance: "interaction-only",
@@ -111,7 +122,7 @@ export function ContactCaretakerModal({ isOpen, onClose, memorialId, memorialNam
                     action: "caretaker_message",
                   }}
                   onSuccess={setTurnstileToken}
-                  onExpire={() => setTurnstileToken("")}
+                  onExpire={resetTurnstile}
                   onError={() => setTurnstileToken("")}
                 />
               </div>

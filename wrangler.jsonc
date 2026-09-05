@@ -2,6 +2,7 @@
   "$schema": "node_modules/wrangler/config-schema.json",
   "name": "theirs-page",
   "main": ".open-next/worker.js",
+  "keep_vars": true,
   "compatibility_date": "2026-08-31",
   "compatibility_flags": [
     "nodejs_compat"
@@ -18,6 +19,7 @@
   },
   "vars": {
     "NEXT_PUBLIC_TURNSTILE_SITE_KEY": "0x4AAAAAAElC6yv2vY7dR2dn",
+    "TURNSTILE_EXPECTED_HOSTNAMES": "theirs.page,www.theirs.page",
     "R2_BUCKET_NAME": "theirs",
     "R2_MEDIA_ENDPOINT": "https://media.theirs.page",
     "R2_LEGACY_MEDIA_ENDPOINTS": "https://pub-3511ae96b3594eecbde1632d4cca06b6.r2.dev",

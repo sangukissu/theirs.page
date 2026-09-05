@@ -75,6 +75,11 @@ export function ContributeModal({
   const [turnstileToken, setTurnstileToken] = useState("")
   const turnstileRef = useRef<TurnstileInstance>(null)
 
+  const resetTurnstile = () => {
+    setTurnstileToken("")
+    turnstileRef.current?.reset()
+  }
+
   // Media upload state
   const fileInputRef = useRef<HTMLInputElement | null>(null)
   const memoryPhotoInputRef = useRef<HTMLInputElement | null>(null)
@@ -183,23 +188,25 @@ export function ContributeModal({
     }
 
     const targetIdentifier = slug || memorialId
-    const intentRes = await fetch(`/api/memorials/${targetIdentifier}/upload-intent`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        turnstile_token: turnstileToken,
-        mime_type: file.type || "application/octet-stream",
-        file_size: file.size,
-        contribution_type: selectedType === "photo" ? "photo" : "memory",
-      }),
-    })
-    const intentData = await intentRes.json()
-    if (!intentRes.ok) throw new Error(intentData.error || "Failed to authorize file upload")
+    try {
+      const intentRes = await fetch(`/api/memorials/${targetIdentifier}/upload-intent`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          turnstile_token: turnstileToken,
+          mime_type: file.type || "application/octet-stream",
+          file_size: file.size,
+          contribution_type: selectedType === "photo" ? "photo" : "memory",
+        }),
+      })
+      const intentData = await intentRes.json().catch(() => ({}))
+      if (!intentRes.ok) throw new Error(intentData.error || "Failed to authorize file upload")
 
-    setUploadAuthorization(intentData.uploadIntentToken)
-    setTurnstileToken("")
-    turnstileRef.current?.reset()
-    return intentData.uploadIntentToken as string
+      setUploadAuthorization(intentData.uploadIntentToken)
+      return intentData.uploadIntentToken as string
+    } finally {
+      resetTurnstile()
+    }
   }
 
   const uploadContributionFile = async (file: File) => {
@@ -325,8 +332,14 @@ export function ContributeModal({
         }),
       })
 
-      const data = await res.json()
+      const data = await res.json().catch(() => ({}))
       if (!res.ok) {
+        if (!uploadAuthorization) {
+          resetTurnstile()
+        } else if (res.status === 403) {
+          setUploadAuthorization(null)
+          resetTurnstile()
+        }
         throw new Error(data.error || "Failed to submit contribution")
       }
 
@@ -353,6 +366,9 @@ export function ContributeModal({
       setIsSubmitted(true)
       onSubmitted?.()
     } catch (err: any) {
+      if (!uploadAuthorization) {
+        resetTurnstile()
+      }
       const userMessage =
         err.message?.includes("fetch") || err.message?.includes("Network")
           ? "Could not submit contribution. Please check your connection and try again."
@@ -380,6 +396,7 @@ export function ContributeModal({
     setIsUploadingMedia(false)
     setMediaUploadError(null)
     setError(null)
+    resetTurnstile()
     onClose()
   }
 
@@ -929,7 +946,7 @@ export function ContributeModal({
                           action: "contribution",
                         }}
                         onSuccess={setTurnstileToken}
-                        onExpire={() => setTurnstileToken("")}
+                        onExpire={resetTurnstile}
                         onError={() => setTurnstileToken("")}
                       />
                     </div>
