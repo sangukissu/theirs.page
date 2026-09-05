@@ -62,7 +62,7 @@ export function MemorialClientView({ data }: { data: MemorialData }) {
   }
 
   return (
-    <main className="min-h-screen bg-white text-[#555] selection:bg-primary/10 selection:text-primary relative pb-16">
+    <main className="min-h-screen bg-white text-[#555] selection:bg-primary/10 selection:text-primary relative pb-24 sm:pb-32">
       {/* 1. Top Section Navigation Bar (Fixed at top) */}
       <MemorialNav
         slug={data.slug}
@@ -137,11 +137,8 @@ export function MemorialClientView({ data }: { data: MemorialData }) {
         />
       )}
 
-      {/* 8. Permanent Stewardship Footer */}
-      <MemorialFooter
-        fullName={data.fullName}
-        slug={data.slug}
-      />
+      {/* 8. Small Premium Brand Badge (Bottom-Left) */}
+      <MemorialFooter />
 
       {/* Guest Contribution Modal */}
       <ContributeModal

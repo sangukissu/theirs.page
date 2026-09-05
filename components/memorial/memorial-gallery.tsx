@@ -524,11 +524,7 @@ export function MemorialGallery({
           </p>
         </div>
 
-        {!isPaid && photoCount >= 5 ? (
-          <div className="text-xs text-[#71717a] bg-[#f4f4f6] px-3.5 py-1.5 rounded-full font-medium self-start sm:self-auto select-none">
-            Photo limit reached ({photoCount}/5)
-          </div>
-        ) : (
+        {!isPaid && photoCount >= 5 ? null : (
           <button
             type="button"
             onClick={() => onOpenContribute("photo")}
