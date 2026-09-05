@@ -1,6 +1,7 @@
 "use client"
 
 import { Heart, Volume2, Plus, ArrowDown } from "lucide-react"
+import { ContributionType } from "./contribute-modal"
 
 interface MemorialHeroProps {
   fullName: string
@@ -10,7 +11,7 @@ interface MemorialHeroProps {
   location?: string | null
   epitaph?: string | null
   portraitUrl?: string | null
-  onOpenContribute: () => void
+  onOpenContribute: (type?: ContributionType) => void
 }
 
 export function MemorialHero({
@@ -87,7 +88,7 @@ export function MemorialHero({
           {/* Primary Action: Add Memory */}
           <button
             type="button"
-            onClick={onOpenContribute}
+            onClick={() => onOpenContribute("tribute")}
             className="inline-flex items-center justify-center gap-1.5 whitespace-nowrap !rounded-full font-medium transition-all cursor-pointer border border-[color-mix(in_srgb,var(--primary)_80%,#3a3480)] bg-[color-mix(in_srgb,var(--primary)_90%,#3a3480)] text-primary-foreground shadow-[inset_0_1px_0_rgba(255,255,255,0.22),inset_0_-1px_0_rgba(58,52,128,0.30)] transform-gpu hover:bg-primary active:scale-[0.98] h-10 px-5 text-sm group"
           >
             <Plus className="size-4" />

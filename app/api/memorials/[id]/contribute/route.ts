@@ -60,7 +60,9 @@ export async function POST(req: NextRequest, context: RouteContext) {
       return NextResponse.json({ error: "Your name is required." }, { status: 400 })
     }
 
-    if (!content || !content.trim()) {
+    const effectiveContent = (content && content.trim()) || (photo_url ? `Photograph shared by ${author_name.trim()}` : "")
+
+    if (!effectiveContent) {
       return NextResponse.json({ error: "Please write a memory or message to share." }, { status: 400 })
     }
 
@@ -146,7 +148,7 @@ export async function POST(req: NextRequest, context: RouteContext) {
       ? "photo"
       : ["flower", "note", "photo", "candle"].includes(tribute_type)
       ? tribute_type
-      : "flower"
+      : "note"
 
     // Otherwise, treat as a memory contribution (stories, photos, moments)
     const { error } = await db
@@ -155,7 +157,7 @@ export async function POST(req: NextRequest, context: RouteContext) {
         memorial_id: memorial.id,
         author_name: author_name.trim(),
         author_relationship: author_relationship?.trim() || null,
-        story: content.trim(),
+        story: effectiveContent,
         approx_year: approx_year ? Number(approx_year) : null,
         location: location?.trim() || null,
         photo_url: photo_url || null,

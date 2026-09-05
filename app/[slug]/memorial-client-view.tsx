@@ -60,7 +60,7 @@ export function MemorialClientView({ data }: { data: MemorialData }) {
         location={data.location}
         epitaph={data.epitaph}
         portraitUrl={data.portraitUrl}
-        onOpenContribute={() => handleOpenContribute()}
+        onOpenContribute={handleOpenContribute}
       />
 
       {/* 3. The Full Editorial Biography / Story */}

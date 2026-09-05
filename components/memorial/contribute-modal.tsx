@@ -6,25 +6,24 @@ import {
   X,
   CheckCircle2,
   Heart,
-  Upload,
-  Sparkles,
   Loader2,
   BookOpen,
   Camera,
-  Clock,
   Mic,
-  MessageSquare,
   ArrowLeft,
-  Calendar,
-  MapPin,
-  User,
   Trash2,
-  ImageIcon,
   AlertCircle,
+  Sparkles,
 } from "lucide-react"
 import { Turnstile } from "@marsidev/react-turnstile"
+import {
+  BotanicalFlowerEmblem,
+  CandleFlameEmblem,
+  QuillFeatherEmblem,
+} from "./tribute-emblems"
 
-export type ContributionType = "memory" | "photo" | "moment" | "voice" | "message"
+export type ContributionType = "tribute" | "memory" | "photo" | "moment" | "voice" | "message"
+export type TributeRitual = "flower" | "candle" | "note"
 
 interface ContributeModalProps {
   isOpen: boolean
@@ -48,12 +47,14 @@ export function ContributeModal({
   initialType = null,
 }: ContributeModalProps) {
   const [selectedType, setSelectedType] = useState<ContributionType | null>(initialType)
+  const [tributeRitual, setTributeRitual] = useState<TributeRitual>("flower")
   const [authorName, setAuthorName] = useState("")
   const [relationship, setRelationship] = useState("")
   const [content, setContent] = useState("")
-  const [extraField, setExtraField] = useState("") // year / album / location / caption
+  const [extraField, setExtraField] = useState("") // approx year
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [isSubmitted, setIsSubmitted] = useState(false)
+  const [error, setError] = useState<string | null>(null)
 
   // Cloudflare Turnstile state
   const siteKey = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY || ""
@@ -67,23 +68,22 @@ export function ContributeModal({
   const [mediaUploadError, setMediaUploadError] = useState<string | null>(null)
 
   const isPhotosFull = !isPaid && (photoCount ?? 0) >= 5
-
   const firstName = memorialName.split(" ")[0] || memorialName
 
   const allContributionOptions = [
+    {
+      type: "tribute" as const,
+      icon: Heart,
+      title: "Leave a Tribute",
+      desc: "Lay a flower, light a candle, or leave a quiet note of remembrance.",
+      color: "text-[#8b5a45] bg-[#faf8f5]",
+      available: true,
+    },
     {
       type: "memory" as const,
       icon: BookOpen,
       title: "Share a memory",
       desc: `An anecdote, a shared story, or a reflection about ${firstName}.`,
-      color: "text-[#8b5a45] bg-[#faf8f5]",
-      available: true,
-    },
-    {
-      type: "message" as const,
-      icon: Heart,
-      title: "Words of remembrance",
-      desc: "Condolences, prayers, or loving thoughts for the family.",
       color: "text-[#8b5a45] bg-[#faf8f5]",
       available: true,
     },
@@ -110,8 +110,9 @@ export function ContributeModal({
   // Reset or initialize state whenever modal opens or initialType changes
   useEffect(() => {
     if (isOpen) {
-      if (initialType && allContributionOptions.find((o) => o.type === initialType)?.available) {
-        setSelectedType(initialType)
+      if (initialType) {
+        const resolvedType = initialType === "message" ? "tribute" : initialType
+        setSelectedType(resolvedType)
       } else {
         setSelectedType(null)
       }
@@ -120,8 +121,6 @@ export function ContributeModal({
       setMediaUploadError(null)
     }
   }, [isOpen, initialType, isPaid, photoCount])
-
-  const [error, setError] = useState<string | null>(null)
 
   const handleFileSelect = async (file: File) => {
     if (!file) return
@@ -181,12 +180,22 @@ export function ContributeModal({
     }
   }
 
+  const isTributeMode = selectedType === "tribute" || selectedType === "message"
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!authorName.trim()) return
 
-    // If photo is uploaded, story is optional (fallback to caption or default note)
-    const effectiveContent = content.trim() || (uploadedFileUrl ? `Photograph shared by ${authorName.trim()}` : "")
+    // For photo or voice mode, if story/caption is empty, fallback to clean attribution
+    let effectiveContent = content.trim()
+    if (!effectiveContent) {
+      if (selectedType === "photo" && uploadedFileUrl) {
+        effectiveContent = `Photograph shared by ${authorName.trim()}`
+      } else if (selectedType === "voice" && uploadedFileUrl) {
+        effectiveContent = `Voice recording shared by ${authorName.trim()}`
+      }
+    }
+
     if (!effectiveContent) return
 
     setIsSubmitting(true)
@@ -195,6 +204,16 @@ export function ContributeModal({
     try {
       const targetIdentifier = memorialId || slug
       const approxYearNum = extraField ? parseInt(extraField.replace(/\D/g, ""), 10) : null
+
+      let safeTributeType: "flower" | "candle" | "note" | "photo" = "note"
+      if (isTributeMode) {
+        safeTributeType = tributeRitual
+      } else if (uploadedFileUrl || selectedType === "photo") {
+        safeTributeType = "photo"
+      } else {
+        safeTributeType = "note"
+      }
+
       const res = await fetch(`/api/memorials/${targetIdentifier}/contribute`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -205,13 +224,7 @@ export function ContributeModal({
           content: effectiveContent,
           approx_year: isNaN(approxYearNum as number) ? null : approxYearNum,
           photo_url: uploadedFileUrl || null,
-          tribute_type: uploadedFileUrl
-            ? "photo"
-            : selectedType === "message"
-            ? "flower"
-            : selectedType === "photo"
-            ? "photo"
-            : "note",
+          tribute_type: safeTributeType,
           turnstile_token: turnstileToken,
         }),
       })
@@ -236,6 +249,7 @@ export function ContributeModal({
   const handleReset = () => {
     setIsSubmitted(false)
     setSelectedType(null)
+    setTributeRitual("flower")
     setAuthorName("")
     setRelationship("")
     setContent("")
@@ -247,6 +261,19 @@ export function ContributeModal({
     setError(null)
     onClose()
   }
+
+  // Determine if form is ready to submit
+  const canSubmit =
+    !isSubmitting &&
+    !isUploadingMedia &&
+    Boolean(authorName.trim()) &&
+    (isTributeMode
+      ? Boolean(content.trim())
+      : selectedType === "memory"
+      ? Boolean(content.trim())
+      : selectedType === "photo" || selectedType === "voice"
+      ? Boolean(uploadedFileUrl)
+      : Boolean(content.trim()))
 
   return (
     <AnimatePresence>
@@ -327,7 +354,7 @@ export function ContributeModal({
                 <div className="flex flex-col gap-5 py-2">
                   <div className="flex flex-col gap-1">
                     <h3 className="text-xl sm:text-2xl font-medium tracking-tight text-[#181925]">
-                      Leave a tribute for {firstName}
+                      Remember {firstName}
                     </h3>
                     <p className="text-xs text-[#71717a]">
                       Choose how you would like to remember {firstName} with the family.
@@ -347,7 +374,11 @@ export function ContributeModal({
                           <div
                             className={`size-10 rounded-xl flex items-center justify-center shrink-0 ${opt.color} transition-transform group-hover:scale-105`}
                           >
-                            <Icon className="size-5" />
+                            {opt.type === "tribute" ? (
+                              <BotanicalFlowerEmblem size={22} className="text-[#8b5a45]" />
+                            ) : (
+                              <Icon className="size-5" />
+                            )}
                           </div>
                           <div className="flex flex-col gap-0.5 min-w-0">
                             <span className="text-sm font-medium text-[#181925] group-hover:text-primary transition-colors">
@@ -363,24 +394,76 @@ export function ContributeModal({
                   </div>
                 </div>
               ) : (
-                /* STEP 2: FOCUSED CONTRIBUTION FORM */
+                /* STEP 2: FOCUSED CONTRIBUTION FORMS */
                 <form onSubmit={handleSubmit} className="flex flex-col gap-4 py-2">
+                  {/* Header Titles */}
                   <div className="flex flex-col gap-1">
                     <h3 className="text-lg sm:text-xl font-medium tracking-tight text-[#181925]">
+                      {isTributeMode && `Leave a tribute for ${firstName}`}
                       {selectedType === "memory" && `Share a memory of ${firstName}`}
-                      {selectedType === "message" && `Words of remembrance for ${firstName}`}
-                      {selectedType === "photo" && `Add photographs of ${firstName}`}
-                      {selectedType === "moment" && `Suggest a timeline moment`}
-                      {selectedType === "voice" && `Share a voice or video recording`}
+                      {selectedType === "photo" && `Share a photograph of ${firstName}`}
+                      {selectedType === "voice" && `Share a voice recording of ${firstName}`}
+                      {selectedType === "moment" && `Suggest a timeline milestone`}
                     </h3>
                     <p className="text-xs text-[#71717a]">
+                      {isTributeMode && "Choose a gesture and leave your words of remembrance."}
                       {selectedType === "memory" && "Tell an anecdote, a story, or a quiet reflection."}
-                      {selectedType === "message" && "Condolences, prayers, or personal thoughts for the family."}
-                      {selectedType === "photo" && "Upload original photographs to preserve in the archive."}
-                      {selectedType === "moment" && "Help record when important milestones took place."}
+                      {selectedType === "photo" && "Upload original photographs to preserve in the family archive."}
                       {selectedType === "voice" && "Upload an audio file or voice memo from your phone."}
+                      {selectedType === "moment" && "Help record when important milestones took place."}
                     </p>
                   </div>
+
+                  {/* ========================================================= */}
+                  {/* 1. TRIBUTE MODE: Linocut Ritual Emblems (Pure ritual offering) */}
+                  {/* ========================================================= */}
+                  {isTributeMode && (
+                    <div className="flex flex-col gap-1.5">
+                      <label className="text-[11px] font-mono text-[#71717a] uppercase tracking-wider">
+                        Choose a gesture
+                      </label>
+                      <div className="grid grid-cols-3 gap-2 sm:gap-2.5">
+                        <button
+                          type="button"
+                          onClick={() => setTributeRitual("flower")}
+                          className={`flex flex-col items-center justify-center py-3 px-2 rounded-2xl border transition-all cursor-pointer text-center ${
+                            tributeRitual === "flower"
+                              ? "bg-[#faf8f5] border-[#8b5a45] text-[#8b5a45] ring-1 ring-[#8b5a45]/30 shadow-2xs"
+                              : "bg-[#f7f7f8] border-black/[0.06] text-[#666] hover:bg-neutral-100 hover:text-[#181925]"
+                          }`}
+                        >
+                          <BotanicalFlowerEmblem size={26} className="shrink-0 mb-1" />
+                          <span className="text-xs font-medium">Lay a Flower</span>
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={() => setTributeRitual("candle")}
+                          className={`flex flex-col items-center justify-center py-3 px-2 rounded-2xl border transition-all cursor-pointer text-center ${
+                            tributeRitual === "candle"
+                              ? "bg-[#faf8f5] border-[#8b5a45] text-[#8b5a45] ring-1 ring-[#8b5a45]/30 shadow-2xs"
+                              : "bg-[#f7f7f8] border-black/[0.06] text-[#666] hover:bg-neutral-100 hover:text-[#181925]"
+                          }`}
+                        >
+                          <CandleFlameEmblem size={26} className="shrink-0 mb-1" />
+                          <span className="text-xs font-medium">Light a Candle</span>
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={() => setTributeRitual("note")}
+                          className={`flex flex-col items-center justify-center py-3 px-2 rounded-2xl border transition-all cursor-pointer text-center ${
+                            tributeRitual === "note"
+                              ? "bg-[#faf8f5] border-[#8b5a45] text-[#8b5a45] ring-1 ring-[#8b5a45]/30 shadow-2xs"
+                              : "bg-[#f7f7f8] border-black/[0.06] text-[#666] hover:bg-neutral-100 hover:text-[#181925]"
+                          }`}
+                        >
+                          <QuillFeatherEmblem size={26} className="shrink-0 mb-1" />
+                          <span className="text-xs font-medium">Leave a Note</span>
+                        </button>
+                      </div>
+                    </div>
+                  )}
 
                   {/* Author Name & Relationship */}
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
@@ -412,25 +495,27 @@ export function ContributeModal({
                     </div>
                   </div>
 
-                  {/* Contextual Extra Field */}
-                  {selectedType === "moment" && (
+                  {/* Optional Year for Memories, Photos, or Milestones */}
+                  {(selectedType === "memory" || selectedType === "photo" || selectedType === "moment") && (
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
                       <div className="flex flex-col gap-1">
                         <label className="text-[11px] font-mono text-[#71717a] uppercase tracking-wider">
-                          Year / Approx Date
+                          Year / Approx Date (optional)
                         </label>
                         <input
                           type="text"
                           value={extraField}
                           onChange={(e) => setExtraField(e.target.value)}
-                          placeholder="e.g. 1974 or Summer 1985"
+                          placeholder="e.g. 1984 or Summer 1992"
                           className="w-full px-3 py-2 rounded-xl bg-[#f7f7f8] border border-black/[0.08] text-sm text-[#181925] placeholder:text-[#aaa] outline-none focus:border-primary/50 transition-colors"
                         />
                       </div>
                     </div>
                   )}
 
-                  {/* Upload Dropzone Preview for Photos or Audio */}
+                  {/* ========================================================= */}
+                  {/* 2. MEDIA DROPZONE FOR PHOTO OR VOICE                      */}
+                  {/* ========================================================= */}
                   {(selectedType === "photo" || selectedType === "voice") && (
                     <div className="flex flex-col gap-2">
                       <input
@@ -459,10 +544,10 @@ export function ContributeModal({
                           )}
                           <div className="flex flex-col min-w-0 flex-1">
                             <span className="text-xs font-medium text-[#181925] truncate">
-                              {uploadedFileName || "Uploaded attachment"}
+                              {uploadedFileName || "Uploaded file"}
                             </span>
                             <span className="text-[11px] text-emerald-600 font-medium inline-flex items-center gap-1">
-                              <CheckCircle2 className="size-3" /> Ready to submit with memory
+                              <CheckCircle2 className="size-3" /> Ready to submit
                             </span>
                           </div>
                           <button
@@ -493,9 +578,9 @@ export function ContributeModal({
                         >
                           <div className="size-10 rounded-full bg-white flex items-center justify-center shadow-xs border border-black/[0.06] group-hover:scale-105 transition-transform">
                             {selectedType === "photo" ? (
-                              <Camera className="size-4 text-primary" />
+                              <Camera className="size-4 text-[#8b5a45]" />
                             ) : (
-                              <Mic className="size-4 text-primary" />
+                              <Mic className="size-4 text-[#8b5a45]" />
                             )}
                           </div>
                           <div className="flex flex-col">
@@ -518,30 +603,115 @@ export function ContributeModal({
                     </div>
                   )}
 
-                  {/* Main Content Area */}
+                  {/* ========================================================= */}
+                  {/* 3. MAIN CONTENT TEXTAREA                                  */}
+                  {/* ========================================================= */}
                   <div className="flex flex-col gap-1">
                     <label className="text-[11px] font-mono text-[#71717a] uppercase tracking-wider">
-                      {selectedType === "message" ? "Words of remembrance *" : selectedType === "photo" && uploadedFileUrl ? "Caption or story behind this photo" : "The story or reflection *"}
+                      {isTributeMode
+                        ? tributeRitual === "flower"
+                          ? "Words to accompany your flower *"
+                          : tributeRitual === "candle"
+                          ? "Words to accompany your candle *"
+                          : "Words of remembrance *"
+                        : selectedType === "memory"
+                        ? "The story or reflection *"
+                        : selectedType === "photo"
+                        ? "Caption or story behind this photo (optional)"
+                        : selectedType === "voice"
+                        ? "Note or context (optional)"
+                        : "Milestone story *"}
                     </label>
                     <textarea
-                      required={!uploadedFileUrl}
-                      rows={4}
+                      required={isTributeMode || selectedType === "memory"}
+                      rows={isTributeMode || selectedType === "memory" ? 4 : 3}
                       value={content}
                       onChange={(e) => setContent(e.target.value)}
                       placeholder={
-                        selectedType === "message"
-                          ? "Write a short note of remembrance, prayer, or condolence for the family..."
+                        isTributeMode
+                          ? tributeRitual === "flower"
+                            ? `“A flower in memory of ${firstName}, remembered with love and peace.”`
+                            : tributeRitual === "candle"
+                            ? `“A candle lit for ${firstName}, whose light will never go out.”`
+                            : `“A quiet note of remembrance, prayer, or thoughts for the family...”`
                           : selectedType === "photo"
-                          ? "Add a caption or tell the story behind this photo..."
-                          : selectedType === "moment"
-                          ? "What happened during this milestone in their life?..."
+                          ? "Where was this taken? Tell us what was happening in this moment (optional)..."
                           : selectedType === "voice"
-                          ? "Tell us when or where this was recorded..."
-                          : "“I remember when Dad spent half of Christmas Day fixing the neighbour’s washer...”"
+                          ? "Tell us when or where this was recorded (optional)..."
+                          : `“I remember when ${firstName} spent half of Christmas Day fixing the neighbour’s washer...”`
                       }
                       className="w-full px-3 py-2.5 rounded-xl bg-[#f7f7f8] border border-black/[0.08] text-sm text-[#181925] placeholder:text-[#aaa] outline-none focus:border-primary/50 transition-colors resize-none leading-relaxed"
                     />
                   </div>
+
+                  {/* ========================================================= */}
+                  {/* 4. OPTIONAL PHOTO ATTACHMENT FOR MEMORY / STORY           */}
+                  {/* ========================================================= */}
+                  {selectedType === "memory" && (
+                    <div className="flex flex-col gap-2 pt-0.5">
+                      <input
+                        ref={fileInputRef}
+                        type="file"
+                        accept="image/*"
+                        className="hidden"
+                        disabled={isUploadingMedia}
+                        onChange={(e) => {
+                          if (e.target.files?.[0]) {
+                            handleFileSelect(e.target.files[0])
+                          }
+                        }}
+                      />
+
+                      {uploadedFileUrl ? (
+                        <div className="relative rounded-2xl border border-black/[0.08] bg-[#fafafb] p-2.5 flex items-center gap-3">
+                          <div className="size-14 rounded-xl overflow-hidden bg-neutral-100 shrink-0 border border-black/[0.08]">
+                            <img src={uploadedFileUrl} alt="Preview" className="size-full object-cover" />
+                          </div>
+                          <div className="flex flex-col min-w-0 flex-1">
+                            <span className="text-xs font-medium text-[#181925] truncate">
+                              {uploadedFileName || "Attached photograph"}
+                            </span>
+                            <span className="text-[11px] text-emerald-600 font-medium inline-flex items-center gap-1">
+                              <CheckCircle2 className="size-3" /> Attached to this memory
+                            </span>
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setUploadedFileUrl(null)
+                              setUploadedFileName(null)
+                              if (fileInputRef.current) fileInputRef.current.value = ""
+                            }}
+                            className="size-8 rounded-full hover:bg-rose-50 text-neutral-400 hover:text-rose-600 flex items-center justify-center transition-colors cursor-pointer"
+                            title="Remove attachment"
+                          >
+                            <Trash2 className="size-4" />
+                          </button>
+                        </div>
+                      ) : isUploadingMedia ? (
+                        <div className="border border-dashed border-primary/40 rounded-2xl p-3 flex items-center justify-center gap-2 bg-primary/5 text-center">
+                          <Loader2 className="size-4 animate-spin text-primary" />
+                          <span className="text-xs font-medium text-[#181925]">Uploading photograph...</span>
+                        </div>
+                      ) : (
+                        <button
+                          type="button"
+                          onClick={() => fileInputRef.current?.click()}
+                          className="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl border border-dashed border-black/[0.12] bg-[#f7f7f8] hover:bg-neutral-100 hover:border-black/[0.2] text-xs font-medium text-[#666] hover:text-[#181925] transition-all cursor-pointer self-start"
+                        >
+                          <Camera className="size-3.5 text-[#8b5a45]" />
+                          <span>Attach a photograph (optional)</span>
+                        </button>
+                      )}
+
+                      {mediaUploadError && (
+                        <div className="p-2.5 rounded-xl bg-rose-50 border border-rose-200 text-xs text-rose-700 flex items-center gap-2">
+                          <AlertCircle className="size-3.5 shrink-0" />
+                          <span>{mediaUploadError}</span>
+                        </div>
+                      )}
+                    </div>
+                  )}
 
                   {error && (
                     <div className="p-2.5 rounded-xl bg-rose-50 border border-rose-200 text-xs text-rose-700 font-medium flex items-center gap-2">
@@ -572,7 +742,7 @@ export function ContributeModal({
                     </button>
                     <button
                       type="submit"
-                      disabled={isSubmitting || isUploadingMedia || !authorName.trim() || (!content.trim() && !uploadedFileUrl)}
+                      disabled={!canSubmit}
                       className="inline-flex items-center justify-center gap-1.5 whitespace-nowrap !rounded-full font-medium transition-all cursor-pointer border border-[color-mix(in_srgb,var(--primary)_80%,#3a3480)] bg-[color-mix(in_srgb,var(--primary)_90%,#3a3480)] text-primary-foreground shadow-[inset_0_1px_0_rgba(255,255,255,0.22),inset_0_-1px_0_rgba(58,52,128,0.30)] transform-gpu hover:bg-primary active:scale-[0.98] h-9 px-5 text-xs select-none disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                       {isSubmitting ? (
@@ -580,8 +750,22 @@ export function ContributeModal({
                           <Loader2 className="size-3.5 animate-spin" />
                           <span>Publishing...</span>
                         </>
+                      ) : isTributeMode ? (
+                        <span>
+                          {tributeRitual === "flower"
+                            ? "Lay Flower & Publish"
+                            : tributeRitual === "candle"
+                            ? "Light Candle & Publish"
+                            : "Publish Tribute"}
+                        </span>
+                      ) : selectedType === "memory" ? (
+                        <span>Publish Memory</span>
+                      ) : selectedType === "photo" ? (
+                        <span>Publish Photograph</span>
+                      ) : selectedType === "voice" ? (
+                        <span>Publish Recording</span>
                       ) : (
-                        <span>Publish Tribute</span>
+                        <span>Publish</span>
                       )}
                     </button>
                   </div>

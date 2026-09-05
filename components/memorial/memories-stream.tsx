@@ -67,7 +67,7 @@ export const DEFAULT_MEMORIES: MemoryItem[] = [
       "When we took the old Morris Minor across the moors in dense fog without telling Grandad. The clutch was slipping and the windscreen wipers barely twitched, but Bob hummed Beatles songs the whole way without fear. He knew every cow track in Devon.",
     audioTitle: "David recounting the Morris Minor trip",
     audioDuration: "0:42",
-    tributeType: "note",
+    tributeType: "candle",
     createdAt: new Date(Date.now() - 1000 * 60 * 60 * 72).toISOString(),
   },
   {
@@ -178,7 +178,7 @@ export function MemoriesStream({
 
         <button
           type="button"
-          onClick={() => onOpenContribute("memory")}
+          onClick={() => onOpenContribute("tribute")}
           className="inline-flex items-center gap-1.5 px-5 py-2.5 rounded-full bg-[#181925] hover:bg-[#252736] text-white text-xs font-medium transition-all cursor-pointer shadow-xs active:scale-95 shrink-0 self-start sm:self-auto"
         >
           <Plus className="size-3.5" />
@@ -192,7 +192,7 @@ export function MemoriesStream({
           <p>No tributes shared yet. Be the first to leave words of remembrance for {firstName}.</p>
           <button
             type="button"
-            onClick={() => onOpenContribute("memory")}
+            onClick={() => onOpenContribute("tribute")}
             className="inline-flex items-center gap-1.5 px-5 py-2.5 rounded-full bg-[#181925] text-white text-xs font-medium hover:bg-[#252736] transition-all cursor-pointer shadow-xs active:scale-95"
           >
             <Plus className="size-3.5" />
@@ -222,7 +222,7 @@ export function MemoriesStream({
                 {/* Left Column: Linocut Ritual Emblem in clean white badge */}
                 <div className="shrink-0 p-2.5 rounded-2xl bg-white border border-black/[0.06] text-[#8b5a45] flex items-center justify-center self-start shadow-none">
                   <TributeEmblem
-                    type={item.tributeType || (item.photoUrl ? "photo" : "flower")}
+                    type={item.tributeType || (item.photoUrl ? "photo" : "note")}
                     size={40}
                   />
                 </div>

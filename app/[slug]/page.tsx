@@ -236,7 +236,7 @@ export default async function MemorialPage({ params }: MemorialPageProps) {
           location: mem.location || undefined,
           story: mem.story,
           photoUrl: mem.photo_url ? resolveMediaUrl(mem.photo_url) : undefined,
-          tributeType: mem.tribute_type || (mem.photo_url ? "photo" : "flower"),
+          tributeType: mem.tribute_type || (mem.photo_url ? "photo" : "note"),
           heartCount: 0,
           createdAt: mem.created_at,
         }
@@ -263,7 +263,7 @@ export default async function MemorialPage({ params }: MemorialPageProps) {
           authorRelationship: "",
           dateOrYear,
           story: gb.message,
-          tributeType: "flower" as const,
+          tributeType: "note" as const,
           heartCount: 0,
           createdAt: gb.created_at,
         }

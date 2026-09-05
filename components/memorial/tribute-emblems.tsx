@@ -180,6 +180,82 @@ export function CameraHeirloomEmblem({ className = "", size = 44 }: EmblemProps)
 }
 
 /**
+ * Serene Candle Flame Linocut Emblem
+ * A reverent, peaceful flame and wax candle offering.
+ */
+export function CandleFlameEmblem({ className = "", size = 44 }: EmblemProps) {
+  return (
+    <svg
+      width={size}
+      height={size}
+      viewBox="0 0 64 64"
+      fill="none"
+      xmlns="http://www.w3.org/2000/svg"
+      className={className}
+      aria-label="Candle lit"
+    >
+      {/* Radiating Light Aura Marks */}
+      <path d="M32 6V9" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeOpacity="0.6" />
+      <path d="M21 12L23.5 14" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeOpacity="0.5" />
+      <path d="M43 12L40.5 14" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeOpacity="0.5" />
+      <path d="M16 20H19" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeOpacity="0.5" />
+      <path d="M48 20H45" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeOpacity="0.5" />
+
+      {/* Flame Teardrop */}
+      <path
+        d="M32 11C28 17 26.5 22 28 25C29.5 28 34.5 28 36 25C37.5 22 36 17 32 11Z"
+        fill="currentColor"
+        fillOpacity="0.85"
+      />
+      {/* Inner Flame Core */}
+      <path
+        d="M32 16C30.5 19 30 22 31 24C31.8 25.5 33.2 25.5 33.8 24C34.5 22 34 19 32 16Z"
+        fill="currentColor"
+        fillOpacity="0.4"
+      />
+
+      {/* Candle Wick */}
+      <path d="M32 25V28" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+
+      {/* Candle Top Rim & Wax Melt */}
+      <path
+        d="M23 29C23 27.5 27 27 32 27C37 27 41 27.5 41 29C41 30.5 37 31 32 31C27 31 23 30.5 23 29Z"
+        fill="currentColor"
+        fillOpacity="0.75"
+      />
+
+      {/* Candle Pillar Body */}
+      <path
+        d="M23 29V49C23 50.5 27 51 32 51C37 51 41 50.5 41 49V29C39.5 30 36 30.5 32 30.5C28 30.5 24.5 30 23 29Z"
+        fill="currentColor"
+        fillOpacity="0.65"
+      />
+
+      {/* Subtle Linocut Wax Drip Accent */}
+      <path
+        d="M26 31V37C26 38.5 28 38.5 28 37V31"
+        fill="currentColor"
+        fillOpacity="0.8"
+      />
+
+      {/* Saucer / Pedestal Dish */}
+      <path
+        d="M17 50C17 48.5 23 48 32 48C41 48 47 48.5 47 50C47 53 41 55 32 55C23 55 17 53 17 50Z"
+        fill="currentColor"
+        fillOpacity="0.75"
+      />
+      <path
+        d="M20 52C23 54.5 27.5 56 32 56C36.5 56 41 54.5 44 52"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeOpacity="0.5"
+      />
+    </svg>
+  )
+}
+
+/**
  * Universal Tribute Emblem Dispatcher
  */
 export function TributeEmblem({
@@ -192,12 +268,13 @@ export function TributeEmblem({
   size?: number
 }) {
   switch (type) {
+    case "candle":
+      return <CandleFlameEmblem className={className} size={size} />
     case "photo":
       return <CameraHeirloomEmblem className={className} size={size} />
     case "note":
       return <QuillFeatherEmblem className={className} size={size} />
     case "flower":
-    case "candle":
     default:
       return <BotanicalFlowerEmblem className={className} size={size} />
   }
