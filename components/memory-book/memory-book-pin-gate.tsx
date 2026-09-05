@@ -98,6 +98,10 @@ export function MemoryBookPinGate({ shareId }: { shareId: string }) {
               <Turnstile
                 key={challengeKey}
                 siteKey={siteKey}
+                options={{
+                  appearance: "interaction-only",
+                  refreshExpired: "auto",
+                }}
                 onSuccess={setTurnstileToken}
                 onExpire={() => setTurnstileToken("")}
                 onError={() => setTurnstileToken("")}

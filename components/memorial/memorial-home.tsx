@@ -59,6 +59,7 @@ export function MemorialHome({ identity, data }: { identity: MemorialIdentity; d
   const preview = searchParams.get("preview") === "visitor" ? "?preview=visitor" : ""
   const viewHref = (view: string, hash = "") => `/${identity.slug}/${view}${preview}${hash}`
   const sections = identity.sectionSettings
+  const remaining = (total: number, shown: number) => Math.max(0, total - shown)
 
   return (
     <>
@@ -88,14 +89,22 @@ export function MemorialHome({ identity, data }: { identity: MemorialIdentity; d
             isDemo={identity.isDemo}
             onOpenContribute={openContribute}
           />
-          <ViewFullSection href={viewHref("tributes")} kind="tributes">View all {data.tributes.total} tributes</ViewFullSection>
+          {(identity.isDemo || data.tributes.hasMore) && (
+            <ViewFullSection href={viewHref("tributes")} kind="tributes">
+              {identity.isDemo ? `View all ${data.tributes.total} tributes` : `View ${remaining(data.tributes.total, data.tributes.items.length)} more tributes`}
+            </ViewFullSection>
+          )}
         </>
       )}
 
       {sections.timeline !== false && (
         <>
           <LifeTimeline milestones={data.timeline.items} isDemo={identity.isDemo} />
-          <ViewFullSection href={viewHref("timeline")} kind="timeline">Explore all {data.timeline.total} milestones</ViewFullSection>
+          {(identity.isDemo || data.timeline.hasMore) && (
+            <ViewFullSection href={viewHref("timeline")} kind="timeline">
+              {identity.isDemo ? `Explore all ${data.timeline.total} milestones` : `Explore ${remaining(data.timeline.total, data.timeline.items.length)} more milestones`}
+            </ViewFullSection>
+          )}
         </>
       )}
 
@@ -109,7 +118,11 @@ export function MemorialHome({ identity, data }: { identity: MemorialIdentity; d
             onOpenContribute={openContribute}
             initialPage={{ ...data.media, hasMore: false, nextCursor: null }}
           />
-          <ViewFullSection href={viewHref("gallery")} kind="gallery">View all {data.media.total} photos & recordings</ViewFullSection>
+          {(identity.isDemo || data.media.hasMore) && (
+            <ViewFullSection href={viewHref("gallery")} kind="gallery">
+              {identity.isDemo ? `View all ${data.media.total} photos & recordings` : `View ${remaining(data.media.total, data.media.items.length)} more photos & recordings`}
+            </ViewFullSection>
+          )}
         </>
       )}
 
@@ -123,7 +136,11 @@ export function MemorialHome({ identity, data }: { identity: MemorialIdentity; d
             isDemo={identity.isDemo}
             onOpenContribute={openContribute}
           />
-          <ViewFullSection href={viewHref("memories")} kind="memories">View all {data.memories.total} stories & memories</ViewFullSection>
+          {(identity.isDemo || data.memories.hasMore) && (
+            <ViewFullSection href={viewHref("memories")} kind="memories">
+              {identity.isDemo ? `View all ${data.memories.total} stories & memories` : `Read ${remaining(data.memories.total, data.memories.items.length)} more stories & memories`}
+            </ViewFullSection>
+          )}
         </>
       )}
     </>

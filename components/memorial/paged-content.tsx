@@ -8,9 +8,8 @@ import { LifeTimeline, type TimelineMilestone } from "./life-timeline"
 import { useMemorialActions } from "./memorial-shell"
 import type { BrowseCollection, PagedCollection } from "@/types/memorial-view"
 
-async function getNextPage<T>(slug: string, collection: BrowseCollection, cursor: string, decade?: number) {
+async function getNextPage<T>(slug: string, collection: BrowseCollection, cursor: string) {
   const params = new URLSearchParams({ collection, cursor })
-  if (decade) params.set("decade", String(decade))
   const response = await fetch(`/api/memorials/${slug}/browse?${params.toString()}`, { cache: "no-store" })
   if (!response.ok) throw new Error("We couldn't load more right now.")
   return response.json() as Promise<PagedCollection<T>>
@@ -80,29 +79,7 @@ export function PagedTributes({ slug, fullName, memorialId, isDemo, initial }: {
   return <><MemoriesStream memories={state.items} fullName={fullName} memorialId={memorialId} slug={slug} isDemo={isDemo} onOpenContribute={openContribute} />{state.hasMore && <LoadMore label="Show more tributes" loading={state.loading} error={state.error} onClick={() => state.append((cursor) => getNextPage(slug, "tributes", cursor))} />}{state.didLoadMore && !state.hasMore && <EndOfList>All tributes are shown.</EndOfList>}</>
 }
 
-export function PagedTimeline({ slug, initial, decades, isDemo, initialDecade }: { slug: string; initial: PagedCollection<TimelineMilestone>; decades: number[]; isDemo: boolean; initialDecade?: number }) {
-  const [decade, setDecade] = useState<number | undefined>(initialDecade)
-  const [page, setPage] = useState(initial)
-  const state = usePagedItems(page)
-  const [filtering, setFiltering] = useState(false)
-  const [filterError, setFilterError] = useState<string | null>(null)
-
-  const chooseDecade = async (next?: number) => {
-    if (next === decade) return
-    setDecade(next); setFiltering(true); setFilterError(null)
-    const params = new URLSearchParams({ collection: "timeline" })
-    if (next) params.set("decade", String(next))
-    const visibleParams = new URLSearchParams()
-    if (new URL(window.location.href).searchParams.get("preview") === "visitor") visibleParams.set("preview", "visitor")
-    if (next) visibleParams.set("decade", String(next))
-    window.history.replaceState(window.history.state, "", `${window.location.pathname}${visibleParams.size ? `?${visibleParams.toString()}` : ""}${window.location.hash}`)
-    try {
-      const response = await fetch(`/api/memorials/${slug}/browse?${params.toString()}`, { cache: "no-store" })
-      if (!response.ok) throw new Error("We couldn't filter the timeline right now.")
-      setPage(await response.json())
-    } catch (reason) { setFilterError(reason instanceof Error ? reason.message : "We couldn't filter the timeline right now.") }
-    finally { setFiltering(false) }
-  }
-
-  return <section><div className="mx-auto max-w-4xl px-4 pt-6">{decades.length > 1 && <div className="flex gap-2 overflow-x-auto pb-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden" aria-label="Filter timeline by decade"><button type="button" onClick={() => chooseDecade()} className={`min-h-10 shrink-0 rounded-full px-4 text-sm font-medium ${decade === undefined ? "bg-primary text-primary-foreground" : "bg-[#f4f4f6] text-[#555]"}`}>All years</button>{decades.map((value) => <button key={value} type="button" onClick={() => chooseDecade(value)} className={`min-h-10 shrink-0 rounded-full px-4 text-sm font-medium ${decade === value ? "bg-primary text-primary-foreground" : "bg-[#f4f4f6] text-[#555]"}`}>{value}s</button>)}</div>}{filtering && <p className="pt-3 text-sm text-[#777]">Loading timeline…</p>}{filterError && <p role="alert" className="pt-3 text-sm text-red-700">{filterError}</p>}</div><LifeTimeline milestones={state.items} isDemo={isDemo} />{state.hasMore && <LoadMore label="Show more milestones" loading={state.loading} error={state.error} onClick={() => state.append((cursor) => getNextPage(slug, "timeline", cursor, decade))} />}{state.didLoadMore && !state.hasMore && <EndOfList>All milestones are shown.</EndOfList>}</section>
+export function PagedTimeline({ slug, initial, isDemo }: { slug: string; initial: PagedCollection<TimelineMilestone>; isDemo: boolean }) {
+  const state = usePagedItems(initial)
+  return <section><LifeTimeline milestones={state.items} isDemo={isDemo} />{state.hasMore && <LoadMore label="Show more milestones" loading={state.loading} error={state.error} onClick={() => state.append((cursor) => getNextPage(slug, "timeline", cursor))} />}{state.didLoadMore && !state.hasMore && <EndOfList>All milestones are shown.</EndOfList>}</section>
 }

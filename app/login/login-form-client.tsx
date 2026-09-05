@@ -298,9 +298,13 @@ function LoginFormWithSearchParams({ nextPath: propNextPath }: { nextPath?: stri
               </div>
 
               {siteKey && (
-                <div className="flex justify-center scale-90 -my-1">
+                <div className="flex justify-center empty:hidden">
                   <Turnstile
                     siteKey={siteKey}
+                    options={{
+                      appearance: "interaction-only",
+                      refreshExpired: "auto",
+                    }}
                     onSuccess={(token) => setCaptchaToken(token)}
                     onExpire={() => setCaptchaToken(undefined)}
                     onError={() => setCaptchaToken(undefined)}

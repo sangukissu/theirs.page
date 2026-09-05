@@ -101,9 +101,27 @@ export function ContactCaretakerModal({ isOpen, onClose, memorialId, memorialNam
 
             {error && <p role="alert" className="mt-4 flex items-center gap-2 rounded-xl border border-rose-200 bg-rose-50 p-3 text-xs text-rose-700"><AlertCircle className="size-4 shrink-0" />{error}</p>}
 
-            <div className="mt-5 flex flex-col items-start justify-between gap-4 sm:flex-row sm:items-center">
-              <Turnstile siteKey={siteKey} onSuccess={setTurnstileToken} onExpire={() => setTurnstileToken("")} onError={() => setTurnstileToken("")} />
-              <button type="submit" disabled={isSending || !turnstileToken || !senderName.trim() || !senderEmail.trim() || message.trim().length < 10} className="inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-full bg-primary px-6 text-sm font-semibold text-white hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-50 sm:w-auto">
+            {siteKey ? (
+              <div className="mt-4 flex justify-center empty:hidden">
+                <Turnstile
+                  siteKey={siteKey}
+                  options={{
+                    appearance: "interaction-only",
+                    refreshExpired: "auto",
+                  }}
+                  onSuccess={setTurnstileToken}
+                  onExpire={() => setTurnstileToken("")}
+                  onError={() => setTurnstileToken("")}
+                />
+              </div>
+            ) : null}
+
+            <div className="mt-5 flex items-center justify-end">
+              <button
+                type="submit"
+                disabled={isSending || (siteKey ? !turnstileToken : false) || !senderName.trim() || !senderEmail.trim() || message.trim().length < 10}
+                className="inline-flex min-h-11 w-full sm:w-auto items-center justify-center gap-2 rounded-full bg-primary px-6 text-sm font-semibold text-white hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-50 transition-colors cursor-pointer"
+              >
                 {isSending && <Loader2 className="size-4 animate-spin" />}
                 {isSending ? "Sending…" : "Send privately"}
               </button>

@@ -455,13 +455,11 @@ export function MemorialGallery({
   }
 
   // Responsive Column Count for true Left-to-Right Masonry distribution
-  const [columnsCount, setColumnsCount] = useState(3)
+  const [columnsCount, setColumnsCount] = useState(2)
 
   useEffect(() => {
     const updateColumns = () => {
-      if (window.innerWidth < 640) {
-        setColumnsCount(1)
-      } else if (window.innerWidth < 768) {
+      if (window.innerWidth < 768) {
         setColumnsCount(2)
       } else {
         setColumnsCount(3)
@@ -739,12 +737,7 @@ export function MemorialGallery({
       ) : (
         /* FLUID MASONRY GRID (Left-to-right distributed, no empty leading slots, natural dimensions) */
         <div
-          className={`grid gap-4 items-start ${columnsCount === 1
-            ? "grid-cols-1"
-            : columnsCount === 2
-              ? "grid-cols-2"
-              : "grid-cols-3"
-            }`}
+          className={`grid gap-4 items-start ${columnsCount === 2 ? "grid-cols-2" : "grid-cols-3"}`}
         >
           {columnItems.map((col, colIdx) => (
             <div key={colIdx} className="flex flex-col gap-4 min-w-0">

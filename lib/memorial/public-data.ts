@@ -377,7 +377,7 @@ export async function loadMemorialHome(context: MemorialViewContext): Promise<Me
   const [media, memories, timeline, tributes] = await Promise.all([
     sections.gallery === false ? empty<GalleryItem>() : loadBrowsePage<GalleryItem>(context, "gallery", { pageSize: 6 }),
     sections.stories === false ? empty<StoryItem>() : loadBrowsePage<StoryItem>(context, "memories", { pageSize: 2 }),
-    sections.timeline === false ? empty<TimelineMilestone>() : loadBrowsePage<TimelineMilestone>(context, "timeline", { pageSize: 3 }),
+    sections.timeline === false ? empty<TimelineMilestone>() : loadBrowsePage<TimelineMilestone>(context, "timeline", { pageSize: context.identity.isDemo ? 3 : 5 }),
     sections.tributes === false ? empty<MemoryItem>() : loadBrowsePage<MemoryItem>(context, "tributes", { pageSize: 2 }),
   ])
   return { media, memories, timeline, tributes }

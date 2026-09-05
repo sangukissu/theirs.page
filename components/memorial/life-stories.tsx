@@ -126,7 +126,7 @@ export function LifeStories({
   return (
     <section
       id="memories"
-      className="py-14 sm:py-20 px-4 max-w-4xl mx-auto flex flex-col gap-8 scroll-mt-24"
+      className="py-12 px-4 max-w-4xl mx-auto flex flex-col gap-8 scroll-mt-24"
     >
       {/* Section Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-black/[0.06] pb-6">

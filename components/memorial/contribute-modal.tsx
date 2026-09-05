@@ -367,10 +367,10 @@ export function ContributeModal({
     (isTributeMode
       ? Boolean(content.trim())
       : selectedType === "memory"
-      ? Boolean(content.trim())
-      : isMedia
-      ? Boolean(uploadedFileUrl)
-      : Boolean(content.trim()))
+        ? Boolean(content.trim())
+        : isMedia
+          ? Boolean(uploadedFileUrl)
+          : Boolean(content.trim()))
 
   return (
     <AnimatePresence>
@@ -391,7 +391,7 @@ export function ContributeModal({
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.96, y: 8 }}
             transition={{ duration: 0.2, ease: [0.16, 1, 0.3, 1] }}
-            className="relative w-full max-w-lg rounded-3xl bg-white border border-black/[0.08] p-6 sm:p-8 overflow-hidden shadow-2xl z-10 select-none max-h-[90vh] flex flex-col"
+            className="relative w-full max-w-lg rounded-3xl bg-white border border-black/[0.08] p-4 sm:p-6 overflow-hidden shadow-2xl z-10 select-none max-h-[90vh] flex flex-col"
           >
             {/* Close / Back Button Bar */}
             <div className="flex items-center justify-between pb-3">
@@ -525,11 +525,10 @@ export function ContributeModal({
                         <button
                           type="button"
                           onClick={() => setTributeRitual("flower")}
-                          className={`flex flex-col items-center justify-center py-3 px-2 rounded-2xl border transition-all cursor-pointer text-center ${
-                            tributeRitual === "flower"
+                          className={`flex flex-col items-center justify-center py-3 px-2 rounded-2xl border transition-all cursor-pointer text-center ${tributeRitual === "flower"
                               ? "bg-primary/5 border-primary text-primary ring-1 ring-primary/30 shadow-2xs"
                               : "bg-[#f7f7f8] border-black/[0.06] text-[#666] hover:bg-neutral-100 hover:text-[#181925]"
-                          }`}
+                            }`}
                         >
                           <BotanicalFlowerEmblem size={26} className="shrink-0 mb-1" />
                           <span className="text-xs font-medium">Lay a Flower</span>
@@ -538,11 +537,10 @@ export function ContributeModal({
                         <button
                           type="button"
                           onClick={() => setTributeRitual("candle")}
-                          className={`flex flex-col items-center justify-center py-3 px-2 rounded-2xl border transition-all cursor-pointer text-center ${
-                            tributeRitual === "candle"
+                          className={`flex flex-col items-center justify-center py-3 px-2 rounded-2xl border transition-all cursor-pointer text-center ${tributeRitual === "candle"
                               ? "bg-primary/5 border-primary text-primary ring-1 ring-primary/30 shadow-2xs"
                               : "bg-[#f7f7f8] border-black/[0.06] text-[#666] hover:bg-neutral-100 hover:text-[#181925]"
-                          }`}
+                            }`}
                         >
                           <CandleFlameEmblem size={26} className="shrink-0 mb-1" />
                           <span className="text-xs font-medium">Light a Candle</span>
@@ -551,11 +549,10 @@ export function ContributeModal({
                         <button
                           type="button"
                           onClick={() => setTributeRitual("note")}
-                          className={`flex flex-col items-center justify-center py-3 px-2 rounded-2xl border transition-all cursor-pointer text-center ${
-                            tributeRitual === "note"
+                          className={`flex flex-col items-center justify-center py-3 px-2 rounded-2xl border transition-all cursor-pointer text-center ${tributeRitual === "note"
                               ? "bg-primary/5 border-primary text-primary ring-1 ring-primary/30 shadow-2xs"
                               : "bg-[#f7f7f8] border-black/[0.06] text-[#666] hover:bg-neutral-100 hover:text-[#181925]"
-                          }`}
+                            }`}
                         >
                           <QuillFeatherEmblem size={26} className="shrink-0 mb-1" />
                           <span className="text-xs font-medium">Leave a Note</span>
@@ -696,8 +693,8 @@ export function ContributeModal({
                               {selectedType === "photo"
                                 ? "Choose or drop a photograph"
                                 : selectedType === "video"
-                                ? "Choose or drop a video clip"
-                                : "Choose or drop an audio file"}
+                                  ? "Choose or drop a video clip"
+                                  : "Choose or drop an audio file"}
                             </span>
                             <span className="text-[10px] text-[#71717a]">
                               Original high-resolution preserved untouched
@@ -724,17 +721,17 @@ export function ContributeModal({
                         ? tributeRitual === "flower"
                           ? "Words to accompany your flower *"
                           : tributeRitual === "candle"
-                          ? "Words to accompany your candle *"
-                          : "Words of remembrance *"
+                            ? "Words to accompany your candle *"
+                            : "Words of remembrance *"
                         : selectedType === "memory"
-                        ? "The story or reflection *"
-                        : selectedType === "photo"
-                        ? "Caption or story behind this photo (optional)"
-                        : selectedType === "voice"
-                        ? "Note or context (optional)"
-                        : selectedType === "video"
-                        ? "Caption or story behind this video (optional)"
-                        : "Milestone story *"}
+                          ? "The story or reflection *"
+                          : selectedType === "photo"
+                            ? "Caption or story behind this photo (optional)"
+                            : selectedType === "voice"
+                              ? "Note or context (optional)"
+                              : selectedType === "video"
+                                ? "Caption or story behind this video (optional)"
+                                : "Milestone story *"}
                     </label>
                     <textarea
                       required={isTributeMode || selectedType === "memory"}
@@ -746,15 +743,15 @@ export function ContributeModal({
                           ? tributeRitual === "flower"
                             ? `“A flower in memory of ${firstName}, remembered with love and peace.”`
                             : tributeRitual === "candle"
-                            ? `“A candle lit for ${firstName}, whose light will never go out.”`
-                            : `“A quiet note of remembrance, prayer, or thoughts for the family...”`
+                              ? `“A candle lit for ${firstName}, whose light will never go out.”`
+                              : `“A quiet note of remembrance, prayer, or thoughts for the family...”`
                           : selectedType === "photo"
-                          ? "Where was this taken? Tell us what was happening in this moment (optional)..."
-                          : selectedType === "voice"
-                          ? "Tell us when or where this was recorded (optional)..."
-                          : selectedType === "video"
-                          ? "Where was this recorded? Tell us what was happening in this moment (optional)..."
-                          : `“I remember when ${firstName} spent half of Christmas Day fixing the neighbour’s washer...”`
+                            ? "Where was this taken? Tell us what was happening in this moment (optional)..."
+                            : selectedType === "voice"
+                              ? "Tell us when or where this was recorded (optional)..."
+                              : selectedType === "video"
+                                ? "Where was this recorded? Tell us what was happening in this moment (optional)..."
+                                : `“I remember when ${firstName} spent half of Christmas Day fixing the neighbour’s washer...”`
                       }
                       className="w-full px-3 py-2.5 rounded-xl bg-[#f7f7f8] border border-black/[0.08] text-sm text-[#181925] placeholder:text-[#aaa] outline-none focus:border-primary/50 transition-colors resize-none leading-relaxed"
                     />
@@ -860,9 +857,13 @@ export function ContributeModal({
                   )}
 
                   {siteKey ? (
-                    <div className="flex justify-center py-1">
+                    <div className="flex justify-center empty:hidden">
                       <Turnstile
                         siteKey={siteKey}
+                        options={{
+                          appearance: "interaction-only",
+                          refreshExpired: "auto",
+                        }}
                         onSuccess={setTurnstileToken}
                         onExpire={() => setTurnstileToken("")}
                         onError={() => setTurnstileToken("")}
@@ -894,8 +895,8 @@ export function ContributeModal({
                           {tributeRitual === "flower"
                             ? "Lay Flower & Publish"
                             : tributeRitual === "candle"
-                            ? "Light Candle & Publish"
-                            : "Publish Tribute"}
+                              ? "Light Candle & Publish"
+                              : "Publish Tribute"}
                         </span>
                       ) : selectedType === "memory" ? (
                         <span>Publish Memory</span>
