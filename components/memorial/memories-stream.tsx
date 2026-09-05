@@ -14,11 +14,10 @@ import { ContributionType } from "./contribute-modal"
 import {
   TributeEmblem,
   TributeType,
-  BotanicalFlowerEmblem,
-  CandleFlameEmblem,
-  QuillFeatherEmblem,
 } from "./tribute-emblems"
 import { Turnstile } from "@marsidev/react-turnstile"
+import { TributeShareMenu } from "./tribute-share-menu"
+import { ContactCaretakerModal } from "./contact-caretaker-modal"
 
 export interface MemoryItem {
   id: string
@@ -117,6 +116,7 @@ export function MemoriesStream({
   const [expandedIds, setExpandedIds] = useState<Record<string, boolean>>({})
   const [activeMenuId, setActiveMenuId] = useState<string | null>(null)
   const [copiedId, setCopiedId] = useState<string | null>(null)
+  const [isContactOpen, setIsContactOpen] = useState(false)
 
   // Open tribute form state
   const [tributeRitual, setTributeRitual] = useState<"flower" | "candle" | "note">("flower")
@@ -175,8 +175,8 @@ export function MemoriesStream({
       (tributeRitual === "flower"
         ? `Laying a flower in loving memory of ${firstName}.`
         : tributeRitual === "candle"
-        ? `Lighting a candle in loving memory of ${firstName}.`
-        : `A quiet note of remembrance for ${firstName}.`)
+          ? `Lighting a candle in loving memory of ${firstName}.`
+          : `A quiet note of remembrance for ${firstName}.`)
 
     setIsSubmitting(true)
     setFormError(null)
@@ -225,37 +225,61 @@ export function MemoriesStream({
     tributeRitual === "flower"
       ? `“A blossom in memory of ${firstName}, remembered with love and peace.”`
       : tributeRitual === "candle"
-      ? `“A candle lit for ${firstName}, whose light and warmth will never leave us.”`
-      : `“A quiet note of remembrance, prayer, or thoughts for the family...”`
+        ? `“A candle lit for ${firstName}, whose light and warmth will never leave us.”`
+        : `“A quiet note of remembrance, prayer, or thoughts for the family...”`
 
   const ritualSubmitLabel =
     tributeRitual === "flower"
       ? "Lay Flower"
       : tributeRitual === "candle"
-      ? "Light Candle"
-      : "Leave Note"
+        ? "Light Candle"
+        : "Leave Note"
+
+  const ritualEmblem = (type: TributeType, size: number, className = "") => (
+    <TributeEmblem type={type} size={size} className={className} variant={isDemo ? "classic" : "vintage"} />
+  )
 
   return (
-    <section id="tributes" className="py-12 sm:py-16 px-4 max-w-4xl mx-auto flex flex-col gap-8 scroll-mt-24">
+    <section id="tributes" className="py-12 px-4 max-w-4xl mx-auto flex flex-col gap-4 scroll-mt-24">
       {/* Header with single clear CTA */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-black/[0.06] pb-6">
         <div className="flex flex-col gap-1">
           <h2 className="text-2xl sm:text-3xl font-medium tracking-tight text-[#181925]">
             Tributes to {firstName}
           </h2>
-          <p className="text-xs sm:text-sm text-[#71717a]">
-            Flowers, candles, and quiet notes of remembrance from family and friends.
-          </p>
         </div>
 
-        <button
-          type="button"
-          onClick={handleScrollToForm}
-          className="inline-flex items-center gap-1.5 px-5 py-2.5 rounded-full bg-[#181925] hover:bg-[#252736] text-white text-xs font-medium transition-all cursor-pointer shadow-xs active:scale-95 shrink-0 self-start sm:self-auto"
-        >
-          <Plus className="size-3.5" />
-          <span>Leave a Tribute</span>
-        </button>
+        {isDemo ? (
+          <button
+            type="button"
+            onClick={handleScrollToForm}
+            className="inline-flex items-center gap-1.5 px-5 py-2.5 rounded-full bg-primary hover:bg-primary/90 text-primary-foreground text-xs font-medium transition-all cursor-pointer shadow-xs active:scale-95 shrink-0 self-start sm:self-auto"
+          >
+            <Plus className="size-3.5" />
+            <span>Leave a Tribute</span>
+          </button>
+        ) : (
+          <div className="flex flex-wrap items-center gap-2">
+            {(memorialId || slug) && (
+            <button
+              type="button"
+              onClick={() => setIsContactOpen(true)}
+              className="inline-flex min-h-10 items-center gap-2 rounded-full border border-primary/25 bg-white px-4 text-xs font-semibold text-primary transition-colors hover:border-primary/50 hover:bg-primary/[0.04]"
+            >
+              <Mail className="size-3.5" />
+              <span>Contact caretaker</span>
+            </button>
+            )}
+            <button
+              type="button"
+              onClick={handleScrollToForm}
+              className="inline-flex items-center gap-1.5 px-5 py-2.5 rounded-full bg-primary hover:bg-primary/90 text-primary-foreground text-xs font-medium transition-all cursor-pointer shadow-xs active:scale-95 shrink-0 self-start sm:self-auto"
+            >
+              <Plus className="size-3.5" />
+              <span>Leave a Tribute</span>
+            </button>
+          </div>
+        )}
       </div>
 
       {/* Reading Stream of Tributes */}
@@ -265,7 +289,7 @@ export function MemoriesStream({
           <button
             type="button"
             onClick={handleScrollToForm}
-            className="inline-flex items-center gap-1.5 px-5 py-2.5 rounded-full bg-[#181925] text-white text-xs font-medium hover:bg-[#252736] transition-all cursor-pointer shadow-xs active:scale-95"
+            className="inline-flex items-center gap-1.5 px-5 py-2.5 rounded-full bg-primary text-primary-foreground text-xs font-medium hover:bg-primary/90 transition-all cursor-pointer shadow-xs active:scale-95"
           >
             <Plus className="size-3.5" />
             <span>Leave a Tribute</span>
@@ -288,19 +312,26 @@ export function MemoriesStream({
             return (
               <article
                 key={item.id}
-                className="p-6 sm:p-7 rounded-3xl bg-[#f7f7f8] border border-black/[0.06] flex flex-col sm:flex-row items-start gap-4 sm:gap-6 transition-all hover:border-black/[0.12] relative group shadow-none"
+                id={`tribute-${item.id}`}
+                className={`p-6 sm:p-7 rounded-3xl bg-[#f7f7f8] border flex flex-col sm:flex-row items-start gap-4 sm:gap-6 transition-all relative group shadow-none scroll-mt-28 ${isDemo ? "border-black/[0.06] hover:border-black/[0.12]" : "border-[#dedfe1] hover:border-[#c9cbd0]"}`}
               >
+                {!isDemo && isNew && (
+                  <span className="absolute -left-px -top-px rounded-br-xl rounded-tl-[23px] bg-primary px-3 py-1 text-[9px] font-bold uppercase tracking-[0.12em] text-white shadow-[inset_0_-1px_0_rgba(0,0,0,0.08)]">
+                    New
+                  </span>
+                )}
                 {/* Left Column: Linocut Ritual Emblem in clean white badge */}
-                <div className="shrink-0 p-2.5 rounded-2xl bg-white border border-black/[0.06] text-[#8b5a45] flex items-center justify-center self-start shadow-none">
+                <div className={`shrink-0 p-2.5 rounded-2xl bg-white border border-black/[0.06] flex items-center justify-center self-start shadow-none ${isDemo ? "text-primary" : "text-[#575b58]"}`}>
                   <TributeEmblem
                     type={item.tributeType || (item.photoUrl ? "photo" : "note")}
                     size={40}
+                    variant={isDemo ? "classic" : "vintage"}
                   />
                 </div>
 
                 {/* Right Column: Tribute Content */}
                 <div className="flex-1 min-w-0 flex flex-col gap-3.5 w-full">
-                  
+
                   {/* Author Header & Utility Menu */}
                   <div className="flex items-start justify-between gap-3">
                     <div className="flex flex-col">
@@ -316,7 +347,7 @@ export function MemoriesStream({
                             </span>
                           </>
                         )}
-                        {isNew && (
+                        {isDemo && isNew && (
                           <span className="text-[10px] uppercase font-mono px-2 py-0.5 rounded-full bg-amber-100/70 text-amber-900 border border-amber-200">
                             New
                           </span>
@@ -338,7 +369,7 @@ export function MemoriesStream({
                     </div>
 
                     {/* Three-dot menu ⋮ for Share & Contact Author */}
-                    <div className="relative">
+                    {isDemo && <div className="relative">
                       <button
                         type="button"
                         onClick={() => setActiveMenuId(isMenuOpen ? null : item.id)}
@@ -369,7 +400,7 @@ export function MemoriesStream({
                           )}
                         </div>
                       )}
-                    </div>
+                    </div>}
                   </div>
 
                   {/* Story Narrative with Progressive Disclosure */}
@@ -383,7 +414,7 @@ export function MemoriesStream({
                       <button
                         type="button"
                         onClick={() => toggleExpand(item.id)}
-                        className="text-xs font-semibold text-[#8b5a45] hover:underline cursor-pointer mt-1.5 inline-block select-none"
+                        className="text-xs font-semibold text-primary hover:underline cursor-pointer mt-1.5 inline-block select-none"
                       >
                         {isExpanded ? "read less" : "read more"}
                       </button>
@@ -394,18 +425,24 @@ export function MemoriesStream({
 
                   {/* Bottom Action: Clean Share link */}
                   <div className="pt-2 border-t border-black/[0.04] flex items-center justify-between text-xs text-[#888]">
-                    <button
-                      type="button"
-                      onClick={() => handleShare(item)}
-                      className="inline-flex items-center gap-1.5 text-xs text-[#777] hover:text-[#181925] transition-colors cursor-pointer select-none"
-                    >
-                      <Share2 className="size-3.5" />
-                      <span>Share</span>
-                    </button>
-                    {copiedId === item.id && (
-                      <span className="text-[11px] text-emerald-700 font-medium animate-in fade-in">
-                        Link copied to clipboard!
-                      </span>
+                    {isDemo ? (
+                      <>
+                        <button
+                          type="button"
+                          onClick={() => handleShare(item)}
+                          className="inline-flex items-center gap-1.5 text-xs text-[#777] hover:text-[#181925] transition-colors cursor-pointer select-none"
+                        >
+                          <Share2 className="size-3.5" />
+                          <span>Share</span>
+                        </button>
+                        {copiedId === item.id && (
+                          <span className="text-[11px] text-emerald-700 font-medium animate-in fade-in">
+                            Link copied to clipboard!
+                          </span>
+                        )}
+                      </>
+                    ) : (
+                      <TributeShareMenu tributeId={item.id} authorName={item.authorName} memorialName={fullName} />
                     )}
                   </div>
                 </div>
@@ -422,14 +459,8 @@ export function MemoriesStream({
       >
         {isSubmitted ? (
           <div className="py-8 text-center flex flex-col items-center justify-center gap-3 animate-in fade-in">
-            <div className="size-14 rounded-2xl bg-[#faf8f5] border border-[#8b5a45]/20 text-[#8b5a45] flex items-center justify-center shadow-xs">
-              {tributeRitual === "candle" ? (
-                <CandleFlameEmblem size={30} />
-              ) : tributeRitual === "flower" ? (
-                <BotanicalFlowerEmblem size={30} />
-              ) : (
-                <QuillFeatherEmblem size={30} />
-              )}
+            <div className="size-14 rounded-2xl bg-primary/5 border border-primary/20 text-primary flex items-center justify-center shadow-xs">
+              {ritualEmblem(tributeRitual, 30)}
             </div>
             <h3 className="text-lg font-medium text-[#181925]">
               Thank you, {authorName}
@@ -444,7 +475,7 @@ export function MemoriesStream({
                 setIsSubmitted(false)
                 setTurnstileToken("")
               }}
-              className="mt-2 text-xs font-semibold text-[#8b5a45] hover:underline cursor-pointer"
+              className="mt-2 text-xs font-semibold text-primary hover:underline cursor-pointer"
             >
               Leave another tribute &rarr;
             </button>
@@ -453,15 +484,9 @@ export function MemoriesStream({
           <form onSubmit={handleTributeSubmit} className="flex flex-col gap-5">
             {/* Form Eyebrow & Header */}
             <div className="flex flex-col gap-1">
-              <span className="text-[11px] font-mono text-[#8b5a45] uppercase tracking-wider">
-                Offer a Gesture
-              </span>
               <h3 className="text-lg sm:text-xl font-medium tracking-tight text-[#181925]">
-                Leave a Tribute for {firstName}
+                Leave a Tribute to {firstName}
               </h3>
-              <p className="text-xs text-[#71717a]">
-                Choose a gesture below to honor {firstName}&apos;s life and comfort the family.
-              </p>
             </div>
 
             {/* 1. Ritual Selector (Segmented 3-Way Toggle) */}
@@ -469,39 +494,36 @@ export function MemoriesStream({
               <button
                 type="button"
                 onClick={() => setTributeRitual("flower")}
-                className={`flex flex-col items-center justify-center py-3.5 px-2 rounded-2xl border transition-all cursor-pointer text-center ${
-                  tributeRitual === "flower"
-                    ? "bg-[#faf8f5] border-[#8b5a45] text-[#8b5a45] ring-1 ring-[#8b5a45]/30 shadow-xs"
-                    : "bg-white border-black/[0.08] text-[#555] hover:bg-neutral-50 hover:text-[#181925]"
-                }`}
+                className={`flex flex-col items-center justify-center py-3.5 px-2 rounded-2xl border transition-all cursor-pointer text-center ${tributeRitual === "flower"
+                  ? "bg-primary/5 border-primary text-primary ring-1 ring-primary/30 shadow-xs"
+                  : "bg-white border-black/[0.08] text-[#555] hover:bg-neutral-50 hover:text-[#181925]"
+                  }`}
               >
-                <BotanicalFlowerEmblem size={26} className="shrink-0 mb-1" />
+                {ritualEmblem("flower", 26, "shrink-0 mb-1")}
                 <span className="text-xs font-medium">Lay a Flower</span>
               </button>
 
               <button
                 type="button"
                 onClick={() => setTributeRitual("candle")}
-                className={`flex flex-col items-center justify-center py-3.5 px-2 rounded-2xl border transition-all cursor-pointer text-center ${
-                  tributeRitual === "candle"
-                    ? "bg-[#faf8f5] border-[#8b5a45] text-[#8b5a45] ring-1 ring-[#8b5a45]/30 shadow-xs"
-                    : "bg-white border-black/[0.08] text-[#555] hover:bg-neutral-50 hover:text-[#181925]"
-                }`}
+                className={`flex flex-col items-center justify-center py-3.5 px-2 rounded-2xl border transition-all cursor-pointer text-center ${tributeRitual === "candle"
+                  ? "bg-primary/5 border-primary text-primary ring-1 ring-primary/30 shadow-xs"
+                  : "bg-white border-black/[0.08] text-[#555] hover:bg-neutral-50 hover:text-[#181925]"
+                  }`}
               >
-                <CandleFlameEmblem size={26} className="shrink-0 mb-1" />
+                {ritualEmblem("candle", 26, "shrink-0 mb-1")}
                 <span className="text-xs font-medium">Light a Candle</span>
               </button>
 
               <button
                 type="button"
                 onClick={() => setTributeRitual("note")}
-                className={`flex flex-col items-center justify-center py-3.5 px-2 rounded-2xl border transition-all cursor-pointer text-center ${
-                  tributeRitual === "note"
-                    ? "bg-[#faf8f5] border-[#8b5a45] text-[#8b5a45] ring-1 ring-[#8b5a45]/30 shadow-xs"
-                    : "bg-white border-black/[0.08] text-[#555] hover:bg-neutral-50 hover:text-[#181925]"
-                }`}
+                className={`flex flex-col items-center justify-center py-3.5 px-2 rounded-2xl border transition-all cursor-pointer text-center ${tributeRitual === "note"
+                  ? "bg-primary/5 border-primary text-primary ring-1 ring-primary/30 shadow-xs"
+                  : "bg-white border-black/[0.08] text-[#555] hover:bg-neutral-50 hover:text-[#181925]"
+                  }`}
               >
-                <QuillFeatherEmblem size={26} className="shrink-0 mb-1" />
+                {ritualEmblem("note", 26, "shrink-0 mb-1")}
                 <span className="text-xs font-medium">Leave a Note</span>
               </button>
             </div>
@@ -519,7 +541,7 @@ export function MemoriesStream({
                   value={authorName}
                   onChange={(e) => setAuthorName(e.target.value)}
                   placeholder="e.g. David Miller"
-                  className="w-full px-3.5 py-2.5 rounded-xl bg-white border border-black/[0.08] text-sm text-[#181925] placeholder:text-[#aaa] outline-none focus:border-[#8b5a45]/50 transition-colors"
+                  className="w-full px-3.5 py-2.5 rounded-xl bg-white border border-black/[0.08] text-sm text-[#181925] placeholder:text-[#aaa] outline-none focus:border-primary/50 transition-colors"
                 />
               </div>
 
@@ -532,7 +554,7 @@ export function MemoriesStream({
                   value={relationship}
                   onChange={(e) => setRelationship(e.target.value)}
                   placeholder="e.g. Daughter, Lifelong friend, Colleague"
-                  className="w-full px-3.5 py-2.5 rounded-xl bg-white border border-black/[0.08] text-sm text-[#181925] placeholder:text-[#aaa] outline-none focus:border-[#8b5a45]/50 transition-colors"
+                  className="w-full px-3.5 py-2.5 rounded-xl bg-white border border-black/[0.08] text-sm text-[#181925] placeholder:text-[#aaa] outline-none focus:border-primary/50 transition-colors"
                 />
               </div>
             </div>
@@ -543,8 +565,8 @@ export function MemoriesStream({
                 {tributeRitual === "flower"
                   ? "Words to accompany your flower (optional)"
                   : tributeRitual === "candle"
-                  ? "Words to accompany your candle (optional)"
-                  : "Words of remembrance *"}
+                    ? "Words to accompany your candle (optional)"
+                    : "Words of remembrance *"}
               </label>
               <textarea
                 required={tributeRitual === "note"}
@@ -552,7 +574,7 @@ export function MemoriesStream({
                 value={content}
                 onChange={(e) => setContent(e.target.value)}
                 placeholder={ritualPlaceholder}
-                className="w-full px-3.5 py-2.5 rounded-xl bg-white border border-black/[0.08] text-sm text-[#181925] placeholder:text-[#aaa] outline-none focus:border-[#8b5a45]/50 transition-colors resize-none leading-relaxed"
+                className="w-full px-3.5 py-2.5 rounded-xl bg-white border border-black/[0.08] text-sm text-[#181925] placeholder:text-[#aaa] outline-none focus:border-primary/50 transition-colors resize-none leading-relaxed"
               />
             </div>
 
@@ -579,7 +601,7 @@ export function MemoriesStream({
               <button
                 type="submit"
                 disabled={isSubmitting || !authorName.trim()}
-                className="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-full font-medium transition-all cursor-pointer bg-[#181925] hover:bg-[#252736] text-white shadow-xs active:scale-[0.98] h-10 px-6 text-xs select-none disabled:opacity-50 disabled:cursor-not-allowed w-full sm:w-auto"
+                className="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-full font-medium transition-all cursor-pointer bg-primary hover:bg-primary/90 text-primary-foreground shadow-xs active:scale-[0.98] h-10 px-6 text-xs select-none disabled:opacity-50 disabled:cursor-not-allowed w-full sm:w-auto"
               >
                 {isSubmitting ? (
                   <>
@@ -588,9 +610,7 @@ export function MemoriesStream({
                   </>
                 ) : (
                   <>
-                    {tributeRitual === "flower" && <BotanicalFlowerEmblem size={16} />}
-                    {tributeRitual === "candle" && <CandleFlameEmblem size={16} />}
-                    {tributeRitual === "note" && <QuillFeatherEmblem size={16} />}
+                    {ritualEmblem(tributeRitual, 16)}
                     <span>{ritualSubmitLabel}</span>
                   </>
                 )}
@@ -599,6 +619,15 @@ export function MemoriesStream({
           </form>
         )}
       </div>
+
+      {!isDemo && (memorialId || slug) && (
+        <ContactCaretakerModal
+          isOpen={isContactOpen}
+          onClose={() => setIsContactOpen(false)}
+          memorialId={memorialId || slug || ""}
+          memorialName={fullName}
+        />
+      )}
 
     </section>
   )

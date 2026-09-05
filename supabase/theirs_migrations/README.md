@@ -15,11 +15,9 @@ Run these SQL scripts in numerical order in your new Supabase project's **SQL Ed
      - `memorials`: The permanent home for someone's life (`theirs.page/[slug]`).
      - `collaborators`: Co-admins and family stewards.
      - `memories`: Stories contributed by family & friends (the heart of the product).
-     - `albums`: Curated photo groupings (*"Childhood"*, *"Wedding"*, *"Our Family"*, etc.).
      - `media_items`: Photos, audio voicemails, clips with captions & metadata.
      - `timeline_events`: Milestone moments (*"1952: Born in Jaipur"*, *"1974: Married Meena"*).
-     - `people_in_life`: Visual relationships (*"Meena — Wife"*, *"Rahul — Son"*).
-     - `guestbook_entries`: Condolences and messages of presence.
+     - `caretaker_messages`: Private visitor messages for memorial administrators.
      - `payments`: Clean transaction records for Dodo Payments.
    - Creates performance indexes on slugs, foreign keys, and status flags.
 
@@ -27,7 +25,8 @@ Run these SQL scripts in numerical order in your new Supabase project's **SQL Ed
    - Enables PostgreSQL Row Level Security (RLS) across all tables.
    - Defines `is_memorial_admin()` and `can_view_memorial()` security definer functions.
    - **Public Access**: Visitors can view published memorials and approved memories/photos.
-   - **Frictionless Contributions**: Anyone (including unauthenticated guests) can submit a memory or guestbook entry, forced to `status = 'pending_approval'`.
+   - **Frictionless Contributions**: Anyone (including unauthenticated guests) can submit a memory, forced to `status = 'pending_approval'`.
+   - **Private Messaging**: Caretaker messages are written through the guarded server endpoint and visible only to memorial administrators.
    - **Admin Moderation**: Only the owner or accepted co-admins can approve, reject, or edit content.
    - **Payment Protection**: Only service-role (`SUPABASE_SECRET_KEY`) can insert/update payment webhook logs.
 
@@ -40,6 +39,10 @@ Run these SQL scripts in numerical order in your new Supabase project's **SQL Ed
 4. **`06_drop_people_in_life.sql`**
    - Safely drops the `people_in_life` table, foreign keys, and RLS policies.
    - Relationships now emerge organically in memories, captions, and timeline stories rather than a rigid list.
+
+5. **`10_caretaker_messages.sql`**
+   - Drops the unused pre-launch `guestbook_entries` table.
+   - Creates the private caretaker inbox and admin-only read, update, and delete policies.
 
 ---
 

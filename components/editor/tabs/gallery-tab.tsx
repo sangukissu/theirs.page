@@ -48,6 +48,8 @@ interface GalleryTabProps {
     value: any
   ) => void
   onReorderMedia?: (reordered: EditorMediaItem[]) => void
+  sectionEnabled?: boolean
+  onToggleSection?: (enabled: boolean) => void
 }
 
 export interface UploadingFileItem {
@@ -70,6 +72,8 @@ export function GalleryTab({
   onRemoveMedia,
   onUpdateMedia,
   onReorderMedia,
+  sectionEnabled = true,
+  onToggleSection,
 }: GalleryTabProps) {
   const [isUploading, setIsUploading] = useState(false)
   const [uploadProgress, setUploadProgress] = useState<string | null>(null)
@@ -267,16 +271,48 @@ export function GalleryTab({
   }
 
   return (
-    <div className="flex flex-col gap-8 max-w-4xl">
-      {/* Header */}
+    <div className="flex flex-col gap-6 max-w-4xl">
+      {/* Header with Small Toggle */}
       <div className="flex flex-col gap-1 border-b border-black/[0.06] pb-4">
-        <h2 className="text-lg sm:text-xl font-medium text-[#181925]">
-          Photographs, Audio & Video Gallery
-        </h2>
+        <div className="flex items-center justify-between gap-4">
+          <h2 className="text-lg sm:text-xl font-medium text-[#181925]">
+            Photographs, Audio & Video Gallery
+          </h2>
+
+          <div className="flex items-center gap-2 select-none shrink-0">
+            <span className={`text-xs ${sectionEnabled ? "text-[#71717a]" : "text-amber-700 font-medium"}`}>
+              {sectionEnabled ? "Active" : "Off"}
+            </span>
+            <button
+              type="button"
+              role="switch"
+              aria-checked={sectionEnabled}
+              onClick={() => onToggleSection?.(!sectionEnabled)}
+              className={`w-9 h-5 rounded-full transition-colors relative p-0.5 shrink-0 cursor-pointer ${
+                sectionEnabled ? "bg-primary" : "bg-neutral-300"
+              }`}
+              title={sectionEnabled ? "Disable this section on memorial" : "Enable this section on memorial"}
+            >
+              <div
+                className={`size-4 rounded-full bg-white transition-transform shadow-xs ${
+                  sectionEnabled ? "translate-x-4" : "translate-x-0"
+                }`}
+              />
+            </button>
+          </div>
+        </div>
         <p className="text-xs sm:text-sm text-[#71717a]">
           Bulk upload family memories. Zero mandatory forms—drop photos, saved voicemails, or vintage video clips. Captions and years are completely optional.
         </p>
       </div>
+
+      <div
+        className={`flex flex-col gap-8 ${
+          !sectionEnabled
+            ? "opacity-35 pointer-events-none select-none grayscale-[40%] transition-all duration-200"
+            : "transition-all duration-200"
+        }`}
+      >
 
       {/* Complete Plan Upgrade Banner */}
       {!isPaid && (
@@ -298,8 +334,8 @@ export function GalleryTab({
           </span>
           <span
             className={`inline-flex items-center gap-1 text-[11px] px-2.5 py-1 rounded-full border ${isPaid
-                ? "bg-neutral-100 text-[#444] border-black/[0.04]"
-                : "bg-amber-50/70 text-amber-800 border-amber-200"
+              ? "bg-neutral-100 text-[#444] border-black/[0.04]"
+              : "bg-amber-50/70 text-amber-800 border-amber-200"
               }`}
           >
             <Volume2 className="size-3 text-primary" /> Audio Notes{" "}
@@ -307,8 +343,8 @@ export function GalleryTab({
           </span>
           <span
             className={`inline-flex items-center gap-1 text-[11px] px-2.5 py-1 rounded-full border ${isPaid
-                ? "bg-neutral-100 text-[#444] border-black/[0.04]"
-                : "bg-amber-50/70 text-amber-800 border-amber-200"
+              ? "bg-neutral-100 text-[#444] border-black/[0.04]"
+              : "bg-amber-50/70 text-amber-800 border-amber-200"
               }`}
           >
             <Video className="size-3 text-primary" /> Video Clips{" "}
@@ -324,8 +360,8 @@ export function GalleryTab({
           ) : (
             <span
               className={`px-2.5 py-1 rounded-full text-xs font-mono font-medium border ${isPhotoQuotaReached
-                  ? "bg-rose-50 text-rose-700 border-rose-200"
-                  : "bg-neutral-100 text-[#555] border-black/[0.06]"
+                ? "bg-rose-50 text-rose-700 border-rose-200"
+                : "bg-neutral-100 text-[#555] border-black/[0.06]"
                 }`}
             >
               {photoCount} / 5 Free Photos Used
@@ -355,8 +391,8 @@ export function GalleryTab({
       {/* Low-Friction Bulk Upload Area */}
       <label
         className={`p-8 sm:p-10 rounded-3xl border-2 border-dashed transition-all flex flex-col items-center justify-center gap-3 cursor-pointer text-center group ${isPhotoQuotaReached
-            ? "border-amber-300 bg-amber-50/20 hover:bg-amber-50/40"
-            : "border-black/[0.12] hover:border-primary/50 bg-white hover:bg-neutral-50/50"
+          ? "border-amber-300 bg-amber-50/20 hover:bg-amber-50/40"
+          : "border-black/[0.12] hover:border-primary/50 bg-white hover:bg-neutral-50/50"
           }`}
       >
         <div className="size-12 rounded-full bg-primary/10 text-primary flex items-center justify-center group-hover:scale-105 transition-transform">
@@ -427,8 +463,8 @@ export function GalleryTab({
                   {/* Frosted Status Overlay */}
                   <div
                     className={`absolute inset-0 flex flex-col items-center justify-center gap-1.5 p-3 text-center ${item.status === "error"
-                        ? "bg-rose-950/85 text-white"
-                        : "bg-black/50 backdrop-blur-[2px] text-white"
+                      ? "bg-rose-950/85 text-white"
+                      : "bg-black/50 backdrop-blur-[2px] text-white"
                       }`}
                   >
                     {item.status === "error" ? (
@@ -505,8 +541,8 @@ export function GalleryTab({
                     type="button"
                     onClick={() => onUpdateMedia(item.id, "is_pinned", !item.is_pinned)}
                     className={`absolute top-2 left-2 size-7 rounded-full flex items-center justify-center transition-all cursor-pointer shadow-xs ${item.is_pinned
-                        ? "bg-[#8b5a45] text-white opacity-100"
-                        : "bg-black/60 hover:bg-black/80 text-white opacity-0 group-hover:opacity-100"
+                      ? "bg-[#8b5a45] text-white opacity-100"
+                      : "bg-black/60 hover:bg-black/80 text-white opacity-0 group-hover:opacity-100"
                       }`}
                     title={item.is_pinned ? "Unpin from top" : "Pin to top as featured"}
                   >
@@ -613,6 +649,7 @@ export function GalleryTab({
             ))}
           </div>
         )}
+      </div>
       </div>
 
       <ConfirmDeleteModal

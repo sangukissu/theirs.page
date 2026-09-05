@@ -44,11 +44,10 @@ export async function GET(req: NextRequest, context: RouteContext) {
     }
 
     // 2. Fetch all relational sub-collections in parallel
-    const [mediaRes, timelineRes, memoriesRes, guestbookRes] = await Promise.all([
+    const [mediaRes, timelineRes, memoriesRes] = await Promise.all([
       db.from("media_items").select("*").eq("memorial_id", id).order("order_index", { ascending: true }),
       db.from("timeline_events").select("*").eq("memorial_id", id).order("year", { ascending: true }),
       db.from("memories").select("*").eq("memorial_id", id).order("created_at", { ascending: false }),
-      db.from("guestbook_entries").select("*").eq("memorial_id", id).order("created_at", { ascending: false }),
     ])
 
     return NextResponse.json({
@@ -56,7 +55,6 @@ export async function GET(req: NextRequest, context: RouteContext) {
       mediaItems: mediaRes.data || [],
       timelineEvents: timelineRes.data || [],
       memories: memoriesRes.data || [],
-      guestbookEntries: guestbookRes.data || [],
     })
   } catch (err: any) {
     console.error("Memorial detail error:", err)

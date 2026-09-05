@@ -52,9 +52,9 @@ export function MemorialStory({ fullName, biography, isDemo = false }: MemorialS
   const formattedBiography = formatBiographyHtml(biography)
 
   return (
-    <section id="story" className="py-12 sm:py-16 px-4 max-w-4xl mx-auto scroll-mt-24">
-      <div className="flex flex-col gap-8">
-        
+    <section id="story" className="py-12 px-4 max-w-4xl mx-auto scroll-mt-24">
+      <div className="flex flex-col gap-4">
+
         {/* Section Heading */}
         <div className="flex flex-col gap-2 border-b border-black/[0.06] pb-4">
           <h2 className="text-2xl sm:text-3xl font-medium tracking-tight text-[#181925]">
@@ -125,6 +125,7 @@ export function MemorialStory({ fullName, biography, isDemo = false }: MemorialS
         .story-editorial-body p {
           margin-bottom: 1.25rem;
           color: #3a3a40;
+          line-height: 1.5;
         }
         .story-editorial-body blockquote {
           margin: 1.5rem 0;

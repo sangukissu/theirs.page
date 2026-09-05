@@ -37,6 +37,7 @@ interface ContributeModalProps {
   initialType?: ContributionType | null
   initialPhotoUrl?: string | null
   initialPhotoTitle?: string | null
+  onSubmitted?: () => void
 }
 
 export function ContributeModal({
@@ -50,6 +51,7 @@ export function ContributeModal({
   initialType = null,
   initialPhotoUrl = null,
   initialPhotoTitle = null,
+  onSubmitted,
 }: ContributeModalProps) {
   const [selectedType, setSelectedType] = useState<ContributionType | null>(initialType)
   const [tributeRitual, setTributeRitual] = useState<TributeRitual>("flower")
@@ -83,7 +85,7 @@ export function ContributeModal({
       icon: Heart,
       title: "Leave a Tribute",
       desc: "Lay a flower, light a candle, or leave a quiet note of remembrance.",
-      color: "text-[#8b5a45] bg-[#faf8f5]",
+      color: "text-primary bg-primary/5",
       available: true,
     },
     {
@@ -91,7 +93,7 @@ export function ContributeModal({
       icon: BookOpen,
       title: "Share a memory",
       desc: `An anecdote, a shared story, or a reflection about ${firstName}.`,
-      color: "text-[#8b5a45] bg-[#faf8f5]",
+      color: "text-primary bg-primary/5",
       available: true,
     },
     {
@@ -99,7 +101,7 @@ export function ContributeModal({
       icon: Camera,
       title: "Share a photograph",
       desc: "Photographs the family and friends may cherish.",
-      color: "text-[#8b5a45] bg-[#faf8f5]",
+      color: "text-primary bg-primary/5",
       available: !isPhotosFull,
     },
     {
@@ -107,7 +109,7 @@ export function ContributeModal({
       icon: Mic,
       title: "Share a voice note",
       desc: "A voicemail or spoken story worth keeping forever.",
-      color: "text-[#8b5a45] bg-[#faf8f5]",
+      color: "text-primary bg-primary/5",
       available: Boolean(isPaid),
     },
     {
@@ -115,7 +117,7 @@ export function ContributeModal({
       icon: Film,
       title: "Share a video clip",
       desc: "Home movies, celebrations, or recorded messages.",
-      color: "text-[#8b5a45] bg-[#faf8f5]",
+      color: "text-primary bg-primary/5",
       available: Boolean(isPaid),
     },
   ]
@@ -326,6 +328,7 @@ export function ContributeModal({
       }
 
       setIsSubmitted(true)
+      onSubmitted?.()
     } catch (err: any) {
       const userMessage =
         err.message?.includes("fetch") || err.message?.includes("Network")
@@ -469,7 +472,7 @@ export function ContributeModal({
                             className={`size-10 rounded-xl flex items-center justify-center shrink-0 ${opt.color} transition-transform group-hover:scale-105`}
                           >
                             {opt.type === "tribute" ? (
-                              <BotanicalFlowerEmblem size={22} className="text-[#8b5a45]" />
+                              <BotanicalFlowerEmblem size={22} className="text-primary" />
                             ) : (
                               <Icon className="size-5" />
                             )}
@@ -524,7 +527,7 @@ export function ContributeModal({
                           onClick={() => setTributeRitual("flower")}
                           className={`flex flex-col items-center justify-center py-3 px-2 rounded-2xl border transition-all cursor-pointer text-center ${
                             tributeRitual === "flower"
-                              ? "bg-[#faf8f5] border-[#8b5a45] text-[#8b5a45] ring-1 ring-[#8b5a45]/30 shadow-2xs"
+                              ? "bg-primary/5 border-primary text-primary ring-1 ring-primary/30 shadow-2xs"
                               : "bg-[#f7f7f8] border-black/[0.06] text-[#666] hover:bg-neutral-100 hover:text-[#181925]"
                           }`}
                         >
@@ -537,7 +540,7 @@ export function ContributeModal({
                           onClick={() => setTributeRitual("candle")}
                           className={`flex flex-col items-center justify-center py-3 px-2 rounded-2xl border transition-all cursor-pointer text-center ${
                             tributeRitual === "candle"
-                              ? "bg-[#faf8f5] border-[#8b5a45] text-[#8b5a45] ring-1 ring-[#8b5a45]/30 shadow-2xs"
+                              ? "bg-primary/5 border-primary text-primary ring-1 ring-primary/30 shadow-2xs"
                               : "bg-[#f7f7f8] border-black/[0.06] text-[#666] hover:bg-neutral-100 hover:text-[#181925]"
                           }`}
                         >
@@ -550,7 +553,7 @@ export function ContributeModal({
                           onClick={() => setTributeRitual("note")}
                           className={`flex flex-col items-center justify-center py-3 px-2 rounded-2xl border transition-all cursor-pointer text-center ${
                             tributeRitual === "note"
-                              ? "bg-[#faf8f5] border-[#8b5a45] text-[#8b5a45] ring-1 ring-[#8b5a45]/30 shadow-2xs"
+                              ? "bg-primary/5 border-primary text-primary ring-1 ring-primary/30 shadow-2xs"
                               : "bg-[#f7f7f8] border-black/[0.06] text-[#666] hover:bg-neutral-100 hover:text-[#181925]"
                           }`}
                         >
@@ -681,11 +684,11 @@ export function ContributeModal({
                         >
                           <div className="size-10 rounded-full bg-white flex items-center justify-center shadow-xs border border-black/[0.06] group-hover:scale-105 transition-transform">
                             {selectedType === "photo" ? (
-                              <Camera className="size-4 text-[#8b5a45]" />
+                              <Camera className="size-4 text-primary" />
                             ) : selectedType === "video" ? (
-                              <Film className="size-4 text-[#8b5a45]" />
+                              <Film className="size-4 text-primary" />
                             ) : (
-                              <Mic className="size-4 text-[#8b5a45]" />
+                              <Mic className="size-4 text-primary" />
                             )}
                           </div>
                           <div className="flex flex-col">
@@ -818,7 +821,7 @@ export function ContributeModal({
                                 onClick={() => memoryPhotoInputRef.current?.click()}
                                 className="rounded-xl border border-dashed border-black/[0.15] hover:border-primary/50 aspect-4/3 flex flex-col items-center justify-center gap-1 bg-[#fafafb] hover:bg-white text-[#71717a] hover:text-primary transition-all cursor-pointer text-center p-2"
                               >
-                                <Camera className="size-4 text-[#8b5a45]" />
+                                <Camera className="size-4 text-primary" />
                                 <span className="text-[10px] font-medium">+ Add photo</span>
                               </button>
                             )}
@@ -835,7 +838,7 @@ export function ContributeModal({
                           onClick={() => memoryPhotoInputRef.current?.click()}
                           className="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl border border-dashed border-black/[0.12] bg-[#f7f7f8] hover:bg-neutral-100 hover:border-black/[0.2] text-xs font-medium text-[#666] hover:text-[#181925] transition-all cursor-pointer self-start"
                         >
-                          <Camera className="size-3.5 text-[#8b5a45]" />
+                          <Camera className="size-3.5 text-primary" />
                           <span>Attach photographs (up to 3 photos)</span>
                         </button>
                       )}

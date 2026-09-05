@@ -2,9 +2,10 @@
 
 import { useState, useEffect, useRef, useCallback } from "react"
 import Link from "next/link"
-import { useRouter } from "next/navigation"
+import { useRouter, useSearchParams } from "next/navigation"
 import {
   ArrowLeft,
+  ArrowRight,
   ExternalLink,
   Save,
   Check,
@@ -24,7 +25,7 @@ import { IdentityTab } from "./tabs/identity-tab"
 import { StoryTab } from "./tabs/story-tab"
 import { GalleryTab, EditorMediaItem } from "./tabs/gallery-tab"
 import { TimelineTab, EditorTimelineEvent } from "./tabs/timeline-tab"
-import { ModerationTab, EditorMemory, EditorGuestbookEntry } from "./tabs/moderation-tab"
+import { ModerationTab, EditorMemory, EditorCaretakerMessage } from "./tabs/moderation-tab"
 import { SettingsTab } from "./tabs/settings-tab"
 import { SectionSettings } from "@/types/theirs"
 
@@ -63,7 +64,7 @@ interface MemorialEditorClientProps {
   initialMediaItems: EditorMediaItem[]
   initialTimelineEvents: EditorTimelineEvent[]
   initialMemories: EditorMemory[]
-  initialGuestbook: EditorGuestbookEntry[]
+  initialCaretakerMessages: EditorCaretakerMessage[]
 }
 
 type SaveStatus = "saved" | "saving" | "local-saved"
@@ -73,10 +74,12 @@ export function MemorialEditorClient({
   initialMediaItems,
   initialTimelineEvents,
   initialMemories,
-  initialGuestbook,
+  initialCaretakerMessages,
 }: MemorialEditorClientProps) {
   const router = useRouter()
-  const [activeTab, setActiveTab] = useState<EditorSectionTab>("identity")
+  const searchParams = useSearchParams()
+  const requestedTab = searchParams.get("tab")
+  const [activeTab, setActiveTab] = useState<EditorSectionTab>(requestedTab === "moderation" ? "moderation" : "identity")
 
   const isPaid = Boolean(initialMemorial.is_paid)
 
@@ -112,7 +115,7 @@ export function MemorialEditorClient({
   const [mediaItems, setMediaItems] = useState<EditorMediaItem[]>(initialMediaItems)
   const [timelineEvents, setTimelineEvents] = useState<EditorTimelineEvent[]>(initialTimelineEvents)
   const [memories, setMemories] = useState<EditorMemory[]>(initialMemories)
-  const [guestbook, setGuestbook] = useState<EditorGuestbookEntry[]>(initialGuestbook)
+  const [caretakerMessages, setCaretakerMessages] = useState<EditorCaretakerMessage[]>(initialCaretakerMessages)
 
   // Auto-Save Status
   const [saveStatus, setSaveStatus] = useState<SaveStatus>("saved")
@@ -342,23 +345,91 @@ export function MemorialEditorClient({
 
   const pendingContributions =
     memories.filter((m) => m.status === "pending_approval").length +
-    guestbook.filter((g) => g.status === "pending_approval").length
+    caretakerMessages.filter((message) => message.status === "unread").length
 
-  // Exactly 7 clean, unbloated tabs matching public memorial structure
+  const handleToggleSection = (
+    sectionKey: keyof SectionSettings,
+    enabled: boolean
+  ) => {
+    if (sectionKey === "story") return
+    const current = {
+      tributes: form.section_settings?.tributes !== false,
+      timeline: form.section_settings?.timeline !== false,
+      gallery: form.section_settings?.gallery !== false,
+      stories: form.section_settings?.stories !== false,
+    }
+    const nextSettings: SectionSettings = {
+      ...current,
+      [sectionKey]: enabled,
+      story: true,
+    }
+    const nextForm = { ...form, section_settings: nextSettings }
+    setForm(nextForm)
+
+    try {
+      localStorage.setItem(
+        DRAFT_KEY,
+        JSON.stringify({
+          form: nextForm,
+          timestamp: Date.now(),
+          isDirty: true,
+        })
+      )
+    } catch {}
+
+    if (debounceTimerRef.current) clearTimeout(debounceTimerRef.current)
+    saveToCloud(nextForm)
+  }
+
+  // Exactly 6 clean, unbloated tabs matching public memorial structure
   const tabs: {
     id: EditorSectionTab
     label: string
     icon: any
     count?: number
     isCompleteOnly?: boolean
+    isOff?: boolean
   }[] = [
     { id: "identity", label: "Identity", icon: User },
-    { id: "story", label: "Life Story", icon: BookOpen },
-    { id: "gallery", label: "Gallery", icon: ImageIcon, count: mediaItems.length },
-    { id: "timeline", label: "Timeline", icon: Calendar, count: timelineEvents.length, isCompleteOnly: true },
-    { id: "moderation", label: "Contributions", icon: MessageSquare, count: pendingContributions },
+    {
+      id: "story",
+      label: "Life Story",
+      icon: BookOpen,
+    },
+    {
+      id: "gallery",
+      label: "Gallery",
+      icon: ImageIcon,
+      count: mediaItems.length,
+      isOff: form.section_settings?.gallery === false,
+    },
+    {
+      id: "timeline",
+      label: "Timeline",
+      icon: Calendar,
+      count: timelineEvents.length,
+      isCompleteOnly: true,
+      isOff: form.section_settings?.timeline === false,
+    },
+    {
+      id: "moderation",
+      label: "Contributions",
+      icon: MessageSquare,
+      count: pendingContributions,
+    },
     { id: "settings", label: "Settings", icon: Settings },
   ]
+
+  const currentIndex = tabs.findIndex((t) => t.id === activeTab)
+  const prevTab = currentIndex > 0 ? tabs[currentIndex - 1] : null
+  const nextTab = currentIndex < tabs.length - 1 ? tabs[currentIndex + 1] : null
+
+  const goToTab = (tabId: EditorSectionTab) => {
+    setActiveTab(tabId)
+    if (typeof window !== "undefined") {
+      window.scrollTo({ top: 0, behavior: "smooth" })
+    }
+  }
 
   return (
     <div className="min-h-screen bg-[#fafafb] text-[#181925] flex flex-col">
@@ -522,6 +593,16 @@ export function MemorialEditorClient({
                   </div>
 
                   <div className="flex items-center gap-1.5">
+                    {tab.isOff && (
+                      <span
+                        className={`text-[9px] font-mono uppercase px-1.5 py-0.2 rounded-full ${
+                          isActive ? "bg-white/20 text-white" : "bg-neutral-200 text-neutral-600"
+                        }`}
+                      >
+                        Off
+                      </span>
+                    )}
+
                     {tab.isCompleteOnly && !initialMemorial.is_paid && (
                       <span
                         className={`text-[9px] font-mono uppercase font-semibold px-1.5 py-0.2 rounded-full ${
@@ -587,6 +668,8 @@ export function MemorialEditorClient({
               }
               onUpdateMedia={handleUpdateMedia}
               onReorderMedia={handleReorderMedia}
+              sectionEnabled={form.section_settings?.gallery !== false}
+              onToggleSection={(enabled) => handleToggleSection("gallery", enabled)}
             />
           )}
 
@@ -603,26 +686,31 @@ export function MemorialEditorClient({
               onRemoveEvent={(id) =>
                 setTimelineEvents((prev) => prev.filter((e) => e.id !== id))
               }
+              sectionEnabled={form.section_settings?.timeline !== false}
+              onToggleSection={(enabled) => handleToggleSection("timeline", enabled)}
             />
           )}
 
           {activeTab === "moderation" && (
             <ModerationTab
               memorialId={initialMemorial.id}
+              initialSubTab={searchParams.get("view") === "messages" ? "messages" : "memories"}
               memories={memories}
-              guestbookEntries={guestbook}
+              caretakerMessages={caretakerMessages}
               onUpdateMemoryStatus={(id, status) => {
                 setMemories(
                   memories.map((m) => (m.id === id ? { ...m, status } : m))
                 )
               }}
-              onUpdateGuestbookStatus={(id, status) => {
-                setGuestbook(
-                  guestbook.map((g) => (g.id === id ? { ...g, status } : g))
+              onUpdateCaretakerMessage={(id, status) => {
+                setCaretakerMessages(
+                  caretakerMessages.map((message) => (message.id === id ? { ...message, status } : message))
                 )
               }}
               onDeleteMemory={(id) => setMemories(memories.filter((m) => m.id !== id))}
-              onDeleteGuestbook={(id) => setGuestbook(guestbook.filter((g) => g.id !== id))}
+              onDeleteCaretakerMessage={(id) => setCaretakerMessages(caretakerMessages.filter((message) => message.id !== id))}
+              sectionSettings={form.section_settings}
+              onToggleSection={handleToggleSection}
             />
           )}
 
@@ -641,6 +729,49 @@ export function MemorialEditorClient({
               onDeleteMemorial={() => router.push("/dashboard")}
             />
           )}
+
+          {/* Previous & Next Tab Navigation Bar */}
+          <nav
+            aria-label="Editor sections navigation"
+            className="flex items-center justify-between gap-4 pt-8 mt-12 pb-10 border-t border-black/[0.08] select-none"
+          >
+            {prevTab ? (
+              <button
+                type="button"
+                onClick={() => goToTab(prevTab.id)}
+                className="group inline-flex items-center gap-2 px-4 py-2 rounded-full border border-black/[0.08] bg-white hover:bg-neutral-50 hover:border-black/20 text-[#181925] text-xs font-medium shadow-2xs transition-all cursor-pointer active:scale-95"
+              >
+                <ArrowLeft className="size-3.5 transition-transform duration-200 group-hover:-translate-x-0.5 text-[#71717a] group-hover:text-[#181925]" />
+                <span>
+                  Previous: <span className="text-[#71717a] font-normal">{prevTab.label}</span>
+                </span>
+              </button>
+            ) : (
+              <div />
+            )}
+
+            {nextTab ? (
+              <button
+                type="button"
+                onClick={() => goToTab(nextTab.id)}
+                className="group inline-flex items-center gap-2 px-4.5 py-2 rounded-full border border-[color-mix(in_srgb,var(--primary)_80%,#3a3480)] bg-[color-mix(in_srgb,var(--primary)_90%,#3a3480)] text-primary-foreground shadow-[inset_0_1px_0_rgba(255,255,255,0.22),inset_0_-1px_0_rgba(58,52,128,0.30)] hover:bg-primary hover:border-[color-mix(in_srgb,var(--primary)_70%,#3a3480)] text-xs font-medium transition-all cursor-pointer active:scale-95 ml-auto"
+              >
+                <span>
+                  Next: <span className="opacity-90 font-normal">{nextTab.label}</span>
+                </span>
+                <ArrowRight className="size-3.5 transition-transform duration-200 group-hover:translate-x-0.5" />
+              </button>
+            ) : (
+              <Link
+                href={`/${form.slug}`}
+                target="_blank"
+                className="group inline-flex items-center gap-2 px-4.5 py-2 rounded-full border border-black/[0.08] bg-white hover:bg-neutral-50 hover:border-black/20 text-[#181925] text-xs font-medium shadow-2xs transition-all cursor-pointer active:scale-95 ml-auto"
+              >
+                <span>Preview Memorial</span>
+                <ExternalLink className="size-3.5 text-[#71717a] group-hover:text-[#181925]" />
+              </Link>
+            )}
+          </nav>
         </main>
 
       </div>

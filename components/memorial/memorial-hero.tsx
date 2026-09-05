@@ -1,6 +1,6 @@
 "use client"
 
-import { Heart, Volume2, Plus, ArrowDown } from "lucide-react"
+import { Plus, Quote } from "lucide-react"
 import { ContributionType } from "./contribute-modal"
 
 interface MemorialHeroProps {
@@ -11,6 +11,7 @@ interface MemorialHeroProps {
   location?: string | null
   epitaph?: string | null
   portraitUrl?: string | null
+  isDemo?: boolean
   onOpenContribute: (type?: ContributionType) => void
 }
 
@@ -22,6 +23,7 @@ export function MemorialHero({
   location = "Devon, England",
   epitaph,
   portraitUrl = "/memorial-family-portrait-grandfather.jpg",
+  isDemo = false,
   onOpenContribute,
 }: MemorialHeroProps) {
   const yearsSpan = birthYear && deathYear ? `${birthYear} — ${deathYear}` : "In Loving Memory"
@@ -76,9 +78,22 @@ export function MemorialHero({
 
         {/* The Personality Epitaph (Life Dominates, Death Only Explains Why) */}
         {epitaph && (
-          <p className="mt-4 text-base sm:text-xl text-[#555] leading-relaxed max-w-xl font-normal text-balance">
-            “{epitaph}”
-          </p>
+          <figure className="mt-5 flex max-w-xl flex-col items-center px-3">
+            <Quote
+              aria-hidden="true"
+              className={isDemo ? "mb-2 size-7 text-primary/70" : "mb-2 size-7 text-primary opacity-70"}
+              strokeWidth={1.5}
+            />
+            <blockquote>
+              <p className="text-balance font-serif text-lg italic leading-relaxed text-[#3a3a40] sm:text-xl sm:leading-8">
+                {epitaph}
+              </p>
+            </blockquote>
+            <span
+              aria-hidden="true"
+              className={isDemo ? "mt-4 h-px w-10 bg-primary/40" : "mt-4 h-px w-10 bg-primary opacity-40"}
+            />
+          </figure>
         )}
 
 

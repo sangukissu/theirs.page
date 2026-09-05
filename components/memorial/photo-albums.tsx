@@ -114,10 +114,10 @@ export function PhotoAlbums({
   }
 
   return (
-    <section id="photos" className="py-12 sm:py-16 px-4 max-w-4xl mx-auto flex flex-col gap-8 scroll-mt-24">
-      
+    <section id="photos" className="py-12 px-4 max-w-4xl mx-auto flex flex-col gap-4 scroll-mt-24">
+
       {/* Header & Controls */}
-      <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 border-b border-black/[0.06] pb-6">
+      <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 border-b border-black/[0.06] pb-4">
         <div className="flex flex-col gap-1">
           <span className="text-xs font-mono font-medium text-primary uppercase tracking-wider">
             Family Photo Archive
@@ -133,7 +133,7 @@ export function PhotoAlbums({
         <button
           type="button"
           onClick={() => onOpenContribute("photo")}
-          className="inline-flex items-center gap-1.5 px-4 py-2 rounded-full bg-[#181925] hover:bg-[#252736] text-white text-xs font-medium transition-all self-start sm:self-auto cursor-pointer shadow-xs active:scale-95"
+          className="inline-flex items-center gap-1.5 px-4 py-2 rounded-full bg-primary hover:bg-primary/90 text-primary-foreground text-xs font-medium transition-all self-start sm:self-auto cursor-pointer shadow-xs active:scale-95"
         >
           <Plus className="size-3.5" />
           <span>Add photographs</span>
@@ -147,11 +147,10 @@ export function PhotoAlbums({
             key={albumKey}
             type="button"
             onClick={() => setActiveAlbum(albumKey)}
-            className={`text-xs px-3.5 py-1.5 rounded-full font-medium transition-all cursor-pointer ${
-              activeAlbum === albumKey
-                ? "bg-[#181925] text-white shadow-2xs"
-                : "bg-[#f4f4f6] text-[#666] hover:text-[#181925]"
-            }`}
+            className={`text-xs px-3.5 py-1.5 rounded-full font-medium transition-all cursor-pointer ${activeAlbum === albumKey
+              ? "bg-primary text-primary-foreground shadow-2xs"
+              : "bg-[#f4f4f6] text-[#666] hover:text-[#181925]"
+              }`}
           >
             {albumKey === "all" ? "All photos" : albumKey}
           </button>
@@ -168,13 +167,12 @@ export function PhotoAlbums({
           >
             {/* Image Container with Varied Ratios */}
             <div
-              className={`rounded-xl overflow-hidden bg-neutral-100 relative ${
-                photo.aspectRatio === "portrait"
-                  ? "aspect-[4/5]"
-                  : photo.aspectRatio === "square"
+              className={`rounded-xl overflow-hidden bg-neutral-100 relative ${photo.aspectRatio === "portrait"
+                ? "aspect-[4/5]"
+                : photo.aspectRatio === "square"
                   ? "aspect-square"
                   : "aspect-[3/2]"
-              }`}
+                }`}
             >
               <img
                 src={photo.url}

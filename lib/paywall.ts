@@ -2,7 +2,7 @@
  * lib/paywall.ts — Centralized Server-Side Paywall for Theirs (theirs.page)
  *
  * Tier Policies:
- * - Free: Up to 5 photos, life story biography, condolences guestbook, shared web address.
+ * - Free: Up to 5 photos, life story biography, tributes, shared web address.
  * - Theirs Complete ($179 One-Time): Family photo albums, audio notes & video clips,
  *   Life Story timeline, private PIN protection, family caretakers & co-admins,
  *   and complete archive ZIP export.

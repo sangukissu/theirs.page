@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useRef, useEffect, useCallback, useMemo } from "react"
+import { usePathname, useRouter } from "next/navigation"
 import {
   Maximize2,
   X,
@@ -25,6 +26,7 @@ import {
   ChevronRight,
 } from "lucide-react"
 import { ContributionType } from "./contribute-modal"
+import type { GalleryFacets, GalleryFilter, PagedCollection } from "@/types/memorial-view"
 
 export type GalleryMediaType = "photo" | "audio" | "video"
 
@@ -193,6 +195,12 @@ interface MemorialGalleryProps {
     initialPhotoUrl?: string,
     initialPhotoTitle?: string
   ) => void
+  browseSlug?: string
+  initialPage?: PagedCollection<GalleryItem>
+  initialFilter?: GalleryFilter
+  initialAlbum?: string
+  initialMediaId?: string
+  initialSelectedItem?: GalleryItem | null
 }
 
 export function MemorialGallery({
@@ -201,11 +209,29 @@ export function MemorialGallery({
   isDemo = false,
   isPaid = false,
   onOpenContribute,
+  browseSlug,
+  initialPage,
+  initialFilter = "all",
+  initialAlbum = "all",
+  initialMediaId,
+  initialSelectedItem,
 }: MemorialGalleryProps) {
-  const galleryItems = isDemo ? (items && items.length > 0 ? items : DEFAULT_GALLERY_ITEMS) : (items || [])
-  const [filter, setFilter] = useState<"all" | "photo" | "audio" | "video">("all")
-  const [selectedAlbum, setSelectedAlbum] = useState<string>("all")
+  const router = useRouter()
+  const pathname = usePathname()
+  const fallbackItems = isDemo ? (items && items.length > 0 ? items : DEFAULT_GALLERY_ITEMS) : (items || [])
+  const [galleryItems, setGalleryItems] = useState<GalleryItem[]>(initialPage?.items || fallbackItems)
+  const [filter, setFilter] = useState<GalleryFilter>(initialFilter)
+  const [selectedAlbum, setSelectedAlbum] = useState<string>(initialAlbum)
+  const [facets, setFacets] = useState<GalleryFacets | undefined>(initialPage?.facets)
+  const [nextCursor, setNextCursor] = useState<string | null>(initialPage?.nextCursor || null)
+  const [hasMore, setHasMore] = useState(Boolean(initialPage?.hasMore))
+  const [isLoadingPage, setIsLoadingPage] = useState(false)
+  const [pageError, setPageError] = useState<string | null>(null)
+  const [didLoadMore, setDidLoadMore] = useState(false)
   const [selectedItem, setSelectedItem] = useState<GalleryItem | null>(null)
+  const failedRequestRef = useRef<{ filter: GalleryFilter; album: string; cursor: string | null; append: boolean } | null>(null)
+  const selectedFromHistoryRef = useRef(false)
+  const lastTriggerRef = useRef<HTMLElement | null>(null)
   const [identifiedMap, setIdentifiedMap] = useState<Record<string, boolean>>({})
 
   // Real Audio & Video Playback State
@@ -218,19 +244,66 @@ export function MemorialGallery({
 
   const firstName = fullName.split(" ")[0] || fullName
 
-  const uniqueAlbums = Array.from(
+  const uniqueAlbums = facets?.albums || Array.from(
     new Set(galleryItems.map((i) => i.album?.trim()).filter(Boolean))
   ) as string[]
 
-  const filteredItems = galleryItems.filter((item) => {
+  const filteredItems = browseSlug ? galleryItems : galleryItems.filter((item) => {
     const matchesType = filter === "all" || item.mediaType === filter
     const matchesAlbum = selectedAlbum === "all" || item.album?.trim() === selectedAlbum
     return matchesType && matchesAlbum
   })
 
-  const photoCount = galleryItems.filter((i) => i.mediaType === "photo").length
-  const audioCount = galleryItems.filter((i) => i.mediaType === "audio").length
-  const videoCount = galleryItems.filter((i) => i.mediaType === "video").length
+  const photoCount = facets?.photo ?? galleryItems.filter((i) => i.mediaType === "photo").length
+  const audioCount = facets?.audio ?? galleryItems.filter((i) => i.mediaType === "audio").length
+  const videoCount = facets?.video ?? galleryItems.filter((i) => i.mediaType === "video").length
+  const allCount = facets?.all ?? galleryItems.length
+
+  useEffect(() => {
+    if (!initialPage) return
+    setGalleryItems(initialPage.items)
+    setFacets(initialPage.facets)
+    setNextCursor(initialPage.nextCursor)
+    setHasMore(initialPage.hasMore)
+    setDidLoadMore(false)
+  }, [initialPage])
+
+  const fetchGalleryPage = useCallback(async (nextFilter: GalleryFilter, nextAlbum: string, cursor?: string | null, append = false) => {
+    if (!browseSlug || isLoadingPage) return
+    setIsLoadingPage(true)
+    setPageError(null)
+    failedRequestRef.current = { filter: nextFilter, album: nextAlbum, cursor: cursor || null, append }
+    try {
+      const params = new URLSearchParams({ collection: "gallery", type: nextFilter })
+      if (nextAlbum !== "all") params.set("album", nextAlbum)
+      if (cursor) params.set("cursor", cursor)
+      const response = await fetch(`/api/memorials/${browseSlug}/browse?${params.toString()}`, { cache: "no-store" })
+      if (!response.ok) throw new Error("We couldn't load the gallery right now.")
+      const page = await response.json() as PagedCollection<GalleryItem>
+      setGalleryItems((current) => append ? [...current, ...page.items.filter((item) => !current.some((existing) => existing.id === item.id))] : page.items)
+      if (page.facets) setFacets(page.facets)
+      setNextCursor(page.nextCursor)
+      setHasMore(page.hasMore)
+      setDidLoadMore(append)
+      failedRequestRef.current = null
+    } catch (reason) {
+      setPageError(reason instanceof Error ? reason.message : "We couldn't load the gallery right now.")
+    } finally {
+      setIsLoadingPage(false)
+    }
+  }, [browseSlug, isLoadingPage])
+
+  const changeFilters = (nextFilter: GalleryFilter, nextAlbum: string) => {
+    setFilter(nextFilter)
+    setSelectedAlbum(nextAlbum)
+    setDidLoadMore(false)
+    const params = new URLSearchParams()
+    if (new URL(window.location.href).searchParams.get("preview") === "visitor") params.set("preview", "visitor")
+    if (nextFilter !== "all") params.set("type", nextFilter)
+    if (nextAlbum !== "all") params.set("album", nextAlbum)
+    window.history.replaceState(window.history.state, "", `${pathname}${params.size ? `?${params.toString()}` : ""}`)
+    void fetchGalleryPage(nextFilter, nextAlbum)
+  }
 
   const handleIdentify = (id: string) => {
     setIdentifiedMap((prev) => ({ ...prev, [id]: true }))
@@ -245,6 +318,13 @@ export function MemorialGallery({
     ? filteredItems.findIndex((i) => i.id === selectedItem.id)
     : -1
 
+  const replaceMediaInUrl = useCallback((mediaId: string) => {
+    if (!browseSlug) return
+    const url = new URL(window.location.href)
+    url.searchParams.set("media", mediaId)
+    window.history.replaceState({ ...window.history.state, theirsMedia: mediaId }, "", `${url.pathname}${url.search}${url.hash}`)
+  }, [browseSlug])
+
   // Format seconds to mm:ss
   const formatTime = (secs: number) => {
     if (isNaN(secs) || !isFinite(secs) || secs < 0) return "0:00"
@@ -258,18 +338,66 @@ export function MemorialGallery({
     if (filteredItems.length <= 1) return
     const nextIdx = (currentIndex - 1 + filteredItems.length) % filteredItems.length
     setSelectedItem(filteredItems[nextIdx])
-  }, [filteredItems, currentIndex])
+    replaceMediaInUrl(filteredItems[nextIdx].id)
+  }, [filteredItems, currentIndex, replaceMediaInUrl])
 
   const handleNext = useCallback(() => {
     if (filteredItems.length <= 1) return
     const nextIdx = (currentIndex + 1) % filteredItems.length
     setSelectedItem(filteredItems[nextIdx])
-  }, [filteredItems, currentIndex])
+    replaceMediaInUrl(filteredItems[nextIdx].id)
+  }, [filteredItems, currentIndex, replaceMediaInUrl])
+
+  const openItem = useCallback((item: GalleryItem, trigger?: HTMLElement | null) => {
+    lastTriggerRef.current = trigger || null
+    setSelectedItem(item)
+    if (browseSlug) {
+      const url = new URL(window.location.href)
+      if (url.searchParams.get("media") !== item.id) {
+        url.searchParams.set("media", item.id)
+        window.history.pushState({ ...window.history.state, theirsMedia: item.id }, "", `${url.pathname}${url.search}${url.hash}`)
+        selectedFromHistoryRef.current = true
+      }
+    }
+  }, [browseSlug])
 
   const handleCloseModal = useCallback(() => {
     setSelectedItem(null)
     setIsSlideshowPlaying(false)
-  }, [])
+    if (browseSlug && new URL(window.location.href).searchParams.has("media")) {
+      if (selectedFromHistoryRef.current) {
+        selectedFromHistoryRef.current = false
+        window.history.back()
+      } else {
+        const url = new URL(window.location.href)
+        url.searchParams.delete("media")
+        router.replace(`${url.pathname}${url.search}${url.hash}`, { scroll: false })
+      }
+    }
+    window.setTimeout(() => lastTriggerRef.current?.focus(), 0)
+  }, [browseSlug, router])
+
+  useEffect(() => {
+    if (!browseSlug) return
+    const requestedId = new URL(window.location.href).searchParams.get("media") || initialMediaId
+    if (requestedId) {
+      const requested = galleryItems.find((item) => item.id === requestedId) || (initialSelectedItem?.id === requestedId ? initialSelectedItem : undefined)
+      if (requested) setSelectedItem(requested)
+    }
+    const handlePopState = () => {
+      const mediaId = new URL(window.location.href).searchParams.get("media")
+      if (!mediaId) {
+        setSelectedItem(null)
+        setIsSlideshowPlaying(false)
+        window.setTimeout(() => lastTriggerRef.current?.focus(), 0)
+      } else {
+        const item = galleryItems.find((candidate) => candidate.id === mediaId)
+        if (item) setSelectedItem(item)
+      }
+    }
+    window.addEventListener("popstate", handlePopState)
+    return () => window.removeEventListener("popstate", handlePopState)
+  }, [browseSlug, galleryItems, initialMediaId, initialSelectedItem])
 
   const toggleSlideshow = useCallback(() => {
     setIsSlideshowPlaying((prev) => !prev)
@@ -361,12 +489,13 @@ export function MemorialGallery({
         if (!current) return null
         const idx = filteredItems.findIndex((i) => i.id === current.id)
         const nextIdx = (idx + 1) % filteredItems.length
+        replaceMediaInUrl(filteredItems[nextIdx].id)
         return filteredItems[nextIdx]
       })
     }, 4500)
 
     return () => clearInterval(timer)
-  }, [isSlideshowPlaying, selectedItem, filteredItems])
+  }, [isSlideshowPlaying, selectedItem, filteredItems, replaceMediaInUrl])
 
   // Keyboard navigation
   useEffect(() => {
@@ -508,30 +637,24 @@ export function MemorialGallery({
   }, [])
 
   return (
-    <section id="gallery" className="py-12 sm:py-16 px-4 max-w-4xl mx-auto flex flex-col gap-8 scroll-mt-24">
-      
+    <section id="gallery" className="py-12 px-4 max-w-4xl mx-auto flex flex-col gap-4 scroll-mt-24">
+
       {/* Section Header */}
-      <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 border-b border-black/[0.06] pb-6">
+      <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 border-b border-black/[0.06] pb-4">
         <div className="flex flex-col gap-1">
-          <span className="text-xs font-mono font-medium text-primary uppercase tracking-wider">
-            Media Archive
-          </span>
           <h2 className="text-2xl sm:text-3xl font-medium tracking-tight text-[#181925]">
             Gallery
           </h2>
-          <p className="text-xs sm:text-sm text-[#71717a]">
-            Preserved photographs, actual voice recordings, and digitized family film reels.
-          </p>
         </div>
 
         {!isPaid && photoCount >= 5 ? null : (
           <button
             type="button"
             onClick={() => onOpenContribute("photo")}
-            className="inline-flex items-center gap-1.5 px-4 py-2 rounded-full bg-[#181925] hover:bg-[#252736] text-white text-xs font-medium transition-all self-start sm:self-auto cursor-pointer shadow-xs active:scale-95"
+            className="inline-flex items-center gap-1.5 px-4 py-2 rounded-full bg-primary hover:bg-primary/90 text-primary-foreground text-xs font-medium transition-all self-start sm:self-auto cursor-pointer shadow-xs active:scale-95"
           >
             <Plus className="size-3.5" />
-            <span>Add to gallery</span>
+            <span>Add photos</span>
           </button>
         )}
       </div>
@@ -539,7 +662,7 @@ export function MemorialGallery({
       {/* Format Filter Chips */}
       <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar py-0.5 select-none">
         {[
-          { key: "all", label: `All (${galleryItems.length})`, show: true },
+          { key: "all", label: `All (${allCount})`, show: true },
           { key: "photo", label: `Photos (${photoCount})`, icon: ImageIcon, show: true },
           { key: "audio", label: `Voice & Audio (${audioCount})`, icon: Volume2, show: Boolean(isPaid || audioCount > 0) },
           { key: "video", label: `Home Video (${videoCount})`, icon: Film, show: Boolean(isPaid || videoCount > 0) },
@@ -552,12 +675,12 @@ export function MemorialGallery({
               <button
                 key={tab.key}
                 type="button"
-                onClick={() => setFilter(tab.key as any)}
-                className={`inline-flex items-center gap-1.5 text-xs px-3.5 py-1.5 rounded-full font-medium transition-all cursor-pointer ${
-                  isActive
-                    ? "bg-[#181925] text-white shadow-2xs"
-                    : "bg-[#f4f4f6] text-[#666] hover:text-[#181925]"
-                }`}
+                onClick={() => changeFilters(tab.key as GalleryFilter, selectedAlbum)}
+                disabled={isLoadingPage}
+                className={`inline-flex items-center gap-1.5 text-xs px-3.5 py-1.5 rounded-full font-medium transition-all cursor-pointer ${isActive
+                  ? "bg-primary text-primary-foreground shadow-2xs"
+                  : "bg-[#f4f4f6] text-[#666] hover:text-[#181925]"
+                  }`}
               >
                 {Icon && <Icon className="size-3 shrink-0" />}
                 <span>{tab.label}</span>
@@ -572,12 +695,12 @@ export function MemorialGallery({
           <span className="text-xs font-medium text-[#71717a] pr-1 shrink-0">Album:</span>
           <button
             type="button"
-            onClick={() => setSelectedAlbum("all")}
-            className={`text-xs px-3 py-1 rounded-full font-medium transition-all cursor-pointer shrink-0 ${
-              selectedAlbum === "all"
-                ? "bg-[#8b5a45] text-white shadow-2xs"
-                : "bg-[#f4f4f6] text-[#666] hover:text-[#181925]"
-            }`}
+            onClick={() => changeFilters(filter, "all")}
+            disabled={isLoadingPage}
+            className={`text-xs px-3 py-1 rounded-full font-medium transition-all cursor-pointer shrink-0 ${selectedAlbum === "all"
+              ? "bg-primary text-primary-foreground shadow-2xs"
+              : "bg-[#f4f4f6] text-[#666] hover:text-[#181925]"
+              }`}
           >
             All Albums
           </button>
@@ -585,12 +708,12 @@ export function MemorialGallery({
             <button
               key={alb}
               type="button"
-              onClick={() => setSelectedAlbum(alb)}
-              className={`text-xs px-3 py-1 rounded-full font-medium transition-all cursor-pointer shrink-0 ${
-                selectedAlbum === alb
-                  ? "bg-[#8b5a45] text-white shadow-2xs"
-                  : "bg-[#f4f4f6] text-[#666] hover:text-[#181925]"
-              }`}
+              onClick={() => changeFilters(filter, alb)}
+              disabled={isLoadingPage}
+              className={`text-xs px-3 py-1 rounded-full font-medium transition-all cursor-pointer shrink-0 ${selectedAlbum === alb
+                ? "bg-primary text-primary-foreground shadow-2xs"
+                : "bg-[#f4f4f6] text-[#666] hover:text-[#181925]"
+                }`}
             >
               {alb}
             </button>
@@ -616,13 +739,12 @@ export function MemorialGallery({
       ) : (
         /* FLUID MASONRY GRID (Left-to-right distributed, no empty leading slots, natural dimensions) */
         <div
-          className={`grid gap-4 items-start ${
-            columnsCount === 1
-              ? "grid-cols-1"
-              : columnsCount === 2
+          className={`grid gap-4 items-start ${columnsCount === 1
+            ? "grid-cols-1"
+            : columnsCount === 2
               ? "grid-cols-2"
               : "grid-cols-3"
-          }`}
+            }`}
         >
           {columnItems.map((col, colIdx) => (
             <div key={colIdx} className="flex flex-col gap-4 min-w-0">
@@ -646,8 +768,8 @@ export function MemorialGallery({
                               <span>Voice recording</span>
                             </span>
                             {item.isPinned && (
-                              <span className="inline-flex items-center gap-1 text-[10px] font-mono font-medium text-[#8b5a45] bg-[#faf8f5] border border-[#8b5a45]/30 px-2 py-0.5 rounded-full">
-                                <Pin className="size-2.5 fill-[#8b5a45]" /> Featured
+                              <span className="inline-flex items-center gap-1 text-[10px] font-mono font-medium text-primary bg-primary/5 border border-primary/30 px-2 py-0.5 rounded-full">
+                                <Pin className="size-2.5 fill-primary" /> Featured
                               </span>
                             )}
                           </div>
@@ -659,7 +781,10 @@ export function MemorialGallery({
                         </div>
 
                         <div
-                          onClick={() => setSelectedItem(item)}
+                          onClick={(event) => openItem(item, event.currentTarget)}
+                          onKeyDown={(event) => { if (event.key === "Enter" || event.key === " ") { event.preventDefault(); openItem(item, event.currentTarget) } }}
+                          tabIndex={0}
+                          role="button"
                           className="flex flex-col gap-1 cursor-pointer"
                         >
                           <h3 className="text-sm font-medium text-[#181925] line-clamp-2 hover:text-primary transition-colors">
@@ -700,9 +825,8 @@ export function MemorialGallery({
                               return (
                                 <span
                                   key={i}
-                                  className={`flex-1 rounded-full transition-all duration-150 ${
-                                    isFilled ? "bg-primary" : "bg-neutral-200"
-                                  } ${isPlaying && isFilled ? "animate-pulse" : ""}`}
+                                  className={`flex-1 rounded-full transition-all duration-150 ${isFilled ? "bg-primary" : "bg-neutral-200"
+                                    } ${isPlaying && isFilled ? "animate-pulse" : ""}`}
                                   style={{ height: `${h}%` }}
                                 />
                               )
@@ -729,7 +853,10 @@ export function MemorialGallery({
                   return (
                     <div key={item.id} className="w-full">
                       <div
-                        onClick={() => setSelectedItem(item)}
+                        onClick={(event) => openItem(item, event.currentTarget)}
+                        onKeyDown={(event) => { if (event.key === "Enter" || event.key === " ") { event.preventDefault(); openItem(item, event.currentTarget) } }}
+                        tabIndex={0}
+                        role="button"
                         className="group relative rounded-2xl overflow-hidden bg-neutral-900 cursor-pointer shadow-xs hover:shadow-md transition-all duration-300 w-full"
                       >
                         {item.posterUrl ? (
@@ -754,7 +881,7 @@ export function MemorialGallery({
                             className="w-full h-auto object-cover block pointer-events-none"
                           />
                         )}
-                        
+
                         {/* Glowing Video Play Button Overlay */}
                         <div className="absolute inset-0 bg-black/35 group-hover:bg-black/20 transition-colors flex items-center justify-center">
                           <div className="size-11 rounded-full bg-white/95 text-[#181925] flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform">
@@ -764,7 +891,7 @@ export function MemorialGallery({
 
                         {/* Pinned Featured Badge */}
                         {item.isPinned && (
-                          <div className="absolute top-2.5 left-2.5 inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-[#8b5a45] text-white text-[10px] font-mono shadow-xs backdrop-blur-xs">
+                          <div className="absolute top-2.5 left-2.5 inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-primary text-primary-foreground text-[10px] font-mono shadow-xs backdrop-blur-xs">
                             <Pin className="size-2.5 fill-white" />
                             <span>Featured</span>
                           </div>
@@ -791,7 +918,10 @@ export function MemorialGallery({
                 return (
                   <div key={item.id} className="w-full">
                     <div
-                      onClick={() => setSelectedItem(item)}
+                      onClick={(event) => openItem(item, event.currentTarget)}
+                      onKeyDown={(event) => { if (event.key === "Enter" || event.key === " ") { event.preventDefault(); openItem(item, event.currentTarget) } }}
+                      tabIndex={0}
+                      role="button"
                       className="group relative rounded-2xl overflow-hidden bg-neutral-100 cursor-pointer shadow-xs hover:shadow-md transition-all duration-300 w-full"
                     >
                       <img
@@ -824,7 +954,7 @@ export function MemorialGallery({
 
                       {/* Pinned Featured Badge */}
                       {item.isPinned && (
-                        <div className="absolute top-2.5 left-2.5 inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-[#8b5a45] text-white text-[10px] font-mono shadow-xs backdrop-blur-xs">
+                        <div className="absolute top-2.5 left-2.5 inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-primary text-primary-foreground text-[10px] font-mono shadow-xs backdrop-blur-xs">
                           <Pin className="size-2.5 fill-white" />
                           <span>Featured</span>
                         </div>
@@ -844,6 +974,30 @@ export function MemorialGallery({
             </div>
           ))}
         </div>
+      )}
+
+      {browseSlug && (hasMore || pageError) && (
+        <div className="flex flex-col items-center gap-3 pt-2">
+          {pageError && <p role="alert" className="text-sm text-red-700">{pageError}</p>}
+          <button
+            type="button"
+            disabled={isLoadingPage}
+            onClick={() => {
+              const failed = failedRequestRef.current
+              void (failed
+                ? fetchGalleryPage(failed.filter, failed.album, failed.cursor, failed.append)
+                : fetchGalleryPage(filter, selectedAlbum, nextCursor, true))
+            }}
+            className="inline-flex min-h-11 items-center gap-2 rounded-full bg-primary px-5 text-sm font-semibold text-primary-foreground shadow-xs hover:bg-primary/90 disabled:opacity-60"
+          >
+            {isLoadingPage && <RotateCcw className="size-4 animate-spin" />}
+            {isLoadingPage ? "Loading…" : pageError ? "Try again" : "Show more media"}
+          </button>
+        </div>
+      )}
+
+      {browseSlug && didLoadMore && !hasMore && !pageError && (
+        <p className="pt-2 text-center text-sm text-[#777]">All media are shown.</p>
       )}
 
       {/* =================================================================== */}
@@ -877,11 +1031,10 @@ export function MemorialGallery({
                 <button
                   type="button"
                   onClick={toggleSlideshow}
-                  className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium transition-colors cursor-pointer ${
-                    isSlideshowPlaying
-                      ? "bg-white/20 text-white"
-                      : "text-white/80 hover:text-white hover:bg-white/10"
-                  }`}
+                  className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium transition-colors cursor-pointer ${isSlideshowPlaying
+                    ? "bg-white/20 text-white"
+                    : "text-white/80 hover:text-white hover:bg-white/10"
+                    }`}
                   title={isSlideshowPlaying ? "Pause slideshow" : "Start slideshow"}
                 >
                   {isSlideshowPlaying ? (

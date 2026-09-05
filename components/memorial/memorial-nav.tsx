@@ -1,10 +1,11 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useEffect, useMemo, useState } from "react"
 import Link from "next/link"
+import { usePathname, useSearchParams } from "next/navigation"
 import { Share2, Plus, Check } from "lucide-react"
-import { ContributionType } from "./contribute-modal"
-import { SectionSettings } from "@/types/theirs"
+import type { ContributionType } from "./contribute-modal"
+import type { SectionSettings } from "@/types/theirs"
 
 interface MemorialNavProps {
   slug: string
@@ -18,23 +19,32 @@ interface MemorialNavProps {
 export function MemorialNav({
   slug,
   fullName,
-  birthYear,
-  deathYear,
+  birthYear: _birthYear,
+  deathYear: _deathYear,
   sectionSettings,
   onOpenContribute,
 }: MemorialNavProps) {
+  const pathname = usePathname()
+  const searchParams = useSearchParams()
   const [copied, setCopied] = useState(false)
-  const [activeSection, setActiveSection] = useState<string>("story")
+  const [activeSection, setActiveSection] = useState<string>("about")
 
   const firstName = fullName.split(" ")[0] || fullName
-
-  const navItems = [
-    { id: "story", label: "Story", enabled: sectionSettings?.story !== false },
-    { id: "tributes", label: "Tributes", enabled: sectionSettings?.tributes !== false },
-    { id: "timeline", label: "Timeline", enabled: sectionSettings?.timeline !== false },
-    { id: "gallery", label: "Gallery", enabled: sectionSettings?.gallery !== false },
-    { id: "memories", label: "Stories", enabled: sectionSettings?.stories !== false },
-  ].filter((item) => item.enabled)
+  const rootPath = `/${slug}`
+  const isHome = pathname === rootPath
+  const previewSuffix = searchParams.get("preview") === "visitor" ? "?preview=visitor" : ""
+  const withPreview = (path: string) => {
+    if (!previewSuffix) return path
+    const [base, hash] = path.split("#")
+    return `${base}${previewSuffix}${hash ? `#${hash}` : ""}`
+  }
+  const navItems = useMemo(() => [
+    { id: "about", label: "About", href: `${rootPath}#about`, enabled: true },
+    { id: "tributes", label: "Tributes", href: `${rootPath}/tributes`, enabled: sectionSettings?.tributes !== false },
+    { id: "timeline", label: "Timeline", href: `${rootPath}/timeline`, enabled: sectionSettings?.timeline !== false },
+    { id: "gallery", label: "Gallery", href: `${rootPath}/gallery`, enabled: sectionSettings?.gallery !== false },
+    { id: "memories", label: "Stories", href: `${rootPath}/memories`, enabled: sectionSettings?.stories !== false },
+  ].filter((item) => item.enabled), [rootPath, sectionSettings])
 
   const handleShare = async () => {
     const url = typeof window !== "undefined" ? window.location.href : `https://theirs.page/${slug}`
@@ -46,75 +56,77 @@ export function MemorialNav({
   }
 
   const scrollToSection = (id: string) => {
-    const el = document.getElementById(id)
-    if (el) {
-      el.scrollIntoView({ behavior: "smooth" })
-    }
+    const element = document.getElementById(id)
+    if (element) element.scrollIntoView({ behavior: "smooth" })
   }
 
   useEffect(() => {
-    const handleScroll = () => {
-      const scrollPos = window.scrollY + 180
-
-      for (let i = navItems.length - 1; i >= 0; i--) {
-        const item = navItems[i]
-        const el = document.getElementById(item.id)
-        if (el) {
-          const top = el.offsetTop
-          if (scrollPos >= top) {
-            setActiveSection(item.id)
-            break
-          }
-        }
+    if (!isHome) {
+      const syncRouteSection = () => {
+        if (pathname.endsWith("/tributes")) setActiveSection("tributes")
+        else if (pathname.endsWith("/gallery")) setActiveSection("gallery")
+        else if (pathname.endsWith("/memories")) setActiveSection("memories")
+        else if (pathname.endsWith("/timeline")) setActiveSection("timeline")
       }
+      syncRouteSection()
+      window.addEventListener("hashchange", syncRouteSection)
+      return () => window.removeEventListener("hashchange", syncRouteSection)
     }
 
+    const handleScroll = () => {
+      const scrollPos = window.scrollY + 180
+      let nextActive = navItems[0]?.id || "about"
+      for (let index = navItems.length - 1; index >= 0; index--) {
+        const item = navItems[index]
+        const element = document.getElementById(item.id)
+        if (element && scrollPos >= element.offsetTop) {
+          nextActive = item.id
+          break
+        }
+      }
+      setActiveSection(nextActive)
+    }
+
+    handleScroll()
     window.addEventListener("scroll", handleScroll, { passive: true })
     return () => window.removeEventListener("scroll", handleScroll)
-  }, [])
+  }, [isHome, pathname, navItems])
 
   return (
     <>
-      {/* =================================================================== */}
-      {/* 1. FIXED TOP NAV PILL (Clean, Responsive, No Overflow)              */}
-      {/* =================================================================== */}
       <nav className="fixed top-3 inset-x-0 z-40 flex justify-center px-2.5 sm:px-4 pointer-events-none">
         <div className="pointer-events-auto flex items-center justify-between gap-1 sm:gap-3 px-2.5 sm:px-4 py-1.5 rounded-full bg-white/90 backdrop-blur-xl border border-black/[0.08] shadow-[0_4px_24px_rgba(0,0,0,0.06)] max-w-xl w-full transition-all">
-          
-          {/* Left: Person Identity / Home link */}
           <Link
-            href="/"
+            href={withPreview(rootPath)}
+            prefetch
             className="flex items-center gap-1.5 text-xs font-semibold tracking-tight text-[#181925] hover:opacity-80 transition-opacity select-none shrink-0 pl-1"
-            title="Return to Theirs home"
+            title="Return to memorial home"
           >
             <span className="size-1.5 rounded-full bg-primary" />
             <span className="truncate max-w-[70px] sm:max-w-[100px]">{firstName}</span>
           </Link>
 
-          {/* Center: 5 Clean Section Tabs (Touch-scrollable on tiny screens with zero visible scrollbar) */}
           <div className="flex items-center gap-0.5 sm:gap-1 overflow-x-auto [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden py-0.5 px-0.5">
             {navItems.map((item) => {
               const isActive = activeSection === item.id
-              return (
-                <button
-                  key={item.id}
-                  type="button"
-                  onClick={() => scrollToSection(item.id)}
-                  className={`px-2 sm:px-2.5 py-1 rounded-full text-[11px] sm:text-xs font-medium whitespace-nowrap transition-all select-none cursor-pointer shrink-0 ${
-                    isActive
-                      ? "text-[#181925] bg-[#f0f0f2] font-semibold"
-                      : "text-[#666] hover:text-[#181925] hover:bg-neutral-50"
-                  }`}
-                >
+              const className = `px-2 sm:px-2.5 py-1 rounded-full text-[11px] sm:text-xs font-medium whitespace-nowrap transition-all select-none cursor-pointer shrink-0 ${isActive
+                ? "text-[#181925] bg-[#f0f0f2] font-semibold"
+                : "text-[#666] hover:text-[#181925] hover:bg-neutral-50"
+                }`
+
+              return isHome ? (
+                <button key={item.id} type="button" onClick={() => scrollToSection(item.id)} className={className}>
                   {item.label}
                 </button>
+              ) : (
+                <Link key={item.id} href={withPreview(item.href)} prefetch className={className}>
+                  {item.label}
+                </Link>
               )
             })}
           </div>
 
-          {/* Right: Share + Desktop Add Button */}
           <div className="flex items-center gap-1 shrink-0 pr-0.5">
-            {/* Share Button */}
             <button
               type="button"
               onClick={handleShare}
@@ -122,14 +134,9 @@ export function MemorialNav({
               title="Share memorial link"
               aria-label="Share memorial link"
             >
-              {copied ? (
-                <Check className="size-3.5 text-emerald-600" />
-              ) : (
-                <Share2 className="size-3.5" />
-              )}
+              {copied ? <Check className="size-3.5 text-emerald-600" /> : <Share2 className="size-3.5" />}
             </button>
 
-            {/* Desktop-Only "+ Add" Pill Button (Signature Brand Button) */}
             <button
               type="button"
               onClick={() => onOpenContribute()}
@@ -139,13 +146,9 @@ export function MemorialNav({
               <span>Add</span>
             </button>
           </div>
-
         </div>
       </nav>
 
-      {/* =================================================================== */}
-      {/* 2. MOBILE-ONLY FLOATING ACTION BUTTON (Signature Brand Button)       */}
-      {/* =================================================================== */}
       <button
         type="button"
         onClick={() => onOpenContribute()}

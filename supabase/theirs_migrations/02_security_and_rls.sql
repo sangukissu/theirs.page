@@ -10,11 +10,9 @@ alter table if exists public.user_profiles enable row level security;
 alter table if exists public.memorials enable row level security;
 alter table if exists public.collaborators enable row level security;
 alter table if exists public.memories enable row level security;
-alter table if exists public.albums enable row level security;
 alter table if exists public.media_items enable row level security;
 alter table if exists public.timeline_events enable row level security;
-alter table if exists public.people_in_life enable row level security;
-alter table if exists public.guestbook_entries enable row level security;
+alter table if exists public.caretaker_messages enable row level security;
 alter table if exists public.payments enable row level security;
 
 
@@ -149,20 +147,7 @@ create policy "Admins can delete memories"
   using (public.is_memorial_admin(memorial_id));
 
 
--- 7. POLICIES: PHOTO ALBUMS
-drop policy if exists "Albums viewable by anyone who can view memorial" on public.albums;
-create policy "Albums viewable by anyone who can view memorial"
-  on public.albums for select
-  using (public.can_view_memorial(memorial_id));
-
-drop policy if exists "Admins can manage albums" on public.albums;
-create policy "Admins can manage albums"
-  on public.albums for all
-  using (public.is_memorial_admin(memorial_id))
-  with check (public.is_memorial_admin(memorial_id));
-
-
--- 8. POLICIES: MEDIA ITEMS
+-- 7. POLICIES: MEDIA ITEMS
 drop policy if exists "Media items viewable by anyone who can view memorial" on public.media_items;
 create policy "Media items viewable by anyone who can view memorial"
   on public.media_items for select
@@ -175,7 +160,7 @@ create policy "Admins can manage media items"
   with check (public.is_memorial_admin(memorial_id));
 
 
--- 9. POLICIES: TIMELINE EVENTS
+-- 8. POLICIES: TIMELINE EVENTS
 drop policy if exists "Timeline events viewable by anyone who can view memorial" on public.timeline_events;
 create policy "Timeline events viewable by anyone who can view memorial"
   on public.timeline_events for select
@@ -188,49 +173,25 @@ create policy "Admins can manage timeline events"
   with check (public.is_memorial_admin(memorial_id));
 
 
--- 10. POLICIES: PEOPLE IN LIFE
-drop policy if exists "People in life viewable by anyone who can view memorial" on public.people_in_life;
-create policy "People in life viewable by anyone who can view memorial"
-  on public.people_in_life for select
-  using (public.can_view_memorial(memorial_id));
+-- 9. POLICIES: PRIVATE CARETAKER MESSAGES
+drop policy if exists "Memorial admins can view caretaker messages" on public.caretaker_messages;
+create policy "Memorial admins can view caretaker messages"
+  on public.caretaker_messages for select
+  using (public.is_memorial_admin(memorial_id));
 
-drop policy if exists "Admins can manage people in life" on public.people_in_life;
-create policy "Admins can manage people in life"
-  on public.people_in_life for all
+drop policy if exists "Memorial admins can update caretaker messages" on public.caretaker_messages;
+create policy "Memorial admins can update caretaker messages"
+  on public.caretaker_messages for update
   using (public.is_memorial_admin(memorial_id))
   with check (public.is_memorial_admin(memorial_id));
 
-
--- 11. POLICIES: GUESTBOOK
-drop policy if exists "View approved guestbook entries" on public.guestbook_entries;
-create policy "View approved guestbook entries"
-  on public.guestbook_entries for select
-  using (
-    (status = 'approved' and public.can_view_memorial(memorial_id))
-    or public.is_memorial_admin(memorial_id)
-  );
-
-drop policy if exists "Anyone can submit a guestbook entry with pending status" on public.guestbook_entries;
-create policy "Anyone can submit a guestbook entry with pending status"
-  on public.guestbook_entries for insert
-  with check (
-    status = 'pending_approval'
-    and public.can_view_memorial(memorial_id)
-  );
-
-drop policy if exists "Admins can manage guestbook entries" on public.guestbook_entries;
-create policy "Admins can manage guestbook entries"
-  on public.guestbook_entries for update
-  using (public.is_memorial_admin(memorial_id))
-  with check (public.is_memorial_admin(memorial_id));
-
-drop policy if exists "Admins can delete guestbook entries" on public.guestbook_entries;
-create policy "Admins can delete guestbook entries"
-  on public.guestbook_entries for delete
+drop policy if exists "Memorial admins can delete caretaker messages" on public.caretaker_messages;
+create policy "Memorial admins can delete caretaker messages"
+  on public.caretaker_messages for delete
   using (public.is_memorial_admin(memorial_id));
 
 
--- 12. POLICIES: PAYMENTS
+-- 10. POLICIES: PAYMENTS
 drop policy if exists "Users can view their own payments" on public.payments;
 create policy "Users can view their own payments"
   on public.payments for select

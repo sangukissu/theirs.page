@@ -25,13 +25,25 @@ export async function PATCH(req: NextRequest, context: RouteContext) {
     const db = getSupabaseAdminSafe() || supabase
 
     const body = await req.json()
-    const { target, targetId, action } = body // target: "memory" | "guestbook", action: "approve" | "reject" | "delete"
+    const { target, targetId, action } = body
 
     if (!target || !targetId || !action) {
       return NextResponse.json({ error: "target, targetId, and action are required" }, { status: 400 })
     }
 
-    const tableName = target === "guestbook" ? "guestbook_entries" : "memories"
+    if (!['memory', 'caretaker_message'].includes(target)) {
+      return NextResponse.json({ error: "Invalid moderation target." }, { status: 400 })
+    }
+
+    if (target === "caretaker_message" && !['read', 'archive', 'delete'].includes(action)) {
+      return NextResponse.json({ error: "Invalid message action." }, { status: 400 })
+    }
+
+    if (target === "memory" && !['approve', 'reject', 'delete'].includes(action)) {
+      return NextResponse.json({ error: "Invalid contribution action." }, { status: 400 })
+    }
+
+    const tableName = target === "caretaker_message" ? "caretaker_messages" : "memories"
     const newStatus = action === "approve" ? "approved" : "rejected"
 
     if (action === "delete") {
@@ -48,9 +60,9 @@ export async function PATCH(req: NextRequest, context: RouteContext) {
       return NextResponse.json({ success: true, action: "deleted" })
     }
 
-    const updatePayload: Record<string, any> = {
-      status: newStatus,
-    }
+    const updatePayload: Record<string, any> = target === "caretaker_message"
+      ? { status: action === "archive" ? "archived" : "read", read_at: new Date().toISOString() }
+      : { status: newStatus }
     if (target === "memory" && newStatus === "approved") {
       updatePayload.approved_at = new Date().toISOString()
     }
@@ -66,7 +78,7 @@ export async function PATCH(req: NextRequest, context: RouteContext) {
       return NextResponse.json({ error: "Failed to update item status." }, { status: 500 })
     }
 
-    return NextResponse.json({ success: true, status: newStatus })
+    return NextResponse.json({ success: true, status: updatePayload.status })
   } catch (err: any) {
     console.error("Moderation PATCH error:", err)
     return NextResponse.json({ error: "Internal server error" }, { status: 500 })

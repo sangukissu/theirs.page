@@ -24,7 +24,7 @@ export async function POST(req: NextRequest, context: RouteContext) {
     const { id } = await context.params
     const body = await req.json().catch(() => ({}))
     const {
-      type, // "memory" | "guestbook" | "photo" | "moment"
+      type, // "memory" | "story" | "tribute" | "photo" | "video" | "moment"
       author_name,
       author_relationship,
       content,
@@ -126,32 +126,7 @@ export async function POST(req: NextRequest, context: RouteContext) {
       }
     }
 
-    // 7. Insert into appropriate table with status: pending_approval
-    if (type === "guestbook") {
-      const { error } = await db
-        .from("guestbook_entries")
-        .insert({
-          memorial_id: memorial.id,
-          author_name: author_name.trim(),
-          message: content.trim(),
-          status: "pending_approval",
-        })
-
-      if (error) {
-        console.error("Guestbook submission error:", error)
-        return NextResponse.json(
-          { error: "Unable to submit your message right now. Please try again in a moment." },
-          { status: 500 }
-        )
-      }
-
-      return NextResponse.json({
-        success: true,
-        message: "Your message of remembrance has been submitted to the family for approval.",
-      })
-    }
-
-    // Determine photo URLs (multi-photo support)
+    // 7. Determine photo URLs (multi-photo support)
     const resolvedPhotoUrls = Array.isArray(photo_urls) && photo_urls.length > 0
       ? photo_urls
       : photo_url
@@ -235,7 +210,7 @@ export async function POST(req: NextRequest, context: RouteContext) {
                 <p style="font-size: 15px; color: #444;">
                   <strong>${author_name.trim()}</strong> ${ritualLabel} on <strong>${memorialName}</strong>.
                 </p>
-                <div style="background-color: #f7f7f8; border-left: 3px solid #8b5a45; padding: 16px 20px; margin: 20px 0; border-radius: 8px; font-style: italic; color: #333;">
+                <div style="background-color: #f7f7f8; border-left: 3px solid #305dde; padding: 16px 20px; margin: 20px 0; border-radius: 8px; font-style: italic; color: #333;">
                   “${effectiveContent.length > 300 ? effectiveContent.slice(0, 300) + '...' : effectiveContent}”
                 </div>
                 <div style="margin: 28px 0;">

@@ -605,13 +605,6 @@ export function SettingsTab({
         <div className="flex flex-col divide-y divide-black/[0.05] border border-black/[0.06] rounded-xl overflow-hidden bg-[#fafafb]">
           {[
             {
-              key: "story" as const,
-              title: "Life Story / Biography",
-              desc: "The long-form editorial life story and background.",
-              icon: BookOpen,
-              active: sectionSettings?.story !== false,
-            },
-            {
               key: "tributes" as const,
               title: "Ritual Tributes",
               desc: "Offerings stream where visitors lay flowers, light candles, or leave notes.",
@@ -670,7 +663,6 @@ export function SettingsTab({
                   type="button"
                   onClick={() => {
                     const current = {
-                      story: sectionSettings?.story !== false,
                       tributes: sectionSettings?.tributes !== false,
                       timeline: sectionSettings?.timeline !== false,
                       gallery: sectionSettings?.gallery !== false,
@@ -678,6 +670,7 @@ export function SettingsTab({
                     }
                     onChange("section_settings", {
                       ...current,
+                      story: true,
                       [sec.key]: !current[sec.key],
                     })
                   }}

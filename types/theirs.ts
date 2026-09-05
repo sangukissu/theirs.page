@@ -22,9 +22,9 @@ export type MemoryVisibility = 'everyone' | 'family_only'
 
 export type MediaType = 'image' | 'audio' | 'video'
 
-export type GuestbookStatus = 'pending_approval' | 'approved' | 'rejected'
+export type CaretakerMessageStatus = 'unread' | 'read' | 'archived'
 
-export type ReportTargetType = 'memorial' | 'memory' | 'media' | 'guestbook'
+export type ReportTargetType = 'memorial' | 'memory' | 'media'
 
 export type ReportStatus = 'pending' | 'reviewed' | 'dismissed'
 
@@ -131,14 +131,15 @@ export interface TimelineEvent {
   created_at: string
 }
 
-export interface GuestbookEntry {
+export interface CaretakerMessage {
   id: string
   memorial_id: string
-  author_name: string
-  author_email: string | null
+  sender_name: string
+  sender_email: string
   message: string
-  status: GuestbookStatus
+  status: CaretakerMessageStatus
   created_at: string
+  read_at: string | null
 }
 
 export interface ContentReport {
@@ -180,7 +181,7 @@ export interface MemorialWithDetails extends Memorial {
   memories?: Memory[]
   timeline_events?: TimelineEvent[]
   media_items?: MediaItem[]
-  guestbook_entries?: GuestbookEntry[]
+  caretaker_messages?: CaretakerMessage[]
 }
 
 // ------------------------------------------------------------------------------
@@ -232,10 +233,10 @@ export interface SubmitMemoryInput {
   turnstile_token?: string
 }
 
-export interface SubmitGuestbookInput {
+export interface SubmitCaretakerMessageInput {
   memorial_id: string
-  author_name: string
-  author_email?: string | null
+  sender_name: string
+  sender_email: string
   message: string
   turnstile_token?: string
 }

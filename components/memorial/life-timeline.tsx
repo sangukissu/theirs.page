@@ -77,11 +77,11 @@ export function LifeTimeline({ milestones, isDemo = false }: LifeTimelineProps) 
     : (milestones || [])
 
   return (
-    <section id="timeline" className="py-12 sm:py-16 px-4 max-w-4xl mx-auto scroll-mt-24">
-      <div className="flex flex-col gap-8">
-        
+    <section id="timeline" className="py-12 px-4 max-w-4xl mx-auto scroll-mt-24">
+      <div className="flex flex-col gap-4">
+
         {/* Section Heading */}
-        <div className="flex flex-col gap-1.5 border-b border-black/[0.06] pb-6">
+        <div className="flex flex-col gap-1.5 border-b border-black/[0.06] pb-4">
           <h2 className="text-2xl sm:text-3xl font-medium tracking-tight text-[#181925]">
             Life Timeline & Milestones
           </h2>
@@ -130,6 +130,8 @@ export function LifeTimeline({ milestones, isDemo = false }: LifeTimelineProps) 
                     <img
                       src={item.photoUrl}
                       alt={item.title}
+                      loading="lazy"
+                      decoding="async"
                       className="w-full h-44 object-cover"
                     />
                   </div>

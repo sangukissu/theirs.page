@@ -10,7 +10,11 @@ interface StoryTabProps {
   onChange: (value: string) => void
 }
 
-export function StoryTab({ fullName, biography, onChange }: StoryTabProps) {
+export function StoryTab({
+  fullName,
+  biography,
+  onChange,
+}: StoryTabProps) {
   const [isPolishing, setIsPolishing] = useState(false)
   const [polishError, setPolishError] = useState<string | null>(null)
   const firstName = fullName.split(" ")[0] || "them"
@@ -55,7 +59,7 @@ export function StoryTab({ fullName, biography, onChange }: StoryTabProps) {
   return (
     <div className="flex flex-col gap-6 max-w-3xl">
       <div className="flex flex-col gap-1 border-b border-black/[0.06] pb-4">
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between gap-4">
           <h2 className="text-lg sm:text-xl font-medium text-[#181925]">
             Their Life Story
           </h2>
@@ -76,18 +80,20 @@ export function StoryTab({ fullName, biography, onChange }: StoryTabProps) {
         </p>
       </div>
 
-      {polishError && (
-        <div className="p-3 rounded-xl bg-amber-50 border border-amber-200 text-xs text-amber-800 flex items-center gap-2">
-          <AlertCircle className="size-3.5 shrink-0 text-amber-600" />
-          <span>{polishError}</span>
-        </div>
-      )}
+      <div className="flex flex-col gap-6">
+        {polishError && (
+          <div className="p-3 rounded-xl bg-amber-50 border border-amber-200 text-xs text-amber-800 flex items-center gap-2">
+            <AlertCircle className="size-3.5 shrink-0 text-amber-600" />
+            <span>{polishError}</span>
+          </div>
+        )}
 
-      <RichStoryEditor
-        value={biography}
-        onChange={onChange}
-        placeholder={`Write ${firstName}’s story here...\n\ne.g. ${firstName} was born during the autumn of 1948, the younger of two brothers raised on the edge of the Devon moors. They spent fifty years repairing antique clocks on the high street, but their true joy was Sunday afternoon tea in the garden...`}
-      />
+        <RichStoryEditor
+          value={biography}
+          onChange={onChange}
+          placeholder={`Write ${firstName}’s story here...\n\ne.g. ${firstName} was born during the autumn of 1948, the younger of two brothers raised on the edge of the Devon moors. They spent fifty years repairing antique clocks on the high street, but their true joy was Sunday afternoon tea in the garden...`}
+        />
+      </div>
     </div>
   )
 }

@@ -63,12 +63,12 @@ export function IdentityTab({
   }
 
   return (
-    <div className="flex flex-col gap-8 max-w-2xl">
+    <div className="flex flex-col gap-4 max-w-2xl">
       <div className="flex flex-col gap-1 border-b border-black/[0.06] pb-4">
         <h2 className="text-lg sm:text-xl font-medium text-[#181925]">
           This memorial is dedicated to:
         </h2>
-       
+
       </div>
 
       {/* 1. Portrait Photo Upload */}

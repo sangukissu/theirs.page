@@ -166,7 +166,7 @@ export function MemorialPinGate({ fullName, portraitUrl, slug }: MemorialPinGate
           <button
             type="submit"
             disabled={loading || pinDigits.some((d) => d === "")}
-            className="w-full mt-2 py-2.5 rounded-full bg-[#181925] hover:bg-[#252736] disabled:opacity-40 disabled:cursor-not-allowed text-white text-xs font-medium transition-all cursor-pointer flex items-center justify-center gap-1.5"
+            className="w-full mt-2 py-2.5 rounded-full bg-primary hover:bg-primary/90 disabled:opacity-40 disabled:cursor-not-allowed text-primary-foreground text-xs font-medium transition-all cursor-pointer flex items-center justify-center gap-1.5"
           >
             {loading ? (
               <Loader2 className="size-3.5 animate-spin" />

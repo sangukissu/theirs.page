@@ -131,22 +131,15 @@ export function LifeStories({
       {/* Section Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-black/[0.06] pb-6">
         <div className="flex flex-col gap-1">
-          <div className="inline-flex items-center gap-2 text-xs font-mono text-[#8b5a45] uppercase tracking-wider mb-0.5">
-            <BookOpen className="size-3.5" />
-            <span>Community Archive</span>
-          </div>
           <h2 className="text-2xl sm:text-3xl font-medium tracking-tight text-[#181925]">
             Stories & Memories of {firstName}
           </h2>
-          <p className="text-xs sm:text-sm text-[#71717a] max-w-xl leading-relaxed">
-            Personal anecdotes, humorous memories, and quiet reflections shared by family, friends, and those who knew {firstName}.
-          </p>
         </div>
 
         <button
           type="button"
           onClick={() => onOpenContribute("memory")}
-          className="inline-flex items-center gap-1.5 px-5 py-2.5 rounded-full bg-[#181925] hover:bg-[#252736] text-white text-xs font-medium transition-all cursor-pointer shadow-xs active:scale-95 shrink-0 self-start sm:self-auto"
+          className="inline-flex items-center gap-1.5 px-5 py-2.5 rounded-full bg-primary hover:bg-primary/90 text-primary-foreground text-xs font-medium transition-all cursor-pointer shadow-xs active:scale-95 shrink-0 self-start sm:self-auto"
         >
           <Plus className="size-3.5" />
           <span>Share a Story</span>
@@ -156,7 +149,7 @@ export function LifeStories({
       {/* Stories Reading Feed */}
       {sorted.length === 0 ? (
         <div className="py-16 text-center text-sm text-[#71717a] rounded-3xl bg-[#f7f7f8] border border-black/[0.06] flex flex-col items-center justify-center gap-3">
-          <div className="size-12 rounded-2xl bg-white border border-black/[0.06] text-[#8b5a45] flex items-center justify-center">
+          <div className="size-12 rounded-2xl bg-white border border-black/[0.06] text-primary flex items-center justify-center">
             <QuillFeatherEmblem size={28} />
           </div>
           <p className="max-w-md text-xs sm:text-sm">
@@ -165,7 +158,7 @@ export function LifeStories({
           <button
             type="button"
             onClick={() => onOpenContribute("memory")}
-            className="inline-flex items-center gap-1.5 px-5 py-2.5 rounded-full bg-[#181925] text-white text-xs font-medium hover:bg-[#252736] transition-all cursor-pointer shadow-xs active:scale-95 mt-1"
+            className="inline-flex items-center gap-1.5 px-5 py-2.5 rounded-full bg-primary text-primary-foreground text-xs font-medium hover:bg-primary/90 transition-all cursor-pointer shadow-xs active:scale-95 mt-1"
           >
             <Plus className="size-3.5" />
             <span>Share a Story</span>
@@ -186,7 +179,7 @@ export function LifeStories({
                 {/* Author & Context Header */}
                 <div className="flex items-start justify-between gap-3">
                   <div className="flex items-center gap-3">
-                    <div className="size-10 rounded-2xl bg-white border border-black/[0.06] text-[#8b5a45] flex items-center justify-center shrink-0">
+                    <div className="size-10 rounded-2xl bg-white border border-black/[0.06] text-primary flex items-center justify-center shrink-0">
                       <QuillFeatherEmblem size={24} />
                     </div>
 
@@ -272,7 +265,7 @@ export function LifeStories({
                     <button
                       type="button"
                       onClick={() => toggleExpand(item.id)}
-                      className="text-xs font-semibold text-[#8b5a45] hover:underline cursor-pointer mt-2 inline-block select-none"
+                      className="text-xs font-semibold text-primary hover:underline cursor-pointer mt-2 inline-block select-none"
                     >
                       {isExpanded ? "read less" : "read full story"}
                     </button>
@@ -293,6 +286,8 @@ export function LifeStories({
                             <img
                               src={url}
                               alt={`Memory photo ${pIdx + 1}`}
+                              loading="lazy"
+                              decoding="async"
                               className="size-full object-cover transition-transform group-hover/photo:scale-[1.03] duration-300"
                             />
                             <div className="absolute inset-0 bg-black/0 group-hover/photo:bg-black/20 transition-colors flex items-center justify-center opacity-0 group-hover/photo:opacity-100">
@@ -311,6 +306,8 @@ export function LifeStories({
                         <img
                           src={item.photoUrls?.[0] || item.photoUrl}
                           alt={item.photoCaption || "Memory photo"}
+                          loading="lazy"
+                          decoding="async"
                           className="w-full max-h-72 object-cover transition-transform group-hover/photo:scale-[1.02] duration-300"
                         />
                         <div className="absolute inset-0 bg-black/0 group-hover/photo:bg-black/20 transition-colors flex items-center justify-center opacity-0 group-hover/photo:opacity-100">
