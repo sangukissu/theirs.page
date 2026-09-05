@@ -252,6 +252,7 @@ export function MemorialEditorClient({
   const handleFieldChange = (field: string, value: any) => {
     setForm((prev) => {
       const next = { ...prev, [field]: value }
+      formRef.current = next
 
       try {
         localStorage.setItem(
@@ -358,40 +359,6 @@ export function MemorialEditorClient({
     memories.filter((m) => m.status === "pending_approval").length +
     caretakerMessages.filter((message) => message.status === "unread").length
 
-  const handleToggleSection = (
-    sectionKey: keyof SectionSettings,
-    enabled: boolean
-  ) => {
-    if (sectionKey === "story") return
-    const current = {
-      tributes: form.section_settings?.tributes !== false,
-      timeline: form.section_settings?.timeline !== false,
-      gallery: form.section_settings?.gallery !== false,
-      stories: form.section_settings?.stories !== false,
-    }
-    const nextSettings: SectionSettings = {
-      ...current,
-      [sectionKey]: enabled,
-      story: true,
-    }
-    const nextForm = { ...form, section_settings: nextSettings }
-    setForm(nextForm)
-
-    try {
-      localStorage.setItem(
-        DRAFT_KEY,
-        JSON.stringify({
-          form: nextForm,
-          timestamp: Date.now(),
-          isDirty: true,
-        })
-      )
-    } catch { }
-
-    if (debounceTimerRef.current) clearTimeout(debounceTimerRef.current)
-    saveToCloud(nextForm)
-  }
-
   // Exactly 6 clean, unbloated tabs matching public memorial structure
   const tabs: {
     id: EditorSectionTab
@@ -399,37 +366,34 @@ export function MemorialEditorClient({
     icon: any
     count?: number
     isCompleteOnly?: boolean
-    isOff?: boolean
   }[] = [
-      { id: "identity", label: "Identity", icon: User },
-      {
-        id: "story",
-        label: "Life Story",
-        icon: BookOpen,
-      },
-      {
-        id: "gallery",
-        label: "Gallery",
-        icon: ImageIcon,
-        count: mediaItems.length,
-        isOff: form.section_settings?.gallery === false,
-      },
-      {
-        id: "timeline",
-        label: "Timeline",
-        icon: Calendar,
-        count: timelineEvents.length,
-        isCompleteOnly: true,
-        isOff: form.section_settings?.timeline === false,
-      },
-      {
-        id: "moderation",
-        label: "Contributions",
-        icon: MessageSquare,
-        count: pendingContributions,
-      },
-      { id: "settings", label: "Settings", icon: Settings },
-    ]
+    { id: "identity", label: "Identity", icon: User },
+    {
+      id: "story",
+      label: "Life Story",
+      icon: BookOpen,
+    },
+    {
+      id: "gallery",
+      label: "Gallery",
+      icon: ImageIcon,
+      count: mediaItems.length,
+    },
+    {
+      id: "timeline",
+      label: "Timeline",
+      icon: Calendar,
+      count: timelineEvents.length,
+      isCompleteOnly: true,
+    },
+    {
+      id: "moderation",
+      label: "Contributions",
+      icon: MessageSquare,
+      count: pendingContributions,
+    },
+    { id: "settings", label: "Settings", icon: Settings },
+  ]
 
   const currentIndex = tabs.findIndex((t) => t.id === activeTab)
   const prevTab = currentIndex > 0 ? tabs[currentIndex - 1] : null
@@ -580,15 +544,6 @@ export function MemorialEditorClient({
                   </div>
 
                   <div className="flex items-center gap-1.5">
-                    {tab.isOff && (
-                      <span
-                        className={`text-[9px] font-mono uppercase px-1.5 py-0.2 rounded-full ${isActive ? "bg-white/20 text-white" : "bg-neutral-200 text-neutral-600"
-                          }`}
-                      >
-                        Off
-                      </span>
-                    )}
-
                     {tab.isCompleteOnly && !initialMemorial.is_paid && (
                       <span
                         className={`text-[9px] font-mono uppercase font-semibold px-1.5 py-0.2 rounded-full ${isActive ? "bg-white/20 text-white" : "bg-emerald-50 text-emerald-700 border border-emerald-200"
@@ -652,8 +607,6 @@ export function MemorialEditorClient({
               }
               onUpdateMedia={handleUpdateMedia}
               onReorderMedia={handleReorderMedia}
-              sectionEnabled={form.section_settings?.gallery !== false}
-              onToggleSection={(enabled) => handleToggleSection("gallery", enabled)}
             />
           )}
 
@@ -670,8 +623,6 @@ export function MemorialEditorClient({
               onRemoveEvent={(id) =>
                 setTimelineEvents((prev) => prev.filter((e) => e.id !== id))
               }
-              sectionEnabled={form.section_settings?.timeline !== false}
-              onToggleSection={(enabled) => handleToggleSection("timeline", enabled)}
             />
           )}
 
@@ -693,8 +644,6 @@ export function MemorialEditorClient({
               }}
               onDeleteMemory={(id) => setMemories(memories.filter((m) => m.id !== id))}
               onDeleteCaretakerMessage={(id) => setCaretakerMessages(caretakerMessages.filter((message) => message.id !== id))}
-              sectionSettings={form.section_settings}
-              onToggleSection={handleToggleSection}
             />
           )}
 

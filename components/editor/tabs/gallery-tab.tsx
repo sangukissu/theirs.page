@@ -50,8 +50,6 @@ interface GalleryTabProps {
     value: any
   ) => void
   onReorderMedia?: (reordered: EditorMediaItem[]) => void
-  sectionEnabled?: boolean
-  onToggleSection?: (enabled: boolean) => void
 }
 
 export interface UploadingFileItem {
@@ -74,8 +72,6 @@ export function GalleryTab({
   onRemoveMedia,
   onUpdateMedia,
   onReorderMedia,
-  sectionEnabled = true,
-  onToggleSection,
 }: GalleryTabProps) {
   const [isUploading, setIsUploading] = useState(false)
   const [uploadProgress, setUploadProgress] = useState<string | null>(null)
@@ -301,41 +297,13 @@ export function GalleryTab({
           <h2 className="text-lg sm:text-xl font-medium text-[#181925]">
             Photographs, Audio & Video Gallery
           </h2>
-
-          <div className="flex items-center gap-2 select-none shrink-0">
-            <span className={`text-xs ${sectionEnabled ? "text-[#71717a]" : "text-amber-700 font-medium"}`}>
-              {sectionEnabled ? "Active" : "Off"}
-            </span>
-            <button
-              type="button"
-              role="switch"
-              aria-checked={sectionEnabled}
-              onClick={() => onToggleSection?.(!sectionEnabled)}
-              className={`w-9 h-5 rounded-full transition-colors relative p-0.5 shrink-0 cursor-pointer ${
-                sectionEnabled ? "bg-primary" : "bg-neutral-300"
-              }`}
-              title={sectionEnabled ? "Disable this section on memorial" : "Enable this section on memorial"}
-            >
-              <div
-                className={`size-4 rounded-full bg-white transition-transform shadow-xs ${
-                  sectionEnabled ? "translate-x-4" : "translate-x-0"
-                }`}
-              />
-            </button>
-          </div>
         </div>
         <p className="text-xs sm:text-sm text-[#71717a]">
           Bulk upload family memories. Zero mandatory forms—drop photos, saved voicemails, or vintage video clips. Captions and years are completely optional.
         </p>
       </div>
 
-      <div
-        className={`flex flex-col gap-8 ${
-          !sectionEnabled
-            ? "opacity-35 pointer-events-none select-none grayscale-[40%] transition-all duration-200"
-            : "transition-all duration-200"
-        }`}
-      >
+      <div className="flex flex-col gap-8">
 
       {/* Complete Plan Upgrade Banner */}
       {!isPaid && (

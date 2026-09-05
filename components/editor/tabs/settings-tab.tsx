@@ -706,34 +706,44 @@ export function SettingsTab({
                   </div>
                 </div>
 
-                <button
-                  type="button"
-                  onClick={() => {
-                    const current = {
-                      tributes: sectionSettings?.tributes !== false,
-                      timeline: sectionSettings?.timeline !== false,
-                      gallery: sectionSettings?.gallery !== false,
-                      stories: sectionSettings?.stories !== false,
-                    }
-                    onChange("section_settings", {
-                      ...current,
-                      story: true,
-                      [sec.key]: !current[sec.key],
-                    })
-                  }}
-                  className={`relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
-                    sec.active ? "bg-emerald-600" : "bg-neutral-300"
-                  }`}
-                  role="switch"
-                  aria-checked={sec.active}
-                >
+                <div className="flex items-center gap-2.5 select-none shrink-0">
                   <span
-                    aria-hidden="true"
-                    className={`pointer-events-none inline-block size-4 transform rounded-full bg-white shadow-xs ring-0 transition duration-200 ease-in-out ${
-                      sec.active ? "translate-x-4" : "translate-x-0"
+                    className={`text-xs font-medium ${
+                      sec.active ? "text-emerald-700" : "text-[#71717a]"
                     }`}
-                  />
-                </button>
+                  >
+                    {sec.active ? "Active" : "Hidden"}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const current = {
+                        tributes: sectionSettings?.tributes !== false,
+                        timeline: sectionSettings?.timeline !== false,
+                        gallery: sectionSettings?.gallery !== false,
+                        stories: sectionSettings?.stories !== false,
+                      }
+                      onChange("section_settings", {
+                        ...current,
+                        story: true,
+                        [sec.key]: !current[sec.key],
+                      })
+                    }}
+                    className={`relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
+                      sec.active ? "bg-emerald-600" : "bg-neutral-300"
+                    }`}
+                    role="switch"
+                    aria-checked={sec.active}
+                    title={sec.active ? `Hide ${sec.title} on memorial` : `Show ${sec.title} on memorial`}
+                  >
+                    <span
+                      aria-hidden="true"
+                      className={`pointer-events-none inline-block size-4 transform rounded-full bg-white shadow-xs ring-0 transition duration-200 ease-in-out ${
+                        sec.active ? "translate-x-4" : "translate-x-0"
+                      }`}
+                    />
+                  </button>
+                </div>
               </div>
             )
           })}

@@ -22,8 +22,6 @@ interface TimelineTabProps {
   onUpgrade?: () => void
   onAddEvent: (event: EditorTimelineEvent) => void
   onRemoveEvent: (id: string) => void
-  sectionEnabled?: boolean
-  onToggleSection?: (enabled: boolean) => void
 }
 
 export function TimelineTab({
@@ -34,8 +32,6 @@ export function TimelineTab({
   onUpgrade,
   onAddEvent,
   onRemoveEvent,
-  sectionEnabled = true,
-  onToggleSection,
 }: TimelineTabProps) {
   const [yearInput, setYearInput] = useState("")
   const [titleInput, setTitleInput] = useState("")
@@ -168,47 +164,18 @@ export function TimelineTab({
 
   return (
     <div className="flex flex-col gap-6 max-w-2xl">
-      {/* Header with Small Toggle */}
       <div className="flex flex-col gap-1 border-b border-black/[0.06] pb-4">
         <div className="flex items-center justify-between gap-4">
           <h2 className="text-lg sm:text-xl font-medium text-[#181925]">
             Life Chronology & Milestones
           </h2>
-
-          <div className="flex items-center gap-2 select-none shrink-0">
-            <span className={`text-xs ${sectionEnabled ? "text-[#71717a]" : "text-amber-700 font-medium"}`}>
-              {sectionEnabled ? "Active" : "Off"}
-            </span>
-            <button
-              type="button"
-              role="switch"
-              aria-checked={sectionEnabled}
-              onClick={() => onToggleSection?.(!sectionEnabled)}
-              className={`w-9 h-5 rounded-full transition-colors relative p-0.5 shrink-0 cursor-pointer ${
-                sectionEnabled ? "bg-primary" : "bg-neutral-300"
-              }`}
-              title={sectionEnabled ? "Disable this section on memorial" : "Enable this section on memorial"}
-            >
-              <div
-                className={`size-4 rounded-full bg-white transition-transform shadow-xs ${
-                  sectionEnabled ? "translate-x-4" : "translate-x-0"
-                }`}
-              />
-            </button>
-          </div>
         </div>
         <p className="text-xs sm:text-sm text-[#71717a]">
           The major markers of {firstName}’s journey. Chapters and ordering are calculated automatically by year.
         </p>
       </div>
 
-      <div
-        className={`flex flex-col gap-8 ${
-          !sectionEnabled
-            ? "opacity-35 pointer-events-none select-none grayscale-[40%] transition-all duration-200"
-            : "transition-all duration-200"
-        }`}
-      >
+      <div className="flex flex-col gap-8">
 
       {/* Complete Plan Upgrade Banner */}
       {!isPaid && (

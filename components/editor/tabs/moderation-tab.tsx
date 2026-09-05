@@ -59,8 +59,6 @@ interface ModerationTabProps {
   onUpdateCaretakerMessage: (id: string, status: "read" | "archived") => void
   onDeleteMemory: (id: string) => void
   onDeleteCaretakerMessage: (id: string) => void
-  sectionSettings?: SectionSettings | null
-  onToggleSection?: (key: keyof SectionSettings, enabled: boolean) => void
 }
 
 export function ModerationTab({
@@ -72,8 +70,6 @@ export function ModerationTab({
   onUpdateCaretakerMessage,
   onDeleteMemory,
   onDeleteCaretakerMessage,
-  sectionSettings,
-  onToggleSection,
 }: ModerationTabProps) {
   const [subTab, setSubTab] = useState<"memories" | "messages">(initialSubTab)
   const [activeBucket, setActiveBucket] = useState<"pending" | "published" | "blocked">("pending")
@@ -170,7 +166,6 @@ export function ModerationTab({
   )
 
   const unreadMessagesCount = caretakerMessages.filter((message) => message.status === "unread").length
-  const isStoriesEnabled = sectionSettings?.stories !== false
 
   return (
     <div className="flex flex-col gap-6 max-w-2xl">
@@ -221,31 +216,6 @@ export function ModerationTab({
             )}
           </button>
         </div>
-
-        {/* Small toggle for the currently selected subtab */}
-        {subTab === "memories" && (
-          <div className="flex items-center gap-2 select-none shrink-0">
-            <span className={`text-xs ${isStoriesEnabled ? "text-[#71717a]" : "text-amber-700 font-medium"}`}>
-              {isStoriesEnabled ? "Active" : "Off"}
-            </span>
-            <button
-              type="button"
-              role="switch"
-              aria-checked={isStoriesEnabled}
-              onClick={() => onToggleSection?.("stories", !isStoriesEnabled)}
-              className={`w-9 h-5 rounded-full transition-colors relative p-0.5 shrink-0 cursor-pointer ${
-                isStoriesEnabled ? "bg-primary" : "bg-neutral-300"
-              }`}
-              title={isStoriesEnabled ? "Disable this section on memorial" : "Enable this section on memorial"}
-            >
-              <div
-                className={`size-4 rounded-full bg-white transition-transform shadow-xs ${
-                  isStoriesEnabled ? "translate-x-4" : "translate-x-0"
-                }`}
-              />
-            </button>
-          </div>
-        )}
       </div>
 
       {/* CONTRIBUTIONS TAB */}
