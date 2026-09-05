@@ -88,6 +88,7 @@ export interface Memory {
   location: string | null
   photo_url: string | null
   tribute_type?: 'flower' | 'note' | 'photo' | 'candle'
+  contribution_type?: 'tribute' | 'story'
   status: MemoryStatus
   visibility: MemoryVisibility
   created_at: string

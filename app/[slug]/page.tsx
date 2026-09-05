@@ -117,6 +117,8 @@ export default async function MemorialPage({ params }: MemorialPageProps) {
   let mediaItems: any[] = []
   let timelineEvents: any[] = []
   let memories: any[] = []
+  let tributes: any[] = []
+  let stories: any[] = []
 
   try {
     const { data: memorial } = await supabaseAdmin
@@ -210,7 +212,10 @@ export default async function MemorialPage({ params }: MemorialPageProps) {
         photoUrl: t.photo_url ? resolveMediaUrl(t.photo_url) : undefined,
       }))
 
-      memories = (memoriesRes.data || []).map((mem: any) => {
+      const rawMemories = memoriesRes.data || []
+      const rawGuestbook = guestbookRes.data || []
+
+      for (const mem of rawMemories) {
         let dateOrYear = ""
         if (mem.approx_year) {
           dateOrYear = String(mem.approx_year)
@@ -227,22 +232,38 @@ export default async function MemorialPage({ params }: MemorialPageProps) {
           else dateOrYear = d.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })
         }
 
-        return {
-          id: mem.id,
-          authorName: mem.author_name,
-          authorRelationship: mem.author_relationship || "",
-          dateOrYear,
-          chronologicalYear: mem.approx_year || undefined,
-          location: mem.location || undefined,
-          story: mem.story,
-          photoUrl: mem.photo_url ? resolveMediaUrl(mem.photo_url) : undefined,
-          tributeType: mem.tribute_type || (mem.photo_url ? "photo" : "note"),
-          heartCount: 0,
-          createdAt: mem.created_at,
-        }
-      })
+        const isStory =
+          mem.contribution_type === "story" ||
+          (!mem.contribution_type && (mem.photo_url || mem.approx_year || (mem.story && mem.story.length > 200)))
 
-      const guestbookTributes = (guestbookRes.data || []).map((gb: any) => {
+        if (isStory) {
+          stories.push({
+            id: mem.id,
+            authorName: mem.author_name,
+            authorRelationship: mem.author_relationship || "",
+            dateOrYear,
+            chronologicalYear: mem.approx_year || undefined,
+            location: mem.location || undefined,
+            story: mem.story,
+            photoUrl: mem.photo_url ? resolveMediaUrl(mem.photo_url) : undefined,
+            createdAt: mem.created_at,
+          })
+        } else {
+          tributes.push({
+            id: mem.id,
+            authorName: mem.author_name,
+            authorRelationship: mem.author_relationship || "",
+            dateOrYear,
+            chronologicalYear: mem.approx_year || undefined,
+            location: mem.location || undefined,
+            story: mem.story,
+            tributeType: (mem.tribute_type as any) || "note",
+            createdAt: mem.created_at,
+          })
+        }
+      }
+
+      for (const gb of rawGuestbook) {
         let dateOrYear = ""
         if (gb.created_at) {
           const d = new Date(gb.created_at)
@@ -257,24 +278,30 @@ export default async function MemorialPage({ params }: MemorialPageProps) {
           else dateOrYear = d.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })
         }
 
-        return {
+        tributes.push({
           id: `gb-${gb.id}`,
           authorName: gb.author_name,
           authorRelationship: "",
           dateOrYear,
           story: gb.message,
-          tributeType: "note" as const,
-          heartCount: 0,
+          tributeType: "note",
           createdAt: gb.created_at,
-        }
-      })
+        })
+      }
 
-      // Unify both memories and past condolence notes into a single, cohesive Tributes stream
-      memories = [...memories, ...guestbookTributes].sort((a, b) => {
+      tributes.sort((a, b) => {
         const timeA = a.createdAt ? new Date(a.createdAt).getTime() : 0
         const timeB = b.createdAt ? new Date(b.createdAt).getTime() : 0
         return timeB - timeA
       })
+
+      stories.sort((a, b) => {
+        const timeA = a.createdAt ? new Date(a.createdAt).getTime() : 0
+        const timeB = b.createdAt ? new Date(b.createdAt).getTime() : 0
+        return timeB - timeA
+      })
+
+      memories = [...tributes]
     } catch (err) {
       console.error("Error fetching child collections:", err)
     }
@@ -314,8 +341,10 @@ export default async function MemorialPage({ params }: MemorialPageProps) {
   }
 
   const photosCount = isDemo ? 42 : mediaItems.filter((m) => m.mediaType === "photo").length
-  const memoriesCount = isDemo ? 14 : memories.length
-  const contributorsCount = isDemo ? 8 : (new Set(memories.map((m) => m.authorName)).size || (dbMemorial ? 1 : 0))
+  const memoriesCount = isDemo ? 14 : (tributes.length + stories.length)
+  const contributorsCount = isDemo
+    ? 8
+    : (new Set([...tributes.map((m) => m.authorName), ...stories.map((s) => s.authorName)]).size || (dbMemorial ? 1 : 0))
 
   const memorialData: MemorialData = {
     id: dbMemorial?.id,
@@ -335,7 +364,9 @@ export default async function MemorialPage({ params }: MemorialPageProps) {
     contributorsCount,
     mediaItems: isDemo ? undefined : mediaItems,
     timelineEvents: isDemo ? undefined : timelineEvents,
-    memories: isDemo ? undefined : memories,
+    memories: isDemo ? undefined : tributes,
+    tributes: isDemo ? undefined : tributes,
+    stories: isDemo ? undefined : stories,
   }
 
   // Schema.org Person & Memorial Structured Data for SEO

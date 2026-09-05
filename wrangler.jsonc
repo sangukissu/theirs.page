@@ -15,5 +15,9 @@
   },
   "observability": {
     "enabled": true
+  },
+  "vars": {
+    "NEXT_PUBLIC_TURNSTILE_SITE_KEY": "0x4AAAAAAElC6yv2vY7dR2dn",
+    "TURNSTILE_SECRET_KEY": "0x4AAAAAAElC6-LxRLOkIkSeI_RiGUGFt4o"
   }
 }

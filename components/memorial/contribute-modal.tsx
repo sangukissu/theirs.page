@@ -229,7 +229,7 @@ export function ContributeModal({
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          type: "memory",
+          type: isTributeMode ? "tribute" : "story",
           author_name: authorName.trim(),
           author_relationship: relationship.trim() || null,
           content: effectiveContent,

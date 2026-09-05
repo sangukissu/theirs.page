@@ -156,7 +156,11 @@ export async function POST(req: NextRequest, context: RouteContext) {
       ? tribute_type
       : "note"
 
-    // Otherwise, treat as a memory contribution (stories, photos, moments)
+    // Determine contribution classification: ritual 'tribute' vs narrative 'story'
+    const isStory = (type === "story" || type === "memory" || Boolean(photo_url) || Boolean(approx_year)) && type !== "tribute"
+    const contributionType = isStory ? "story" : "tribute"
+
+    // Otherwise, treat as a memory/tribute contribution
     const { error } = await db
       .from("memories")
       .insert({
@@ -168,6 +172,7 @@ export async function POST(req: NextRequest, context: RouteContext) {
         location: location?.trim() || null,
         photo_url: photo_url || null,
         tribute_type: safeTributeType,
+        contribution_type: contributionType,
         status: "pending_approval",
         visibility: "everyone",
       })

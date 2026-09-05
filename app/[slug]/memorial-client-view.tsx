@@ -7,6 +7,7 @@ import { MemorialStory } from "@/components/memorial/memorial-story"
 import { MemoriesStream, MemoryItem } from "@/components/memorial/memories-stream"
 import { LifeTimeline, TimelineMilestone } from "@/components/memorial/life-timeline"
 import { MemorialGallery, GalleryItem } from "@/components/memorial/memorial-gallery"
+import { LifeStories, StoryItem } from "@/components/memorial/life-stories"
 import { MemorialFooter } from "@/components/memorial/memorial-footer"
 import { ContributeModal, ContributionType } from "@/components/memorial/contribute-modal"
 
@@ -29,6 +30,8 @@ export interface MemorialData {
   mediaItems?: GalleryItem[]
   timelineEvents?: TimelineMilestone[]
   memories?: MemoryItem[]
+  tributes?: MemoryItem[]
+  stories?: StoryItem[]
 }
 
 export function MemorialClientView({ data }: { data: MemorialData }) {
@@ -70,10 +73,10 @@ export function MemorialClientView({ data }: { data: MemorialData }) {
         isDemo={data.isDemo}
       />
 
-      {/* 4. The Collaborative Memories Stream (Filters, Reactions, Reading feed) */}
+      {/* 4. The Collaborative Tributes Stream (Flowers, Candles, Condolence notes) */}
       <MemoriesStream
         fullName={data.fullName}
-        memories={data.memories}
+        memories={data.tributes || data.memories}
         memorialId={data.id}
         slug={data.slug}
         isDemo={data.isDemo}
@@ -95,7 +98,17 @@ export function MemorialClientView({ data }: { data: MemorialData }) {
         onOpenContribute={handleOpenContribute}
       />
 
-      {/* 7. Permanent Stewardship Footer */}
+      {/* 7. Dedicated Life Stories & Memories (Personal narratives & photo anecdotes - AFTER GALLERY) */}
+      <LifeStories
+        fullName={data.fullName}
+        stories={data.stories}
+        memorialId={data.id}
+        slug={data.slug}
+        isDemo={data.isDemo}
+        onOpenContribute={handleOpenContribute}
+      />
+
+      {/* 8. Permanent Stewardship Footer */}
       <MemorialFooter
         fullName={data.fullName}
         slug={data.slug}

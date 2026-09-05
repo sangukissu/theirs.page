@@ -3,8 +3,6 @@
 import { useState } from "react"
 import {
   Plus,
-  Play,
-  Pause,
   MapPin,
   Share2,
   MoreVertical,
@@ -32,79 +30,48 @@ export interface MemoryItem {
 
 export const DEFAULT_MEMORIES: MemoryItem[] = [
   {
-    id: "mem-3",
+    id: "trib-1",
     authorName: "Meena Carter",
     authorRelationship: "Wife of 50 years",
     dateOrYear: "Yesterday",
     location: "Devon Cottage",
     story:
-      "For fifty years, Bob brought two cups of Assam tea upstairs at 6:30 every morning in the chipped blue porcelain mugs we bought on Portobello Road. Even in his last week at the cottage, he reminded Anita where the good tea leaves were kept.",
+      "A blossom in memory of my dearest Bob. For fifty years you brought warmth, laughter, and calm into our home.",
     tributeType: "flower",
     createdAt: new Date(Date.now() - 1000 * 60 * 60 * 20).toISOString(),
   },
   {
-    id: "mem-1",
-    authorName: "Anita Carter",
-    authorRelationship: "Daughter",
-    dateOrYear: "1994",
-    chronologicalYear: 1994,
-    location: "London, UK",
+    id: "trib-2",
+    authorName: "David Carter",
+    authorRelationship: "Older Brother",
+    dateOrYear: "2 days ago",
+    location: "Dartmoor, Devon",
     story:
-      "Dad couldn’t walk past a broken appliance without trying to repair it. Once he spent half of Christmas Day fixing Mrs. Higgins’ washing machine while everyone was waiting for dinner. He wouldn’t leave until it spun without rattling, then ate cold turkey with greasy hands and a giant grin.",
-    photoUrl: "/historical-wedding-photo.webp",
-    photoCaption: "Christmas morning in the kitchen, 1994",
-    tributeType: "photo",
+      "Lighting a candle for my little brother Bob. Your gentle spirit and steady hands will never be forgotten.",
+    tributeType: "candle",
     createdAt: new Date(Date.now() - 1000 * 60 * 60 * 48).toISOString(),
   },
   {
-    id: "mem-2",
-    authorName: "David Carter",
-    authorRelationship: "Older Brother",
-    dateOrYear: "1968",
-    chronologicalYear: 1968,
-    location: "Dartmoor, Devon",
+    id: "trib-3",
+    authorName: "Thomas Bradley",
+    authorRelationship: "Lifelong Friend & Beekeeper",
+    dateOrYear: "3 days ago",
+    location: "Dartmoor Valleys",
     story:
-      "When we took the old Morris Minor across the moors in dense fog without telling Grandad. The clutch was slipping and the windscreen wipers barely twitched, but Bob hummed Beatles songs the whole way without fear. He knew every cow track in Devon.",
-    audioTitle: "David recounting the Morris Minor trip",
-    audioDuration: "0:42",
-    tributeType: "candle",
+      "Laying a wildflower for Bob. Rest peacefully, old friend, among the heather and the bees.",
+    tributeType: "flower",
     createdAt: new Date(Date.now() - 1000 * 60 * 60 * 72).toISOString(),
   },
   {
-    id: "mem-4",
-    authorName: "Sarah Jenkins",
-    authorRelationship: "Senior Apprentice",
-    dateOrYear: "1998",
-    chronologicalYear: 1998,
-    location: "Carter Workshop",
+    id: "trib-4",
+    authorName: "Eleanor Vance",
+    authorRelationship: "Family Neighbor",
+    dateOrYear: "5 days ago",
+    location: "London, UK",
     story:
-      "Thirty years at the bench and I never once heard him raise his voice. Whenever an apprentice broke a delicate clock spring, Bob would just pour a fresh cup of tea, smile, and say: ‘Well, now you know exactly how much pressure it takes to break one. That’s called learning.’",
+      "Holding the entire Carter family in our prayers. Robert’s kindness and warmth touched everyone who walked down our lane.",
     tributeType: "note",
     createdAt: new Date(Date.now() - 1000 * 60 * 60 * 120).toISOString(),
-  },
-  {
-    id: "mem-5",
-    authorName: "Rahul Carter",
-    authorRelationship: "Grandson",
-    dateOrYear: "2012",
-    chronologicalYear: 2012,
-    location: "Back Porch, Devon",
-    story:
-      "He spent three months carving a miniature wooden chess set for my tenth birthday. Every piece was carved from spare oak offcuts from the grandfather clocks. I still keep the King in my desk drawer at university.",
-    tributeType: "note",
-    createdAt: new Date(Date.now() - 1000 * 60 * 60 * 180).toISOString(),
-  },
-  {
-    id: "mem-6",
-    authorName: "Thomas Bradley",
-    authorRelationship: "Lifelong Friend & Beekeeper",
-    dateOrYear: "2001",
-    chronologicalYear: 2001,
-    location: "Dartmoor Valleys",
-    story:
-      "Whenever the wild bees nested in the cottage eaves, Bob wouldn't call pest control. He'd put on his old tweed jacket, gently smoke them into a wooden box, and walk them three miles down into the valley so they'd pollinate the heather.",
-    tributeType: "flower",
-    createdAt: new Date(Date.now() - 1000 * 60 * 60 * 240).toISOString(),
   },
 ]
 
@@ -125,7 +92,6 @@ export function MemoriesStream({
   isDemo = false,
   onOpenContribute,
 }: MemoriesStreamProps) {
-  const [playingAudioId, setPlayingAudioId] = useState<string | null>(null)
   const [expandedIds, setExpandedIds] = useState<Record<string, boolean>>({})
   const [activeMenuId, setActiveMenuId] = useState<string | null>(null)
   const [copiedId, setCopiedId] = useState<string | null>(null)
@@ -172,7 +138,7 @@ export function MemoriesStream({
             Tributes to {firstName}
           </h2>
           <p className="text-xs sm:text-sm text-[#71717a]">
-            Stories, prayers, and words of remembrance from family and friends.
+            Flowers, candles, and quiet notes of remembrance from family and friends.
           </p>
         </div>
 
@@ -202,7 +168,6 @@ export function MemoriesStream({
       ) : (
         <div className="flex flex-col gap-5">
           {sorted.map((item) => {
-            const isAudioPlaying = playingAudioId === item.id
             const isExpanded = !!expandedIds[item.id]
             const shouldTruncate = item.story.length > 260
             const isMenuOpen = activeMenuId === item.id
@@ -319,53 +284,7 @@ export function MemoriesStream({
                     )}
                   </div>
 
-                  {/* Embedded Audio Memo (if present) */}
-                  {item.audioTitle && (
-                    <div className="p-3 rounded-2xl bg-white border border-black/[0.06] flex items-center justify-between gap-3 my-1">
-                      <button
-                        type="button"
-                        onClick={() => setPlayingAudioId(isAudioPlaying ? null : item.id)}
-                        className="size-8 rounded-full bg-[#181925] text-white flex items-center justify-center shrink-0 hover:bg-[#282a3a] transition-colors cursor-pointer"
-                      >
-                        {isAudioPlaying ? <Pause className="size-3.5" /> : <Play className="size-3.5 ml-0.5" />}
-                      </button>
-                      <div className="flex-1 flex flex-col min-w-0">
-                        <span className="text-xs font-medium text-[#181925] truncate">
-                          {item.audioTitle}
-                        </span>
-                        <div className="flex items-center gap-1 h-2.5 mt-0.5">
-                          {[30, 60, 90, 45, 80, 50, 70, 40, 85, 60, 30].map((h, i) => (
-                            <div
-                              key={i}
-                              className={`w-0.5 rounded-full transition-all ${
-                                isAudioPlaying ? "bg-[#181925]" : "bg-neutral-300"
-                              }`}
-                              style={{ height: `${h}%` }}
-                            />
-                          ))}
-                        </div>
-                      </div>
-                      <span className="text-[11px] font-mono text-[#888] shrink-0">
-                        {item.audioDuration}
-                      </span>
-                    </div>
-                  )}
 
-                  {/* Embedded Photograph (if present) */}
-                  {item.photoUrl && (
-                    <div className="rounded-2xl overflow-hidden border border-black/[0.06] bg-neutral-100 max-h-80 my-1">
-                      <img
-                        src={item.photoUrl}
-                        alt={item.photoCaption || "Contributed photograph"}
-                        className="w-full h-full object-cover grayscale contrast-105"
-                      />
-                      {item.photoCaption && (
-                        <div className="p-2.5 bg-white/90 backdrop-blur-xs text-xs text-[#666] italic border-t border-black/[0.04]">
-                          {item.photoCaption}
-                        </div>
-                      )}
-                    </div>
-                  )}
 
                   {/* Bottom Action: Clean Share link */}
                   <div className="pt-2 border-t border-black/[0.04] flex items-center justify-between text-xs text-[#888]">

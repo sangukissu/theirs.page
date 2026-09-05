@@ -30,6 +30,7 @@ export function MemorialNav({
     { id: "tributes", label: "Tributes" },
     { id: "timeline", label: "Timeline" },
     { id: "gallery", label: "Gallery" },
+    { id: "memories", label: "Stories" },
   ]
 
   const handleShare = async () => {
