@@ -63,8 +63,10 @@ export function ContributeModal({
 
   // Media upload state
   const fileInputRef = useRef<HTMLInputElement | null>(null)
+  const memoryPhotoInputRef = useRef<HTMLInputElement | null>(null)
   const [uploadedFileUrl, setUploadedFileUrl] = useState<string | null>(null)
   const [uploadedFileName, setUploadedFileName] = useState<string | null>(null)
+  const [memoryPhotos, setMemoryPhotos] = useState<{ url: string; name: string }[]>([])
   const [isUploadingMedia, setIsUploadingMedia] = useState(false)
   const [mediaUploadError, setMediaUploadError] = useState<string | null>(null)
 
@@ -182,10 +184,67 @@ export function ContributeModal({
     }
   }
 
+  const handleMemoryPhotoSelect = async (file: File) => {
+    if (!file) return
+    if (memoryPhotos.length >= 3) {
+      setMediaUploadError("You can attach up to 3 photographs to a story.")
+      return
+    }
+
+    setIsUploadingMedia(true)
+    setMediaUploadError(null)
+
+    try {
+      const targetIdentifier = slug || memorialId
+      const intentRes = await fetch(`/api/memorials/${targetIdentifier}/upload-intent`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          turnstile_token: turnstileToken,
+          mime_type: file.type || "image/jpeg",
+          file_size: file.size,
+          file_name: file.name,
+        }),
+      })
+
+      const intentData = await intentRes.json()
+      if (!intentRes.ok) {
+        throw new Error(intentData.error || "Failed to authorize photo upload")
+      }
+
+      const formData = new FormData()
+      formData.append("file", file)
+      formData.append("folder", "contributions")
+      formData.append("memorialId", intentData.memorialId || memorialId || slug)
+      formData.append("uploadIntentToken", intentData.uploadIntentToken)
+
+      const res = await fetch("/api/r2/upload", {
+        method: "POST",
+        body: formData,
+      })
+
+      const data = await res.json()
+      if (!res.ok) {
+        throw new Error(data.error || "Failed to upload photo")
+      }
+
+      setMemoryPhotos((prev) => [...prev, { url: data.publicUrl, name: file.name }])
+    } catch (err: any) {
+      console.error("Photo upload error:", err)
+      setMediaUploadError(err.message || "Failed to upload photo. Please try again.")
+    } finally {
+      setIsUploadingMedia(false)
+    }
+  }
+
   const handleDrop = (e: React.DragEvent) => {
     e.preventDefault()
     if (e.dataTransfer.files && e.dataTransfer.files[0]) {
-      handleFileSelect(e.dataTransfer.files[0])
+      if (selectedType === "memory") {
+        handleMemoryPhotoSelect(e.dataTransfer.files[0])
+      } else {
+        handleFileSelect(e.dataTransfer.files[0])
+      }
     }
   }
 
@@ -216,10 +275,15 @@ export function ContributeModal({
       const targetIdentifier = memorialId || slug
       const approxYearNum = extraField ? parseInt(extraField.replace(/\D/g, ""), 10) : null
 
+      const resolvedPhotoUrls = isMedia
+        ? (uploadedFileUrl ? [uploadedFileUrl] : [])
+        : memoryPhotos.map((p) => p.url)
+      const primaryPhotoUrl = resolvedPhotoUrls[0] || null
+
       let safeTributeType: "flower" | "candle" | "note" | "photo" = "note"
       if (isTributeMode) {
         safeTributeType = tributeRitual
-      } else if (uploadedFileUrl || selectedType === "photo") {
+      } else if (primaryPhotoUrl || selectedType === "photo") {
         safeTributeType = "photo"
       } else {
         safeTributeType = "note"
@@ -234,7 +298,8 @@ export function ContributeModal({
           author_relationship: relationship.trim() || null,
           content: effectiveContent,
           approx_year: isNaN(approxYearNum as number) ? null : approxYearNum,
-          photo_url: uploadedFileUrl || null,
+          photo_url: primaryPhotoUrl,
+          photo_urls: resolvedPhotoUrls,
           tribute_type: safeTributeType,
           turnstile_token: turnstileToken,
         }),
@@ -267,6 +332,7 @@ export function ContributeModal({
     setExtraField("")
     setUploadedFileUrl(null)
     setUploadedFileName(null)
+    setMemoryPhotos([])
     setIsUploadingMedia(false)
     setMediaUploadError(null)
     setError(null)
@@ -677,48 +743,71 @@ export function ContributeModal({
                   </div>
 
                   {/* ========================================================= */}
-                  {/* 4. OPTIONAL PHOTO ATTACHMENT FOR MEMORY / STORY           */}
+                  {/* 4. OPTIONAL PHOTO ATTACHMENTS (UP TO 3) FOR MEMORY / STORY */}
                   {/* ========================================================= */}
                   {selectedType === "memory" && (
                     <div className="flex flex-col gap-2 pt-0.5">
                       <input
-                        ref={fileInputRef}
+                        ref={memoryPhotoInputRef}
                         type="file"
                         accept="image/*"
                         className="hidden"
                         disabled={isUploadingMedia}
                         onChange={(e) => {
                           if (e.target.files?.[0]) {
-                            handleFileSelect(e.target.files[0])
+                            handleMemoryPhotoSelect(e.target.files[0])
                           }
+                          e.target.value = ""
                         }}
                       />
 
-                      {uploadedFileUrl ? (
-                        <div className="relative rounded-2xl border border-black/[0.08] bg-[#fafafb] p-2.5 flex items-center gap-3">
-                          <div className="size-14 rounded-xl overflow-hidden bg-neutral-100 shrink-0 border border-black/[0.08]">
-                            <img src={uploadedFileUrl} alt="Preview" className="size-full object-cover" />
-                          </div>
-                          <div className="flex flex-col min-w-0 flex-1">
-                            <span className="text-xs font-medium text-[#181925] truncate">
-                              {uploadedFileName || "Attached photograph"}
+                      {memoryPhotos.length > 0 ? (
+                        <div className="flex flex-col gap-2">
+                          <div className="flex items-center justify-between">
+                            <span className="text-[11px] font-mono uppercase text-[#71717a]">
+                              Attached Photos ({memoryPhotos.length}/3)
                             </span>
-                            <span className="text-[11px] text-emerald-600 font-medium inline-flex items-center gap-1">
-                              <CheckCircle2 className="size-3" /> Attached to this memory
-                            </span>
+                            {memoryPhotos.length < 3 && (
+                              <button
+                                type="button"
+                                disabled={isUploadingMedia}
+                                onClick={() => memoryPhotoInputRef.current?.click()}
+                                className="text-xs text-primary font-medium hover:underline cursor-pointer disabled:opacity-50"
+                              >
+                                + Add another photo
+                              </button>
+                            )}
                           </div>
-                          <button
-                            type="button"
-                            onClick={() => {
-                              setUploadedFileUrl(null)
-                              setUploadedFileName(null)
-                              if (fileInputRef.current) fileInputRef.current.value = ""
-                            }}
-                            className="size-8 rounded-full hover:bg-rose-50 text-neutral-400 hover:text-rose-600 flex items-center justify-center transition-colors cursor-pointer"
-                            title="Remove attachment"
-                          >
-                            <Trash2 className="size-4" />
-                          </button>
+
+                          <div className="grid grid-cols-3 gap-2">
+                            {memoryPhotos.map((p, idx) => (
+                              <div
+                                key={idx}
+                                className="relative rounded-xl overflow-hidden aspect-4/3 bg-neutral-100 border border-black/[0.08] group"
+                              >
+                                <img src={p.url} alt="Attached photo" className="size-full object-cover" />
+                                <button
+                                  type="button"
+                                  onClick={() => setMemoryPhotos(memoryPhotos.filter((_, i) => i !== idx))}
+                                  className="absolute top-1 right-1 size-6 rounded-full bg-black/60 hover:bg-rose-600 text-white flex items-center justify-center transition-colors cursor-pointer shadow-xs"
+                                  title="Remove photo"
+                                >
+                                  <X className="size-3" />
+                                </button>
+                              </div>
+                            ))}
+                            {memoryPhotos.length < 3 && (
+                              <button
+                                type="button"
+                                disabled={isUploadingMedia}
+                                onClick={() => memoryPhotoInputRef.current?.click()}
+                                className="rounded-xl border border-dashed border-black/[0.15] hover:border-primary/50 aspect-4/3 flex flex-col items-center justify-center gap-1 bg-[#fafafb] hover:bg-white text-[#71717a] hover:text-primary transition-all cursor-pointer text-center p-2"
+                              >
+                                <Camera className="size-4 text-[#8b5a45]" />
+                                <span className="text-[10px] font-medium">+ Add photo</span>
+                              </button>
+                            )}
+                          </div>
                         </div>
                       ) : isUploadingMedia ? (
                         <div className="border border-dashed border-primary/40 rounded-2xl p-3 flex items-center justify-center gap-2 bg-primary/5 text-center">
@@ -728,11 +817,11 @@ export function ContributeModal({
                       ) : (
                         <button
                           type="button"
-                          onClick={() => fileInputRef.current?.click()}
+                          onClick={() => memoryPhotoInputRef.current?.click()}
                           className="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl border border-dashed border-black/[0.12] bg-[#f7f7f8] hover:bg-neutral-100 hover:border-black/[0.2] text-xs font-medium text-[#666] hover:text-[#181925] transition-all cursor-pointer self-start"
                         >
                           <Camera className="size-3.5 text-[#8b5a45]" />
-                          <span>Attach a photograph (optional)</span>
+                          <span>Attach photographs (up to 3 photos)</span>
                         </button>
                       )}
 

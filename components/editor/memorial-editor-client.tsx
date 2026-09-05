@@ -17,6 +17,7 @@ import {
   Loader2,
   RotateCcw,
   Shield,
+  Eye,
 } from "lucide-react"
 
 import { IdentityTab } from "./tabs/identity-tab"
@@ -25,6 +26,7 @@ import { GalleryTab, EditorMediaItem } from "./tabs/gallery-tab"
 import { TimelineTab, EditorTimelineEvent } from "./tabs/timeline-tab"
 import { ModerationTab, EditorMemory, EditorGuestbookEntry } from "./tabs/moderation-tab"
 import { SettingsTab } from "./tabs/settings-tab"
+import { SectionSettings } from "@/types/theirs"
 
 export type EditorSectionTab =
   | "identity"
@@ -50,6 +52,7 @@ interface InitialMemorialData {
   access_pin_hash?: string | null
   successor_name?: string | null
   successor_email?: string | null
+  section_settings?: SectionSettings | null
   is_paid?: boolean
   paid_at?: string | null
   updated_at?: string
@@ -96,6 +99,13 @@ export function MemorialEditorClient({
     pin: isPaid ? (initialMemorial.access_pin_hash || "") : "",
     successor_name: initialMemorial.successor_name || "",
     successor_email: initialMemorial.successor_email || "",
+    section_settings: initialMemorial.section_settings || {
+      story: true,
+      tributes: true,
+      timeline: true,
+      gallery: true,
+      stories: true,
+    },
   })
 
   // Relational Collections
@@ -191,6 +201,7 @@ export function MemorialEditorClient({
             pin: safePin,
             successor_name: currentForm.successor_name || null,
             successor_email: currentForm.successor_email || null,
+            section_settings: currentForm.section_settings || null,
           }),
         })
 
@@ -270,8 +281,12 @@ export function MemorialEditorClient({
     return () => window.removeEventListener("beforeunload", handleBeforeUnload)
   }, [saveStatus])
 
-  // 6. GALLERY MEDIA UPDATES
-  const handleUpdateMedia = async (id: string, field: "caption" | "approx_year" | "location", value: any) => {
+  // 6. GALLERY MEDIA UPDATES & REORDERING
+  const handleUpdateMedia = async (
+    id: string,
+    field: "caption" | "approx_year" | "location" | "album" | "is_pinned" | "order_index",
+    value: any
+  ) => {
     setMediaItems((prev) =>
       prev.map((m) => (m.id === id ? { ...m, [field]: value } : m))
     )
@@ -287,6 +302,26 @@ export function MemorialEditorClient({
       })
     } catch (err) {
       console.error("Failed to auto-save media update:", err)
+    }
+  }
+
+  const handleReorderMedia = async (reordered: EditorMediaItem[]) => {
+    setMediaItems(reordered)
+    try {
+      await Promise.all(
+        reordered.map((item, idx) =>
+          fetch(`/api/memorials/${initialMemorial.id}/media`, {
+            method: "PATCH",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              mediaId: item.id,
+              order_index: idx,
+            }),
+          })
+        )
+      )
+    } catch (err) {
+      console.error("Failed to save media reorder:", err)
     }
   }
 
@@ -390,11 +425,21 @@ export function MemorialEditorClient({
           </div>
 
           <Link
+            href={`/${form.slug}?preview=visitor`}
+            target="_blank"
+            className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-[#f4f4f6] hover:bg-neutral-200 text-[#181925] text-xs font-medium transition-colors"
+            title="Preview the memorial exactly as visitors see it, with draft banners hidden"
+          >
+            <Eye className="size-3 text-[#666]" />
+            <span>View as visitor</span>
+          </Link>
+
+          <Link
             href={`/${form.slug}`}
             target="_blank"
             className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-[#f4f4f6] hover:bg-neutral-200 text-[#181925] text-xs font-medium transition-colors"
           >
-            <span>Preview live</span>
+            <span>Preview</span>
             <ExternalLink className="size-3 text-[#888]" />
           </Link>
 
@@ -537,6 +582,7 @@ export function MemorialEditorClient({
               onAddMedia={(item) => setMediaItems([item, ...mediaItems])}
               onRemoveMedia={(id) => setMediaItems(mediaItems.filter((m) => m.id !== id))}
               onUpdateMedia={handleUpdateMedia}
+              onReorderMedia={handleReorderMedia}
             />
           )}
 
@@ -581,6 +627,7 @@ export function MemorialEditorClient({
               pin={form.pin}
               successorName={form.successor_name}
               successorEmail={form.successor_email}
+              sectionSettings={form.section_settings}
               isPaid={Boolean(initialMemorial.is_paid)}
               onChange={handleFieldChange}
               onDeleteMemorial={() => router.push("/dashboard")}

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server"
 import { getSupabaseAdminSafe } from "@/utils/supabase/admin"
 import { createClient } from "@/utils/supabase/server"
 import { verifyTurnstileToken, checkContributionRateLimit } from "@/lib/turnstile"
+import { resend } from "@/lib/resend"
 
 interface RouteContext {
   params: Promise<{ id: string }>
@@ -30,6 +31,7 @@ export async function POST(req: NextRequest, context: RouteContext) {
       approx_year,
       location,
       photo_url,
+      photo_urls,
       tribute_type,
       turnstile_token,
     } = body
@@ -78,10 +80,10 @@ export async function POST(req: NextRequest, context: RouteContext) {
     const db = adminClient || serverClient
 
     const isUuid = UUID_REGEX.test(id)
-    let memorial: { id: string; slug: string; status: string; privacy: string } | null = null
+    let memorial: { id: string; slug: string; status: string; privacy: string; full_name?: string; owner_id?: string } | null = null
 
     try {
-      let query = db.from("memorials").select("id, slug, status, privacy")
+      let query = db.from("memorials").select("id, slug, status, privacy, full_name, owner_id")
       query = isUuid ? query.eq("id", id) : query.eq("slug", id)
       const res = await query.maybeSingle()
       if (res.data) memorial = res.data
@@ -91,7 +93,7 @@ export async function POST(req: NextRequest, context: RouteContext) {
 
     if (!memorial && adminClient) {
       try {
-        let query = serverClient.from("memorials").select("id, slug, status, privacy")
+        let query = serverClient.from("memorials").select("id, slug, status, privacy, full_name, owner_id")
         query = isUuid ? query.eq("id", id) : query.eq("slug", id)
         const res = await query.maybeSingle()
         if (res.data) memorial = res.data
@@ -149,15 +151,23 @@ export async function POST(req: NextRequest, context: RouteContext) {
       })
     }
 
+    // Determine photo URLs (multi-photo support)
+    const resolvedPhotoUrls = Array.isArray(photo_urls) && photo_urls.length > 0
+      ? photo_urls
+      : photo_url
+      ? [photo_url]
+      : []
+    const primaryPhotoUrl = resolvedPhotoUrls[0] || photo_url || null
+
     // Determine tribute type: flower, note, photo, or candle
-    const safeTributeType = photo_url
+    const safeTributeType = primaryPhotoUrl
       ? "photo"
       : ["flower", "note", "photo", "candle"].includes(tribute_type)
       ? tribute_type
       : "note"
 
     // Determine contribution classification: ritual 'tribute' vs narrative 'story'
-    const isStory = (type === "story" || type === "memory" || Boolean(photo_url) || Boolean(approx_year)) && type !== "tribute"
+    const isStory = (type === "story" || type === "memory" || resolvedPhotoUrls.length > 0 || Boolean(approx_year)) && type !== "tribute"
     const contributionType = isStory ? "story" : "tribute"
 
     // Check if submitter is memorial owner
@@ -182,7 +192,8 @@ export async function POST(req: NextRequest, context: RouteContext) {
         story: effectiveContent,
         approx_year: approx_year ? Number(approx_year) : null,
         location: location?.trim() || null,
-        photo_url: photo_url || null,
+        photo_url: primaryPhotoUrl,
+        photo_urls: resolvedPhotoUrls,
         tribute_type: safeTributeType,
         contribution_type: contributionType,
         status: initialStatus,
@@ -197,6 +208,51 @@ export async function POST(req: NextRequest, context: RouteContext) {
         { error: "Unable to submit your memory right now. Please try again in a moment." },
         { status: 500 }
       )
+    }
+
+    // Fire-and-forget email alert to caretaker via Resend if configured
+    if (memorial.owner_id && process.env.RESEND_API_KEY && process.env.RESEND_API_KEY !== "re_placeholder_for_build") {
+      try {
+        const { data: ownerProfile } = await db
+          .from("user_profiles")
+          .select("email, full_name")
+          .eq("user_id", memorial.owner_id)
+          .maybeSingle()
+
+        if (ownerProfile?.email) {
+          const appUrl = process.env.NEXT_PUBLIC_APP_URL || "https://theirs.page"
+          const editorUrl = `${appUrl}/dashboard/memorials/${memorial.id}/editor`
+          const memorialName = memorial.full_name || "your memorial"
+          const ritualLabel = safeTributeType === "flower" ? "laid a flower" : safeTributeType === "candle" ? "lit a candle" : safeTributeType === "photo" ? "shared a photograph" : "left a remembrance"
+
+          await resend.emails.send({
+            from: "Theirs <notifications@theirs.page>",
+            to: ownerProfile.email,
+            subject: `New tribute from ${author_name.trim()} for ${memorialName}`,
+            html: `
+              <div style="font-family: Georgia, serif; max-width: 520px; margin: 0 auto; padding: 40px 20px; color: #181925; line-height: 1.6;">
+                <h2 style="font-size: 20px; font-weight: normal; margin-bottom: 16px; color: #181925;">A new tribute has arrived</h2>
+                <p style="font-size: 15px; color: #444;">
+                  <strong>${author_name.trim()}</strong> ${ritualLabel} on <strong>${memorialName}</strong>.
+                </p>
+                <div style="background-color: #f7f7f8; border-left: 3px solid #8b5a45; padding: 16px 20px; margin: 20px 0; border-radius: 8px; font-style: italic; color: #333;">
+                  “${effectiveContent.length > 300 ? effectiveContent.slice(0, 300) + '...' : effectiveContent}”
+                </div>
+                <div style="margin: 28px 0;">
+                  <a href="${editorUrl}" style="background-color: #181925; color: #ffffff; padding: 11px 22px; border-radius: 22px; text-decoration: none; font-size: 13px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; font-weight: 500; display: inline-block;">
+                    View in Dashboard &rarr;
+                  </a>
+                </div>
+                <p style="font-size: 12px; color: #999; margin-top: 32px; border-top: 1px solid #eaeaea; padding-top: 16px;">
+                  Sent from Theirs (theirs.page) · Quiet, permanent places for a human life
+                </p>
+              </div>
+            `,
+          })
+        }
+      } catch (notifyErr) {
+        console.warn("Caretaker contribution email notification error:", notifyErr)
+      }
     }
 
     return NextResponse.json({

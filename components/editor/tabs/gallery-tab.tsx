@@ -13,6 +13,10 @@ import {
   Check,
   Lock,
   Sparkles,
+  Pin,
+  ArrowUp,
+  ArrowDown,
+  Folder,
 } from "lucide-react"
 import { UpgradeBanner } from "../upgrade-banner"
 import { ConfirmDeleteModal } from "../confirm-delete-modal"
@@ -24,6 +28,9 @@ export interface EditorMediaItem {
   caption?: string | null
   approx_year?: number | null
   location?: string | null
+  album?: string | null
+  is_pinned?: boolean
+  order_index?: number
 }
 
 interface GalleryTabProps {
@@ -34,7 +41,12 @@ interface GalleryTabProps {
   onUpgrade?: () => void
   onAddMedia: (item: EditorMediaItem) => void
   onRemoveMedia: (id: string) => void
-  onUpdateMedia: (id: string, field: "caption" | "approx_year" | "location", value: any) => void
+  onUpdateMedia: (
+    id: string,
+    field: "caption" | "approx_year" | "location" | "album" | "is_pinned" | "order_index",
+    value: any
+  ) => void
+  onReorderMedia?: (reordered: EditorMediaItem[]) => void
 }
 
 export function GalleryTab({
@@ -46,6 +58,7 @@ export function GalleryTab({
   onAddMedia,
   onRemoveMedia,
   onUpdateMedia,
+  onReorderMedia,
 }: GalleryTabProps) {
   const [isUploading, setIsUploading] = useState(false)
   const [uploadProgress, setUploadProgress] = useState<string | null>(null)
@@ -295,10 +308,12 @@ export function GalleryTab({
           </div>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
-            {mediaItems.map((item) => (
+            {mediaItems.map((item, index) => (
               <div
                 key={item.id}
-                className="p-3 rounded-2xl bg-white border border-black/[0.07] flex flex-col gap-2.5 shadow-2xs group relative"
+                className={`p-3 rounded-2xl bg-white border flex flex-col gap-2.5 shadow-2xs group relative transition-all ${
+                  item.is_pinned ? "border-[#8b5a45]/40 bg-[#faf8f5]/40" : "border-black/[0.07]"
+                }`}
               >
                 <div className="aspect-4/3 rounded-xl overflow-hidden bg-neutral-100 relative">
                   {item.media_type === "video" ? (
@@ -323,6 +338,27 @@ export function GalleryTab({
                     />
                   )}
 
+                  {/* Pin to Top Button (Top Left) */}
+                  <button
+                    type="button"
+                    onClick={() => onUpdateMedia(item.id, "is_pinned", !item.is_pinned)}
+                    className={`absolute top-2 left-2 size-7 rounded-full flex items-center justify-center transition-all cursor-pointer shadow-xs ${
+                      item.is_pinned
+                        ? "bg-[#8b5a45] text-white opacity-100"
+                        : "bg-black/60 hover:bg-black/80 text-white opacity-0 group-hover:opacity-100"
+                    }`}
+                    title={item.is_pinned ? "Unpin from top" : "Pin to top as featured"}
+                  >
+                    <Pin className={`size-3.5 ${item.is_pinned ? "fill-white" : ""}`} />
+                  </button>
+
+                  {item.is_pinned && (
+                    <span className="absolute top-2 left-10 text-[9px] font-mono uppercase tracking-wider bg-[#8b5a45] text-white px-2 py-0.5 rounded-full shadow-xs">
+                      Pinned
+                    </span>
+                  )}
+
+                  {/* Delete Button (Top Right) */}
                   <button
                     type="button"
                     onClick={() => setItemToDelete(item)}
@@ -331,6 +367,44 @@ export function GalleryTab({
                   >
                     <Trash2 className="size-3.5" />
                   </button>
+
+                  {/* Move Earlier / Move Later Controls (Bottom Left inside overlay) */}
+                  <div className="absolute bottom-2 left-2 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <button
+                      type="button"
+                      disabled={index === 0}
+                      onClick={() => {
+                        if (index > 0 && onReorderMedia) {
+                          const next = [...mediaItems]
+                          const temp = next[index]
+                          next[index] = next[index - 1]
+                          next[index - 1] = temp
+                          onReorderMedia(next)
+                        }
+                      }}
+                      className="size-6 rounded-md bg-black/70 hover:bg-black/90 disabled:opacity-30 disabled:pointer-events-none flex items-center justify-center text-white cursor-pointer"
+                      title="Move earlier"
+                    >
+                      <ArrowUp className="size-3" />
+                    </button>
+                    <button
+                      type="button"
+                      disabled={index === mediaItems.length - 1}
+                      onClick={() => {
+                        if (index < mediaItems.length - 1 && onReorderMedia) {
+                          const next = [...mediaItems]
+                          const temp = next[index]
+                          next[index] = next[index + 1]
+                          next[index + 1] = temp
+                          onReorderMedia(next)
+                        }
+                      }}
+                      className="size-6 rounded-md bg-black/70 hover:bg-black/90 disabled:opacity-30 disabled:pointer-events-none flex items-center justify-center text-white cursor-pointer"
+                      title="Move later"
+                    >
+                      <ArrowDown className="size-3" />
+                    </button>
+                  </div>
                 </div>
 
                 {/* Optional Inline Metadata */}
@@ -352,13 +426,27 @@ export function GalleryTab({
                       className="w-18 px-2 py-1.5 rounded-lg bg-[#fafafb] border border-black/[0.06] text-xs text-[#181925] font-mono placeholder:text-[#aaa] outline-none focus:border-primary/50 text-center"
                     />
                   </div>
-                  <input
-                    type="text"
-                    defaultValue={item.location || ""}
-                    onBlur={(e) => onUpdateMedia(item.id, "location", e.target.value)}
-                    placeholder="Location (e.g. Cornwall, UK)"
-                    className="w-full px-2.5 py-1.5 rounded-lg bg-[#fafafb] border border-black/[0.06] text-xs text-[#181925] placeholder:text-[#aaa] outline-none focus:border-primary/50"
-                  />
+
+                  <div className="flex items-center gap-2">
+                    <div className="flex-1 flex items-center gap-1 px-2 py-1 rounded-lg bg-[#fafafb] border border-black/[0.06]">
+                      <Folder className="size-3 text-[#888] shrink-0" />
+                      <input
+                        type="text"
+                        defaultValue={item.album || ""}
+                        onBlur={(e) => onUpdateMedia(item.id, "album", e.target.value)}
+                        placeholder="Album (e.g. Family)"
+                        className="w-full bg-transparent text-[11px] text-[#181925] placeholder:text-[#aaa] outline-none"
+                      />
+                    </div>
+
+                    <input
+                      type="text"
+                      defaultValue={item.location || ""}
+                      onBlur={(e) => onUpdateMedia(item.id, "location", e.target.value)}
+                      placeholder="Location"
+                      className="flex-1 px-2.5 py-1 rounded-lg bg-[#fafafb] border border-black/[0.06] text-[11px] text-[#181925] placeholder:text-[#aaa] outline-none focus:border-primary/50"
+                    />
+                  </div>
                 </div>
               </div>
             ))}

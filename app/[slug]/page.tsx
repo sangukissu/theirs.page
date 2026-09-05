@@ -11,6 +11,9 @@ interface MemorialPageProps {
   params: Promise<{
     slug: string
   }>
+  searchParams?: Promise<{
+    preview?: string
+  }>
 }
 
 export async function generateMetadata({ params }: MemorialPageProps): Promise<Metadata> {
@@ -77,8 +80,10 @@ export async function generateMetadata({ params }: MemorialPageProps): Promise<M
   }
 }
 
-export default async function MemorialPage({ params }: MemorialPageProps) {
+export default async function MemorialPage({ params, searchParams }: MemorialPageProps) {
   const { slug } = await params
+  const resolvedSearchParams = searchParams ? await searchParams : {}
+  const isVisitorPreview = resolvedSearchParams?.preview === "visitor"
 
   // Reserved top-level slugs that should not match as a memorial
   const reservedSlugs = [
@@ -172,6 +177,7 @@ export default async function MemorialPage({ params }: MemorialPageProps) {
           .from("media_items")
           .select("*")
           .eq("memorial_id", dbMemorial.id)
+          .order("is_pinned", { ascending: false })
           .order("order_index", { ascending: true })
           .order("created_at", { ascending: true }),
         activeClient
@@ -200,6 +206,8 @@ export default async function MemorialPage({ params }: MemorialPageProps) {
         mediaType: m.media_type === "image" ? "photo" : (m.media_type as "photo" | "audio" | "video"),
         year: m.approx_year ? String(m.approx_year) : "",
         location: m.location || undefined,
+        album: m.album || undefined,
+        isPinned: Boolean(m.is_pinned),
         mediaUrl: resolveMediaUrl(m.url),
       }))
 
@@ -234,7 +242,14 @@ export default async function MemorialPage({ params }: MemorialPageProps) {
 
         const isStory =
           mem.contribution_type === "story" ||
-          (!mem.contribution_type && (mem.photo_url || mem.approx_year || (mem.story && mem.story.length > 200)))
+          (!mem.contribution_type && (mem.photo_url || (Array.isArray(mem.photo_urls) && mem.photo_urls.length > 0) || mem.approx_year || (mem.story && mem.story.length > 200)))
+
+        const rawPhotoUrls = Array.isArray(mem.photo_urls) && mem.photo_urls.length > 0
+          ? mem.photo_urls
+          : mem.photo_url
+          ? [mem.photo_url]
+          : []
+        const photoUrls = rawPhotoUrls.map((u: string) => resolveMediaUrl(u))
 
         if (isStory) {
           stories.push({
@@ -245,7 +260,8 @@ export default async function MemorialPage({ params }: MemorialPageProps) {
             chronologicalYear: mem.approx_year || undefined,
             location: mem.location || undefined,
             story: mem.story,
-            photoUrl: mem.photo_url ? resolveMediaUrl(mem.photo_url) : undefined,
+            photoUrl: photoUrls[0] || undefined,
+            photoUrls: photoUrls.length > 0 ? photoUrls : undefined,
             createdAt: mem.created_at,
           })
         } else {
@@ -359,6 +375,13 @@ export default async function MemorialPage({ params }: MemorialPageProps) {
     portraitUrl,
     isDemo,
     isPaid: isDemo ? true : Boolean(dbMemorial?.is_paid),
+    sectionSettings: dbMemorial?.section_settings || {
+      story: true,
+      tributes: true,
+      timeline: true,
+      gallery: true,
+      stories: true,
+    },
     memoriesCount,
     photosCount,
     contributorsCount,
@@ -386,7 +409,25 @@ export default async function MemorialPage({ params }: MemorialPageProps) {
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
       />
-      {dbMemorial && dbMemorial.status === "draft" && isOwner && (
+      {/* 1. If viewing in visitor preview mode: show subtle floating pill */}
+      {isOwner && isVisitorPreview && (
+        <div className="fixed bottom-5 right-5 z-50 bg-[#181925]/95 text-white px-4 py-2.5 rounded-full shadow-2xl text-xs font-sans flex items-center gap-3 border border-white/20 backdrop-blur-md animate-in fade-in slide-in-from-bottom-3 select-none">
+          <span className="flex items-center gap-1.5 font-medium">
+            <span className="size-2 rounded-full bg-emerald-400 animate-pulse" />
+            Viewing as visitor
+          </span>
+          <span className="text-white/30">|</span>
+          <a
+            href={`/dashboard/memorials/${dbMemorial?.id}/editor`}
+            className="text-neutral-300 hover:text-white underline font-semibold transition-colors"
+          >
+            Back to editor &rarr;
+          </a>
+        </div>
+      )}
+
+      {/* 2. Standard draft mode banner (suppressed in visitor preview) */}
+      {dbMemorial && dbMemorial.status === "draft" && isOwner && !isVisitorPreview && (
         <div className="bg-amber-500 text-black px-4 py-2 text-xs font-medium text-center sticky top-0 z-50 shadow-xs flex items-center justify-center gap-2">
           <span>⚠️ <strong>Draft Preview Mode</strong> — This memorial is private and not yet published to visitors.</span>
           <a

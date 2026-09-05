@@ -4,12 +4,14 @@ import { useState, useEffect } from "react"
 import Link from "next/link"
 import { Share2, Plus, Check } from "lucide-react"
 import { ContributionType } from "./contribute-modal"
+import { SectionSettings } from "@/types/theirs"
 
 interface MemorialNavProps {
   slug: string
   fullName: string
   birthYear?: number | null
   deathYear?: number | null
+  sectionSettings?: SectionSettings | null
   onOpenContribute: (type?: ContributionType) => void
 }
 
@@ -18,6 +20,7 @@ export function MemorialNav({
   fullName,
   birthYear,
   deathYear,
+  sectionSettings,
   onOpenContribute,
 }: MemorialNavProps) {
   const [copied, setCopied] = useState(false)
@@ -26,12 +29,12 @@ export function MemorialNav({
   const firstName = fullName.split(" ")[0] || fullName
 
   const navItems = [
-    { id: "story", label: "Story" },
-    { id: "tributes", label: "Tributes" },
-    { id: "timeline", label: "Timeline" },
-    { id: "gallery", label: "Gallery" },
-    { id: "memories", label: "Stories" },
-  ]
+    { id: "story", label: "Story", enabled: sectionSettings?.story !== false },
+    { id: "tributes", label: "Tributes", enabled: sectionSettings?.tributes !== false },
+    { id: "timeline", label: "Timeline", enabled: sectionSettings?.timeline !== false },
+    { id: "gallery", label: "Gallery", enabled: sectionSettings?.gallery !== false },
+    { id: "memories", label: "Stories", enabled: sectionSettings?.stories !== false },
+  ].filter((item) => item.enabled)
 
   const handleShare = async () => {
     const url = typeof window !== "undefined" ? window.location.href : `https://theirs.page/${slug}`

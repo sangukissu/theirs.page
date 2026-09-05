@@ -17,9 +17,16 @@ import {
   Loader2,
   Eye,
   Sparkles,
+  BookOpen,
+  Heart,
+  Calendar,
+  Image as ImageIcon,
+  MessageSquare,
+  Sliders,
 } from "lucide-react"
 import { UpgradeBanner } from "../upgrade-banner"
 import { ConfirmDeleteModal } from "../confirm-delete-modal"
+import { SectionSettings } from "@/types/theirs"
 
 interface CollaboratorItem {
   id: string
@@ -38,6 +45,7 @@ interface SettingsTabProps {
   pin?: string
   successorName: string
   successorEmail: string
+  sectionSettings?: SectionSettings | null
   isPaid?: boolean
   onChange: (field: string, value: any) => void
   onDeleteMemorial: () => void
@@ -51,6 +59,7 @@ export function SettingsTab({
   pin = "",
   successorName,
   successorEmail,
+  sectionSettings,
   isPaid = false,
   onChange,
   onDeleteMemorial,
@@ -579,7 +588,119 @@ export function SettingsTab({
         )}
       </div>
 
-      {/* 4. Multiple Family Caretakers & Collaborators (Complete Plan Feature) */}
+      {/* 4. Page Sections & Visibility Controls */}
+      <div className="flex flex-col gap-4 p-5 rounded-2xl bg-white border border-black/[0.07]">
+        <div className="flex items-center justify-between">
+          <div className="flex flex-col gap-0.5">
+            <label className="text-xs font-medium text-[#181925] flex items-center gap-1.5">
+              <Sliders className="size-3.5 text-primary" />
+              <span>Page Sections & Layout</span>
+            </label>
+            <p className="text-[11px] text-[#71717a]">
+              Turn memorial sections ON or OFF. Disabled sections disappear completely from the page and navigation bar.
+            </p>
+          </div>
+        </div>
+
+        <div className="flex flex-col divide-y divide-black/[0.05] border border-black/[0.06] rounded-xl overflow-hidden bg-[#fafafb]">
+          {[
+            {
+              key: "story" as const,
+              title: "Life Story / Biography",
+              desc: "The long-form editorial life story and background.",
+              icon: BookOpen,
+              active: sectionSettings?.story !== false,
+            },
+            {
+              key: "tributes" as const,
+              title: "Ritual Tributes",
+              desc: "Offerings stream where visitors lay flowers, light candles, or leave notes.",
+              icon: Heart,
+              active: sectionSettings?.tributes !== false,
+            },
+            {
+              key: "timeline" as const,
+              title: "Life Timeline Chapters",
+              desc: "Chronological milestone chapters and key dates in their journey.",
+              icon: Calendar,
+              active: sectionSettings?.timeline !== false,
+            },
+            {
+              key: "gallery" as const,
+              title: "Media Gallery",
+              desc: "Family photo albums, recorded voice notes, and digitized home videos.",
+              icon: ImageIcon,
+              active: sectionSettings?.gallery !== false,
+            },
+            {
+              key: "stories" as const,
+              title: "Personal Stories & Memories",
+              desc: "Narratives, anecdotes, and photo stories contributed by friends and family.",
+              icon: MessageSquare,
+              active: sectionSettings?.stories !== false,
+            },
+          ].map((sec) => {
+            const Icon = sec.icon
+            return (
+              <div
+                key={sec.key}
+                className="flex items-center justify-between p-3.5 sm:px-4 hover:bg-white transition-colors"
+              >
+                <div className="flex items-center gap-3 min-w-0 pr-4">
+                  <div
+                    className={`size-8 rounded-lg flex items-center justify-center shrink-0 border ${
+                      sec.active
+                        ? "bg-primary/10 text-primary border-primary/20"
+                        : "bg-neutral-200/60 text-[#888] border-black/[0.05]"
+                    }`}
+                  >
+                    <Icon className="size-4" />
+                  </div>
+                  <div className="flex flex-col min-w-0">
+                    <span className="text-xs font-medium text-[#181925] truncate">
+                      {sec.title}
+                    </span>
+                    <span className="text-[11px] text-[#71717a] line-clamp-1">
+                      {sec.desc}
+                    </span>
+                  </div>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    const current = {
+                      story: sectionSettings?.story !== false,
+                      tributes: sectionSettings?.tributes !== false,
+                      timeline: sectionSettings?.timeline !== false,
+                      gallery: sectionSettings?.gallery !== false,
+                      stories: sectionSettings?.stories !== false,
+                    }
+                    onChange("section_settings", {
+                      ...current,
+                      [sec.key]: !current[sec.key],
+                    })
+                  }}
+                  className={`relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
+                    sec.active ? "bg-emerald-600" : "bg-neutral-300"
+                  }`}
+                  role="switch"
+                  aria-checked={sec.active}
+                >
+                  <span
+                    aria-hidden="true"
+                    className={`pointer-events-none inline-block size-4 transform rounded-full bg-white shadow-xs ring-0 transition duration-200 ease-in-out ${
+                      sec.active ? "translate-x-4" : "translate-x-0"
+                    }`}
+                  />
+                </button>
+              </div>
+            )
+          })}
+        </div>
+      </div>
+
+      {/* 5. Multiple Family Caretakers & Collaborators (Complete Plan Feature) */}
       <div className="flex flex-col gap-4 p-5 rounded-2xl bg-white border border-black/[0.07]">
         <div className="flex items-center justify-between">
           <div className="flex flex-col gap-0.5">

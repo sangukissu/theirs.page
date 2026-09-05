@@ -25,6 +25,7 @@ export interface StoryItem {
   location?: string
   story: string
   photoUrl?: string
+  photoUrls?: string[]
   photoCaption?: string
   createdAt?: string
 }
@@ -278,29 +279,52 @@ export function LifeStories({
                   )}
                 </div>
 
-                {/* Attached Photograph (if contributor attached one) */}
-                {item.photoUrl && (
+                {/* Attached Photograph(s) */}
+                {((item.photoUrls && item.photoUrls.length > 0) || item.photoUrl) && (
                   <div className="pt-2">
-                    <div
-                      onClick={() => setLightboxPhoto({ url: item.photoUrl!, caption: item.photoCaption || item.authorName })}
-                      className="relative rounded-2xl overflow-hidden border border-black/[0.08] bg-white max-w-sm cursor-pointer group/photo"
-                    >
-                      <img
-                        src={item.photoUrl}
-                        alt={item.photoCaption || "Memory photo"}
-                        className="w-full max-h-72 object-cover transition-transform group-hover/photo:scale-[1.02] duration-300"
-                      />
-                      <div className="absolute inset-0 bg-black/0 group-hover/photo:bg-black/20 transition-colors flex items-center justify-center opacity-0 group-hover/photo:opacity-100">
-                        <div className="size-9 rounded-full bg-white/90 text-[#181925] flex items-center justify-center shadow-md">
-                          <Maximize2 className="size-4" />
-                        </div>
+                    {item.photoUrls && item.photoUrls.length > 1 ? (
+                      <div className={`grid gap-2.5 ${item.photoUrls.length === 2 ? "grid-cols-2 max-w-lg" : "grid-cols-2 sm:grid-cols-3 max-w-xl"}`}>
+                        {item.photoUrls.map((url, pIdx) => (
+                          <div
+                            key={pIdx}
+                            onClick={() => setLightboxPhoto({ url, caption: `${item.authorName} · Photo ${pIdx + 1}` })}
+                            className="relative rounded-2xl overflow-hidden border border-black/[0.08] bg-white aspect-4/3 cursor-pointer group/photo"
+                          >
+                            <img
+                              src={url}
+                              alt={`Memory photo ${pIdx + 1}`}
+                              className="size-full object-cover transition-transform group-hover/photo:scale-[1.03] duration-300"
+                            />
+                            <div className="absolute inset-0 bg-black/0 group-hover/photo:bg-black/20 transition-colors flex items-center justify-center opacity-0 group-hover/photo:opacity-100">
+                              <div className="size-8 rounded-full bg-white/90 text-[#181925] flex items-center justify-center shadow-md">
+                                <Maximize2 className="size-3.5" />
+                              </div>
+                            </div>
+                          </div>
+                        ))}
                       </div>
-                      {item.photoCaption && (
-                        <div className="p-2.5 bg-white border-t border-black/[0.06] text-xs text-[#666] italic">
-                          {item.photoCaption}
+                    ) : (
+                      <div
+                        onClick={() => setLightboxPhoto({ url: (item.photoUrls?.[0] || item.photoUrl)!, caption: item.photoCaption || item.authorName })}
+                        className="relative rounded-2xl overflow-hidden border border-black/[0.08] bg-white max-w-sm cursor-pointer group/photo"
+                      >
+                        <img
+                          src={item.photoUrls?.[0] || item.photoUrl}
+                          alt={item.photoCaption || "Memory photo"}
+                          className="w-full max-h-72 object-cover transition-transform group-hover/photo:scale-[1.02] duration-300"
+                        />
+                        <div className="absolute inset-0 bg-black/0 group-hover/photo:bg-black/20 transition-colors flex items-center justify-center opacity-0 group-hover/photo:opacity-100">
+                          <div className="size-9 rounded-full bg-white/90 text-[#181925] flex items-center justify-center shadow-md">
+                            <Maximize2 className="size-4" />
+                          </div>
                         </div>
-                      )}
-                    </div>
+                        {item.photoCaption && (
+                          <div className="p-2.5 bg-white border-t border-black/[0.06] text-xs text-[#666] italic">
+                            {item.photoCaption}
+                          </div>
+                        )}
+                      </div>
+                    )}
                   </div>
                 )}
               </article>

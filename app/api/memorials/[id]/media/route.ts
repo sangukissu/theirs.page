@@ -34,7 +34,7 @@ export async function POST(req: NextRequest, context: RouteContext) {
     }
 
     const body = await req.json()
-    const { url, media_type, caption, approx_year, location } = body
+    const { url, media_type, caption, approx_year, location, album, is_pinned, order_index } = body
 
     if (!url) {
       return NextResponse.json({ error: "Media URL is required" }, { status: 400 })
@@ -70,6 +70,9 @@ export async function POST(req: NextRequest, context: RouteContext) {
         caption: caption?.trim() || null,
         approx_year: approx_year ? Number(approx_year) : null,
         location: location?.trim() || null,
+        album: album?.trim() || null,
+        is_pinned: Boolean(is_pinned),
+        order_index: order_index !== undefined ? Number(order_index) : 0,
       })
       .select()
       .single()
@@ -104,7 +107,7 @@ export async function PATCH(req: NextRequest, context: RouteContext) {
     }
 
     const body = await req.json()
-    const { mediaId, caption, approx_year, location } = body
+    const { mediaId, caption, approx_year, location, album, is_pinned, order_index } = body
 
     if (!mediaId) {
       return NextResponse.json({ error: "mediaId is required" }, { status: 400 })
@@ -114,6 +117,9 @@ export async function PATCH(req: NextRequest, context: RouteContext) {
     if (caption !== undefined) updates.caption = caption?.trim() || null
     if (approx_year !== undefined) updates.approx_year = approx_year ? Number(approx_year) : null
     if (location !== undefined) updates.location = location?.trim() || null
+    if (album !== undefined) updates.album = album?.trim() || null
+    if (is_pinned !== undefined) updates.is_pinned = Boolean(is_pinned)
+    if (order_index !== undefined) updates.order_index = Number(order_index)
 
     const db = getSupabaseAdminSafe() || supabase
     const { data: updated, error } = await db

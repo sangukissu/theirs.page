@@ -17,6 +17,7 @@ import {
   Check,
   Film,
   RotateCcw,
+  Pin,
 } from "lucide-react"
 import { ContributionType } from "./contribute-modal"
 
@@ -29,6 +30,7 @@ export interface GalleryItem {
   year: string
   location?: string
   album?: string
+  isPinned?: boolean
   mediaUrl: string // Real audio file, video file, or high-res photo URL
   posterUrl?: string // Poster image for video/audio preview
   aspectRatio?: "portrait" | "landscape" | "square"
@@ -183,6 +185,7 @@ export function MemorialGallery({
 }: MemorialGalleryProps) {
   const galleryItems = isDemo ? (items && items.length > 0 ? items : DEFAULT_GALLERY_ITEMS) : (items || [])
   const [filter, setFilter] = useState<"all" | "photo" | "audio" | "video">("all")
+  const [selectedAlbum, setSelectedAlbum] = useState<string>("all")
   const [selectedItem, setSelectedItem] = useState<GalleryItem | null>(null)
   const [identifiedMap, setIdentifiedMap] = useState<Record<string, boolean>>({})
 
@@ -196,9 +199,14 @@ export function MemorialGallery({
 
   const firstName = fullName.split(" ")[0] || fullName
 
+  const uniqueAlbums = Array.from(
+    new Set(galleryItems.map((i) => i.album?.trim()).filter(Boolean))
+  ) as string[]
+
   const filteredItems = galleryItems.filter((item) => {
-    if (filter === "all") return true
-    return item.mediaType === filter
+    const matchesType = filter === "all" || item.mediaType === filter
+    const matchesAlbum = selectedAlbum === "all" || item.album?.trim() === selectedAlbum
+    return matchesType && matchesAlbum
   })
 
   const photoCount = galleryItems.filter((i) => i.mediaType === "photo").length
@@ -381,6 +389,38 @@ export function MemorialGallery({
           })}
       </div>
 
+      {/* Album Filter Bar (Only visible when items have albums) */}
+      {uniqueAlbums.length > 0 && (
+        <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar py-0.5 select-none -mt-4">
+          <span className="text-xs font-medium text-[#71717a] pr-1 shrink-0">Album:</span>
+          <button
+            type="button"
+            onClick={() => setSelectedAlbum("all")}
+            className={`text-xs px-3 py-1 rounded-full font-medium transition-all cursor-pointer shrink-0 ${
+              selectedAlbum === "all"
+                ? "bg-[#8b5a45] text-white shadow-2xs"
+                : "bg-[#f4f4f6] text-[#666] hover:text-[#181925]"
+            }`}
+          >
+            All Albums
+          </button>
+          {uniqueAlbums.map((alb) => (
+            <button
+              key={alb}
+              type="button"
+              onClick={() => setSelectedAlbum(alb)}
+              className={`text-xs px-3 py-1 rounded-full font-medium transition-all cursor-pointer shrink-0 ${
+                selectedAlbum === alb
+                  ? "bg-[#8b5a45] text-white shadow-2xs"
+                  : "bg-[#f4f4f6] text-[#666] hover:text-[#181925]"
+              }`}
+            >
+              {alb}
+            </button>
+          ))}
+        </div>
+      )}
+
       {/* Unified Media Grid / Empty State */}
       {filteredItems.length === 0 ? (
         <div className="py-16 text-center text-sm text-[#71717a] rounded-3xl bg-[#fafafb] border border-black/[0.06] flex flex-col items-center justify-center gap-3">
@@ -417,10 +457,17 @@ export function MemorialGallery({
                 className="p-5 rounded-2xl bg-[#f7f7f8] border border-black/[0.06] hover:border-black/[0.12] transition-all flex flex-col justify-between gap-4 group"
               >
                 <div className="flex items-center justify-between">
-                  <span className="inline-flex items-center gap-1 text-[11px] font-mono text-primary bg-primary/10 px-2 py-0.5 rounded-full font-medium">
-                    <Volume2 className="size-3" />
-                    <span>Voice recording</span>
-                  </span>
+                  <div className="flex items-center gap-1.5">
+                    <span className="inline-flex items-center gap-1 text-[11px] font-mono text-primary bg-primary/10 px-2 py-0.5 rounded-full font-medium">
+                      <Volume2 className="size-3" />
+                      <span>Voice recording</span>
+                    </span>
+                    {item.isPinned && (
+                      <span className="inline-flex items-center gap-1 text-[10px] font-mono font-medium text-[#8b5a45] bg-[#faf8f5] border border-[#8b5a45]/30 px-2 py-0.5 rounded-full">
+                        <Pin className="size-2.5 fill-[#8b5a45]" /> Featured
+                      </span>
+                    )}
+                  </div>
                   <span className="text-[11px] font-mono text-[#888]">
                     {isPlaying
                       ? (durationDisplay ? `${currentFormattedTime} / ${durationDisplay}` : currentFormattedTime)
@@ -532,6 +579,14 @@ export function MemorialGallery({
                     </div>
                   </div>
 
+                  {/* Pinned Featured Badge */}
+                  {item.isPinned && (
+                    <div className="absolute top-2 left-2 inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-[#8b5a45] text-white text-[10px] font-mono shadow-xs backdrop-blur-xs">
+                      <Pin className="size-2.5 fill-white" />
+                      <span>Featured</span>
+                    </div>
+                  )}
+
                   {/* Video Duration Badge */}
                   {videoDuration ? (
                     <div className="absolute bottom-2 right-2 inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-black/75 text-white text-[10px] font-mono backdrop-blur-xs">
@@ -594,8 +649,16 @@ export function MemorialGallery({
                   <Maximize2 className="size-5 drop-shadow-sm" />
                 </div>
 
+                {/* Pinned Featured Badge */}
+                {item.isPinned && (
+                  <div className="absolute top-2 left-2 inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-[#8b5a45] text-white text-[10px] font-mono shadow-xs backdrop-blur-xs">
+                    <Pin className="size-2.5 fill-white" />
+                    <span>Featured</span>
+                  </div>
+                )}
+
                 {/* "Who is this?" flag for unidentified faces */}
-                {item.hasUnknownPerson && (
+                {item.hasUnknownPerson && !item.isPinned && (
                   <div className="absolute top-2 left-2 inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-amber-500/90 text-white text-[10px] font-medium backdrop-blur-xs shadow-xs">
                     <HelpCircle className="size-2.5" />
                     <span>Who is this?</span>

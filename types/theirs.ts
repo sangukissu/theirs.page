@@ -44,6 +44,14 @@ export interface UserProfile {
   updated_at: string
 }
 
+export interface SectionSettings {
+  story?: boolean
+  tributes?: boolean
+  timeline?: boolean
+  gallery?: boolean
+  stories?: boolean
+}
+
 export interface Memorial {
   id: string
   owner_id: string
@@ -63,6 +71,7 @@ export interface Memorial {
   status: MemorialStatus
   is_paid: boolean
   paid_at: string | null
+  section_settings?: SectionSettings | null
   created_at: string
   updated_at: string
 }
@@ -87,6 +96,7 @@ export interface Memory {
   approx_year: number | null
   location: string | null
   photo_url: string | null
+  photo_urls?: string[] | null
   tribute_type?: 'flower' | 'note' | 'photo' | 'candle'
   contribution_type?: 'tribute' | 'story'
   status: MemoryStatus
@@ -104,6 +114,8 @@ export interface MediaItem {
   approx_year: number | null
   location: string | null
   order_index: number
+  album?: string | null
+  is_pinned?: boolean
   created_at: string
 }
 
@@ -201,6 +213,7 @@ export interface UpdateMemorialInput {
   status?: MemorialStatus
   successor_name?: string | null
   successor_email?: string | null
+  section_settings?: SectionSettings | null
 }
 
 export interface SubmitMemoryInput {
@@ -212,7 +225,9 @@ export interface SubmitMemoryInput {
   approx_year?: number | null
   location?: string | null
   photo_url?: string | null
+  photo_urls?: string[] | null
   tribute_type?: 'flower' | 'note' | 'photo' | 'candle'
+  contribution_type?: 'tribute' | 'story'
   visibility?: MemoryVisibility
   turnstile_token?: string
 }
