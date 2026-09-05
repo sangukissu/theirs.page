@@ -1,15 +1,24 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect, useRef } from "react"
 import {
   Plus,
   MapPin,
   Share2,
   MoreVertical,
   Mail,
+  Loader2,
+  AlertCircle,
 } from "lucide-react"
 import { ContributionType } from "./contribute-modal"
-import { TributeEmblem, TributeType } from "./tribute-emblems"
+import {
+  TributeEmblem,
+  TributeType,
+  BotanicalFlowerEmblem,
+  CandleFlameEmblem,
+  QuillFeatherEmblem,
+} from "./tribute-emblems"
+import { Turnstile } from "@marsidev/react-turnstile"
 
 export interface MemoryItem {
   id: string
@@ -81,7 +90,7 @@ interface MemoriesStreamProps {
   memorialId?: string
   slug?: string
   isDemo?: boolean
-  onOpenContribute: (type?: ContributionType) => void
+  onOpenContribute?: (type?: ContributionType) => void
 }
 
 export function MemoriesStream({
@@ -92,18 +101,39 @@ export function MemoriesStream({
   isDemo = false,
   onOpenContribute,
 }: MemoriesStreamProps) {
+  const [items, setItems] = useState<MemoryItem[]>(() => {
+    if (isDemo) {
+      return memories && memories.length > 0 ? memories : DEFAULT_MEMORIES
+    }
+    return memories || []
+  })
+
+  useEffect(() => {
+    if (memories) {
+      setItems(memories)
+    }
+  }, [memories])
+
   const [expandedIds, setExpandedIds] = useState<Record<string, boolean>>({})
   const [activeMenuId, setActiveMenuId] = useState<string | null>(null)
   const [copiedId, setCopiedId] = useState<string | null>(null)
 
-  const activeMemories = isDemo
-    ? (memories && memories.length > 0 ? memories : DEFAULT_MEMORIES)
-    : (memories || [])
+  // Open tribute form state
+  const [tributeRitual, setTributeRitual] = useState<"flower" | "candle" | "note">("flower")
+  const [authorName, setAuthorName] = useState("")
+  const [relationship, setRelationship] = useState("")
+  const [content, setContent] = useState("")
+  const [turnstileToken, setTurnstileToken] = useState("")
+  const [isSubmitting, setIsSubmitting] = useState(false)
+  const [isSubmitted, setIsSubmitted] = useState(false)
+  const [formError, setFormError] = useState<string | null>(null)
+  const formNameInputRef = useRef<HTMLInputElement>(null)
 
+  const siteKey = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY || "0x4AAAAAAElC6yv2vY7dR2dn"
   const firstName = fullName.split(" ")[0] || fullName
 
   // Order memories strictly newest first
-  const sorted = [...activeMemories].sort((a, b) => {
+  const sorted = [...items].sort((a, b) => {
     if (a.createdAt && b.createdAt) {
       return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
     }
@@ -128,9 +158,85 @@ export function MemoriesStream({
     setActiveMenuId(null)
   }
 
+  const handleScrollToForm = () => {
+    const el = document.getElementById("open-tribute-form")
+    if (el) {
+      el.scrollIntoView({ behavior: "smooth" })
+      setTimeout(() => formNameInputRef.current?.focus(), 300)
+    }
+  }
+
+  const handleTributeSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!authorName.trim()) return
+
+    const effectiveContent =
+      content.trim() ||
+      (tributeRitual === "flower"
+        ? `Laying a flower in loving memory of ${firstName}.`
+        : tributeRitual === "candle"
+        ? `Lighting a candle in loving memory of ${firstName}.`
+        : `A quiet note of remembrance for ${firstName}.`)
+
+    setIsSubmitting(true)
+    setFormError(null)
+
+    try {
+      const targetIdentifier = memorialId || slug || ""
+      const res = await fetch(`/api/memorials/${targetIdentifier}/contribute`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          type: "tribute",
+          tribute_type: tributeRitual,
+          author_name: authorName.trim(),
+          author_relationship: relationship.trim() || null,
+          content: effectiveContent,
+          turnstile_token: turnstileToken || undefined,
+        }),
+      })
+
+      const data = await res.json()
+      if (!res.ok) {
+        throw new Error(data.error || "Failed to submit tribute")
+      }
+
+      const newTribute: MemoryItem = {
+        id: data.memory?.id || `trib-local-${Date.now()}`,
+        authorName: authorName.trim(),
+        authorRelationship: relationship.trim() || undefined,
+        dateOrYear: "Just now",
+        story: effectiveContent,
+        tributeType: tributeRitual,
+        createdAt: new Date().toISOString(),
+      }
+
+      setItems((prev) => [newTribute, ...prev])
+      setIsSubmitted(true)
+    } catch (err: any) {
+      console.error("Open tribute form submit error:", err)
+      setFormError(err.message || "Failed to submit tribute. Please try again.")
+    } finally {
+      setIsSubmitting(false)
+    }
+  }
+
+  const ritualPlaceholder =
+    tributeRitual === "flower"
+      ? `“A blossom in memory of ${firstName}, remembered with love and peace.”`
+      : tributeRitual === "candle"
+      ? `“A candle lit for ${firstName}, whose light and warmth will never leave us.”`
+      : `“A quiet note of remembrance, prayer, or thoughts for the family...”`
+
+  const ritualSubmitLabel =
+    tributeRitual === "flower"
+      ? "Lay Flower"
+      : tributeRitual === "candle"
+      ? "Light Candle"
+      : "Leave Note"
+
   return (
     <section id="tributes" className="py-12 sm:py-16 px-4 max-w-4xl mx-auto flex flex-col gap-8 scroll-mt-24">
-      
       {/* Header with single clear CTA */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-black/[0.06] pb-6">
         <div className="flex flex-col gap-1">
@@ -144,7 +250,7 @@ export function MemoriesStream({
 
         <button
           type="button"
-          onClick={() => onOpenContribute("tribute")}
+          onClick={handleScrollToForm}
           className="inline-flex items-center gap-1.5 px-5 py-2.5 rounded-full bg-[#181925] hover:bg-[#252736] text-white text-xs font-medium transition-all cursor-pointer shadow-xs active:scale-95 shrink-0 self-start sm:self-auto"
         >
           <Plus className="size-3.5" />
@@ -158,7 +264,7 @@ export function MemoriesStream({
           <p>No tributes shared yet. Be the first to leave words of remembrance for {firstName}.</p>
           <button
             type="button"
-            onClick={() => onOpenContribute("tribute")}
+            onClick={handleScrollToForm}
             className="inline-flex items-center gap-1.5 px-5 py-2.5 rounded-full bg-[#181925] text-white text-xs font-medium hover:bg-[#252736] transition-all cursor-pointer shadow-xs active:scale-95"
           >
             <Plus className="size-3.5" />
@@ -309,27 +415,190 @@ export function MemoriesStream({
         </div>
       )}
 
-      {/* Quiet End Prompt */}
-      {sorted.length > 0 && (
-        <div className="flex flex-col sm:flex-row items-center justify-between gap-4 p-6 sm:p-7 rounded-3xl bg-[#f7f7f8] border border-black/[0.06] text-left mt-2">
-          <div className="flex flex-col gap-0.5">
-            <h3 className="text-sm sm:text-base font-medium text-[#181925]">
-              Have words or a memory of {firstName}?
+      {/* Embedded Open Tribute Form with all 3 Ritual Options */}
+      <div
+        id="open-tribute-form"
+        className="rounded-3xl bg-[#f7f7f8] border border-black/[0.08] p-6 sm:p-8 scroll-mt-28 mt-2 shadow-xs transition-all"
+      >
+        {isSubmitted ? (
+          <div className="py-8 text-center flex flex-col items-center justify-center gap-3 animate-in fade-in">
+            <div className="size-14 rounded-2xl bg-[#faf8f5] border border-[#8b5a45]/20 text-[#8b5a45] flex items-center justify-center shadow-xs">
+              {tributeRitual === "candle" ? (
+                <CandleFlameEmblem size={30} />
+              ) : tributeRitual === "flower" ? (
+                <BotanicalFlowerEmblem size={30} />
+              ) : (
+                <QuillFeatherEmblem size={30} />
+              )}
+            </div>
+            <h3 className="text-lg font-medium text-[#181925]">
+              Thank you, {authorName}
             </h3>
-            <p className="text-xs text-[#71717a]">
-              Every tribute helps the family remember the complete person.
+            <p className="text-xs sm:text-sm text-[#71717a] max-w-md leading-relaxed">
+              Your tribute to {firstName} has been placed. Thank you for honoring their memory.
             </p>
+            <button
+              type="button"
+              onClick={() => {
+                setContent("")
+                setIsSubmitted(false)
+                setTurnstileToken("")
+              }}
+              className="mt-2 text-xs font-semibold text-[#8b5a45] hover:underline cursor-pointer"
+            >
+              Leave another tribute &rarr;
+            </button>
           </div>
-          <button
-            type="button"
-            onClick={() => onOpenContribute("memory")}
-            className="inline-flex items-center gap-1.5 px-5 py-2.5 rounded-full bg-[#181925] text-white text-xs font-medium hover:bg-[#252736] transition-all cursor-pointer shadow-xs active:scale-95 shrink-0"
-          >
-            <Plus className="size-3.5" />
-            <span>Leave a Tribute</span>
-          </button>
-        </div>
-      )}
+        ) : (
+          <form onSubmit={handleTributeSubmit} className="flex flex-col gap-5">
+            {/* Form Eyebrow & Header */}
+            <div className="flex flex-col gap-1">
+              <span className="text-[11px] font-mono text-[#8b5a45] uppercase tracking-wider">
+                Offer a Gesture
+              </span>
+              <h3 className="text-lg sm:text-xl font-medium tracking-tight text-[#181925]">
+                Leave a Tribute for {firstName}
+              </h3>
+              <p className="text-xs text-[#71717a]">
+                Choose a gesture below to honor {firstName}&apos;s life and comfort the family.
+              </p>
+            </div>
+
+            {/* 1. Ritual Selector (Segmented 3-Way Toggle) */}
+            <div className="grid grid-cols-3 gap-2 sm:gap-3">
+              <button
+                type="button"
+                onClick={() => setTributeRitual("flower")}
+                className={`flex flex-col items-center justify-center py-3.5 px-2 rounded-2xl border transition-all cursor-pointer text-center ${
+                  tributeRitual === "flower"
+                    ? "bg-[#faf8f5] border-[#8b5a45] text-[#8b5a45] ring-1 ring-[#8b5a45]/30 shadow-xs"
+                    : "bg-white border-black/[0.08] text-[#555] hover:bg-neutral-50 hover:text-[#181925]"
+                }`}
+              >
+                <BotanicalFlowerEmblem size={26} className="shrink-0 mb-1" />
+                <span className="text-xs font-medium">Lay a Flower</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setTributeRitual("candle")}
+                className={`flex flex-col items-center justify-center py-3.5 px-2 rounded-2xl border transition-all cursor-pointer text-center ${
+                  tributeRitual === "candle"
+                    ? "bg-[#faf8f5] border-[#8b5a45] text-[#8b5a45] ring-1 ring-[#8b5a45]/30 shadow-xs"
+                    : "bg-white border-black/[0.08] text-[#555] hover:bg-neutral-50 hover:text-[#181925]"
+                }`}
+              >
+                <CandleFlameEmblem size={26} className="shrink-0 mb-1" />
+                <span className="text-xs font-medium">Light a Candle</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setTributeRitual("note")}
+                className={`flex flex-col items-center justify-center py-3.5 px-2 rounded-2xl border transition-all cursor-pointer text-center ${
+                  tributeRitual === "note"
+                    ? "bg-[#faf8f5] border-[#8b5a45] text-[#8b5a45] ring-1 ring-[#8b5a45]/30 shadow-xs"
+                    : "bg-white border-black/[0.08] text-[#555] hover:bg-neutral-50 hover:text-[#181925]"
+                }`}
+              >
+                <QuillFeatherEmblem size={26} className="shrink-0 mb-1" />
+                <span className="text-xs font-medium">Leave a Note</span>
+              </button>
+            </div>
+
+            {/* 2. Contributor Name & Relationship */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div className="flex flex-col gap-1">
+                <label className="text-[11px] font-mono text-[#71717a] uppercase tracking-wider">
+                  Your Name *
+                </label>
+                <input
+                  ref={formNameInputRef}
+                  type="text"
+                  required
+                  value={authorName}
+                  onChange={(e) => setAuthorName(e.target.value)}
+                  placeholder="e.g. David Miller"
+                  className="w-full px-3.5 py-2.5 rounded-xl bg-white border border-black/[0.08] text-sm text-[#181925] placeholder:text-[#aaa] outline-none focus:border-[#8b5a45]/50 transition-colors"
+                />
+              </div>
+
+              <div className="flex flex-col gap-1">
+                <label className="text-[11px] font-mono text-[#71717a] uppercase tracking-wider">
+                  Relationship to {firstName}
+                </label>
+                <input
+                  type="text"
+                  value={relationship}
+                  onChange={(e) => setRelationship(e.target.value)}
+                  placeholder="e.g. Daughter, Lifelong friend, Colleague"
+                  className="w-full px-3.5 py-2.5 rounded-xl bg-white border border-black/[0.08] text-sm text-[#181925] placeholder:text-[#aaa] outline-none focus:border-[#8b5a45]/50 transition-colors"
+                />
+              </div>
+            </div>
+
+            {/* 3. Words of Remembrance */}
+            <div className="flex flex-col gap-1">
+              <label className="text-[11px] font-mono text-[#71717a] uppercase tracking-wider">
+                {tributeRitual === "flower"
+                  ? "Words to accompany your flower (optional)"
+                  : tributeRitual === "candle"
+                  ? "Words to accompany your candle (optional)"
+                  : "Words of remembrance *"}
+              </label>
+              <textarea
+                required={tributeRitual === "note"}
+                rows={3}
+                value={content}
+                onChange={(e) => setContent(e.target.value)}
+                placeholder={ritualPlaceholder}
+                className="w-full px-3.5 py-2.5 rounded-xl bg-white border border-black/[0.08] text-sm text-[#181925] placeholder:text-[#aaa] outline-none focus:border-[#8b5a45]/50 transition-colors resize-none leading-relaxed"
+              />
+            </div>
+
+            {formError && (
+              <div className="p-3 rounded-xl bg-rose-50 border border-rose-200 text-xs text-rose-700 font-medium flex items-center gap-2">
+                <AlertCircle className="size-3.5 shrink-0" />
+                <span>{formError}</span>
+              </div>
+            )}
+
+            {/* 4. Turnstile Captcha & Submit */}
+            <div className="pt-1 flex flex-col sm:flex-row items-center justify-between gap-4">
+              {siteKey ? (
+                <Turnstile
+                  siteKey={siteKey}
+                  onSuccess={setTurnstileToken}
+                  onExpire={() => setTurnstileToken("")}
+                  onError={() => setTurnstileToken("")}
+                />
+              ) : (
+                <div />
+              )}
+
+              <button
+                type="submit"
+                disabled={isSubmitting || !authorName.trim()}
+                className="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-full font-medium transition-all cursor-pointer bg-[#181925] hover:bg-[#252736] text-white shadow-xs active:scale-[0.98] h-10 px-6 text-xs select-none disabled:opacity-50 disabled:cursor-not-allowed w-full sm:w-auto"
+              >
+                {isSubmitting ? (
+                  <>
+                    <Loader2 className="size-3.5 animate-spin" />
+                    <span>Placing Tribute...</span>
+                  </>
+                ) : (
+                  <>
+                    {tributeRitual === "flower" && <BotanicalFlowerEmblem size={16} />}
+                    {tributeRitual === "candle" && <CandleFlameEmblem size={16} />}
+                    {tributeRitual === "note" && <QuillFeatherEmblem size={16} />}
+                    <span>{ritualSubmitLabel}</span>
+                  </>
+                )}
+              </button>
+            </div>
+          </form>
+        )}
+      </div>
 
     </section>
   )

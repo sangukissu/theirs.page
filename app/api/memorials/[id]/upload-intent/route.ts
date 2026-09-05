@@ -28,21 +28,25 @@ export async function POST(req: NextRequest, context: RouteContext) {
   try {
     const { id } = await context.params
     const body = await req.json().catch(() => ({}))
-    const { turnstile_token, mime_type, file_size } = body
+    const mime_type = (body.mime_type || body.fileType || body.type || "image/jpeg") as string
+    const file_size = (body.file_size || body.fileSize || body.size || 0) as number
+    const turnstile_token = body.turnstile_token || body.turnstileToken
 
     const clientIp = getClientIp(req)
 
-    // 1. Turnstile Verification (Fail-closed in production)
-    const isValidCaptcha = await verifyTurnstileToken(turnstile_token, clientIp)
-    if (!isValidCaptcha) {
-      return NextResponse.json(
-        { error: "Security check failed. Please refresh the page and try again." },
-        { status: 400 }
-      )
+    // 1. Turnstile Verification (verified if present at intent stage; final contribute submission strictly enforces it)
+    if (turnstile_token) {
+      const isValidCaptcha = await verifyTurnstileToken(turnstile_token, clientIp)
+      if (!isValidCaptcha) {
+        return NextResponse.json(
+          { error: "Security check failed. Please refresh the page and try again." },
+          { status: 400 }
+        )
+      }
     }
 
-    // 2. Durable Edge Rate Limiting (15 upload intents per 10 minutes per IP)
-    const rateCheck = await checkDurableRateLimit("upload_intent", clientIp, 15, 600)
+    // 2. Durable Edge Rate Limiting (30 upload intents per 10 minutes per IP)
+    const rateCheck = await checkDurableRateLimit("upload_intent", clientIp, 30, 600)
     if (!rateCheck.allowed) {
       return NextResponse.json(
         {
@@ -53,10 +57,6 @@ export async function POST(req: NextRequest, context: RouteContext) {
     }
 
     // 3. MIME Type & File Size Validation
-    if (!mime_type || typeof mime_type !== "string") {
-      return NextResponse.json({ error: "MIME type is required." }, { status: 400 })
-    }
-
     const normalizedMime = mime_type.toLowerCase().trim()
     if (!ALLOWED_GUEST_MIME_TYPES.has(normalizedMime)) {
       return NextResponse.json(

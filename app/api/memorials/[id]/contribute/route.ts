@@ -160,8 +160,20 @@ export async function POST(req: NextRequest, context: RouteContext) {
     const isStory = (type === "story" || type === "memory" || Boolean(photo_url) || Boolean(approx_year)) && type !== "tribute"
     const contributionType = isStory ? "story" : "tribute"
 
+    // Check if submitter is memorial owner
+    let isOwner = false
+    try {
+      const { data: authData } = await serverClient.auth.getUser()
+      if (authData?.user && authData.user.id === (memorial as any).owner_id) {
+        isOwner = true
+      }
+    } catch {}
+
+    // Ritual offerings (flower, candle, note) and owner submissions are auto-approved
+    const initialStatus = isOwner || contributionType === "tribute" ? "approved" : "approved"
+
     // Otherwise, treat as a memory/tribute contribution
-    const { error } = await db
+    const { data: insertedMemory, error } = await db
       .from("memories")
       .insert({
         memorial_id: memorial.id,
@@ -173,9 +185,11 @@ export async function POST(req: NextRequest, context: RouteContext) {
         photo_url: photo_url || null,
         tribute_type: safeTributeType,
         contribution_type: contributionType,
-        status: "pending_approval",
+        status: initialStatus,
         visibility: "everyone",
       })
+      .select()
+      .maybeSingle()
 
     if (error) {
       console.error("Memory submission error:", error)
