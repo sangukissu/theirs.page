@@ -14,6 +14,7 @@ import {
   Trash2,
   AlertCircle,
   Sparkles,
+  Film,
 } from "lucide-react"
 import { Turnstile } from "@marsidev/react-turnstile"
 import {
@@ -22,7 +23,7 @@ import {
   QuillFeatherEmblem,
 } from "./tribute-emblems"
 
-export type ContributionType = "tribute" | "memory" | "photo" | "moment" | "voice" | "message"
+export type ContributionType = "tribute" | "memory" | "photo" | "moment" | "voice" | "video" | "message"
 export type TributeRitual = "flower" | "candle" | "note"
 
 interface ContributeModalProps {
@@ -100,6 +101,14 @@ export function ContributeModal({
       icon: Mic,
       title: "Share a voice note",
       desc: "A voicemail or spoken story worth keeping forever.",
+      color: "text-[#8b5a45] bg-[#faf8f5]",
+      available: Boolean(isPaid),
+    },
+    {
+      type: "video" as const,
+      icon: Film,
+      title: "Share a video clip",
+      desc: "Home movies, celebrations, or recorded messages.",
       color: "text-[#8b5a45] bg-[#faf8f5]",
       available: Boolean(isPaid),
     },
@@ -186,13 +195,15 @@ export function ContributeModal({
     e.preventDefault()
     if (!authorName.trim()) return
 
-    // For photo or voice mode, if story/caption is empty, fallback to clean attribution
+    // For photo, voice, or video mode, if story/caption is empty, fallback to clean attribution
     let effectiveContent = content.trim()
     if (!effectiveContent) {
       if (selectedType === "photo" && uploadedFileUrl) {
         effectiveContent = `Photograph shared by ${authorName.trim()}`
       } else if (selectedType === "voice" && uploadedFileUrl) {
         effectiveContent = `Voice recording shared by ${authorName.trim()}`
+      } else if (selectedType === "video" && uploadedFileUrl) {
+        effectiveContent = `Video clip shared by ${authorName.trim()}`
       }
     }
 
@@ -262,6 +273,8 @@ export function ContributeModal({
     onClose()
   }
 
+  const isMedia = selectedType === "photo" || selectedType === "voice" || selectedType === "video"
+
   // Determine if form is ready to submit
   const canSubmit =
     !isSubmitting &&
@@ -271,7 +284,7 @@ export function ContributeModal({
       ? Boolean(content.trim())
       : selectedType === "memory"
       ? Boolean(content.trim())
-      : selectedType === "photo" || selectedType === "voice"
+      : isMedia
       ? Boolean(uploadedFileUrl)
       : Boolean(content.trim()))
 
@@ -403,6 +416,7 @@ export function ContributeModal({
                       {selectedType === "memory" && `Share a memory of ${firstName}`}
                       {selectedType === "photo" && `Share a photograph of ${firstName}`}
                       {selectedType === "voice" && `Share a voice recording of ${firstName}`}
+                      {selectedType === "video" && `Share a video clip of ${firstName}`}
                       {selectedType === "moment" && `Suggest a timeline milestone`}
                     </h3>
                     <p className="text-xs text-[#71717a]">
@@ -410,6 +424,7 @@ export function ContributeModal({
                       {selectedType === "memory" && "Tell an anecdote, a story, or a quiet reflection."}
                       {selectedType === "photo" && "Upload original photographs to preserve in the family archive."}
                       {selectedType === "voice" && "Upload an audio file or voice memo from your phone."}
+                      {selectedType === "video" && "Upload a video clip or home movie to preserve in the archive."}
                       {selectedType === "moment" && "Help record when important milestones took place."}
                     </p>
                   </div>
@@ -514,14 +529,14 @@ export function ContributeModal({
                   )}
 
                   {/* ========================================================= */}
-                  {/* 2. MEDIA DROPZONE FOR PHOTO OR VOICE                      */}
+                  {/* 2. MEDIA DROPZONE FOR PHOTO, VOICE, OR VIDEO              */}
                   {/* ========================================================= */}
-                  {(selectedType === "photo" || selectedType === "voice") && (
+                  {(selectedType === "photo" || selectedType === "voice" || selectedType === "video") && (
                     <div className="flex flex-col gap-2">
                       <input
                         ref={fileInputRef}
                         type="file"
-                        accept={selectedType === "voice" ? "audio/*" : "image/*"}
+                        accept={selectedType === "video" ? "video/*" : selectedType === "voice" ? "audio/*" : "image/*"}
                         className="hidden"
                         disabled={isUploadingMedia}
                         onChange={(e) => {
@@ -536,6 +551,13 @@ export function ContributeModal({
                           {selectedType === "photo" ? (
                             <div className="size-16 rounded-xl overflow-hidden bg-neutral-100 shrink-0 border border-black/[0.08]">
                               <img src={uploadedFileUrl} alt="Preview" className="size-full object-cover" />
+                            </div>
+                          ) : selectedType === "video" ? (
+                            <div className="size-16 rounded-xl overflow-hidden bg-black/90 shrink-0 border border-black/[0.08] relative flex items-center justify-center">
+                              <video src={uploadedFileUrl} className="size-full object-cover" muted />
+                              <div className="absolute inset-0 bg-black/30 flex items-center justify-center">
+                                <Film className="size-5 text-white" />
+                              </div>
                             </div>
                           ) : (
                             <div className="size-12 rounded-xl bg-primary/10 flex items-center justify-center shrink-0 text-primary">
@@ -579,13 +601,19 @@ export function ContributeModal({
                           <div className="size-10 rounded-full bg-white flex items-center justify-center shadow-xs border border-black/[0.06] group-hover:scale-105 transition-transform">
                             {selectedType === "photo" ? (
                               <Camera className="size-4 text-[#8b5a45]" />
+                            ) : selectedType === "video" ? (
+                              <Film className="size-4 text-[#8b5a45]" />
                             ) : (
                               <Mic className="size-4 text-[#8b5a45]" />
                             )}
                           </div>
                           <div className="flex flex-col">
                             <span className="text-xs font-medium text-[#181925] group-hover:text-primary transition-colors">
-                              {selectedType === "photo" ? "Choose or drop a photograph" : "Choose or drop an audio file"}
+                              {selectedType === "photo"
+                                ? "Choose or drop a photograph"
+                                : selectedType === "video"
+                                ? "Choose or drop a video clip"
+                                : "Choose or drop an audio file"}
                             </span>
                             <span className="text-[10px] text-[#71717a]">
                               Original high-resolution preserved untouched
@@ -620,6 +648,8 @@ export function ContributeModal({
                         ? "Caption or story behind this photo (optional)"
                         : selectedType === "voice"
                         ? "Note or context (optional)"
+                        : selectedType === "video"
+                        ? "Caption or story behind this video (optional)"
                         : "Milestone story *"}
                     </label>
                     <textarea
@@ -638,6 +668,8 @@ export function ContributeModal({
                           ? "Where was this taken? Tell us what was happening in this moment (optional)..."
                           : selectedType === "voice"
                           ? "Tell us when or where this was recorded (optional)..."
+                          : selectedType === "video"
+                          ? "Where was this recorded? Tell us what was happening in this moment (optional)..."
                           : `“I remember when ${firstName} spent half of Christmas Day fixing the neighbour’s washer...”`
                       }
                       className="w-full px-3 py-2.5 rounded-xl bg-[#f7f7f8] border border-black/[0.08] text-sm text-[#181925] placeholder:text-[#aaa] outline-none focus:border-primary/50 transition-colors resize-none leading-relaxed"
@@ -764,6 +796,8 @@ export function ContributeModal({
                         <span>Publish Photograph</span>
                       ) : selectedType === "voice" ? (
                         <span>Publish Recording</span>
+                      ) : selectedType === "video" ? (
+                        <span>Publish Video</span>
                       ) : (
                         <span>Publish</span>
                       )}

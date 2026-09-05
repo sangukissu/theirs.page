@@ -22,9 +22,14 @@ export const ALLOWED_GUEST_MIME_TYPES = new Set([
   "audio/ogg",
   "audio/aac",
   "audio/flac",
+  "video/mp4",
+  "video/webm",
+  "video/quicktime",
+  "video/x-m4v",
+  "video/ogg",
 ])
 
-export const MAX_GUEST_UPLOAD_BYTES = 15 * 1024 * 1024 // 15MB
+export const MAX_GUEST_UPLOAD_BYTES = 100 * 1024 * 1024 // 100MB
 
 /**
  * Creates an HMAC-SHA256 signed upload intent token valid for 10 minutes

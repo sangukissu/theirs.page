@@ -60,7 +60,13 @@ export async function POST(req: NextRequest, context: RouteContext) {
       return NextResponse.json({ error: "Your name is required." }, { status: 400 })
     }
 
-    const effectiveContent = (content && content.trim()) || (photo_url ? `Photograph shared by ${author_name.trim()}` : "")
+    const effectiveContent =
+      (content && content.trim()) ||
+      (photo_url
+        ? type === "video"
+          ? `Video clip shared by ${author_name.trim()}`
+          : `Photograph shared by ${author_name.trim()}`
+        : "")
 
     if (!effectiveContent) {
       return NextResponse.json({ error: "Please write a memory or message to share." }, { status: 400 })
