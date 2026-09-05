@@ -219,6 +219,7 @@ export const getMemorialViewContext = cache(async (slug: string): Promise<Memori
       status: memorial?.status,
       privacy: memorial?.privacy,
       sectionSettings: sections,
+      contributionSettings: memorial?.contribution_settings || null,
       photoCount,
     },
   }

@@ -14,7 +14,7 @@ export const metadata: Metadata = {
     title: "Restoration quality benchmark | BringBack",
     description:
       "How we score BringBack restoration outputs: identity drift, damage repair, texture, colorization, artifacts—with demo cases.",
-    url: "https://theirs-page.sangukissu.workers.dev/restoration-benchmark",
+    url: "https://theirs.page/restoration-benchmark",
     type: "website",
   },
   robots: { index: true, follow: true },
@@ -86,11 +86,11 @@ export default function RestorationBenchmarkPage() {
     headline: "BringBack photo restoration quality benchmark",
     datePublished: "2026-07-19",
     dateModified: "2026-08-12",
-    author: { "@type": "Organization", name: "BringBack", url: "https://theirs-page.sangukissu.workers.dev" },
-    publisher: { "@type": "Organization", name: "BringBack", url: "https://theirs-page.sangukissu.workers.dev" },
+    author: { "@type": "Organization", name: "BringBack", url: "https://theirs.page" },
+    publisher: { "@type": "Organization", name: "BringBack", url: "https://theirs.page" },
     description:
       "Scoring rubric and owned demos for AI photo restoration: identity drift, damage repair, texture, unwanted colorization, artifacts.",
-    mainEntityOfPage: "https://theirs-page.sangukissu.workers.dev/restoration-benchmark",
+    mainEntityOfPage: "https://theirs.page/restoration-benchmark",
   }
 
   return (

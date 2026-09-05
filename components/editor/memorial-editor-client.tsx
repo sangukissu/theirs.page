@@ -27,7 +27,7 @@ import { GalleryTab, EditorMediaItem } from "./tabs/gallery-tab"
 import { TimelineTab, EditorTimelineEvent } from "./tabs/timeline-tab"
 import { ModerationTab, EditorMemory, EditorCaretakerMessage } from "./tabs/moderation-tab"
 import { SettingsTab } from "./tabs/settings-tab"
-import { SectionSettings } from "@/types/theirs"
+import { SectionSettings, ContributionSettings } from "@/types/theirs"
 
 export type EditorSectionTab =
   | "identity"
@@ -54,6 +54,7 @@ interface InitialMemorialData {
   successor_name?: string | null
   successor_email?: string | null
   section_settings?: SectionSettings | null
+  contribution_settings?: ContributionSettings | null
   is_paid?: boolean
   paid_at?: string | null
   updated_at?: string
@@ -108,6 +109,15 @@ export function MemorialEditorClient({
       timeline: true,
       gallery: true,
       stories: true,
+    },
+    contribution_settings: initialMemorial.contribution_settings || {
+      accept_contributions: true,
+      tributes: true,
+      memories: true,
+      photos: true,
+      voice: true,
+      videos: true,
+      moments: true,
     },
   })
 
@@ -205,6 +215,7 @@ export function MemorialEditorClient({
             successor_name: currentForm.successor_name || null,
             successor_email: currentForm.successor_email || null,
             section_settings: currentForm.section_settings || null,
+            contribution_settings: currentForm.contribution_settings || null,
           }),
         })
 
@@ -220,7 +231,7 @@ export function MemorialEditorClient({
                 isDirty: false,
               })
             )
-          } catch {}
+          } catch { }
           return true
         } else {
           const errData = await res.json().catch(() => ({}))
@@ -375,7 +386,7 @@ export function MemorialEditorClient({
           isDirty: true,
         })
       )
-    } catch {}
+    } catch { }
 
     if (debounceTimerRef.current) clearTimeout(debounceTimerRef.current)
     saveToCloud(nextForm)
@@ -390,35 +401,35 @@ export function MemorialEditorClient({
     isCompleteOnly?: boolean
     isOff?: boolean
   }[] = [
-    { id: "identity", label: "Identity", icon: User },
-    {
-      id: "story",
-      label: "Life Story",
-      icon: BookOpen,
-    },
-    {
-      id: "gallery",
-      label: "Gallery",
-      icon: ImageIcon,
-      count: mediaItems.length,
-      isOff: form.section_settings?.gallery === false,
-    },
-    {
-      id: "timeline",
-      label: "Timeline",
-      icon: Calendar,
-      count: timelineEvents.length,
-      isCompleteOnly: true,
-      isOff: form.section_settings?.timeline === false,
-    },
-    {
-      id: "moderation",
-      label: "Contributions",
-      icon: MessageSquare,
-      count: pendingContributions,
-    },
-    { id: "settings", label: "Settings", icon: Settings },
-  ]
+      { id: "identity", label: "Identity", icon: User },
+      {
+        id: "story",
+        label: "Life Story",
+        icon: BookOpen,
+      },
+      {
+        id: "gallery",
+        label: "Gallery",
+        icon: ImageIcon,
+        count: mediaItems.length,
+        isOff: form.section_settings?.gallery === false,
+      },
+      {
+        id: "timeline",
+        label: "Timeline",
+        icon: Calendar,
+        count: timelineEvents.length,
+        isCompleteOnly: true,
+        isOff: form.section_settings?.timeline === false,
+      },
+      {
+        id: "moderation",
+        label: "Contributions",
+        icon: MessageSquare,
+        count: pendingContributions,
+      },
+      { id: "settings", label: "Settings", icon: Settings },
+    ]
 
   const currentIndex = tabs.findIndex((t) => t.id === activeTab)
   const prevTab = currentIndex > 0 ? tabs[currentIndex - 1] : null
@@ -433,7 +444,7 @@ export function MemorialEditorClient({
 
   return (
     <div className="min-h-screen bg-[#fafafb] text-[#181925] flex flex-col">
-      
+
       {/* 1. Master Top Bar */}
       <header className="h-16 border-b border-black/[0.06] bg-white/90 backdrop-blur-md px-4 sm:px-8 flex items-center justify-between sticky top-0 z-40">
         <div className="flex items-center gap-4 min-w-0">
@@ -456,11 +467,10 @@ export function MemorialEditorClient({
             <button
               type="button"
               onClick={togglePublishStatus}
-              className={`px-2.5 py-0.5 rounded-full text-[10px] font-mono uppercase font-semibold cursor-pointer transition-all shrink-0 ${
-                form.status === "published"
+              className={`px-2.5 py-0.5 rounded-full text-[10px] font-mono uppercase font-semibold cursor-pointer transition-all shrink-0 ${form.status === "published"
                   ? "bg-emerald-50 text-emerald-700 border border-emerald-200 hover:bg-emerald-100"
                   : "bg-amber-50 text-amber-700 border border-amber-200 hover:bg-amber-100"
-              }`}
+                }`}
               title="Click to toggle between Draft and Published"
             >
               {form.status}
@@ -470,30 +480,8 @@ export function MemorialEditorClient({
 
         {/* Right Actions & Auto-Save Indicator */}
         <div className="flex items-center gap-3 shrink-0">
-          
-          {/* Live Auto-Save Status Badge */}
-          <div className="hidden sm:flex items-center gap-1.5 text-xs text-[#71717a] font-sans pr-1">
-            {saveStatus === "saving" && (
-              <span className="inline-flex items-center gap-1 text-primary">
-                <Loader2 className="size-3 animate-spin" />
-                <span className="text-[11px]">Saving...</span>
-              </span>
-            )}
 
-            {saveStatus === "local-saved" && (
-              <span className="inline-flex items-center gap-1 text-amber-600" title="Changes are safely buffered on this device and saving to cloud">
-                <span className="size-1.5 rounded-full bg-amber-500 animate-pulse" />
-                <span className="text-[11px]">Saved locally</span>
-              </span>
-            )}
 
-            {saveStatus === "saved" && (
-              <span className="inline-flex items-center gap-1 text-emerald-600">
-                <Check className="size-3" />
-                <span className="text-[11px]">Saved</span>
-              </span>
-            )}
-          </div>
 
           <Link
             href={`/${form.slug}?preview=visitor`}
@@ -568,10 +556,10 @@ export function MemorialEditorClient({
       )}
 
       {/* 2. Responsive Editor Body (Sidebar + Content Canvas) */}
-      <div className="flex-1 flex flex-col md:flex-row max-w-6xl w-full mx-auto px-4 sm:px-6 py-6 sm:py-10 gap-8">
-        
-        {/* Navigation Tabs (Horizontal on Mobile, Vertical Sidebar on Desktop) */}
-        <aside className="w-full md:w-56 shrink-0 flex flex-col gap-1">
+      <div className="flex-1 flex flex-col md:flex-row max-w-5xl w-full mx-auto px-4 sm:px-6 py-6 sm:py-10 gap-8 lg:gap-12 items-start justify-center">
+
+        {/* Navigation Tabs (Sticky horizontal on Mobile, Sticky Vertical Sidebar on Desktop) */}
+        <aside className="w-full md:w-56 shrink-0 flex flex-col gap-1 sticky top-16 md:top-24 z-30 bg-[#fafafb]/95 md:bg-transparent backdrop-blur-xs md:backdrop-blur-none py-2 md:py-0 self-start">
           <div className="flex md:flex-col overflow-x-auto no-scrollbar gap-1 p-1 rounded-2xl bg-white md:bg-transparent border md:border-none border-black/[0.06]">
             {tabs.map((tab) => {
               const Icon = tab.icon
@@ -580,12 +568,11 @@ export function MemorialEditorClient({
                 <button
                   key={tab.id}
                   type="button"
-                  onClick={() => setActiveTab(tab.id)}
-                  className={`flex items-center justify-between gap-2.5 px-3.5 py-2 rounded-xl text-xs font-medium whitespace-nowrap transition-all cursor-pointer ${
-                    isActive
+                  onClick={() => goToTab(tab.id)}
+                  className={`flex items-center justify-between gap-2.5 px-3.5 py-2 rounded-xl text-xs font-medium whitespace-nowrap transition-all cursor-pointer ${isActive
                       ? "bg-[#181925] text-white shadow-2xs"
                       : "text-[#666] hover:text-[#181925] hover:bg-white/80"
-                  }`}
+                    }`}
                 >
                   <div className="flex items-center gap-2">
                     <Icon className="size-3.5 shrink-0" />
@@ -595,9 +582,8 @@ export function MemorialEditorClient({
                   <div className="flex items-center gap-1.5">
                     {tab.isOff && (
                       <span
-                        className={`text-[9px] font-mono uppercase px-1.5 py-0.2 rounded-full ${
-                          isActive ? "bg-white/20 text-white" : "bg-neutral-200 text-neutral-600"
-                        }`}
+                        className={`text-[9px] font-mono uppercase px-1.5 py-0.2 rounded-full ${isActive ? "bg-white/20 text-white" : "bg-neutral-200 text-neutral-600"
+                          }`}
                       >
                         Off
                       </span>
@@ -605,9 +591,8 @@ export function MemorialEditorClient({
 
                     {tab.isCompleteOnly && !initialMemorial.is_paid && (
                       <span
-                        className={`text-[9px] font-mono uppercase font-semibold px-1.5 py-0.2 rounded-full ${
-                          isActive ? "bg-white/20 text-white" : "bg-emerald-50 text-emerald-700 border border-emerald-200"
-                        }`}
+                        className={`text-[9px] font-mono uppercase font-semibold px-1.5 py-0.2 rounded-full ${isActive ? "bg-white/20 text-white" : "bg-emerald-50 text-emerald-700 border border-emerald-200"
+                          }`}
                       >
                         Pro
                       </span>
@@ -615,9 +600,8 @@ export function MemorialEditorClient({
 
                     {tab.count !== undefined && tab.count > 0 && (
                       <span
-                        className={`text-[10px] font-mono px-1.5 py-0.2 rounded-full ${
-                          isActive ? "bg-white/20 text-white" : "bg-neutral-100 text-[#777]"
-                        }`}
+                        className={`text-[10px] font-mono px-1.5 py-0.2 rounded-full ${isActive ? "bg-white/20 text-white" : "bg-neutral-100 text-[#777]"
+                          }`}
                       >
                         {tab.count}
                       </span>
@@ -630,7 +614,7 @@ export function MemorialEditorClient({
         </aside>
 
         {/* Active Tab Canvas */}
-        <main className="flex-1 min-w-0 bg-transparent">
+        <main className="flex-1 min-w-0 bg-transparent max-w-2xl w-full">
           {activeTab === "identity" && (
             <IdentityTab
               memorialId={initialMemorial.id}
@@ -724,6 +708,7 @@ export function MemorialEditorClient({
               successorName={form.successor_name}
               successorEmail={form.successor_email}
               sectionSettings={form.section_settings}
+              contributionSettings={form.contribution_settings}
               isPaid={Boolean(initialMemorial.is_paid)}
               onChange={handleFieldChange}
               onDeleteMemorial={() => router.push("/dashboard")}

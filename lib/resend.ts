@@ -5,7 +5,7 @@ import { Resend } from 'resend'
 export const resend = new Resend(process.env.RESEND_API_KEY || 're_placeholder_for_build')
 
 // Default sender for win-back emails
-export const WINBACK_SENDER = 'Harvansh <support@bringback.pro>'
+export const WINBACK_SENDER = 'Theirs.page Memorial Team <support@theirs.page>'
 
 // Email 1: Inspiration email (4 hours after signup)
 export const winbackEmail1 = {
@@ -41,7 +41,7 @@ Code: WELCOME10 (10% OFF the Pro and Family Plans)
 
 The Pro Plan unlocks the Reunion Video feature (where you can hug your loved ones) and 20 restorations. I'd love for you to try it.
 
-Upgrade now: ${process.env.NEXT_PUBLIC_APP_URL || 'https://theirs-page.sangukissu.workers.dev'}/dashboard
+Upgrade now: ${process.env.NEXT_PUBLIC_APP_URL || 'https://theirs.page'}/dashboard
 
 Best,
 Harvansh Chaudhary`,

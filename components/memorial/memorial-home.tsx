@@ -116,6 +116,7 @@ export function MemorialHome({ identity, data }: { identity: MemorialIdentity; d
             isDemo={identity.isDemo}
             isPaid={identity.isPaid}
             onOpenContribute={openContribute}
+            slug={identity.slug}
             initialPage={{ ...data.media, hasMore: false, nextCursor: null }}
           />
           {(identity.isDemo || data.media.hasMore) && (

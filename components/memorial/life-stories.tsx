@@ -14,6 +14,7 @@ import {
 } from "lucide-react"
 import { ContributionType } from "./contribute-modal"
 import { QuillFeatherEmblem } from "./tribute-emblems"
+import { useOptimisticReceipts } from "@/lib/memorial/optimistic-receipts"
 
 export interface StoryItem {
   id: string
@@ -28,6 +29,7 @@ export interface StoryItem {
   photoUrls?: string[]
   photoCaption?: string
   createdAt?: string
+  isOptimistic?: boolean
 }
 
 export const DEFAULT_STORIES: StoryItem[] = [
@@ -98,7 +100,30 @@ export function LifeStories({
 
   const firstName = fullName.split(" ")[0] || fullName
 
-  const sorted = [...activeStories].sort((a, b) => {
+  const optimisticReceipts = useOptimisticReceipts(slug || memorialId || "", activeStories)
+
+  const optimisticStories: StoryItem[] = optimisticReceipts
+    .filter((r) => r.contribution_type === "story" || Boolean(r.approx_year) || (r.photo_urls && r.photo_urls.length > 0))
+    .map((r) => ({
+      id: r.id,
+      authorName: r.author_name,
+      authorRelationship: r.author_relationship || "",
+      dateOrYear: r.approx_year ? String(r.approx_year) : "Just now",
+      chronologicalYear: typeof r.approx_year === "number" ? r.approx_year : (r.approx_year ? parseInt(String(r.approx_year), 10) || undefined : undefined),
+      location: r.location || undefined,
+      story: r.story,
+      photoUrl: r.photo_url || (r.photo_urls && r.photo_urls[0]) || undefined,
+      photoUrls: r.photo_urls && r.photo_urls.length ? r.photo_urls : undefined,
+      createdAt: r.created_at,
+      isOptimistic: true,
+    }))
+
+  const combined = [
+    ...optimisticStories,
+    ...activeStories.filter((s) => !optimisticReceipts.some((r) => r.id === s.id)),
+  ]
+
+  const sorted = [...combined].sort((a, b) => {
     if (a.createdAt && b.createdAt) {
       return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
     }
@@ -195,6 +220,12 @@ export function LifeStories({
                               {item.authorRelationship}
                             </span>
                           </>
+                        )}
+                        {item.isOptimistic && (
+                          <span className="inline-flex items-center gap-1.5 text-[11px] font-medium text-emerald-800 bg-emerald-50/90 px-2.5 py-0.5 rounded-full border border-emerald-200/60">
+                            <span className="size-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                            <span>Sent to {firstName}&apos;s family</span>
+                          </span>
                         )}
                       </div>
 

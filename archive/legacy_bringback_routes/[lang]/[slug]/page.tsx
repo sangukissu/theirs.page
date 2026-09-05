@@ -15,8 +15,8 @@ export function generateStaticParams() {
     // The countryPages[lang].slug format is "/lang/keyword-slug"
     const fullSlug = countryPages[lang].slug
     const slugPart = fullSlug.split('/').pop() || ''
-    
-    return { 
+
+    return {
       lang,
       slug: slugPart
     }
@@ -25,7 +25,7 @@ export function generateStaticParams() {
 
 export async function generateMetadata({ params }: { params: Promise<{ lang: string; slug: string }> }): Promise<Metadata> {
   const { lang, slug } = await params
-  
+
   // Validate language exists
   if (!supportedLanguages.includes(lang as SupportedLang)) {
     return {}
@@ -54,7 +54,7 @@ export async function generateMetadata({ params }: { params: Promise<{ lang: str
       title: page.meta.title,
       description: page.meta.description,
       type: "website",
-      url: `https://theirs-page.sangukissu.workers.dev${page.slug}`,
+      url: `https://theirs.page${page.slug}`,
       locale: page.locale,
       siteName: "BringBack AI",
     },
@@ -63,7 +63,7 @@ export async function generateMetadata({ params }: { params: Promise<{ lang: str
 
 export default async function LocalizedCountryPage({ params }: { params: Promise<{ lang: string; slug: string }> }) {
   const { lang, slug } = await params
-  
+
   // Validate language
   if (!supportedLanguages.includes(lang as SupportedLang)) {
     notFound()
@@ -77,7 +77,7 @@ export default async function LocalizedCountryPage({ params }: { params: Promise
     notFound()
   }
 
-  const pageUrl = `https://theirs-page.sangukissu.workers.dev${page.slug}`
+  const pageUrl = `https://theirs.page${page.slug}`
   const prices = page.pricing?.plans
     ?.map((p) => parseUsdPrice(p.price))
     .filter((p): p is number => typeof p === "number")
@@ -101,33 +101,33 @@ export default async function LocalizedCountryPage({ params }: { params: Promise
         offers:
           typeof lowPrice === "number" && typeof highPrice === "number"
             ? {
-                "@type": "AggregateOffer",
-                url: "https://theirs-page.sangukissu.workers.dev/pricing",
-                priceCurrency: "USD",
-                lowPrice: lowPrice.toFixed(2),
-                highPrice: highPrice.toFixed(2),
-                offerCount: String(page.pricing.plans.length),
-              }
+              "@type": "AggregateOffer",
+              url: "https://theirs.page/pricing",
+              priceCurrency: "USD",
+              lowPrice: lowPrice.toFixed(2),
+              highPrice: highPrice.toFixed(2),
+              offerCount: String(page.pricing.plans.length),
+            }
             : {
-                "@type": "Offer",
-                url: "https://theirs-page.sangukissu.workers.dev/pricing",
-                priceCurrency: "USD",
-                availability: "https://schema.org/OnlineOnly",
-              },
+              "@type": "Offer",
+              url: "https://theirs.page/pricing",
+              priceCurrency: "USD",
+              availability: "https://schema.org/OnlineOnly",
+            },
       },
       page.faq?.length
         ? {
-            "@type": "FAQPage",
-            "@id": `${pageUrl}#faq`,
-            mainEntity: page.faq.map((item) => ({
-              "@type": "Question",
-              name: item.question,
-              acceptedAnswer: {
-                "@type": "Answer",
-                text: item.answer,
-              },
-            })),
-          }
+          "@type": "FAQPage",
+          "@id": `${pageUrl}#faq`,
+          mainEntity: page.faq.map((item) => ({
+            "@type": "Question",
+            name: item.question,
+            acceptedAnswer: {
+              "@type": "Answer",
+              text: item.answer,
+            },
+          })),
+        }
         : null,
     ].filter(Boolean),
   }

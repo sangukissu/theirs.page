@@ -2,7 +2,7 @@ import type { GalleryItem } from "@/components/memorial/memorial-gallery"
 import type { TimelineMilestone } from "@/components/memorial/life-timeline"
 import type { StoryItem } from "@/components/memorial/life-stories"
 import type { MemoryItem } from "@/components/memorial/memories-stream"
-import type { SectionSettings } from "@/types/theirs"
+import type { SectionSettings, ContributionSettings } from "@/types/theirs"
 
 export type MemorialView = "home" | "timeline" | "memories" | "gallery" | "tributes"
 export type BrowseCollection = "gallery" | "memories" | "timeline" | "tributes"
@@ -25,6 +25,7 @@ export interface MemorialIdentity {
   status?: string
   privacy?: string
   sectionSettings: SectionSettings
+  contributionSettings?: ContributionSettings | null
   photoCount: number
 }
 

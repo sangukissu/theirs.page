@@ -106,7 +106,7 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
           height: 630,
           alt: post.featuredImage?.node?.altText || post.title,
         }],
-        url: `https://theirs-page.sangukissu.workers.dev/blog/${post.slug}`,
+        url: `https://theirs.page/blog/${post.slug}`,
       },
       twitter: {
         card: "summary_large_image",
@@ -115,7 +115,7 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
         images: [ogImage],
       },
       alternates: {
-        canonical: `https://theirs-page.sangukissu.workers.dev/blog/${post.slug}`,
+        canonical: `https://theirs.page/blog/${post.slug}`,
       },
     }
   } catch (error) {
@@ -153,34 +153,34 @@ function BlogPostContent({ post }: { post: WordPressPost }) {
   const blogPostJsonLd = {
     '@context': 'https://schema.org',
     '@type': 'BlogPosting',
-    '@id': `https://theirs-page.sangukissu.workers.dev/blog/${post.slug}`,
+    '@id': `https://theirs.page/blog/${post.slug}`,
     headline: post.title,
     description: post.excerpt ? post.excerpt.replace(/<[^>]*>/g, '') : post.title,
-    image: post.featuredImage?.node?.sourceUrl || 'https://theirs-page.sangukissu.workers.dev/placeholder.svg',
+    image: post.featuredImage?.node?.sourceUrl || 'https://theirs.page/placeholder.svg',
     datePublished: post.date,
     dateModified: post.modified,
     author: {
       '@type': 'Organization',
       name: 'BringBack Team',
-      url: 'https://theirs-page.sangukissu.workers.dev'
+      url: 'https://theirs.page'
     },
     publisher: {
       '@type': 'Organization',
       name: 'BringBack',
       logo: {
         '@type': 'ImageObject',
-        url: 'https://theirs-page.sangukissu.workers.dev/bringback-logo.webp'
+        url: 'https://theirs.page/bringback-logo.webp'
       }
     },
     // Use URL string for mainEntityOfPage to avoid emitting a WebPage entity
-    mainEntityOfPage: `https://theirs-page.sangukissu.workers.dev/blog/${post.slug}`,
+    mainEntityOfPage: `https://theirs.page/blog/${post.slug}`,
     articleSection: category,
     wordCount: post.content.split(' ').length,
     timeRequired: `PT${readTime}M`,
     inLanguage: 'en-US',
     isPartOf: {
       '@type': 'Blog',
-      '@id': 'https://theirs-page.sangukissu.workers.dev/blog',
+      '@id': 'https://theirs.page/blog',
       name: 'BringBack Blog'
     }
   }
@@ -234,10 +234,10 @@ function BlogPostContent({ post }: { post: WordPressPost }) {
 
                   {/* Excerpt */}
                   {post.excerpt && (
-                    <div 
-                      className="text-md sm:text-xl text-gray-600 leading-relaxed mb-4 italic" 
-                      dangerouslySetInnerHTML={{ __html: post.excerpt }} 
-                      suppressHydrationWarning 
+                    <div
+                      className="text-md sm:text-xl text-gray-600 leading-relaxed mb-4 italic"
+                      dangerouslySetInnerHTML={{ __html: post.excerpt }}
+                      suppressHydrationWarning
                     />
                   )}
 
@@ -265,7 +265,7 @@ function BlogPostContent({ post }: { post: WordPressPost }) {
 
                     <ShareButton
                       title={post.title}
-                      url={`https://theirs-page.sangukissu.workers.dev/blog/${post.slug}`}
+                      url={`https://theirs.page/blog/${post.slug}`}
                       text={post.excerpt || `Check out this article: ${post.title}`}
                     />
                   </div>

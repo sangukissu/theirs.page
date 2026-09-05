@@ -11,10 +11,10 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 const RESEND_API_KEY = Deno.env.get('RESEND_API_KEY')!
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!
 const SUPABASE_SECRET_KEY = Deno.env.get('SUPABASE_SECRET_KEY')!
-const WINBACK_FROM = Deno.env.get('WINBACK_FROM') || 'Harvansh <harvansh@updates.bringback.pro>'
-const WINBACK_REPLY_TO = Deno.env.get('WINBACK_REPLY_TO') || 'support@bringback.pro'
+const WINBACK_FROM = Deno.env.get('WINBACK_FROM') || 'Theirs.page Team <harvansh@support.theirs.page>'
+const WINBACK_REPLY_TO = Deno.env.get('WINBACK_REPLY_TO') || 'support@theirs.page'
 const WINBACK_CRON_SECRET = Deno.env.get('WINBACK_CRON_SECRET')
-const APP_URL = Deno.env.get('NEXT_PUBLIC_APP_URL') || 'https://theirs-page.sangukissu.workers.dev'
+const APP_URL = Deno.env.get('NEXT_PUBLIC_APP_URL') || 'https://theirs.page'
 
 const supabase = createClient(SUPABASE_URL, SUPABASE_SECRET_KEY)
 
@@ -232,7 +232,7 @@ serve(async (req: Request) => {
 
         console.log(`Win-back email 1 job complete. Sent: ${sentCount}, Errors: ${errors.length}`)
 
-        
+
         return new Response(
             JSON.stringify({
                 message: 'Win-back email 1 job complete',

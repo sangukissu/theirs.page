@@ -21,7 +21,7 @@ export async function generateStaticParams() {
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
   const { slug } = await params;
   const page = featuresData[slug];
-  
+
   if (!page) {
     return {};
   }
@@ -39,7 +39,7 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
       title: socialTitle,
       description: page.meta.description,
       type: 'website',
-      url: `https://theirs-page.sangukissu.workers.dev${page.slug}`,
+      url: `https://theirs.page${page.slug}`,
       siteName: 'BringBack AI',
       locale: 'en_US',
     },
@@ -49,7 +49,7 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
       description: page.meta.description,
     },
     alternates: {
-      canonical: `https://theirs-page.sangukissu.workers.dev${page.slug}`,
+      canonical: `https://theirs.page${page.slug}`,
     }
   };
 }
@@ -94,24 +94,24 @@ export default async function FeaturesPage({ params }: { params: Promise<{ slug:
     '@graph': [
       {
         '@type': 'WebApplication',
-        '@id': `https://theirs-page.sangukissu.workers.dev${page.slug}#webapp`,
+        '@id': `https://theirs.page${page.slug}#webapp`,
         name: page.meta.title,
         description: page.meta.description,
-        url: `https://theirs-page.sangukissu.workers.dev${page.slug}`,
+        url: `https://theirs.page${page.slug}`,
         applicationCategory: 'PhotoEditingApplication',
         operatingSystem: 'Web',
         inLanguage: 'en-US',
         browserRequirements: 'Requires JavaScript. Requires HTML5.',
         offers: {
           '@type': 'Offer',
-          url: 'https://theirs-page.sangukissu.workers.dev/pricing',
+          url: 'https://theirs.page/pricing',
           priceCurrency: 'USD',
           availability: 'https://schema.org/OnlineOnly'
         }
       },
       ...(page.faq?.length ? [{
         '@type': 'FAQPage',
-        '@id': `https://theirs-page.sangukissu.workers.dev${page.slug}#faq`,
+        '@id': `https://theirs.page${page.slug}#faq`,
         mainEntity: page.faq.map((item) => ({
           '@type': 'Question',
           name: item.question,
@@ -135,14 +135,14 @@ export default async function FeaturesPage({ params }: { params: Promise<{ slug:
         <Navbar />
 
         <main className="pt-16 pb-20">
-          
+
           {/* --- HERO SECTION --- */}
           <section className="relative w-full max-w-[1320px] mx-auto px-4 sm:px-8 pt-6 pb-24 overflow-visible flex flex-col items-center text-center z-10">
 
             {/* Background Pattern */}
             <div className="absolute inset-0 -z-10 opacity-[0.03]" style={{ backgroundImage: 'radial-gradient(#000 1px, transparent 1px)', backgroundSize: '20px 20px' }}></div>
             <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[800px] h-[400px] bg-[#FF4D00]/5 blur-[120px] -z-10 rounded-full pointer-events-none"></div>
-            
+
             {/* Trust Badge - Matches Screenshot */}
             <div className="inline-flex items-center gap-1 bg-[#111111] text-white px-4 py-1.5 rounded-full text-xs sm:text-sm font-bold uppercase tracking-wider mb-8 shadow-lg shadow-black/10">
               <span className="text-[#FF4D00]">//</span> {page.hero.trustBadge} <span className="text-[#FF4D00]">//</span>
@@ -160,7 +160,7 @@ export default async function FeaturesPage({ params }: { params: Promise<{ slug:
                 page.hero.h1
               )}
             </h1>
-            
+
             {/* Subheading - Refined Typography */}
             <p className="text-lg sm:text-xl text-gray-500 font-medium leading-relaxed mb-12 max-w-3xl mx-auto">
               {page.hero.subheadline}
@@ -188,7 +188,7 @@ export default async function FeaturesPage({ params }: { params: Promise<{ slug:
           {/* --- QUALITY ANALYSIS / REAL RESULTS SECTION --- */}
           <section id="quality-analysis" className="bg-[#111111] text-white py-32 overflow-hidden relative">
             <div className="absolute top-0 right-0 w-[600px] h-[600px] bg-[#FF4D00]/10 rounded-full blur-[120px] pointer-events-none"></div>
-            
+
             <div className="max-w-[1320px] mx-auto px-4 relative z-10">
               {page.qualityAnalysis ? (
                 <>
@@ -213,108 +213,108 @@ export default async function FeaturesPage({ params }: { params: Promise<{ slug:
                     {/* Text Content Side */}
                     <div>
                       <div className="space-y-8">
-                      {page.qualityAnalysis.features.map((feature, idx) => (
-                        <div key={idx} className="flex gap-4 group">
-                          <div className="flex-shrink-0 w-10 h-10 rounded-full bg-white/5 border border-white/10 flex items-center justify-center text-[#FF4D00] group-hover:bg-[#FF4D00] group-hover:text-white transition-all duration-300">
-                             <CheckCircle2 size={18} />
+                        {page.qualityAnalysis.features.map((feature, idx) => (
+                          <div key={idx} className="flex gap-4 group">
+                            <div className="flex-shrink-0 w-10 h-10 rounded-full bg-white/5 border border-white/10 flex items-center justify-center text-[#FF4D00] group-hover:bg-[#FF4D00] group-hover:text-white transition-all duration-300">
+                              <CheckCircle2 size={18} />
+                            </div>
+                            <div>
+                              <h3 className="font-bold text-lg mb-1 text-white">{feature.title}</h3>
+                              <p className="text-sm text-gray-400 leading-relaxed">{feature.description}</p>
+                            </div>
                           </div>
-                          <div>
-                            <h3 className="font-bold text-lg mb-1 text-white">{feature.title}</h3>
-                            <p className="text-sm text-gray-400 leading-relaxed">{feature.description}</p>
-                          </div>
-                        </div>
-                      ))}
+                        ))}
+                      </div>
                     </div>
-                  </div>
 
-                  {/* Visual Transformation Side */}
-                  <div className="relative w-full min-w-0">
-                    <div className="bg-white/5 border border-white/10 rounded-[2.5rem] p-6 lg:p-8 backdrop-blur-sm w-full">
-                       {/* Inputs */}
-                       <div className="flex gap-4 mb-8 overflow-x-auto pb-4 no-scrollbar mask-gradient-r w-full">
+                    {/* Visual Transformation Side */}
+                    <div className="relative w-full min-w-0">
+                      <div className="bg-white/5 border border-white/10 rounded-[2.5rem] p-6 lg:p-8 backdrop-blur-sm w-full">
+                        {/* Inputs */}
+                        <div className="flex gap-4 mb-8 overflow-x-auto pb-4 no-scrollbar mask-gradient-r w-full">
                           {page.qualityAnalysis.visuals.inputs.map((input, idx) => (
                             <div key={idx} className="flex-shrink-0 w-32 relative group">
-                               <div className="aspect-[3/4] rounded-xl overflow-hidden mb-3 border-2 border-white/10 relative">
-                                  <div className="absolute top-2 right-2 bg-black/60 backdrop-blur-md text-[10px] font-bold px-2 py-0.5 rounded text-white">IN</div>
-                                  <img src={input.src} className="w-full h-full object-cover" alt={input.label} />
-                               </div>
-                               <p className="text-[10px] font-bold uppercase tracking-wider text-gray-500 text-center">{input.label}</p>
+                              <div className="aspect-[3/4] rounded-xl overflow-hidden mb-3 border-2 border-white/10 relative">
+                                <div className="absolute top-2 right-2 bg-black/60 backdrop-blur-md text-[10px] font-bold px-2 py-0.5 rounded text-white">IN</div>
+                                <img src={input.src} className="w-full h-full object-cover" alt={input.label} />
+                              </div>
+                              <p className="text-[10px] font-bold uppercase tracking-wider text-gray-500 text-center">{input.label}</p>
                             </div>
                           ))}
-                       </div>
+                        </div>
 
-                       {/* Process Arrow */}
-                       <div className="flex justify-center mb-8 relative">
+                        {/* Process Arrow */}
+                        <div className="flex justify-center mb-8 relative">
                           <div className="bg-[#FF4D00] text-white px-6 py-2 rounded-full font-bold text-sm shadow-lg shadow-[#FF4D00]/20 flex items-center gap-2 z-10">
-                             AI Processing <Sparkles size={14} fill="currentColor" />
+                            AI Processing <Sparkles size={14} fill="currentColor" />
                           </div>
                           <div className="absolute top-1/2 left-0 right-0 h-px bg-white/10 -z-0"></div>
-                       </div>
+                        </div>
 
-                       {/* Result */}
-                       <div className="relative rounded-2xl overflow-hidden border border-white/10 group shadow-2xl shadow-black/50">
+                        {/* Result */}
+                        <div className="relative rounded-2xl overflow-hidden border border-white/10 group shadow-2xl shadow-black/50">
                           <div className="absolute top-4 left-4 z-10 bg-[#FF4D00] text-white text-xs font-bold px-3 py-1.5 rounded-lg shadow-lg">FINAL RESULT</div>
                           <img src={page.qualityAnalysis.visuals.output.src} className="w-full h-auto object-cover group-hover:scale-105 transition-transform duration-700" alt={page.qualityAnalysis.visuals.output.label} />
-                          
+
                           {/* Floating Detail Badges */}
                           <div className="absolute bottom-4 left-4 right-4 flex gap-2 overflow-x-auto no-scrollbar">
-                             {['Perfect Lighting', 'Unified Scale', 'HD Detail'].map((tag, i) => (
-                                <div key={i} className="flex-shrink-0 bg-black/60 backdrop-blur-md border border-white/10 px-3 py-1.5 rounded-full text-[10px] font-bold uppercase tracking-wider text-white flex items-center gap-1.5">
-                                   <CheckCircle2 size={10} className="text-[#FF4D00]" /> {tag}
-                                </div>
-                             ))}
+                            {['Perfect Lighting', 'Unified Scale', 'HD Detail'].map((tag, i) => (
+                              <div key={i} className="flex-shrink-0 bg-black/60 backdrop-blur-md border border-white/10 px-3 py-1.5 rounded-full text-[10px] font-bold uppercase tracking-wider text-white flex items-center gap-1.5">
+                                <CheckCircle2 size={10} className="text-[#FF4D00]" /> {tag}
+                              </div>
+                            ))}
                           </div>
-                       </div>
-                       <p className="text-center text-xs font-bold uppercase tracking-wider text-gray-500 mt-4">{page.qualityAnalysis.visuals.output.label}</p>
+                        </div>
+                        <p className="text-center text-xs font-bold uppercase tracking-wider text-gray-500 mt-4">{page.qualityAnalysis.visuals.output.label}</p>
+                      </div>
                     </div>
                   </div>
-                </div>
-              </>
+                </>
               ) : (
                 // FALLBACK for pages without specific quality data
                 <>
-                   {/* Header */}
-                   <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-8 mb-20">
-                     <div className="max-w-2xl">
-                       <div className="inline-flex items-center gap-1 bg-white/10 text-white px-4 py-1.5 rounded-full text-xs sm:text-sm font-bold uppercase tracking-wider mb-6 border border-white/10">
-                         <span className="text-[#FF4D00]">//</span> Professional Quality <span className="text-[#FF4D00]">//</span>
-                       </div>
-                       <h2 className="text-[3.5rem] sm:text-[4rem] font-extrabold tracking-tight text-white leading-[1.1]">
-                         Real Results
-                       </h2>
-                     </div>
-                     <div className="max-w-sm">
-                       <p className="text-lg text-gray-400 font-medium leading-relaxed">
-                         See how we bring elements together naturally.
-                       </p>
-                     </div>
-                   </div>
-                   
-                   <div className="grid lg:grid-cols-2 gap-8">
-                     {page.showcaseCaptions.map((item, idx) => (
-                       <div key={idx} className="bg-white/5 border border-white/10 rounded-[2rem] p-6 group hover:bg-white/10 transition-all duration-300 text-left">
-                         <div className="grid grid-cols-2 gap-4 mb-6 h-[300px]">
-                            <div className="space-y-2 flex flex-col h-full">
-                               <div className="bg-white/10 rounded-xl flex-1 relative overflow-hidden">
-                                  <div className="absolute inset-0 flex items-center justify-center text-xs font-bold text-gray-500 uppercase tracking-wider">Source 1</div>
-                               </div>
-                               <div className="bg-white/10 rounded-xl flex-1 relative overflow-hidden">
-                                  <div className="absolute inset-0 flex items-center justify-center text-xs font-bold text-gray-500 uppercase tracking-wider">Source 2</div>
-                               </div>
+                  {/* Header */}
+                  <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-8 mb-20">
+                    <div className="max-w-2xl">
+                      <div className="inline-flex items-center gap-1 bg-white/10 text-white px-4 py-1.5 rounded-full text-xs sm:text-sm font-bold uppercase tracking-wider mb-6 border border-white/10">
+                        <span className="text-[#FF4D00]">//</span> Professional Quality <span className="text-[#FF4D00]">//</span>
+                      </div>
+                      <h2 className="text-[3.5rem] sm:text-[4rem] font-extrabold tracking-tight text-white leading-[1.1]">
+                        Real Results
+                      </h2>
+                    </div>
+                    <div className="max-w-sm">
+                      <p className="text-lg text-gray-400 font-medium leading-relaxed">
+                        See how we bring elements together naturally.
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="grid lg:grid-cols-2 gap-8">
+                    {page.showcaseCaptions.map((item, idx) => (
+                      <div key={idx} className="bg-white/5 border border-white/10 rounded-[2rem] p-6 group hover:bg-white/10 transition-all duration-300 text-left">
+                        <div className="grid grid-cols-2 gap-4 mb-6 h-[300px]">
+                          <div className="space-y-2 flex flex-col h-full">
+                            <div className="bg-white/10 rounded-xl flex-1 relative overflow-hidden">
+                              <div className="absolute inset-0 flex items-center justify-center text-xs font-bold text-gray-500 uppercase tracking-wider">Source 1</div>
                             </div>
-                            <div className="bg-black rounded-xl h-full relative overflow-hidden border border-white/10">
-                               <div className="absolute top-4 right-4 bg-[#FF4D00] text-white text-[10px] font-bold px-2 py-1 rounded-md uppercase tracking-wider">Result</div>
+                            <div className="bg-white/10 rounded-xl flex-1 relative overflow-hidden">
+                              <div className="absolute inset-0 flex items-center justify-center text-xs font-bold text-gray-500 uppercase tracking-wider">Source 2</div>
                             </div>
-                         </div>
-                         <div className="flex items-center justify-between px-2">
-                            <div>
-                               <p className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">{item.beforeLabel} → {item.afterLabel}</p>
-                               <p className="font-bold text-lg leading-tight text-white">{item.caption}</p>
-                            </div>
-                         </div>
-                       </div>
-                     ))}
-                   </div>
+                          </div>
+                          <div className="bg-black rounded-xl h-full relative overflow-hidden border border-white/10">
+                            <div className="absolute top-4 right-4 bg-[#FF4D00] text-white text-[10px] font-bold px-2 py-1 rounded-md uppercase tracking-wider">Result</div>
+                          </div>
+                        </div>
+                        <div className="flex items-center justify-between px-2">
+                          <div>
+                            <p className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">{item.beforeLabel} → {item.afterLabel}</p>
+                            <p className="font-bold text-lg leading-tight text-white">{item.caption}</p>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
                 </>
               )}
             </div>
@@ -400,68 +400,68 @@ export default async function FeaturesPage({ params }: { params: Promise<{ slug:
 
           {/* --- TRUST & PRIVACY --- */}
           <section id="trust-privacy" className="py-32 bg-[#111111] text-white relative overflow-hidden">
-             {/* Abstract Background Elements */}
-             <div className="absolute top-0 right-0 w-[800px] h-[800px] bg-[#FF4D00]/5 rounded-full blur-[120px] pointer-events-none translate-x-1/2 -translate-y-1/2"></div>
-             <div className="absolute bottom-0 left-0 w-[600px] h-[600px] bg-blue-500/5 rounded-full blur-[100px] pointer-events-none -translate-x-1/2 translate-y-1/2"></div>
-             
-             <div className="max-w-[1320px] mx-auto px-4 relative z-10">
-                {/* Header */}
-                <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-8 mb-16">
-                  <div className="max-w-2xl">
-                    <div className="inline-flex items-center gap-1 bg-white/10 text-white px-4 py-1.5 rounded-full text-xs sm:text-sm font-bold uppercase tracking-wider mb-6 border border-white/10">
-                      <span className="text-[#FF4D00]">//</span> Security <span className="text-[#FF4D00]">//</span>
-                    </div>
-                    <h2 className="text-[3.5rem] sm:text-[4rem] font-extrabold tracking-tight text-white leading-[1.1]">
-                      Your Privacy is <br />
-                      <span className="text-gray-400">Non-Negotiable.</span>
-                    </h2>
+            {/* Abstract Background Elements */}
+            <div className="absolute top-0 right-0 w-[800px] h-[800px] bg-[#FF4D00]/5 rounded-full blur-[120px] pointer-events-none translate-x-1/2 -translate-y-1/2"></div>
+            <div className="absolute bottom-0 left-0 w-[600px] h-[600px] bg-blue-500/5 rounded-full blur-[100px] pointer-events-none -translate-x-1/2 translate-y-1/2"></div>
+
+            <div className="max-w-[1320px] mx-auto px-4 relative z-10">
+              {/* Header */}
+              <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-8 mb-16">
+                <div className="max-w-2xl">
+                  <div className="inline-flex items-center gap-1 bg-white/10 text-white px-4 py-1.5 rounded-full text-xs sm:text-sm font-bold uppercase tracking-wider mb-6 border border-white/10">
+                    <span className="text-[#FF4D00]">//</span> Security <span className="text-[#FF4D00]">//</span>
                   </div>
-                  <div className="max-w-sm">
-                    <p className="text-lg text-gray-400 font-medium leading-relaxed">
-                      Generated media stays in your account until you delete it. We do not use your family photos to train general-purpose AI models.
-                    </p>
+                  <h2 className="text-[3.5rem] sm:text-[4rem] font-extrabold tracking-tight text-white leading-[1.1]">
+                    Your Privacy is <br />
+                    <span className="text-gray-400">Non-Negotiable.</span>
+                  </h2>
+                </div>
+                <div className="max-w-sm">
+                  <p className="text-lg text-gray-400 font-medium leading-relaxed">
+                    Generated media stays in your account until you delete it. We do not use your family photos to train general-purpose AI models.
+                  </p>
+                </div>
+              </div>
+
+              <div className="grid md:grid-cols-3 gap-8">
+                <div className="bg-white/5 border border-white/10 p-10 rounded-[2.5rem] hover:bg-white/10 transition-colors duration-300">
+                  <div className="w-14 h-14 bg-[#FF4D00]/20 rounded-2xl flex items-center justify-center mb-8 text-[#FF4D00]">
+                    <Clock size={28} />
                   </div>
+                  <h3 className="text-2xl font-bold mb-4">You control media</h3>
+                  <p className="text-gray-400 leading-relaxed font-medium">
+                    Results remain available in My Media so you can download later. Delete anytime. Memory Book is stored only when you save a keepsake.
+                  </p>
                 </div>
 
-                <div className="grid md:grid-cols-3 gap-8">
-                   <div className="bg-white/5 border border-white/10 p-10 rounded-[2.5rem] hover:bg-white/10 transition-colors duration-300">
-                      <div className="w-14 h-14 bg-[#FF4D00]/20 rounded-2xl flex items-center justify-center mb-8 text-[#FF4D00]">
-                         <Clock size={28} />
-                      </div>
-                      <h3 className="text-2xl font-bold mb-4">You control media</h3>
-                      <p className="text-gray-400 leading-relaxed font-medium">
-                         Results remain available in My Media so you can download later. Delete anytime. Memory Book is stored only when you save a keepsake.
-                      </p>
-                   </div>
-
-                   <div className="bg-white/5 border border-white/10 p-10 rounded-[2.5rem] hover:bg-white/10 transition-colors duration-300">
-                      <div className="w-14 h-14 bg-blue-500/20 rounded-2xl flex items-center justify-center mb-8 text-blue-400">
-                         <Shield size={28} />
-                      </div>
-                      <h3 className="text-2xl font-bold mb-4">Secure processing</h3>
-                      <p className="text-gray-400 leading-relaxed font-medium">
-                         Uploads are transmitted over HTTPS and processed only to deliver the feature you request. See our Privacy Policy for processors.
-                      </p>
-                   </div>
-
-                   <div className="bg-white/5 border border-white/10 p-10 rounded-[2.5rem] hover:bg-white/10 transition-colors duration-300">
-                      <div className="w-14 h-14 bg-green-500/20 rounded-2xl flex items-center justify-center mb-8 text-green-400">
-                         <Users size={28} />
-                      </div>
-                      <h3 className="text-2xl font-bold mb-4">No public model training</h3>
-                      <p className="text-gray-400 leading-relaxed font-medium">
-                         We do not use your private family photos to train general-purpose AI models for public release.
-                      </p>
-                   </div>
+                <div className="bg-white/5 border border-white/10 p-10 rounded-[2.5rem] hover:bg-white/10 transition-colors duration-300">
+                  <div className="w-14 h-14 bg-blue-500/20 rounded-2xl flex items-center justify-center mb-8 text-blue-400">
+                    <Shield size={28} />
+                  </div>
+                  <h3 className="text-2xl font-bold mb-4">Secure processing</h3>
+                  <p className="text-gray-400 leading-relaxed font-medium">
+                    Uploads are transmitted over HTTPS and processed only to deliver the feature you request. See our Privacy Policy for processors.
+                  </p>
                 </div>
-             </div>
+
+                <div className="bg-white/5 border border-white/10 p-10 rounded-[2.5rem] hover:bg-white/10 transition-colors duration-300">
+                  <div className="w-14 h-14 bg-green-500/20 rounded-2xl flex items-center justify-center mb-8 text-green-400">
+                    <Users size={28} />
+                  </div>
+                  <h3 className="text-2xl font-bold mb-4">No public model training</h3>
+                  <p className="text-gray-400 leading-relaxed font-medium">
+                    We do not use your private family photos to train general-purpose AI models for public release.
+                  </p>
+                </div>
+              </div>
+            </div>
           </section>
 
           {/* --- PRICING --- */}
           <Pricing />
 
           {/* --- FAQ --- */}
-          <FAQ 
+          <FAQ
             items={page.faq}
             title={
               <>

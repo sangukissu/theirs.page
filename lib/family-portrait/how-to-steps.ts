@@ -33,5 +33,5 @@ export const FAMILY_PORTRAIT_HOW_TO = {
   name: "How BringBack AI creates believable AI family portraits",
   description:
     "From choosing clear references to reviewing the result, the workflow helps you create one portrait while keeping realistic expectations about AI-generated details.",
-  url: "https://theirs-page.sangukissu.workers.dev/ai-family-portrait#how-it-works",
+  url: "https://theirs.page/ai-family-portrait#how-it-works",
 } as const

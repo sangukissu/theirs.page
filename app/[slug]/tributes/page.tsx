@@ -15,5 +15,9 @@ export default async function TributesPage({ params }: { params: Promise<{ slug:
   if (!context || context.identity.sectionSettings.tributes === false) notFound()
   if (context.requiresPin) return null
   const page = await loadBrowsePage<MemoryItem>(context, "tributes")
-  return <PagedTributes slug={slug} fullName={context.identity.fullName} memorialId={context.identity.id} isDemo={context.identity.isDemo} initial={page} />
+  return (
+    <div className="pt-16 sm:pt-20 pb-10">
+      <PagedTributes slug={slug} fullName={context.identity.fullName} memorialId={context.identity.id} isDemo={context.identity.isDemo} initial={page} />
+    </div>
+  )
 }

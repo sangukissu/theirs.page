@@ -328,7 +328,7 @@ async function sendReactionEmail(job: MemoryBookJob) {
       "",
       ...reactionLines,
       "",
-      `${process.env.NEXT_PUBLIC_APP_URL || "https://theirs-page.sangukissu.workers.dev"}/dashboard/memory-book/${job.book_id}`,
+      `${process.env.NEXT_PUBLIC_APP_URL || "https://theirs.page"}/dashboard/memory-book/${job.book_id}`,
     ].join("\n"),
   })
 
@@ -390,7 +390,7 @@ async function sendDraftExpiryWarning(job: MemoryBookJob) {
       `Your unpublished keepsake “${book.title}” has been inactive and is scheduled for cleanup on ${new Date(book.expires_at).toLocaleDateString("en-US")}.`,
       "Opening or editing the draft resets the 90-day preservation period.",
       "",
-      `${process.env.NEXT_PUBLIC_APP_URL || "https://theirs-page.sangukissu.workers.dev"}/dashboard/memory-book/${book.id}`,
+      `${process.env.NEXT_PUBLIC_APP_URL || "https://theirs.page"}/dashboard/memory-book/${book.id}`,
       "",
       "Published keepsakes do not expire.",
     ].join("\n"),

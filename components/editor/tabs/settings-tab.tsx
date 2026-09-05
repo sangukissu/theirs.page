@@ -26,13 +26,14 @@ import {
 } from "lucide-react"
 import { UpgradeBanner } from "../upgrade-banner"
 import { ConfirmDeleteModal } from "../confirm-delete-modal"
-import { SectionSettings } from "@/types/theirs"
+import { SectionSettings, ContributionSettings } from "@/types/theirs"
 
 interface CollaboratorItem {
   id: string
   email: string
   role: "co_admin" | "contributor"
   invitation_accepted?: boolean
+  is_trusted?: boolean
   inviteLink?: string
   created_at: string
 }
@@ -46,6 +47,7 @@ interface SettingsTabProps {
   successorName: string
   successorEmail: string
   sectionSettings?: SectionSettings | null
+  contributionSettings?: ContributionSettings | null
   isPaid?: boolean
   onChange: (field: string, value: any) => void
   onDeleteMemorial: () => void
@@ -60,6 +62,7 @@ export function SettingsTab({
   successorName,
   successorEmail,
   sectionSettings,
+  contributionSettings,
   isPaid = false,
   onChange,
   onDeleteMemorial,
@@ -94,6 +97,24 @@ export function SettingsTab({
     navigator.clipboard.writeText(link)
     setCopiedCollabId(collabId)
     setTimeout(() => setCopiedCollabId(null), 2500)
+  }
+
+  const currentContributionSettings: ContributionSettings = contributionSettings || {
+    accept_contributions: true,
+    tributes: true,
+    memories: true,
+    photos: true,
+    voice: true,
+    videos: true,
+    moments: true,
+  }
+
+  const handleToggleContributionSetting = (key: keyof ContributionSettings, value: boolean) => {
+    const updated = {
+      ...currentContributionSettings,
+      [key]: value,
+    }
+    onChange("contribution_settings", updated)
   }
 
   // Ownership transfer state
@@ -184,7 +205,33 @@ export function SettingsTab({
     }
   }
 
-  // 3. Remove Caretaker
+  // 3. Toggle Contributor Trust (Bypasses human approval, automated safety still screens)
+  const handleToggleTrust = async (collaboratorId: string, currentTrust: boolean) => {
+    const nextTrust = !currentTrust
+    // Optimistic UI update
+    setCollaborators((prev) =>
+      prev.map((c) => (c.id === collaboratorId ? { ...c, is_trusted: nextTrust } : c))
+    )
+    try {
+      const res = await fetch(`/api/memorials/${memorialId}/collaborators`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ collaboratorId, is_trusted: nextTrust }),
+      })
+      if (!res.ok) {
+        // Revert on failure
+        setCollaborators((prev) =>
+          prev.map((c) => (c.id === collaboratorId ? { ...c, is_trusted: currentTrust } : c))
+        )
+      }
+    } catch {
+      setCollaborators((prev) =>
+        prev.map((c) => (c.id === collaboratorId ? { ...c, is_trusted: currentTrust } : c))
+      )
+    }
+  }
+
+  // 4. Remove Caretaker
   const handleConfirmRemoveCollaborator = async () => {
     if (!caretakerToDelete) return
     setIsRemovingCaretaker(true)
@@ -693,6 +740,125 @@ export function SettingsTab({
         </div>
       </div>
 
+      {/* Visitor Contributions & Permissions */}
+      <div className="flex flex-col gap-4 p-5 rounded-2xl bg-white border border-black/[0.07]">
+        <div className="flex items-center justify-between">
+          <div className="flex flex-col gap-0.5">
+            <label className="text-xs font-medium text-[#181925] flex items-center gap-1.5">
+              <Heart className="size-3.5 text-primary" />
+              <span>Visitor Contributions & Permissions</span>
+            </label>
+            <p className="text-[11px] text-[#71717a]">
+              Control what visitors may submit. Turned OFF items disappear completely from public forms.
+            </p>
+          </div>
+
+          <div className="flex items-center gap-2 select-none">
+            <span
+              className={`text-xs ${
+                currentContributionSettings.accept_contributions !== false
+                  ? "text-[#71717a]"
+                  : "text-rose-700 font-medium"
+              }`}
+            >
+              {currentContributionSettings.accept_contributions !== false ? "Open" : "Closed"}
+            </span>
+            <button
+              type="button"
+              role="switch"
+              aria-checked={currentContributionSettings.accept_contributions !== false}
+              onClick={() =>
+                handleToggleContributionSetting(
+                  "accept_contributions",
+                  currentContributionSettings.accept_contributions === false
+                )
+              }
+              className={`relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
+                currentContributionSettings.accept_contributions !== false
+                  ? "bg-emerald-600"
+                  : "bg-neutral-300"
+              }`}
+            >
+              <span
+                aria-hidden="true"
+                className={`pointer-events-none inline-block size-4 transform rounded-full bg-white shadow-xs ring-0 transition duration-200 ease-in-out ${
+                  currentContributionSettings.accept_contributions !== false
+                    ? "translate-x-4"
+                    : "translate-x-0"
+                }`}
+              />
+            </button>
+          </div>
+        </div>
+
+        {currentContributionSettings.accept_contributions !== false && (
+          <div className="flex flex-col divide-y divide-black/[0.05] border border-black/[0.06] rounded-xl overflow-hidden bg-[#fafafb]">
+            {[
+              {
+                key: "tributes" as const,
+                title: "Tributes & Quiet Condolences",
+                desc: "Visitors can lay flowers, light candles, or leave quiet written notes of remembrance.",
+              },
+              {
+                key: "memories" as const,
+                title: "Memories & Written Stories",
+                desc: "Visitors can write anecdotal stories and personal reflections about their life.",
+              },
+              {
+                key: "photos" as const,
+                title: "Photographs",
+                desc: "Allow visitors to contribute photos they took or cherished.",
+              },
+              {
+                key: "voice" as const,
+                title: "Voice Notes",
+                desc: "Voicemails or spoken memories uploaded by family and friends.",
+              },
+              {
+                key: "videos" as const,
+                title: "Video Clips",
+                desc: "Home movies, celebrations, or recorded video clips.",
+              },
+              {
+                key: "moments" as const,
+                title: "Life Moments",
+                desc: "Timeline additions and significant milestone suggestions.",
+              },
+            ].map((opt) => {
+              const active = currentContributionSettings[opt.key] !== false
+              return (
+                <div
+                  key={opt.key}
+                  className="flex items-center justify-between p-3.5 sm:px-4 hover:bg-white transition-colors"
+                >
+                  <div className="flex flex-col min-w-0 pr-4">
+                    <span className="text-xs font-medium text-[#181925]">{opt.title}</span>
+                    <span className="text-[11px] text-[#71717a]">{opt.desc}</span>
+                  </div>
+
+                  <button
+                    type="button"
+                    role="switch"
+                    aria-checked={active}
+                    onClick={() => handleToggleContributionSetting(opt.key, !active)}
+                    className={`relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
+                      active ? "bg-emerald-600" : "bg-neutral-300"
+                    }`}
+                  >
+                    <span
+                      aria-hidden="true"
+                      className={`pointer-events-none inline-block size-4 transform rounded-full bg-white shadow-xs ring-0 transition duration-200 ease-in-out ${
+                        active ? "translate-x-4" : "translate-x-0"
+                      }`}
+                    />
+                  </button>
+                </div>
+              )
+            })}
+          </div>
+        )}
+      </div>
+
       {/* 5. Multiple Family Caretakers & Collaborators (Complete Plan Feature) */}
       <div className="flex flex-col gap-4 p-5 rounded-2xl bg-white border border-black/[0.07]">
         <div className="flex items-center justify-between">
@@ -777,49 +943,89 @@ export function SettingsTab({
         ) : collaborators.length === 0 ? (
           <span className="text-xs text-[#888] italic">No additional caretakers invited yet.</span>
         ) : (
-          <div className="flex flex-col gap-2 border-t border-black/[0.04] pt-3">
+          <div className="flex flex-col gap-2.5 border-t border-black/[0.04] pt-3">
             {collaborators.map((c) => (
               <div
                 key={c.id}
-                className="flex items-center justify-between p-2.5 rounded-xl bg-[#fafafb] border border-black/[0.04] text-xs"
+                className="flex flex-col p-3 rounded-xl bg-[#fafafb] border border-black/[0.04] text-xs gap-2.5"
               >
-                <div className="flex items-center gap-2">
-                  <span className="font-medium text-[#181925]">{c.email}</span>
-                  <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-primary/10 text-primary uppercase font-semibold">
-                    {c.role === "co_admin" ? "Co-admin" : "Contributor"}
-                  </span>
-                  {c.invitation_accepted === false && (
-                    <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-amber-50 text-amber-700 border border-amber-200">
-                      Pending
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <span className="font-medium text-[#181925]">{c.email}</span>
+                    <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-primary/10 text-primary uppercase font-semibold">
+                      {c.role === "co_admin" ? "Co-admin" : "Contributor"}
                     </span>
-                  )}
-                </div>
+                    {c.invitation_accepted === false && (
+                      <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-amber-50 text-amber-700 border border-amber-200">
+                        Pending
+                      </span>
+                    )}
+                  </div>
 
-                <div className="flex items-center gap-3">
-                  {c.inviteLink && c.invitation_accepted === false && (
+                  <div className="flex items-center gap-3">
+                    {c.inviteLink && c.invitation_accepted === false && (
+                      <button
+                        type="button"
+                        onClick={() => handleCopyInvite(c.id, c.inviteLink)}
+                        className="text-[11px] text-[#71717a] hover:text-primary transition-colors cursor-pointer inline-flex items-center gap-1"
+                        title="Copy invitation link"
+                      >
+                        {copiedCollabId === c.id ? (
+                          <span className="text-emerald-600 font-medium">Link copied!</span>
+                        ) : (
+                          <span className="underline">Copy link</span>
+                        )}
+                      </button>
+                    )}
+
                     <button
                       type="button"
-                      onClick={() => handleCopyInvite(c.id, c.inviteLink)}
-                      className="text-[11px] text-[#71717a] hover:text-primary transition-colors cursor-pointer inline-flex items-center gap-1"
-                      title="Copy invitation link"
+                      onClick={() => setCaretakerToDelete(c)}
+                      className="text-[#aaa] hover:text-rose-600 transition-colors cursor-pointer"
+                      title="Remove caretaker"
                     >
-                      {copiedCollabId === c.id ? (
-                        <span className="text-emerald-600 font-medium">Link copied!</span>
-                      ) : (
-                        <span className="underline">Copy link</span>
-                      )}
+                      <Trash2 className="size-3.5" />
                     </button>
-                  )}
-
-                  <button
-                    type="button"
-                    onClick={() => setCaretakerToDelete(c)}
-                    className="text-[#aaa] hover:text-rose-600 transition-colors cursor-pointer"
-                    title="Remove caretaker"
-                  >
-                    <Trash2 className="size-3.5" />
-                  </button>
+                  </div>
                 </div>
+
+                {/* Trust Switch for Contributor Role */}
+                {c.role === "contributor" ? (
+                  <div className="flex items-center justify-between pt-2 border-t border-black/[0.04]">
+                    <div className="flex flex-col pr-3">
+                      <span className="text-[11px] font-medium text-[#181925]">
+                        Trust {c.email.split("@")[0]}&apos;s contributions
+                      </span>
+                      <span className="text-[10px] text-[#71717a] leading-tight">
+                        Contributions appear without waiting for your approval. Theirs will still run automated safety checks.
+                      </span>
+                    </div>
+
+                    <button
+                      type="button"
+                      role="switch"
+                      aria-checked={Boolean(c.is_trusted)}
+                      onClick={() => handleToggleTrust(c.id, Boolean(c.is_trusted))}
+                      className={`relative inline-flex h-4.5 w-8 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
+                        c.is_trusted ? "bg-emerald-600" : "bg-neutral-300"
+                      }`}
+                      title={c.is_trusted ? "Trusted contributor (auto-publishes)" : "Approval required"}
+                    >
+                      <span
+                        aria-hidden="true"
+                        className={`pointer-events-none inline-block size-3.5 transform rounded-full bg-white shadow-xs ring-0 transition duration-200 ease-in-out ${
+                          c.is_trusted ? "translate-x-3.5" : "translate-x-0"
+                        }`}
+                      />
+                    </button>
+                  </div>
+                ) : (
+                  <div className="pt-1.5 border-t border-black/[0.04]">
+                    <span className="text-[10px] text-[#71717a] italic">
+                      Co-admins have full moderation and direct publishing privileges.
+                    </span>
+                  </div>
+                )}
               </div>
             ))}
           </div>

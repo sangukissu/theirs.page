@@ -16,7 +16,11 @@ export type MemorialStatus = 'draft' | 'published' | 'archived'
 
 export type CollaboratorRole = 'co_admin' | 'contributor'
 
-export type MemoryStatus = 'pending_approval' | 'approved' | 'rejected'
+export type MemoryStatus = 'pending_approval' | 'approved' | 'rejected' | 'blocked'
+
+export type SafetyDecision = 'safe' | 'review' | 'blocked'
+
+export type ContributorRole = 'anonymous' | 'invited' | 'trusted' | 'co_admin' | 'owner'
 
 export type MemoryVisibility = 'everyone' | 'family_only'
 
@@ -52,6 +56,16 @@ export interface SectionSettings {
   stories?: boolean
 }
 
+export interface ContributionSettings {
+  accept_contributions?: boolean
+  tributes?: boolean
+  memories?: boolean
+  photos?: boolean
+  voice?: boolean
+  videos?: boolean
+  moments?: boolean
+}
+
 export interface Memorial {
   id: string
   owner_id: string
@@ -72,6 +86,7 @@ export interface Memorial {
   is_paid: boolean
   paid_at: string | null
   section_settings?: SectionSettings | null
+  contribution_settings?: ContributionSettings | null
   created_at: string
   updated_at: string
 }
@@ -83,7 +98,22 @@ export interface Collaborator {
   email: string
   role: CollaboratorRole
   invitation_accepted: boolean
+  is_trusted: boolean
   created_at: string
+}
+
+export interface MemorySafetyDetails {
+  decision?: SafetyDecision
+  sexual?: boolean
+  threat?: boolean
+  hate?: boolean
+  harassment?: boolean
+  spam?: boolean
+  scam?: boolean
+  personal_data?: boolean
+  garbage?: boolean
+  reason?: string
+  confidence?: number
 }
 
 export interface Memory {
@@ -100,6 +130,11 @@ export interface Memory {
   tribute_type?: 'flower' | 'note' | 'photo' | 'candle'
   contribution_type?: 'tribute' | 'story'
   status: MemoryStatus
+  safety_decision?: SafetyDecision
+  safety_details?: MemorySafetyDetails | Record<string, any> | null
+  contributor_role?: ContributorRole
+  receipt_token?: string | null
+  is_quarantined?: boolean
   visibility: MemoryVisibility
   created_at: string
   approved_at: string | null

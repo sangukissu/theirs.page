@@ -18,6 +18,7 @@ import {
 import { Turnstile } from "@marsidev/react-turnstile"
 import { TributeShareMenu } from "./tribute-share-menu"
 import { ContactCaretakerModal } from "./contact-caretaker-modal"
+import { useOptimisticReceipts, saveLocalReceipt } from "@/lib/memorial/optimistic-receipts"
 
 export interface MemoryItem {
   id: string
@@ -34,6 +35,7 @@ export interface MemoryItem {
   chronologicalYear?: number
   tributeType?: TributeType
   createdAt?: string
+  isOptimistic?: boolean
 }
 
 export const DEFAULT_MEMORIES: MemoryItem[] = [
@@ -132,8 +134,24 @@ export function MemoriesStream({
   const siteKey = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY || "0x4AAAAAAElC6yv2vY7dR2dn"
   const firstName = fullName.split(" ")[0] || fullName
 
-  // Order memories strictly newest first
-  const sorted = [...items].sort((a, b) => {
+  const optimisticReceipts = useOptimisticReceipts(slug || memorialId || "", items)
+
+  // Order memories strictly newest first, prepending locally saved optimistic receipts
+  const sorted = [
+    ...optimisticReceipts.map((r): MemoryItem => ({
+      id: r.id,
+      authorName: r.author_name,
+      authorRelationship: r.author_relationship || undefined,
+      dateOrYear: "Just now",
+      location: r.location || undefined,
+      story: r.story,
+      photoUrl: r.photo_url || (r.photo_urls && r.photo_urls[0]) || undefined,
+      tributeType: (r.tribute_type as TributeType) || "note",
+      createdAt: r.created_at,
+      isOptimistic: true,
+    })),
+    ...items.filter((item) => !optimisticReceipts.some((r) => r.id === item.id)),
+  ].sort((a, b) => {
     if (a.createdAt && b.createdAt) {
       return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
     }
@@ -201,14 +219,35 @@ export function MemoriesStream({
         throw new Error(data.error || "Failed to submit tribute")
       }
 
+      if (data.item && data.receipt_token) {
+        saveLocalReceipt(memorialId || slug || "", {
+          id: data.item.id,
+          receipt_token: data.receipt_token,
+          memorial_slug: slug || "",
+          memorial_id: memorialId,
+          author_name: data.item.author_name,
+          author_relationship: data.item.author_relationship,
+          story: data.item.story,
+          approx_year: data.item.approx_year,
+          location: data.item.location,
+          photo_url: data.item.photo_url,
+          photo_urls: data.item.photo_urls,
+          tribute_type: data.item.tribute_type,
+          contribution_type: data.item.contribution_type,
+          status: data.item.status,
+          created_at: data.item.created_at || new Date().toISOString(),
+        })
+      }
+
       const newTribute: MemoryItem = {
-        id: data.memory?.id || `trib-local-${Date.now()}`,
+        id: data.item?.id || `trib-local-${Date.now()}`,
         authorName: authorName.trim(),
         authorRelationship: relationship.trim() || undefined,
         dateOrYear: "Just now",
         story: effectiveContent,
         tributeType: tributeRitual,
         createdAt: new Date().toISOString(),
+        isOptimistic: data.item?.status !== "approved",
       }
 
       setItems((prev) => [newTribute, ...prev])
@@ -346,6 +385,12 @@ export function MemoriesStream({
                               {item.authorRelationship}
                             </span>
                           </>
+                        )}
+                        {item.isOptimistic && (
+                          <span className="inline-flex items-center gap-1.5 text-[11px] font-medium text-emerald-800 bg-emerald-50/90 px-2.5 py-0.5 rounded-full border border-emerald-200/60">
+                            <span className="size-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                            <span>Sent to {firstName}&apos;s family</span>
+                          </span>
                         )}
                         {isDemo && isNew && (
                           <span className="text-[10px] uppercase font-mono px-2 py-0.5 rounded-full bg-amber-100/70 text-amber-900 border border-amber-200">

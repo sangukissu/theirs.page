@@ -129,6 +129,7 @@ export async function PATCH(req: NextRequest, context: RouteContext) {
       "biography",
       "portrait_photo_url",
       "section_settings",
+      "contribution_settings",
     ]
 
     for (const f of editorialFields) {

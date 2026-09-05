@@ -25,20 +25,20 @@ export async function POST(req: NextRequest) {
   }
 
   const urls = (body.urls || [])
-    .filter((u) => typeof u === "string" && u.startsWith("https://theirs-page.sangukissu.workers.dev/"))
+    .filter((u) => typeof u === "string" && u.startsWith("https://theirs.page/"))
     .slice(0, 100)
 
   if (urls.length === 0) {
     return NextResponse.json(
-      { error: "Provide urls[] under https://theirs-page.sangukissu.workers.dev/" },
+      { error: "Provide urls[] under https://theirs.page/" },
       { status: 400 }
     )
   }
 
   const payload = {
-    host: "bringback.pro",
+    host: "theirs.page",
     key,
-    keyLocation: `https://theirs-page.sangukissu.workers.dev/${key}.txt`,
+    keyLocation: `https://theirs.page/${key}.txt`,
     urlList: urls,
   }
 

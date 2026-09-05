@@ -27,6 +27,7 @@ import {
 } from "lucide-react"
 import { ContributionType } from "./contribute-modal"
 import type { GalleryFacets, GalleryFilter, PagedCollection } from "@/types/memorial-view"
+import { useOptimisticReceipts } from "@/lib/memorial/optimistic-receipts"
 
 export type GalleryMediaType = "photo" | "audio" | "video"
 
@@ -47,6 +48,7 @@ export interface GalleryItem {
   story?: string
   audioTitle?: string
   addedBy?: string
+  isOptimistic?: boolean
 }
 
 export const DEFAULT_GALLERY_ITEMS: GalleryItem[] = [
@@ -196,6 +198,7 @@ interface MemorialGalleryProps {
     initialPhotoTitle?: string
   ) => void
   browseSlug?: string
+  slug?: string
   initialPage?: PagedCollection<GalleryItem>
   initialFilter?: GalleryFilter
   initialAlbum?: string
@@ -210,6 +213,7 @@ export function MemorialGallery({
   isPaid = false,
   onOpenContribute,
   browseSlug,
+  slug,
   initialPage,
   initialFilter = "all",
   initialAlbum = "all",
@@ -234,6 +238,35 @@ export function MemorialGallery({
   const lastTriggerRef = useRef<HTMLElement | null>(null)
   const [identifiedMap, setIdentifiedMap] = useState<Record<string, boolean>>({})
 
+  // Optimistic Contributor Receipts
+  const activeSlug = browseSlug || slug || ""
+  const optimisticReceipts = useOptimisticReceipts(activeSlug, galleryItems)
+
+  const optimisticMediaItems = useMemo<GalleryItem[]>(() => {
+    return optimisticReceipts
+      .filter((r) => r.photo_url || (r.photo_urls && r.photo_urls.length > 0) || (r.contribution_type && ["photo", "voice", "video"].includes(r.contribution_type)))
+      .map((r): GalleryItem => ({
+        id: r.id,
+        title: r.story ? (r.story.length > 50 ? `${r.story.slice(0, 50)}...` : r.story) : (r.contribution_type === "voice" ? "Voice recording" : r.contribution_type === "video" ? "Video recording" : "Photograph"),
+        mediaType: (r.contribution_type === "voice" ? "audio" : r.contribution_type === "video" ? "video" : "photo") as GalleryMediaType,
+        year: r.approx_year ? String(r.approx_year) : "Recently added",
+        location: r.location || undefined,
+        album: "Family contributions",
+        mediaUrl: r.photo_url || (r.photo_urls && r.photo_urls[0]) || "",
+        aspectRatio: "portrait",
+        story: r.story,
+        addedBy: r.author_name,
+        isOptimistic: true,
+      }))
+  }, [optimisticReceipts])
+
+  const allGalleryItems = useMemo(() => {
+    if (optimisticMediaItems.length === 0) return galleryItems
+    const existingIds = new Set(galleryItems.map((i) => i.id))
+    const deduped = optimisticMediaItems.filter((i) => !existingIds.has(i.id))
+    return [...deduped, ...galleryItems]
+  }, [optimisticMediaItems, galleryItems])
+
   // Real Audio & Video Playback State
   const [playingAudioId, setPlayingAudioId] = useState<string | null>(null)
   const [audioProgress, setAudioProgress] = useState<Record<string, number>>({})
@@ -245,19 +278,31 @@ export function MemorialGallery({
   const firstName = fullName.split(" ")[0] || fullName
 
   const uniqueAlbums = facets?.albums || Array.from(
-    new Set(galleryItems.map((i) => i.album?.trim()).filter(Boolean))
+    new Set(allGalleryItems.map((i) => i.album?.trim()).filter(Boolean))
   ) as string[]
 
-  const filteredItems = browseSlug ? galleryItems : galleryItems.filter((item) => {
-    const matchesType = filter === "all" || item.mediaType === filter
-    const matchesAlbum = selectedAlbum === "all" || item.album?.trim() === selectedAlbum
-    return matchesType && matchesAlbum
-  })
+  const filteredItems = useMemo(() => {
+    if (!browseSlug) {
+      return allGalleryItems.filter((item) => {
+        const matchesType = filter === "all" || item.mediaType === filter
+        const matchesAlbum = selectedAlbum === "all" || item.album?.trim() === selectedAlbum
+        return matchesType && matchesAlbum
+      })
+    }
+    const matchingOptimistic = optimisticMediaItems.filter((item) => {
+      const matchesType = filter === "all" || item.mediaType === filter
+      const matchesAlbum = selectedAlbum === "all" || item.album?.trim() === selectedAlbum
+      return matchesType && matchesAlbum
+    })
+    const existingIds = new Set(galleryItems.map((i) => i.id))
+    const deduped = matchingOptimistic.filter((i) => !existingIds.has(i.id))
+    return [...deduped, ...galleryItems]
+  }, [browseSlug, allGalleryItems, optimisticMediaItems, galleryItems, filter, selectedAlbum])
 
-  const photoCount = facets?.photo ?? galleryItems.filter((i) => i.mediaType === "photo").length
-  const audioCount = facets?.audio ?? galleryItems.filter((i) => i.mediaType === "audio").length
-  const videoCount = facets?.video ?? galleryItems.filter((i) => i.mediaType === "video").length
-  const allCount = facets?.all ?? galleryItems.length
+  const photoCount = facets?.photo ?? allGalleryItems.filter((i) => i.mediaType === "photo").length
+  const audioCount = facets?.audio ?? allGalleryItems.filter((i) => i.mediaType === "audio").length
+  const videoCount = facets?.video ?? allGalleryItems.filter((i) => i.mediaType === "video").length
+  const allCount = facets?.all ?? allGalleryItems.length
 
   useEffect(() => {
     if (!initialPage) return
@@ -737,10 +782,10 @@ export function MemorialGallery({
       ) : (
         /* FLUID MASONRY GRID (Left-to-right distributed, no empty leading slots, natural dimensions) */
         <div
-          className={`grid gap-4 items-start ${columnsCount === 2 ? "grid-cols-2" : "grid-cols-3"}`}
+          className={`grid gap-2.5 sm:gap-4 items-start ${columnsCount === 2 ? "grid-cols-2" : "grid-cols-3"}`}
         >
           {columnItems.map((col, colIdx) => (
-            <div key={colIdx} className="flex flex-col gap-4 min-w-0">
+            <div key={colIdx} className="flex flex-col gap-2.5 sm:gap-4 min-w-0">
               {col.map((item) => {
                 // 1. REAL AUDIO CARD (Interactive Waveform Player in Masonry Flow)
                 if (item.mediaType === "audio") {
@@ -753,20 +798,26 @@ export function MemorialGallery({
 
                   return (
                     <div key={item.id} className="w-full">
-                      <div className="p-5 rounded-2xl bg-[#f7f7f8] border border-black/[0.06] hover:border-black/[0.12] transition-all flex flex-col justify-between gap-4 group">
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center gap-1.5">
-                            <span className="inline-flex items-center gap-1 text-[11px] font-mono text-primary bg-primary/10 px-2 py-0.5 rounded-full font-medium">
-                              <Volume2 className="size-3" />
+                      <div className="p-3.5 sm:p-5 rounded-2xl bg-[#f7f7f8] border border-black/[0.06] hover:border-black/[0.12] transition-all flex flex-col justify-between gap-3 sm:gap-4 group">
+                        <div className="flex items-center justify-between gap-1 flex-wrap">
+                          <div className="flex items-center gap-1.5 flex-wrap">
+                            <span className="inline-flex items-center gap-1 text-[10px] sm:text-[11px] font-mono text-primary bg-primary/10 px-1.5 sm:px-2 py-0.5 rounded-full font-medium">
+                              <Volume2 className="size-2.5 sm:size-3" />
                               <span>Voice recording</span>
                             </span>
                             {item.isPinned && (
-                              <span className="inline-flex items-center gap-1 text-[10px] font-mono font-medium text-primary bg-primary/5 border border-primary/30 px-2 py-0.5 rounded-full">
-                                <Pin className="size-2.5 fill-primary" /> Featured
+                              <span className="inline-flex items-center gap-1 text-[9px] sm:text-[10px] font-mono font-medium text-primary bg-primary/5 border border-primary/30 px-1.5 py-0.5 rounded-full">
+                                <Pin className="size-2 sm:size-2.5 fill-primary" /> Featured
+                              </span>
+                            )}
+                            {item.isOptimistic && (
+                              <span className="inline-flex items-center gap-1.5 text-[9px] sm:text-[10px] font-sans font-medium text-emerald-800 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-full">
+                                <span className="size-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                                <span>Sent to {firstName}&apos;s family</span>
                               </span>
                             )}
                           </div>
-                          <span className="text-[11px] font-mono text-[#888]">
+                          <span className="text-[10px] sm:text-[11px] font-mono text-[#888]">
                             {isPlaying
                               ? (durationDisplay ? `${currentFormattedTime} / ${durationDisplay}` : currentFormattedTime)
                               : (durationDisplay || "Audio recording")}
@@ -780,35 +831,35 @@ export function MemorialGallery({
                           role="button"
                           className="flex flex-col gap-1 cursor-pointer"
                         >
-                          <h3 className="text-sm font-medium text-[#181925] line-clamp-2 hover:text-primary transition-colors">
+                          <h3 className="text-xs sm:text-sm font-medium text-[#181925] line-clamp-2 hover:text-primary transition-colors">
                             {item.title}
                           </h3>
                           {item.story && (
-                            <p className="text-xs text-[#555] leading-relaxed line-clamp-2">
+                            <p className="text-[11px] sm:text-xs text-[#555] leading-relaxed line-clamp-2">
                               “{item.story}”
                             </p>
                           )}
                         </div>
 
                         {/* Interactive Waveform Seekbar */}
-                        <div className="p-3 rounded-xl bg-white border border-black/[0.06] flex items-center gap-3 select-none">
+                        <div className="p-2 sm:p-3 rounded-xl bg-white border border-black/[0.06] flex items-center gap-2 sm:gap-3 select-none">
                           <button
                             type="button"
                             onClick={() => handleToggleAudio(item)}
-                            className="size-9 rounded-full bg-primary text-white flex items-center justify-center shrink-0 hover:bg-primary/95 transition-transform active:scale-95 cursor-pointer shadow-xs"
+                            className="size-7 sm:size-9 rounded-full bg-primary text-white flex items-center justify-center shrink-0 hover:bg-primary/95 transition-transform active:scale-95 cursor-pointer shadow-xs"
                             aria-label={isPlaying ? "Pause audio" : "Play audio"}
                           >
                             {isPlaying ? (
-                              <Pause className="size-4 fill-white" />
+                              <Pause className="size-3.5 sm:size-4 fill-white" />
                             ) : (
-                              <Play className="size-4 ml-0.5 fill-white" />
+                              <Play className="size-3.5 sm:size-4 ml-0.5 fill-white" />
                             )}
                           </button>
 
                           {/* Clickable Scrubber Waveform */}
                           <div
                             onClick={(e) => handleSeekAudio(item, e)}
-                            className="flex-1 flex items-center gap-[2.5px] h-6 cursor-pointer relative"
+                            className="flex-1 flex items-center gap-[2px] sm:gap-[2.5px] h-5 sm:h-6 cursor-pointer relative overflow-hidden"
                             title="Click to seek"
                           >
                             {[35, 65, 95, 45, 80, 55, 75, 40, 90, 60, 30, 75, 50, 85, 40, 65, 90, 55].map((h, i) => {
@@ -818,7 +869,7 @@ export function MemorialGallery({
                               return (
                                 <span
                                   key={i}
-                                  className={`flex-1 rounded-full transition-all duration-150 ${isFilled ? "bg-primary" : "bg-neutral-200"
+                                  className={`flex-1 rounded-full transition-all duration-150 min-w-[2px] ${isFilled ? "bg-primary" : "bg-neutral-200"
                                     } ${isPlaying && isFilled ? "animate-pulse" : ""}`}
                                   style={{ height: `${h}%` }}
                                 />
@@ -827,7 +878,7 @@ export function MemorialGallery({
                           </div>
 
                           {item.year && (
-                            <span className="text-[10px] font-mono text-[#888] shrink-0">
+                            <span className="text-[9px] sm:text-[10px] font-mono text-[#888] shrink-0">
                               {item.year}
                             </span>
                           )}
@@ -890,6 +941,14 @@ export function MemorialGallery({
                           </div>
                         )}
 
+                        {/* Optimistic Receipt Badge */}
+                        {item.isOptimistic && (
+                          <div className="absolute top-2.5 left-2.5 z-10 inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-950/90 text-emerald-200 text-[10px] font-medium border border-emerald-500/40 shadow-xs backdrop-blur-xs">
+                            <span className="size-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                            <span>Sent to {firstName}&apos;s family</span>
+                          </div>
+                        )}
+
                         {/* Video Duration Badge */}
                         <div className="absolute bottom-2.5 right-2.5 inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-black/75 text-white text-[10px] font-mono backdrop-blur-xs">
                           <Film className="size-2.5" />
@@ -923,6 +982,14 @@ export function MemorialGallery({
                         loading="lazy"
                         className="w-full h-auto object-cover block rounded-2xl transition-transform duration-500 group-hover:scale-[1.02]"
                       />
+
+                      {/* Optimistic Receipt Badge */}
+                      {item.isOptimistic && (
+                        <div className="absolute top-2.5 left-2.5 z-10 inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-950/90 text-emerald-200 text-[10px] font-medium border border-emerald-500/40 shadow-xs backdrop-blur-xs">
+                          <span className="size-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                          <span>Sent to {firstName}&apos;s family</span>
+                        </div>
+                      )}
 
                       {/* Elegant Vignette Gradient & Details on Hover */}
                       <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex flex-col justify-end p-3.5 text-white pointer-events-none">
@@ -1228,6 +1295,14 @@ export function MemorialGallery({
                   </>
                 )}
               </div>
+
+              {/* Optimistic Receipt Indicator */}
+              {selectedItem.isOptimistic && (
+                <div className="mt-1.5 inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-emerald-950/80 text-emerald-200 text-[10px] border border-emerald-500/40">
+                  <span className="size-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                  <span>Sent to {firstName}&apos;s family</span>
+                </div>
+              )}
 
               {/* Separate story if not used as title */}
               {selectedItem.story && selectedItem.title !== selectedItem.story && selectedItem.title !== "Photograph" && (

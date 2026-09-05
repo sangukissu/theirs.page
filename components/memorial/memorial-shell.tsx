@@ -49,6 +49,7 @@ export function MemorialShell({ identity, children }: { identity: MemorialIdenti
           deathYear={identity.deathYear}
           sectionSettings={identity.sectionSettings}
           onOpenContribute={openContribute}
+          hasTopBanner={Boolean(draftPreview)}
         />
         {children}
         <MemorialFooter />
@@ -61,7 +62,20 @@ export function MemorialShell({ identity, children }: { identity: MemorialIdenti
             </Link>
           </div>
         )}
-        <ContributeModal isOpen={isOpen} onClose={closeContribute} onSubmitted={() => router.refresh()} memorialName={identity.fullName} slug={identity.slug} memorialId={identity.id} isPaid={identity.isPaid} photoCount={identity.photoCount} initialType={type} initialPhotoUrl={photoUrl} initialPhotoTitle={photoTitle} />
+        <ContributeModal
+          isOpen={isOpen}
+          onClose={closeContribute}
+          onSubmitted={() => router.refresh()}
+          memorialName={identity.fullName}
+          slug={identity.slug}
+          memorialId={identity.id}
+          isPaid={identity.isPaid}
+          photoCount={identity.photoCount}
+          contributionSettings={identity.contributionSettings}
+          initialType={type}
+          initialPhotoUrl={photoUrl}
+          initialPhotoTitle={photoTitle}
+        />
       </main>
     </MemorialActionsContext.Provider>
   )

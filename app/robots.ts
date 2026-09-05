@@ -4,7 +4,6 @@ import { MetadataRoute } from "next"
 // share links, auth, internal Next assets, admin).
 const PRIVATE_PATHS = [
   "/api/",
-  "/api/memory-books/share/",
   "/dashboard/",
   "/m/",
   "/private/",
@@ -14,7 +13,7 @@ const PRIVATE_PATHS = [
 ]
 
 // Live answer engines: these fetch at query time to build AI answers. Blocking
-// them removes bringback.pro from Perplexity, ChatGPT Search and Claude — where
+// them removes Theirs.page from Perplexity, ChatGPT Search and Claude — where
 // a large share of "how do I add my late father to a photo" demand now lands.
 const GEO_DISCOVERY_BOTS = [
   "OAI-SearchBot",
@@ -76,6 +75,6 @@ export default function robots(): MetadataRoute.Robots {
         disallow: "/",
       })),
     ],
-    sitemap: "https://theirs-page.sangukissu.workers.dev/sitemap.xml",
+    sitemap: "https://theirs.page/sitemap.xml",
   }
 }

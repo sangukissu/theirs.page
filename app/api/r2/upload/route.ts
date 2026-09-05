@@ -9,6 +9,7 @@ import {
   ALLOWED_GUEST_MIME_TYPES,
   MAX_GUEST_UPLOAD_BYTES,
 } from "@/lib/upload-intent"
+import { validateMagicBytes, stripExifAndGps } from "@/lib/safety/moderation"
 
 const R2_PUBLIC_ENDPOINT =
   process.env.R2_MEDIA_ENDPOINT || "https://pub-3511ae96b3594eecbde1632d4cca06b6.r2.dev"
@@ -225,20 +226,40 @@ export async function POST(req: NextRequest) {
 
     // 2. Read file into buffer
     const arrayBuffer = await file.arrayBuffer()
-    const buffer = Buffer.from(arrayBuffer)
+    let buffer: Buffer = Buffer.from(arrayBuffer)
 
-    // 3. Generate clean storage key
+    // 3. Magic bytes validation
+    const validation = validateMagicBytes(buffer, file.name, contentType)
+    if (!validation.valid) {
+      return NextResponse.json(
+        { error: validation.error || "File validation failed. Please upload a valid media file." },
+        { status: 400 }
+      )
+    }
+
+    // 4. Privacy & Safety: Strip EXIF and GPS coordinates for image contributions
+    if (isContribution && validation.mediaType === "image") {
+      buffer = Buffer.from(stripExifAndGps(buffer, validation.detectedMime))
+    }
+
+    // 5. Generate clean storage key
     const timestamp = Date.now()
     const randomId = Math.random().toString(36).substring(2, 9)
     const cleanFilename = file.name.replace(/[^a-zA-Z0-9.-]/g, "_")
     const safeFolder = folder.replace(/[^a-zA-Z0-9_-]/g, "")
 
-    const key = resolvedMemorialId
-      ? `memorials/${resolvedMemorialId}/${safeFolder}/${timestamp}_${randomId}_${cleanFilename}`
-      : `uploads/${user?.id || "guest"}/${safeFolder}/${timestamp}_${randomId}_${cleanFilename}`
+    // Contributions are placed in private quarantine prefix until caretaker approval
+    let key: string
+    if (isContribution && resolvedMemorialId) {
+      key = `quarantine/${resolvedMemorialId}/${safeFolder}/${timestamp}_${randomId}_${cleanFilename}`
+    } else if (resolvedMemorialId) {
+      key = `memorials/${resolvedMemorialId}/${safeFolder}/${timestamp}_${randomId}_${cleanFilename}`
+    } else {
+      key = `uploads/${user?.id || "guest"}/${safeFolder}/${timestamp}_${randomId}_${cleanFilename}`
+    }
 
-    // 4. Upload to Cloudflare R2
-    await putR2Object(key, buffer, contentType, "public, max-age=31536000, immutable")
+    // 6. Upload to Cloudflare R2
+    await putR2Object(key, buffer, validation.detectedMime || contentType, "public, max-age=31536000, immutable")
 
     const publicUrl = `${R2_PUBLIC_ENDPOINT.replace(/\/$/, "")}/${key}`
 
@@ -246,10 +267,11 @@ export async function POST(req: NextRequest) {
       success: true,
       key,
       publicUrl,
-      mediaType,
+      mediaType: validation.mediaType,
       filename: file.name,
-      contentType,
-      size: file.size,
+      contentType: validation.detectedMime || contentType,
+      size: buffer.length,
+      isQuarantined: isContribution,
     })
   } catch (err: any) {
     console.error("Server upload error:", err)

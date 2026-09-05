@@ -22,6 +22,8 @@ import {
   CandleFlameEmblem,
   QuillFeatherEmblem,
 } from "./tribute-emblems"
+import { saveLocalReceipt } from "@/lib/memorial/optimistic-receipts"
+import type { ContributionSettings } from "@/types/theirs"
 
 export type ContributionType = "tribute" | "memory" | "photo" | "moment" | "voice" | "video" | "message"
 export type TributeRitual = "flower" | "candle" | "note"
@@ -34,6 +36,7 @@ interface ContributeModalProps {
   memorialId?: string
   isPaid?: boolean
   photoCount?: number
+  contributionSettings?: ContributionSettings | null
   initialType?: ContributionType | null
   initialPhotoUrl?: string | null
   initialPhotoTitle?: string | null
@@ -48,6 +51,7 @@ export function ContributeModal({
   memorialId,
   isPaid = false,
   photoCount = 0,
+  contributionSettings,
   initialType = null,
   initialPhotoUrl = null,
   initialPhotoTitle = null,
@@ -79,6 +83,8 @@ export function ContributeModal({
   const isPhotosFull = !isPaid && (photoCount ?? 0) >= 5
   const firstName = memorialName.split(" ")[0] || memorialName
 
+  const allContributionsDisabled = contributionSettings?.accept_contributions === false
+
   const allContributionOptions = [
     {
       type: "tribute" as const,
@@ -86,7 +92,7 @@ export function ContributeModal({
       title: "Leave a Tribute",
       desc: "Lay a flower, light a candle, or leave a quiet note of remembrance.",
       color: "text-primary bg-primary/5",
-      available: true,
+      available: !allContributionsDisabled && contributionSettings?.tributes !== false,
     },
     {
       type: "memory" as const,
@@ -94,7 +100,7 @@ export function ContributeModal({
       title: "Share a memory",
       desc: `An anecdote, a shared story, or a reflection about ${firstName}.`,
       color: "text-primary bg-primary/5",
-      available: true,
+      available: !allContributionsDisabled && contributionSettings?.memories !== false,
     },
     {
       type: "photo" as const,
@@ -102,7 +108,7 @@ export function ContributeModal({
       title: "Share a photograph",
       desc: "Photographs the family and friends may cherish.",
       color: "text-primary bg-primary/5",
-      available: !isPhotosFull,
+      available: !allContributionsDisabled && !isPhotosFull && contributionSettings?.photos !== false,
     },
     {
       type: "voice" as const,
@@ -110,7 +116,7 @@ export function ContributeModal({
       title: "Share a voice note",
       desc: "A voicemail or spoken story worth keeping forever.",
       color: "text-primary bg-primary/5",
-      available: Boolean(isPaid),
+      available: !allContributionsDisabled && Boolean(isPaid) && contributionSettings?.voice !== false,
     },
     {
       type: "video" as const,
@@ -118,7 +124,7 @@ export function ContributeModal({
       title: "Share a video clip",
       desc: "Home movies, celebrations, or recorded messages.",
       color: "text-primary bg-primary/5",
-      available: Boolean(isPaid),
+      available: !allContributionsDisabled && Boolean(isPaid) && contributionSettings?.videos !== false,
     },
   ]
 
@@ -327,6 +333,26 @@ export function ContributeModal({
         throw new Error(data.error || "Failed to submit contribution")
       }
 
+      if (data.item && data.receipt_token) {
+        saveLocalReceipt(slug || memorialId || "", {
+          id: data.item.id,
+          receipt_token: data.receipt_token,
+          memorial_slug: slug,
+          memorial_id: memorialId,
+          author_name: data.item.author_name,
+          author_relationship: data.item.author_relationship,
+          story: data.item.story,
+          approx_year: data.item.approx_year,
+          location: data.item.location,
+          photo_url: data.item.photo_url,
+          photo_urls: data.item.photo_urls,
+          tribute_type: data.item.tribute_type,
+          contribution_type: data.item.contribution_type,
+          status: data.item.status,
+          created_at: data.item.created_at || new Date().toISOString(),
+        })
+      }
+
       setIsSubmitted(true)
       onSubmitted?.()
     } catch (err: any) {
@@ -431,17 +457,39 @@ export function ContributeModal({
 
                   <div className="flex flex-col gap-1.5">
                     <h3 className="text-xl font-medium text-[#181925]">
-                      Thank you for remembering
+                      Added. Thank you for remembering {firstName}.
                     </h3>
                     <p className="text-xs sm:text-sm text-[#666] max-w-sm leading-relaxed">
-                      Your contribution has been safely received for {memorialName}&apos;s Memorial. It will appear here once the caretaker reviews it.
+                      Your remembrance has been added to your view and sent to {firstName}&apos;s family.
                     </p>
+                    <div className="mt-2 inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-neutral-100 text-[11px] text-[#71717a] font-medium mx-auto">
+                      <span className="size-1.5 rounded-full bg-emerald-500" />
+                      <span>Sent to {firstName}&apos;s family</span>
+                    </div>
                   </div>
 
                   <button
                     type="button"
                     onClick={handleReset}
-                    className="mt-4 px-6 py-2.5 rounded-full bg-neutral-100 hover:bg-neutral-200 text-xs font-medium text-[#181925] transition-colors cursor-pointer"
+                    className="mt-4 px-6 py-2.5 rounded-full bg-[#181925] hover:bg-black text-xs font-medium text-white transition-colors cursor-pointer"
+                  >
+                    Done
+                  </button>
+                </div>
+              ) : allContributionsDisabled ? (
+                /* CONTRIBUTIONS DISABLED STATE */
+                <div className="py-12 flex flex-col items-center text-center gap-3">
+                  <div className="size-12 rounded-full bg-neutral-100 text-neutral-500 flex items-center justify-center">
+                    <Heart className="size-5" />
+                  </div>
+                  <h3 className="text-lg font-medium text-[#181925]">Contributions are paused</h3>
+                  <p className="text-xs text-[#666] max-w-xs leading-relaxed">
+                    The family is not currently accepting public tributes or memories for {firstName}&apos;s memorial.
+                  </p>
+                  <button
+                    type="button"
+                    onClick={handleReset}
+                    className="mt-4 px-5 py-2 rounded-full bg-neutral-100 hover:bg-neutral-200 text-xs font-medium text-[#181925] transition-colors cursor-pointer"
                   >
                     Close
                   </button>

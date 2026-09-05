@@ -9,7 +9,7 @@ import { Navbar } from "@/components/landing/Navbar"
 import { Footer } from "@/components/landing/Footer"
 import CompareLayout from "@/components/pages/compare-layout"
 
-const SITE_URL = "https://theirs-page.sangukissu.workers.dev"
+const SITE_URL = "https://theirs.page"
 
 function comparePath(page: ComparePageData) {
   return `/compare/${page.slug}`
@@ -153,18 +153,18 @@ export default async function ComparePage({
   const faqLd =
     page.faqs.length > 0
       ? {
-          "@context": "https://schema.org",
-          "@type": "FAQPage",
-          "@id": `${url}#faq`,
-          mainEntity: page.faqs.map((faq) => ({
-            "@type": "Question",
-            name: faq.q,
-            acceptedAnswer: {
-              "@type": "Answer",
-              text: stripMdLinks(faq.a),
-            },
-          })),
-        }
+        "@context": "https://schema.org",
+        "@type": "FAQPage",
+        "@id": `${url}#faq`,
+        mainEntity: page.faqs.map((faq) => ({
+          "@type": "Question",
+          name: faq.q,
+          acceptedAnswer: {
+            "@type": "Answer",
+            text: stripMdLinks(faq.a),
+          },
+        })),
+      }
       : null
 
   return (

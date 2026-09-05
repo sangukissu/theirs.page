@@ -14,6 +14,7 @@ interface MemorialNavProps {
   deathYear?: number | null
   sectionSettings?: SectionSettings | null
   onOpenContribute: (type?: ContributionType) => void
+  hasTopBanner?: boolean
 }
 
 export function MemorialNav({
@@ -23,6 +24,7 @@ export function MemorialNav({
   deathYear: _deathYear,
   sectionSettings,
   onOpenContribute,
+  hasTopBanner = false,
 }: MemorialNavProps) {
   const pathname = usePathname()
   const searchParams = useSearchParams()
@@ -94,7 +96,7 @@ export function MemorialNav({
 
   return (
     <>
-      <nav className="fixed top-3 inset-x-0 z-40 flex justify-center px-2.5 sm:px-4 pointer-events-none">
+      <nav className={`fixed ${hasTopBanner ? "top-11 sm:top-12" : "top-3"} inset-x-0 z-40 flex justify-center px-2.5 sm:px-4 pointer-events-none transition-all`}>
         <div className="pointer-events-auto flex items-center justify-between gap-1 sm:gap-3 px-2.5 sm:px-4 py-1.5 rounded-full bg-white/90 backdrop-blur-xl border border-black/[0.08] shadow-[0_4px_24px_rgba(0,0,0,0.06)] max-w-xl w-full transition-all">
           <Link
             href={withPreview(rootPath)}

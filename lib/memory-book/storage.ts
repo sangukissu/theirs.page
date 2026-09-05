@@ -12,7 +12,7 @@ function extensionFromContentType(contentType: string | null, locator: string) {
   if (contentType?.includes("webp")) return ".webp"
   if (contentType?.includes("jpeg") || contentType?.includes("jpg")) return ".jpg"
   if (contentType?.includes("mp4")) return ".mp4"
-  return extname(new URL(locator, "https://theirs-page.sangukissu.workers.dev").pathname) || ".bin"
+  return extname(new URL(locator, "https://theirs.page").pathname) || ".bin"
 }
 
 export function memoryBookAssetKey(input: {

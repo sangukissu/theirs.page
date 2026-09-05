@@ -197,8 +197,8 @@ export const compareData: Record<string, ComparePageData> = {
     niche: "restoration",
     lastUpdated: "2026-08-12",
     readingMinutes: 13,
-    ctaLink: "https://theirs-page.sangukissu.workers.dev/old-photo-restoration",
-    ctaLink2: "https://theirs-page.sangukissu.workers.dev/login",
+    ctaLink: "https://theirs.page/old-photo-restoration",
+    ctaLink2: "https://theirs.page/login",
     meta: {
       title: "Remini Alternative for Old Family Photos (No Weekly Sub) | BringBack",
       description: "Compare Remini’s mobile subscription experience with BringBack’s web-based old-photo restoration, one-time credits, side-by-side review, and optional animation.",
@@ -417,8 +417,8 @@ export const compareData: Record<string, ComparePageData> = {
     "niche": "restoration",
     "lastUpdated": "2026-08-12",
     "readingMinutes": 14,
-    "ctaLink": "https://theirs-page.sangukissu.workers.dev/old-photo-restoration",
-    "ctaLink2": "https://theirs-page.sangukissu.workers.dev/login",
+    "ctaLink": "https://theirs.page/old-photo-restoration",
+    "ctaLink2": "https://theirs.page/login",
     "meta": {
       "title": "VanceAI Alternative for Old Family Photos (Credits Never Expire) | BringBack",
       "description": "Looking for a VanceAI alternative for old photo restoration without subscription stress? BringBack uses one-time credits that never expire, identity-first restore, and animation—not a multi-tool image suite.",
@@ -648,12 +648,12 @@ export const compareData: Record<string, ComparePageData> = {
     "slug": "nero-ai-alternative",
     "competitor": "Nero AI",
     "niche": "restoration",
-    "ctaLink": "https://theirs-page.sangukissu.workers.dev/old-photo-restoration",
-    "ctaLink2": "https://theirs-page.sangukissu.workers.dev/login",
+    "ctaLink": "https://theirs.page/old-photo-restoration",
+    "ctaLink2": "https://theirs.page/login",
     "meta": {
       "title": "Best Nero AI Alternative for Photo Restoration 2026 | BringBack AI",
       "description": "Looking for a Nero AI alternative without confusing credit consumption or heavy PC software? BringBack AI is the dedicated web restorer for historical family photos.",
-      "keywords":["nero ai alternative", "nero vs bringback", "apps like nero ai", "nero ai photo restoration alternative", "nero image upscaler alternative", "restore old photos without nero"]
+      "keywords": ["nero ai alternative", "nero vs bringback", "apps like nero ai", "nero ai photo restoration alternative", "nero image upscaler alternative", "restore old photos without nero"]
     },
     "hero": {
       "h1": "A dedicated Nero AI alternative for family history.",
@@ -707,10 +707,10 @@ export const compareData: Record<string, ComparePageData> = {
     },
     "matrix": {
       "description": "Comparing BringBack AI to Nero AI highlights the difference between a 'general purpose software company' and a 'specialized family history studio'.",
-      "rows":[
+      "rows": [
         { "feature": "Core AI Focus", "competitor": "E-commerce, Anime & Game Art", "bringBack": "Genealogy & Historical portraits", "winner": "bringBack" },
         { "feature": "Workflow & Platform", "competitor": "Pushes heavy Windows desktop apps", "bringBack": "Lightweight, zero-install Web App", "winner": "bringBack" },
-         { "feature": "Pricing Model", "competitor": "Subscriptions ($9.95/mo) or $50+ Desktop SKUs", "bringBack": "One-time credit packs from $4.99", "winner": "bringBack" },
+        { "feature": "Pricing Model", "competitor": "Subscriptions ($9.95/mo) or $50+ Desktop SKUs", "bringBack": "One-time credit packs from $4.99", "winner": "bringBack" },
         { "feature": "Facial Accuracy", "competitor": "Generic upscaling (can look 'plastic')", "bringBack": "Identity-preserving diffusion models", "winner": "bringBack" },
         { "feature": "Animation Integration", "competitor": "No native photo animation", "bringBack": "Built-in cinematic face animation", "winner": "bringBack" },
         { "feature": "Credit Consumption", "competitor": "Variable (1 to 2 credits per action)", "bringBack": "Simple, transparent 1-credit system", "winner": "bringBack" },
@@ -720,16 +720,16 @@ export const compareData: Record<string, ComparePageData> = {
     },
     "aboutCompetitor": {
       "title": "About Nero AI",
-      "content":[
+      "content": [
         "Nero is a legacy software company (famous for Nero Burning ROM) that has aggressively pivoted into artificial intelligence. Today, Nero AI offers a massive suite of tools ranging from PC performance benchmarking to anime generators and background removers.",
         "Their primary strength lies in their 'Image Upscaler', which is heavily marketed toward e-commerce sellers, real estate agents, and digital artists who need to increase image resolution up to 16K. While they offer a web version, they heavily push users toward purchasing their $49.95+ Windows desktop software to utilize local PC GPU processing."
       ],
-      "pros":[
+      "pros": [
         "Excellent at upscaling modern product photos and game art",
         "Offers downloadable Windows software for offline batch processing",
         "Massive suite of tools including PC benchmarking and photo tagging"
       ],
-      "cons":[
+      "cons": [
         "General-purpose AI training often creates 'plastic' or unnatural faces on historical photos",
         "Web pricing model is complex with varying credit costs per action",
         "Desktop software requires a powerful, modern Windows PC to run efficiently",
@@ -738,11 +738,11 @@ export const compareData: Record<string, ComparePageData> = {
     },
     "whySwitch": {
       "title": "Why people switch from Nero AI to BringBack AI",
-      "intro":[
+      "intro": [
         "People searching for a Nero AI alternative usually encounter the 'Jack of all Trades' problem. Because Nero's AI is trained to upscale everything from anime to real estate, its models apply modern digital smoothing to historical photography. This strips away the character, film grain, and unique identity of the ancestors in the photo.",
         "BringBack AI was engineered specifically for family historians. We do not do anime. We do not do e-commerce. We do authentic, respectful preservation."
       ],
-      "points":[
+      "points": [
         {
           "title": "The 'Identity Drift' Problem",
           "description": "Broad multi-tool upscalers often optimize for a polished modern look, which can smooth age and film character out of historical faces. BringBack prioritizes identity-preserving restore—always compare the result to the original before sharing or printing."
@@ -763,7 +763,7 @@ export const compareData: Record<string, ComparePageData> = {
     },
     "whichToChoose": {
       "bringBackTitle": "Pick BringBack AI if",
-      "bringBackPoints":[
+      "bringBackPoints": [
         "You are restoring irreplaceable historical family photos",
         "You want authentic, identity-accurate facial reconstruction",
         "You want to animate your photos after restoring them",
@@ -771,7 +771,7 @@ export const compareData: Record<string, ComparePageData> = {
         "You want a simple, transparent one-time payment"
       ],
       "competitorTitle": "Pick Nero AI if",
-      "competitorPoints":[
+      "competitorPoints": [
         "You need to batch-upscale 100+ e-commerce product shots",
         "You specifically want to run AI locally on your Windows GPU",
         "You are upscaling digital game art or anime illustrations",
@@ -780,7 +780,7 @@ export const compareData: Record<string, ComparePageData> = {
     },
     "finalThoughts": {
       "title": "Final thoughts",
-      "content":[
+      "content": [
         "Nero AI is a powerful piece of technology for digital marketers, artists, and real estate professionals. If you need to make a blurry product photo look sharp for Amazon, Nero's AI Image Upscaler is highly effective.",
         "However, family memories require a different kind of care. When you are trying to recover the only existing photograph of your great-grandparents, you don't want a generic upscaler that turns them into a digital painting. BringBack AI offers superior, purpose-built restoration technology designed entirely for preserving the emotional and historical integrity of your legacy."
       ]
@@ -788,7 +788,7 @@ export const compareData: Record<string, ComparePageData> = {
     "howToSwitch": {
       "title": "How to restore photos with BringBack AI in 60 seconds",
       "description": "Switching from heavy desktop software to our web-based platform is frictionless. No downloads, no GPU requirements, no subscriptions.",
-      "steps":[
+      "steps": [
         {
           "stepNumber": 1,
           "title": "Upload directly in your browser",
@@ -809,7 +809,7 @@ export const compareData: Record<string, ComparePageData> = {
     "semanticCapabilities": {
       "title": "Purpose-built to fix real historical damage",
       "description": "Generic upscalers like Nero AI are trained on modern digital data sets. BringBack AI’s diffusion models are trained on authentic historical damage, including:",
-      "capabilities":[
+      "capabilities": [
         "Severe water damage, mold stains, and 'foxing'",
         "Deep physical scratches and torn paper edges",
         "Faded Sepia tones and chemical silvering",
@@ -820,7 +820,7 @@ export const compareData: Record<string, ComparePageData> = {
     "uniqueAdvantage": {
       "title": "Beyond Restoration: Bring your ancestors to life",
       "description": "Nero AI stops at sharpening static pixels. BringBack takes your family history a step further with our photo animation tools.",
-      "features":[
+      "features": [
         {
           "heading": "Cinematic Motion",
           "text": "Turn a static 1920s portrait into a moving, smiling video. Watch your ancestors look around and smile with stunning realism."
@@ -835,7 +835,7 @@ export const compareData: Record<string, ComparePageData> = {
       "title": "How we compared BringBack to Nero AI",
       "content": COMPARE_CLAIM.methodologyNote
     },
-    "faqs":[
+    "faqs": [
       { "q": "Do I need a powerful Windows PC to use BringBack?", "a": "No. Unlike Nero AI's desktop software, BringBack processes everything on our enterprise cloud servers. You can use it on any Mac, PC, or mobile browser." },
       { "q": "Is BringBack a subscription service like Nero's web app?", "a": "No. BringBack is strictly pay-as-you-go. You purchase a credit pack, use it at your own pace, and your credits never expire. There are no recurring monthly charges." },
       { "q": "Why do faces look more natural on BringBack than Nero AI?", "a": "Nero's AI is trained broadly on modern images, e-commerce, and anime, which can cause 'over-smoothing'. BringBack is specifically engineered on historical data to preserve authentic textures and paper grain." },
@@ -852,12 +852,12 @@ export const compareData: Record<string, ComparePageData> = {
     "slug": "jpghd-alternative",
     "competitor": "JPGHD",
     "niche": "restoration",
-    "ctaLink": "https://theirs-page.sangukissu.workers.dev/old-photo-restoration",
-    "ctaLink2": "https://theirs-page.sangukissu.workers.dev/login",
+    "ctaLink": "https://theirs.page/old-photo-restoration",
+    "ctaLink2": "https://theirs.page/login",
     "meta": {
       "title": "Best JPGHD Alternative for Photo Restoration 2026 | BringBack AI",
       "description": "Looking for a JPGHD alternative with modern 2026 AI models and superior facial animation? BringBack AI offers premium historical photo restoration with strict data privacy.",
-      "keywords":["jpghd alternative", "jpghd photo alternative", "jpghd photo restoration alternative", "apps like jpghd", "restore old photos without jpghd", "jpghd vs bringback"]
+      "keywords": ["jpghd alternative", "jpghd photo alternative", "jpghd photo restoration alternative", "apps like jpghd", "restore old photos without jpghd", "jpghd vs bringback"]
     },
     "hero": {
       "h1": "A modern, premium JPGHD alternative for historical photos.",
@@ -909,7 +909,7 @@ export const compareData: Record<string, ComparePageData> = {
     },
     "matrix": {
       "description": "When comparing BringBack AI to JPGHD, the differences are most apparent in the generation of the AI models used, the quality of the animation, and data security.",
-      "rows":[
+      "rows": [
         { "feature": "AI Technology Engine", "competitor": "General-purpose enhancement pipeline", "bringBack": "Identity-first restoration workflow", "winner": "bringBack" },
         { "feature": "Animation Quality", "competitor": "Basic 'Magic Photo' warping", "bringBack": "Cinematic, artifact-free motion", "winner": "bringBack" },
         { "feature": "Colorization Accuracy", "competitor": "Basic tinting (often muddy)", "bringBack": "Careful palette mapping", "winner": "bringBack" },
@@ -922,16 +922,16 @@ export const compareData: Record<string, ComparePageData> = {
     },
     "aboutCompetitor": {
       "title": "About JPGHD",
-      "content":[
+      "content": [
         "JPGHD is a veteran utility in the AI photo enhancement space. It was one of the earlier platforms to offer lossless restoration, colorization, and a feature called 'Magic Photo' to animate faces. It utilizes early-generation AI models to upscale low-resolution images and repair basic damage.",
         "While JPGHD paved the way for online photo restoration, its core technology has not evolved as rapidly as the broader AI industry. The results often display the hallmarks of aggressive general-purpose enhancement rather than identity-first historical restoration. "
       ],
-      "pros":[
+      "pros": [
         "Offers a functional all-in-one suite (upscale, colorize, animate)",
         "Straightforward, no-frills utilitarian interface",
         "Capable of handling basic digital upscaling efficiently"
       ],
-      "cons":[
+      "cons": [
         "Older AI models often result in 'muddy' colors or plastic-looking faces",
         "'Magic Photo' animation can cause severe background warping and unnatural expressions",
         "Push toward subscriptions with expiring credits",
@@ -940,11 +940,11 @@ export const compareData: Record<string, ComparePageData> = {
     },
     "whySwitch": {
       "title": "Why people switch from JPGHD to BringBack AI",
-      "intro":[
+      "intro": [
         "Users seeking a JPGHD alternative are usually hitting the ceiling of what older AI technology can achieve. When dealing with precious family history, 'good enough' upscaling isn't acceptable. You need precision.",
         "BringBack AI represents the next generation of restoration. We abandoned the older, smoothing-heavy models in favor of advanced 2026 diffusion networks that actually understand human anatomy, historical film grain, and realistic motion."
       ],
-      "points":[
+      "points": [
         {
           "title": "Escaping the 'Painted' Look",
           "description": "JPGHD's older algorithms often 'guess' missing data by blurring and smoothing it, making your ancestors look like oil paintings. BringBack AI preserves the actual photographic emulsion, film grain, and skin pores so the image remains a true photograph."
@@ -965,7 +965,7 @@ export const compareData: Record<string, ComparePageData> = {
     },
     "whichToChoose": {
       "bringBackTitle": "Pick BringBack AI if",
-      "bringBackPoints":[
+      "bringBackPoints": [
         "You want modern 2026 AI restoration without the 'painted' look",
         "You want artifact-free, cinematic facial animation",
         "You demand careful, vibrant colorization",
@@ -973,7 +973,7 @@ export const compareData: Record<string, ComparePageData> = {
         "You demand account-controlled media and clear privacy policy"
       ],
       "competitorTitle": "Pick JPGHD if",
-      "competitorPoints":[
+      "competitorPoints": [
         "You are familiar with their legacy interface and prefer it",
         "You only need basic, low-level upscaling for digital images",
         "You are not concerned with advanced animation realism",
@@ -982,7 +982,7 @@ export const compareData: Record<string, ComparePageData> = {
     },
     "finalThoughts": {
       "title": "Final thoughts",
-      "content":[
+      "content": [
         "JPGHD deserves credit as an early pioneer in making AI photo enhancement accessible via the web. If you just need to quickly upscale a basic digital image, it still gets the job done.",
         "However, the AI landscape has shifted dramatically. Preserving your family legacy requires technology that respects the original artifact. BringBack AI's modern diffusion models, highly accurate colorization, and flawless animation engine provide a significantly higher tier of quality that your family's history deserves."
       ]
@@ -990,7 +990,7 @@ export const compareData: Record<string, ComparePageData> = {
     "howToSwitch": {
       "title": "How to restore photos with BringBack AI in 60 seconds",
       "description": "Switching from a legacy tool to our modern platform is frictionless. No subscriptions, no outdated interfaces.",
-      "steps":[
+      "steps": [
         {
           "stepNumber": 1,
           "title": "Upload your scanned photo",
@@ -1011,7 +1011,7 @@ export const compareData: Record<string, ComparePageData> = {
     "semanticCapabilities": {
       "title": "Purpose-built to fix real historical damage",
       "description": "Legacy upscalers like JPGHD struggle with complex physical damage. BringBack AI’s diffusion models are trained on authentic historical degradation, including:",
-      "capabilities":[
+      "capabilities": [
         "Severe water damage, mold spotting, and 'foxing'",
         "Deep physical scratches and jagged, torn paper edges",
         "Faded Sepia tones and yellowing UV damage",
@@ -1022,7 +1022,7 @@ export const compareData: Record<string, ComparePageData> = {
     "uniqueAdvantage": {
       "title": "Subtle, Respectful Animation",
       "description": "While JPGHD offers a basic 'Magic Photo' feature, BringBack elevates animation to a cinematic standard.",
-      "features":[
+      "features": [
         {
           "heading": "Lifelike Motion without Warping",
           "text": "Turn a static portrait into a moving video. Our AI isolates the subject so the background doesn't bend or warp when the person moves."
@@ -1037,7 +1037,7 @@ export const compareData: Record<string, ComparePageData> = {
       "title": "How we compared BringBack to JPGHD",
       "content": COMPARE_CLAIM.methodologyNote
     },
-    "faqs":[
+    "faqs": [
       { "q": "Do I need to download an app to use BringBack?", "a": "No. BringBack is a powerful, entirely web-based platform. You can access it from any browser on your PC, Mac, or mobile device without installing anything." },
       { "q": "Is BringBack's animation better than JPGHD's Magic Photo?", "a": "Yes. JPGHD's older animation engine often warps the image background and distorts head shapes. BringBack uses advanced 2026 face-mapping to create natural, cinematic motion without artifacts." },
       { "q": "How does BringBack handle severely damaged photos compared to JPGHD?", "a": "Unlike legacy upscalers that just blur over scratches, BringBack utilizes advanced diffusion models specifically trained to understand and structurally repair severe scratches, tears, and heavy fading." },
@@ -1054,12 +1054,12 @@ export const compareData: Record<string, ComparePageData> = {
     "slug": "phowd-alternative",
     "competitor": "Phowd",
     "niche": "restoration",
-    "ctaLink": "https://theirs-page.sangukissu.workers.dev/old-photo-restoration",
-    "ctaLink2": "https://theirs-page.sangukissu.workers.dev/login",
+    "ctaLink": "https://theirs.page/old-photo-restoration",
+    "ctaLink2": "https://theirs.page/login",
     "meta": {
       "title": "Best Phowd Alternative for Photo Restoration 2026 | BringBack AI",
       "description": "Tired of waiting days and paying premium freelance rates on Phowd? BringBack AI restores your old family photos instantly and privately for pennies.",
-      "keywords":["phowd alternative", "apps like phowd", "phowd ai photo restoration alternative", "sites like phowd", "phowd vs bringback", "instant photo restoration"]
+      "keywords": ["phowd alternative", "apps like phowd", "phowd ai photo restoration alternative", "sites like phowd", "phowd vs bringback", "instant photo restoration"]
     },
     "hero": {
       "h1": "The instant, private Phowd alternative for old photos.",
@@ -1112,7 +1112,7 @@ export const compareData: Record<string, ComparePageData> = {
     },
     "matrix": {
       "description": "Comparing BringBack AI to Phowd is a comparison between automated, private AI and a crowdsourced human freelance marketplace. Here is how they stack up.",
-      "rows":[
+      "rows": [
         { "feature": "Processing Time", "competitor": "Days or weeks", "bringBack": "Under 60 seconds", "winner": "bringBack" },
         { "feature": "Cost per Photo", "competitor": "Typically $5.00 - $20.00+", "bringBack": "From ~$0.37/restore (Family Pack)", "winner": "bringBack" },
         { "feature": "Data Privacy", "competitor": "Downloaded by freelance retouchers", "bringBack": "Generated media stays until you delete it; no public model training on family photos", "winner": "bringBack" },
@@ -1125,16 +1125,16 @@ export const compareData: Record<string, ComparePageData> = {
     },
     "aboutCompetitor": {
       "title": "About Phowd",
-      "content":[
+      "content": [
         "Phowd operates differently from standard AI apps; it is a crowdsourced marketplace for photo retouching. Users upload a damaged photo, set a price (a 'bounty'), and human retouchers from around the world download the image, edit it manually using software like Photoshop, and submit their versions. You then pay for the one you like best.",
         "While this allows for highly customized, human-driven edits, it is inherently slow and expensive. Because you are paying for human labor, simple restorations can cost upwards of $10 to $20 per image, and the process can take several days depending on the freelancers' availability."
       ],
-      "pros":[
+      "pros": [
         "Real human retouchers can make subjective, artistic decisions",
         "You can request highly specific bespoke alterations (e.g., 'remove this person')",
         "Multiple retouchers submit variations for you to choose from"
       ],
-      "cons":[
+      "cons": [
         "Extremely slow turnaround times compared to instant AI",
         "High cost per photo due to manual freelance labor",
         "Significant privacy concerns: your family photos are downloaded to strangers' personal computers",
@@ -1143,11 +1143,11 @@ export const compareData: Record<string, ComparePageData> = {
     },
     "whySwitch": {
       "title": "Why people switch from Phowd to BringBack AI",
-      "intro":[
+      "intro": [
         "People transitioning away from Phowd generally cite three major pain points: wait times, high costs, and privacy. Restoring a box of 50 family photos on a freelance platform could take months and cost hundreds of dollars.",
         "BringBack AI replaces the manual freelance workflow with state-of-the-art 2026 diffusion models. We deliver results that rival professional human retouchers, but we do it instantly, securely, and for pennies."
       ],
-      "points":[
+      "points": [
         {
           "title": "Instant Results vs. Days of Waiting",
           "description": "On Phowd, you must post your photo, wait for retouchers to find it, and wait days for them to manually edit it. BringBack AI processes your image and delivers high-resolution, careful restoration in less than 60 seconds."
@@ -1168,7 +1168,7 @@ export const compareData: Record<string, ComparePageData> = {
     },
     "whichToChoose": {
       "bringBackTitle": "Pick BringBack AI if",
-      "bringBackPoints":[
+      "bringBackPoints": [
         "You want your photos restored in seconds, not days",
         "You have a large batch of photos and need an affordable solution",
         "You demand strict data privacy and zero human involvement",
@@ -1176,7 +1176,7 @@ export const compareData: Record<string, ComparePageData> = {
         "You want consistent, careful results"
       ],
       "competitorTitle": "Pick Phowd if",
-      "competitorPoints":[
+      "competitorPoints": [
         "You need a highly subjective, artistic digital painting",
         "You want to specifically instruct a human to add/remove complex objects",
         "You have the budget to pay premium freelance rates",
@@ -1185,7 +1185,7 @@ export const compareData: Record<string, ComparePageData> = {
     },
     "finalThoughts": {
       "title": "Final thoughts",
-      "content":[
+      "content": [
         "Phowd is an interesting platform if you have a single, highly complex creative request that requires a human artist's interpretation. The freelance community there is talented.",
         "However, for standard historical preservation, damage repair, and colorization, the manual freelance model is outdated. BringBack AI harnesses the power of 2026 diffusion technology to give you professional-grade results instantly. By eliminating the middleman, we save you time, protect your privacy, and keep your restoration project affordable."
       ]
@@ -1193,7 +1193,7 @@ export const compareData: Record<string, ComparePageData> = {
     "howToSwitch": {
       "title": "How to restore photos with BringBack AI in 60 seconds",
       "description": "Skip the freelance bidding wars. Switch to instant, private AI restoration.",
-      "steps":[
+      "steps": [
         {
           "stepNumber": 1,
           "title": "Upload your scanned photo",
@@ -1214,7 +1214,7 @@ export const compareData: Record<string, ComparePageData> = {
     "semanticCapabilities": {
       "title": "Purpose-built to fix real historical damage",
       "description": "BringBack AI achieves what used to take a human retoucher hours in Photoshop. We automatically fix:",
-      "capabilities":[
+      "capabilities": [
         "Severe water damage, mold stains, and 'foxing'",
         "Deep physical scratches, creases, and torn paper edges",
         "Faded Sepia tones and yellowing UV damage",
@@ -1225,7 +1225,7 @@ export const compareData: Record<string, ComparePageData> = {
     "uniqueAdvantage": {
       "title": "Subtle, Respectful Animation",
       "description": "Freelance retouchers on crowdsourced platforms generally deal only with static images. BringBack takes your family history further.",
-      "features":[
+      "features": [
         {
           "heading": "Lifelike Cinematic Motion",
           "text": "Turn a static historical portrait into a moving video instantly. Watch your ancestors smile, blink, and look around."
@@ -1240,7 +1240,7 @@ export const compareData: Record<string, ComparePageData> = {
       "title": "How we compared BringBack to Phowd",
       "content": "To provide an objective comparison, we evaluated the core differences between a crowdsourced freelance marketplace (Phowd) and an automated AI platform (BringBack). We reviewed user turnaround times, the financial cost of posting bounties vs. purchasing AI credits, and the inherent data privacy differences between distributing files to independent freelancers versus using secured, auto-deleting cloud servers. The data on this page reflects platform models and pricing parity as of Q2 2026."
     },
-    "faqs":[
+    "faqs": [
       { "q": "Do human retouchers look at my photos on BringBack?", "a": "No. Unlike Phowd, BringBack is entirely automated by AI. No human eyes ever see your private family photographs." },
       { "q": "Is BringBack faster than using Phowd?", "a": "Yes. Phowd relies on freelancers, which can take days. BringBack processes and restores your images in under 60 seconds." },
       { "q": "How does the cost compare?", "a": "Posting a bounty on Phowd typically costs between $5 and $20+ per photo. BringBack uses one-time credit packs ($4.99/4, $9.99/20, $21.99/60) at 1 credit per restore—about $0.37 each on the Family Pack." },
@@ -1259,8 +1259,8 @@ export const compareData: Record<string, ComparePageData> = {
     "niche": "restoration",
     "lastUpdated": "2026-08-12",
     "readingMinutes": 13,
-    "ctaLink": "https://theirs-page.sangukissu.workers.dev/old-photo-restoration",
-    "ctaLink2": "https://theirs-page.sangukissu.workers.dev/login",
+    "ctaLink": "https://theirs.page/old-photo-restoration",
+    "ctaLink2": "https://theirs.page/login",
     "meta": {
       "title": "EaseUS Photo Restoration Alternative for Family Photos | BringBack",
       "description": "Compare EaseUS online old-photo restoration and Fixo file repair with BringBack’s family-photo workflow, one-time credits, restoration, portraits, and animation.",
@@ -1488,8 +1488,8 @@ export const compareData: Record<string, ComparePageData> = {
     "niche": "restoration",
     "lastUpdated": "2026-08-12",
     "readingMinutes": 14,
-    "ctaLink": "https://theirs-page.sangukissu.workers.dev/old-photo-restoration",
-    "ctaLink2": "https://theirs-page.sangukissu.workers.dev/login",
+    "ctaLink": "https://theirs.page/old-photo-restoration",
+    "ctaLink2": "https://theirs.page/login",
     "meta": {
       "title": "PixelBin Alternative for Family Photos (No Subscription) | BringBack",
       "description": "PixelBin (pixelbin.io) is a Fynd image platform for developers and teams. BringBack is the consumer alternative for old family photo restoration with one-time credits that never expire.",
@@ -1716,12 +1716,12 @@ export const compareData: Record<string, ComparePageData> = {
     "slug": "airbrush-alternative",
     "competitor": "Airbrush",
     "niche": "restoration",
-    "ctaLink": "https://theirs-page.sangukissu.workers.dev/old-photo-restoration",
-    "ctaLink2": "https://theirs-page.sangukissu.workers.dev/login",
+    "ctaLink": "https://theirs.page/old-photo-restoration",
+    "ctaLink2": "https://theirs.page/login",
     "meta": {
       "title": "Best Airbrush Alternative for Photo Restoration 2026 | BringBack AI",
       "description": "Tired of Airbrush applying modern beauty filters to your historical family photos? BringBack AI is the premium alternative for authentic, identity-preserving restoration.",
-      "keywords":["airbrush alternative", "airbrush photo restoration alternative", "apps like airbrush for old photos", "airbrush vs bringback", "restore old photos without airbrush", "airbrush app alternative"]
+      "keywords": ["airbrush alternative", "airbrush photo restoration alternative", "apps like airbrush for old photos", "airbrush vs bringback", "restore old photos without airbrush", "airbrush app alternative"]
     },
     "hero": {
       "h1": "The Airbrush alternative built for history, not selfies.",
@@ -1772,7 +1772,7 @@ export const compareData: Record<string, ComparePageData> = {
     },
     "matrix": {
       "description": "Comparing BringBack AI to Airbrush highlights the massive difference between a 'selfie beauty camera' and a 'historical preservation studio'.",
-      "rows":[
+      "rows": [
         { "feature": "AI Model Training", "competitor": "Modern selfies & beauty standards", "bringBack": "Historical photography & authentic textures", "winner": "bringBack" },
         { "feature": "Facial Processing", "competitor": "Aggressive skin smoothing & makeup", "bringBack": "Identity and micro-expression preservation", "winner": "bringBack" },
         { "feature": "Platform & Workflow", "competitor": "Mobile-first smartphone app", "bringBack": "Desktop-optimized web application", "winner": "bringBack" },
@@ -1785,16 +1785,16 @@ export const compareData: Record<string, ComparePageData> = {
     },
     "aboutCompetitor": {
       "title": "About Airbrush",
-      "content":[
+      "content": [
         "Airbrush made its name as one of the most popular 'beauty camera' and selfie-editing apps on the iOS and Android app stores. Its core features revolve around making people look flawless: removing acne, whitening teeth, slimming faces, and applying digital makeup.",
         "Recently, Airbrush added an AI photo restoration feature to capitalize on the trend. However, because their underlying AI models were built to 'beautify' modern faces, they apply those same aggressive smoothing algorithms to historical portraits. The result is often an old photograph that looks weirdly modern, airbrushed, and stripped of its authentic vintage character."
       ],
-      "pros":[
+      "pros": [
         "Exceptional at removing blemishes and editing modern selfies",
         "Very intuitive, user-friendly mobile interface",
         "Great for adding digital makeup or adjusting lighting on faces"
       ],
-      "cons":[
+      "cons": [
         "Applies 'beauty filters' to old photos, destroying their historical authenticity",
         "Mobile-only workflow is tedious for users with large flatbed-scanned files",
         "Traps users in recurring monthly or yearly app subscriptions",
@@ -1803,11 +1803,11 @@ export const compareData: Record<string, ComparePageData> = {
     },
     "whySwitch": {
       "title": "Why people switch from Airbrush to BringBack AI",
-      "intro":[
+      "intro": [
         "Users seeking an Airbrush alternative usually realize that a beauty app is the wrong tool for genealogy. You don't want your great-grandmother to look like an Instagram influencer; you want her to look like herself.",
         "BringBack AI was engineered specifically to respect the past. We don't use beauty filters. We use advanced diffusion technology to repair physical damage while leaving the human identity completely intact."
       ],
-      "points":[
+      "points": [
         {
           "title": "The 'Beauty Filter' Problem",
           "description": "Airbrush's AI is trained to eliminate wrinkles, pores, and texture. On a 100-year-old photograph, those textures are essential to the person's identity. BringBack AI preserves age lines, facial structure, and authentic film grain so your ancestors don't look like plastic mannequins."
@@ -1828,7 +1828,7 @@ export const compareData: Record<string, ComparePageData> = {
     },
     "whichToChoose": {
       "bringBackTitle": "Pick BringBack AI if",
-      "bringBackPoints":[
+      "bringBackPoints": [
         "You want authentic restoration without 'beauty filters'",
         "You are working with high-resolution desktop scans",
         "You refuse to pay for recurring app subscriptions",
@@ -1836,7 +1836,7 @@ export const compareData: Record<string, ComparePageData> = {
         "You demand account-controlled media and clear privacy policy"
       ],
       "competitorTitle": "Pick Airbrush if",
-      "competitorPoints":[
+      "competitorPoints": [
         "You want to edit a selfie taken today on your smartphone",
         "You want to digitally whiten teeth or remove acne",
         "You prefer working entirely inside a mobile app",
@@ -1845,7 +1845,7 @@ export const compareData: Record<string, ComparePageData> = {
     },
     "finalThoughts": {
       "title": "Final thoughts",
-      "content":[
+      "content": [
         "If you are getting ready to post a photo to social media and want to make sure you look your absolute best, Airbrush is a fantastic tool that delivers on its promises.",
         "However, historical photographs require a completely different approach. When you are restoring a picture of your ancestors, perfection isn't the goal—authenticity is. BringBack AI provides the specialized, respectful technology required to repair the damage of time without erasing the true character of the people you love."
       ]
@@ -1853,7 +1853,7 @@ export const compareData: Record<string, ComparePageData> = {
     "howToSwitch": {
       "title": "How to restore photos with BringBack AI in 60 seconds",
       "description": "Skip the app stores, the beauty filters, and the subscriptions. Get premium restoration directly in your browser.",
-      "steps":[
+      "steps": [
         {
           "stepNumber": 1,
           "title": "Upload your scanned photo",
@@ -1874,7 +1874,7 @@ export const compareData: Record<string, ComparePageData> = {
     "semanticCapabilities": {
       "title": "Purpose-built to fix real historical damage",
       "description": "Airbrush excels at removing pimples and blemishes. BringBack AI’s diffusion models are trained to fix authentic physical degradation, including:",
-      "capabilities":[
+      "capabilities": [
         "Severe water damage, mold stains, and 'foxing'",
         "Deep physical scratches, creases, and torn paper edges",
         "Faded Sepia tones and chemical silvering",
@@ -1885,7 +1885,7 @@ export const compareData: Record<string, ComparePageData> = {
     "uniqueAdvantage": {
       "title": "Beyond Repair: Bring your ancestors to life",
       "description": "Airbrush focuses on making static faces look flawless. BringBack takes your family history further by making it move.",
-      "features":[
+      "features": [
         {
           "heading": "Cinematic Motion",
           "text": "Turn a static 1920s portrait into a moving, smiling video. Watch your ancestors look around and smile with stunning realism."
@@ -1900,7 +1900,7 @@ export const compareData: Record<string, ComparePageData> = {
       "title": "How we compared BringBack to Airbrush",
       "content": COMPARE_CLAIM.methodologyNote
     },
-    "faqs":[
+    "faqs": [
       { "q": "Does Airbrush change the faces in old photos?", "a": "Yes, Airbrush is fundamentally a beauty app. Its AI is trained to smooth skin, remove wrinkles, and 'beautify' the subject, which often changes the natural identity of historical figures." },
       { "q": "What is the best alternative to Airbrush for old photos?", "a": "BringBack AI is the best alternative because it uses specialized diffusion models trained on historical damage, preserving the authentic identity and film grain without applying modern beauty filters." },
       { "q": "Do I need to download an app to use BringBack?", "a": "No. BringBack is a powerful, entirely web-based platform. You can access it from any browser on your PC, Mac, or mobile device without installing anything from the App Store." },
@@ -1917,12 +1917,12 @@ export const compareData: Record<string, ComparePageData> = {
     "slug": "imagecolorizer-alternative",
     "competitor": "ImageColorizer",
     "niche": "restoration",
-    "ctaLink": "https://theirs-page.sangukissu.workers.dev/old-photo-restoration",
-    "ctaLink2": "https://theirs-page.sangukissu.workers.dev/login",
+    "ctaLink": "https://theirs.page/old-photo-restoration",
+    "ctaLink2": "https://theirs.page/login",
     "meta": {
       "title": "Best ImageColorizer Alternative for Photo Restoration 2026 | BringBack AI",
       "description": "Looking for an ImageColorizer alternative? BringBack AI provides superior careful colorization, deep scratch repair, and cinematic animation in one platform.",
-      "keywords":["imagecolorizer alternative", "imagecolorizer photo restoration alternative", "image colorizer vs bringback", "apps like imagecolorizer", "restore and colorize old photos", "best alternative to imagecolorizer"]
+      "keywords": ["imagecolorizer alternative", "imagecolorizer photo restoration alternative", "image colorizer vs bringback", "apps like imagecolorizer", "restore and colorize old photos", "best alternative to imagecolorizer"]
     },
     "hero": {
       "h1": "The all-in-one ImageColorizer alternative for true historical preservation.",
@@ -1973,7 +1973,7 @@ export const compareData: Record<string, ComparePageData> = {
     },
     "matrix": {
       "description": "Comparing BringBack AI to ImageColorizer highlights the difference between a fragmented utility suite and a cohesive, premium restoration platform.",
-      "rows":[
+      "rows": [
         { "feature": "Workflow Experience", "competitor": "Fragmented (separate tools for tasks)", "bringBack": "Unified (Restore, Colorize, Animate instantly)", "winner": "bringBack" },
         { "feature": "Colorization Engine", "competitor": "Basic uniform hue mapping", "bringBack": "Semantic, careful diffusion", "winner": "bringBack" },
         { "feature": "Animation Integration", "competitor": "No native face animation", "bringBack": "Built-in cinematic face animation", "winner": "bringBack" },
@@ -1986,16 +1986,16 @@ export const compareData: Record<string, ComparePageData> = {
     },
     "aboutCompetitor": {
       "title": "About ImageColorizer",
-      "content":[
+      "content": [
         "ImageColorizer built its reputation on one core function: using early-generation AI to add color to black-and-white photographs. Over time, they expanded their suite to include tools for enhancing, repairing, and removing backgrounds from images.",
         "While their colorization technology is accessible, their platform structure often requires users to 'hop' between different standalone tools. For example, you may need to use their 'Enhance' tool, download the result, and then upload it again to their 'Colorize' tool. Furthermore, their older colorization models sometimes struggle with semantic awareness, resulting in 'color bleeding' or muddy, unnatural skin tones."
       ],
-      "pros":[
+      "pros": [
         "Quick and straightforward for basic color tinting",
         "Offers a variety of standalone editing utilities",
         "Accessible cloud-based interface with mobile app options"
       ],
-      "cons":[
+      "cons": [
         "Fragmented workflow makes full restoration tedious",
         "Colorization can sometimes look 'painted', muddy, or historically inaccurate",
         "Lacks the ability to animate restored faces into video",
@@ -2004,11 +2004,11 @@ export const compareData: Record<string, ComparePageData> = {
     },
     "whySwitch": {
       "title": "Why people switch from ImageColorizer to BringBack AI",
-      "intro":[
+      "intro": [
         "Users seeking an ImageColorizer alternative usually hit a wall with the fragmented user experience and the limitations of early-generation colorization models. When restoring a family heirloom, you want the colors to look authentic, not like a vintage postcard with a single hue washed over it.",
         "BringBack AI unifies the entire preservation process. Our 2026 diffusion models handle structural repair, semantic colorization, and cinematic animation simultaneously in one premium workspace."
       ],
-      "points":[
+      "points": [
         {
           "title": "The Fragmented Workflow Problem",
           "description": "Bouncing between different tools to fix scratches, upscale resolution, and add color is frustrating and degrades image quality through repeated saving. BringBack AI processes all your restoration goals in a single, cohesive workflow, preserving maximum fidelity."
@@ -2029,7 +2029,7 @@ export const compareData: Record<string, ComparePageData> = {
     },
     "whichToChoose": {
       "bringBackTitle": "Pick BringBack AI if",
-      "bringBackPoints":[
+      "bringBackPoints": [
         "You want all restoration and colorization done in one seamless step",
         "You demand careful, distinct color mapping without 'bleeding'",
         "You want to animate your ancestors' faces with cinematic realism",
@@ -2037,7 +2037,7 @@ export const compareData: Record<string, ComparePageData> = {
         "You require strict account-controlled media data privacy"
       ],
       "competitorTitle": "Pick ImageColorizer if",
-      "competitorPoints":[
+      "competitorPoints": [
         "You only need to quickly tint an undamaged black-and-white photo",
         "You want to use their other utilities like background removal",
         "You are comfortable navigating between different standalone tools",
@@ -2046,7 +2046,7 @@ export const compareData: Record<string, ComparePageData> = {
     },
     "finalThoughts": {
       "title": "Final thoughts",
-      "content":[
+      "content": [
         "ImageColorizer is a capable utility that helped popularize AI colorization. If you have a clean digital scan and just want to see what it looks like with a quick splash of color, it does the job reliably.",
         "However, authentic historical preservation requires a more sophisticated touch. BringBack AI offers a superior, unified platform that not only repairs deep physical damage but applies next-generation, careful colorization—and caps it off with breathtaking facial animation. It is the complete package for your family legacy."
       ]
@@ -2054,7 +2054,7 @@ export const compareData: Record<string, ComparePageData> = {
     "howToSwitch": {
       "title": "How to restore and colorize with BringBack AI in 60 seconds",
       "description": "Skip the fragmented tools and expiring credits. Get a unified, premium workflow right in your browser.",
-      "steps":[
+      "steps": [
         {
           "stepNumber": 1,
           "title": "Upload your scanned photo",
@@ -2075,7 +2075,7 @@ export const compareData: Record<string, ComparePageData> = {
     "semanticCapabilities": {
       "title": "Purpose-built for holistic historical preservation",
       "description": "While basic colorizers struggle with underlying damage, BringBack AI’s diffusion models fix physical degradation before applying color, ensuring a flawless result:",
-      "capabilities":[
+      "capabilities": [
         "Deep physical scratches, creases, and torn paper edges",
         "Semantic colorization (distinct hues for skin, clothing, and nature)",
         "Severe water damage, mold stains, and 'foxing'",
@@ -2086,7 +2086,7 @@ export const compareData: Record<string, ComparePageData> = {
     "uniqueAdvantage": {
       "title": "Beyond Color: Bring your ancestors to life",
       "description": "ImageColorizer focuses entirely on static enhancements. BringBack takes your family history a step further with our photo animation tools.",
-      "features":[
+      "features": [
         {
           "heading": "Cinematic Motion",
           "text": "Turn a newly colorized, static 1920s portrait into a moving, smiling video. Watch your ancestors look around and smile with stunning realism."
@@ -2101,7 +2101,7 @@ export const compareData: Record<string, ComparePageData> = {
       "title": "How we compared BringBack to ImageColorizer",
       "content": COMPARE_CLAIM.methodologyNote
     },
-    "faqs":[
+    "faqs": [
       { "q": "Is BringBack's colorization better than ImageColorizer?", "a": "BringBack utilizes modern semantic diffusion models, which better understand the difference between materials (like skin vs. clothing), resulting in more careful and distinct colors compared to older tinting methods." },
       { "q": "Do I need to use separate tools to fix scratches and add color on BringBack?", "a": "No. Unlike ImageColorizer's fragmented workflow, BringBack analyzes the image and simultaneously repairs physical damage, upscales resolution, and adds color in a single, unified process." },
       { "q": "Can ImageColorizer animate my old photos?", "a": "No, ImageColorizer is focused entirely on static image transformations. BringBack includes a built-in cinematic animation engine to bring your restored portraits to life." },
@@ -2118,12 +2118,12 @@ export const compareData: Record<string, ComparePageData> = {
     "slug": "photoglory-alternative",
     "competitor": "PhotoGlory",
     "niche": "restoration",
-    "ctaLink": "https://theirs-page.sangukissu.workers.dev/old-photo-restoration",
-    "ctaLink2": "https://theirs-page.sangukissu.workers.dev/login",
+    "ctaLink": "https://theirs.page/old-photo-restoration",
+    "ctaLink2": "https://theirs.page/login",
     "meta": {
       "title": "Best PhotoGlory Alternative for Photo Restoration 2026 | BringBack AI",
       "description": "Looking for a PhotoGlory alternative for Mac or Mobile? BringBack AI is the premium web-based restorer offering 1-click AI restoration and cinematic animation.",
-      "keywords":["photoglory alternative", "photoglory for mac", "photo restoration software like photoglory", "photoglory vs bringback", "restore old photos without photoglory", "best photoglory replacement"]
+      "keywords": ["photoglory alternative", "photoglory for mac", "photo restoration software like photoglory", "photoglory vs bringback", "restore old photos without photoglory", "best photoglory replacement"]
     },
     "hero": {
       "h1": "The modern, cross-platform PhotoGlory alternative.",
@@ -2174,7 +2174,7 @@ export const compareData: Record<string, ComparePageData> = {
     },
     "matrix": {
       "description": "Comparing BringBack AI to PhotoGlory is fundamentally a comparison between a modern cloud-based AI engine and traditional desktop software. Here is the feature breakdown.",
-      "rows":[
+      "rows": [
         { "feature": "Platform Support", "competitor": "Windows PC only (No Mac)", "bringBack": "Web-based (Mac, PC, Mobile)", "winner": "bringBack" },
         { "feature": "Workflow Experience", "competitor": "Heavy manual editing & sliders", "bringBack": "Instant, automated 1-click AI", "winner": "bringBack" },
         { "feature": "Software Installation", "competitor": "Requires heavy local download", "bringBack": "Zero installation required", "winner": "bringBack" },
@@ -2187,16 +2187,16 @@ export const compareData: Record<string, ComparePageData> = {
     },
     "aboutCompetitor": {
       "title": "About PhotoGlory",
-      "content":[
+      "content": [
         "PhotoGlory is a traditional Windows desktop software program designed specifically for restoring old photos. Unlike modern cloud AI tools, PhotoGlory operates much like a simplified version of Adobe Photoshop. It offers a suite of manual tools, including healing brushes, clone stamps, and color adjustment sliders.",
         "While it does feature a '1-click' colorization and enhancement button, its core strength lies in allowing users to manually tweak their images offline. However, this architecture comes with severe limitations: it is not available for Mac or mobile users, it requires a capable Windows PC to run smoothly, and restoring a heavily damaged photo often requires tedious, time-consuming manual brushwork."
       ],
-      "pros":[
+      "pros": [
         "Operates completely offline, which is great for users with slow internet",
         "Offers granular manual control with traditional editing brushes and sliders",
         "No recurring subscriptions; relies on a one-time software license fee"
       ],
-      "cons":[
+      "cons": [
         "Strictly Windows only—completely excludes Mac, iOS, and Android users",
         "Automated AI features lag behind modern 2026 cloud-based diffusion models",
         "Manual restoration of deep scratches can be extremely tedious and time-consuming",
@@ -2205,11 +2205,11 @@ export const compareData: Record<string, ComparePageData> = {
     },
     "whySwitch": {
       "title": "Why people switch from PhotoGlory to BringBack AI",
-      "intro":[
+      "intro": [
         "Users seeking a PhotoGlory alternative usually fall into two camps: Mac users who are frustrated by the lack of software support, and Windows users who are tired of spending 30 minutes manually clicking on scratches to fix a single photograph.",
         "BringBack AI solves both problems. By leveraging the power of enterprise cloud servers, we deliver vastly superior AI restoration to any device with a web browser, instantly."
       ],
-      "points":[
+      "points": [
         {
           "title": "The Mac and Mobile Solution",
           "description": "PhotoGlory completely ignores Mac users and mobile workflows. BringBack AI is an advanced web application. Whether you are on a MacBook Pro, a Windows PC, or an iPad, you get the exact same premium, high-speed restoration experience with zero software to install."
@@ -2230,7 +2230,7 @@ export const compareData: Record<string, ComparePageData> = {
     },
     "whichToChoose": {
       "bringBackTitle": "Pick BringBack AI if",
-      "bringBackPoints":[
+      "bringBackPoints": [
         "You use a Mac, iPhone, or iPad",
         "You want the AI to do the heavy lifting instantly",
         "You want to animate your ancestors' faces",
@@ -2238,7 +2238,7 @@ export const compareData: Record<string, ComparePageData> = {
         "You prefer paying a small fee per photo rather than a large software license"
       ],
       "competitorTitle": "Pick PhotoGlory if",
-      "competitorPoints":[
+      "competitorPoints": [
         "You are exclusively on a Windows PC",
         "You have no internet connection and must work offline",
         "You actively enjoy spending time manually using digital paint brushes",
@@ -2247,7 +2247,7 @@ export const compareData: Record<string, ComparePageData> = {
     },
     "finalThoughts": {
       "title": "Final thoughts",
-      "content":[
+      "content": [
         "PhotoGlory is a respectable piece of legacy software for Windows users who prefer a hands-on, offline approach similar to Adobe Photoshop Elements. If you have a weekend to kill and enjoy manually retouching pixels, it is a solid purchase.",
         "However, if you value your time, use a Mac, or want access to the profound emotional impact of facial animation, desktop software feels incredibly outdated. BringBack AI provides next-generation, automated preservation technology that is accessible from anywhere, ensuring your family legacy is restored effortlessly and beautifully."
       ]
@@ -2255,7 +2255,7 @@ export const compareData: Record<string, ComparePageData> = {
     "howToSwitch": {
       "title": "How to restore photos with BringBack AI in 60 seconds",
       "description": "Skip the heavy Windows downloads and manual brush tools. Get instant AI restoration in your browser.",
-      "steps":[
+      "steps": [
         {
           "stepNumber": 1,
           "title": "Upload your scanned photo",
@@ -2276,7 +2276,7 @@ export const compareData: Record<string, ComparePageData> = {
     "semanticCapabilities": {
       "title": "Automated repair for physical historical damage",
       "description": "While traditional desktop software requires manual 'healing brushes' for severe damage, BringBack AI autonomously fixes:",
-      "capabilities":[
+      "capabilities": [
         "Deep physical scratches, creases, and torn paper edges",
         "Severe water damage, mold stains, and 'foxing'",
         "Faded Sepia tones and chemical silvering",
@@ -2287,7 +2287,7 @@ export const compareData: Record<string, ComparePageData> = {
     "uniqueAdvantage": {
       "title": "Beyond Static Software: Bring your ancestors to life",
       "description": "Desktop photo editors like PhotoGlory are limited to creating static JPEGs. BringBack takes your family history into the cinematic era.",
-      "features":[
+      "features": [
         {
           "heading": "Cinematic Motion",
           "text": "Turn a static historical portrait into a moving, smiling video. Watch your ancestors look around and smile with stunning realism."
@@ -2302,7 +2302,7 @@ export const compareData: Record<string, ComparePageData> = {
       "title": "How we compared BringBack to PhotoGlory",
       "content": COMPARE_CLAIM.methodologyNote
     },
-    "faqs":[
+    "faqs": [
       { "q": "Is PhotoGlory available for Mac?", "a": "No. PhotoGlory is exclusively built for Windows PCs. If you are a Mac user looking for an alternative, BringBack AI is the perfect solution as it runs flawlessly in any Mac web browser." },
       { "q": "Do I need to manually brush out scratches on BringBack like I do in PhotoGlory?", "a": "No. BringBack uses advanced 2026 generative AI to automatically detect and repair deep scratches and tears, eliminating the need for tedious manual clone-stamping." },
       { "q": "Can PhotoGlory animate my old photos?", "a": "No, PhotoGlory is a static photo editing software. BringBack AI includes a built-in cinematic animation engine to bring your restored portraits to life as moving videos." },
@@ -2319,12 +2319,12 @@ export const compareData: Record<string, ComparePageData> = {
     "slug": "unblurimage-alternative",
     "competitor": "UnblurImage",
     "niche": "restoration",
-    "ctaLink": "https://theirs-page.sangukissu.workers.dev/old-photo-restoration",
-    "ctaLink2": "https://theirs-page.sangukissu.workers.dev/login",
+    "ctaLink": "https://theirs.page/old-photo-restoration",
+    "ctaLink2": "https://theirs.page/login",
     "meta": {
       "title": "Best UnblurImage Alternative for Photo Restoration 2026 | BringBack AI",
       "description": "UnblurImage is great for shaky smartphone pics, but it over-sharpens historical photos. BringBack AI is the premium alternative for authentic historical restoration.",
-      "keywords":["unblurimage alternative", "unblurimage photo restoration alternative", "unblur image ai alternative", "apps like unblurimage", "unblurimage vs bringback", "restore old photos without oversharpening"]
+      "keywords": ["unblurimage alternative", "unblurimage photo restoration alternative", "unblur image ai alternative", "apps like unblurimage", "unblurimage vs bringback", "restore old photos without oversharpening"]
     },
     "hero": {
       "h1": "The UnblurImage alternative for authentic historical preservation.",
@@ -2375,7 +2375,7 @@ export const compareData: Record<string, ComparePageData> = {
     },
     "matrix": {
       "description": "Comparing BringBack AI to UnblurImage highlights the difference between a single-purpose digital sharpening tool and a comprehensive historical restoration studio.",
-      "rows":[
+      "rows": [
         { "feature": "Core AI Focus", "competitor": "Sharpening out-of-focus pixels", "bringBack": "Historical texture & damage repair", "winner": "bringBack" },
         { "feature": "Physical Damage Repair", "competitor": "Struggles with large tears/scratches", "bringBack": "Generative structural reconstruction", "winner": "bringBack" },
         { "feature": "Film Grain Handling", "competitor": "Often over-sharpens grain ('crunchy')", "bringBack": "Preserves authentic vintage emulsion", "winner": "bringBack" },
@@ -2388,16 +2388,16 @@ export const compareData: Record<string, ComparePageData> = {
     },
     "aboutCompetitor": {
       "title": "About UnblurImage",
-      "content":[
+      "content": [
         "UnblurImage.ai is exactly what its name suggests: a single-purpose utility built to fix blurry photographs. Using AI upscaling and deconvolution algorithms, it analyzes soft or out-of-focus digital pixels and aggressively tightens them to create a sharper image.",
         "While they offer an 'old photo restoration' module, the underlying technology is still heavily biased toward their core unblurring engine. When applied to historical photos, this aggressive sharpening often exacerbates paper texture, highlights dust particles, and transforms natural film grain into harsh, unnatural digital artifacts."
       ],
-      "pros":[
+      "pros": [
         "Highly effective at fixing motion blur in modern smartphone photos",
         "Fast, straightforward interface designed for a single task",
         "Can significantly improve the readability of blurry text in images"
       ],
-      "cons":[
+      "cons": [
         "Over-sharpens vintage film grain, causing a harsh, 'crunchy' visual aesthetic",
         "Not designed to generatively reconstruct missing pieces from physical tears",
         "Lacks integrated semantic colorization and cinematic facial animation",
@@ -2406,11 +2406,11 @@ export const compareData: Record<string, ComparePageData> = {
     },
     "whySwitch": {
       "title": "Why people switch from UnblurImage to BringBack AI",
-      "intro":[
+      "intro": [
         "Users searching for an UnblurImage alternative generally realize that making an old photo 'sharper' isn't the same thing as making it 'better.' Applying modern sharpening filters to a 1920s portrait usually ruins the authenticity of the photograph.",
         "BringBack AI was engineered specifically for historical preservation. We understand that old photos shouldn't look like they were taken on an iPhone 15; they should look like pristine versions of what they originally were."
       ],
-      "points":[
+      "points": [
         {
           "title": "The Over-Sharpening Artifact Problem",
           "description": "UnblurImage treats vintage film grain and dust as 'blur' that needs to be aggressively tightened. This results in unnatural, high-contrast artifacts. BringBack’s 2026 diffusion models are trained to differentiate between actual focal blur and authentic historical paper textures."
@@ -2431,7 +2431,7 @@ export const compareData: Record<string, ComparePageData> = {
     },
     "whichToChoose": {
       "bringBackTitle": "Pick BringBack AI if",
-      "bringBackPoints":[
+      "bringBackPoints": [
         "You are dealing with physical damage like tears, mold, and deep scratches",
         "You want to preserve authentic historical textures and film grain",
         "You want to animate your ancestors' faces with cinematic realism",
@@ -2439,7 +2439,7 @@ export const compareData: Record<string, ComparePageData> = {
         "You want accurate semantic colorization alongside your restoration"
       ],
       "competitorTitle": "Pick UnblurImage if",
-      "competitorPoints":[
+      "competitorPoints": [
         "You have a modern digital photo that is slightly out of focus",
         "You need to fix camera-shake motion blur",
         "You are trying to make blurry text readable",
@@ -2448,7 +2448,7 @@ export const compareData: Record<string, ComparePageData> = {
     },
     "finalThoughts": {
       "title": "Final thoughts",
-      "content":[
+      "content": [
         "UnblurImage is a fantastic utility for modern digital photography. If you took a great photo of a fast-moving object but missed the focus slightly, their algorithms are highly capable of saving the shot.",
         "However, historical photo restoration requires nuance. It requires an AI that knows the difference between 'blur' and 'vintage emulsion.' BringBack AI provides the specialized, delicate touch necessary to recover the faded faces of your ancestors, bringing them back to life with dignity, accuracy, and cinematic animation."
       ]
@@ -2456,7 +2456,7 @@ export const compareData: Record<string, ComparePageData> = {
     "howToSwitch": {
       "title": "How to authentically restore photos with BringBack AI",
       "description": "Skip the aggressive sharpening filters. Get premium, identity-preserving restoration directly in your browser.",
-      "steps":[
+      "steps": [
         {
           "stepNumber": 1,
           "title": "Upload your scanned photo",
@@ -2477,7 +2477,7 @@ export const compareData: Record<string, ComparePageData> = {
     "semanticCapabilities": {
       "title": "Purpose-built to fix physical historical damage",
       "description": "UnblurImage focuses on fixing focal algorithms. BringBack AI’s diffusion models are trained to fix authentic physical degradation, including:",
-      "capabilities":[
+      "capabilities": [
         "Deep physical scratches, creases, and torn paper edges",
         "Severe water damage, mold stains, and 'foxing'",
         "Faded Sepia tones and chemical silvering",
@@ -2488,7 +2488,7 @@ export const compareData: Record<string, ComparePageData> = {
     "uniqueAdvantage": {
       "title": "Beyond Static Enhancement: Bring your ancestors to life",
       "description": "UnblurImage focuses entirely on static digital clarity. BringBack takes your family history into the cinematic era.",
-      "features":[
+      "features": [
         {
           "heading": "Cinematic Motion",
           "text": "Turn a static, restored portrait into a moving, smiling video. Watch your ancestors look around and smile with stunning realism."
@@ -2503,7 +2503,7 @@ export const compareData: Record<string, ComparePageData> = {
       "title": "How we compared BringBack to UnblurImage",
       "content": COMPARE_CLAIM.methodologyNote
     },
-    "faqs":[
+    "faqs": [
       { "q": "Does UnblurImage fix torn photos?", "a": "UnblurImage struggles with severe physical damage. Because its core AI is designed to sharpen existing pixels, it cannot effectively generate missing pieces of a photograph. BringBack AI specializes in deep generative repair for tears and missing corners." },
       { "q": "Why do my old photos look 'crunchy' or weird on UnblurImage?", "a": "This is a common issue when using digital unblurring tools on historical photos. The AI interprets natural vintage film grain as 'blur' and aggressively sharpens it, resulting in harsh, unnatural artifacts. BringBack is trained to respect and preserve authentic historical textures." },
       { "q": "Can UnblurImage animate my old photos?", "a": "No, UnblurImage is focused entirely on static image clarity. BringBack AI includes a built-in cinematic animation engine to bring your restored portraits to life as moving videos." },
@@ -2522,8 +2522,8 @@ export const compareData: Record<string, ComparePageData> = {
     niche: "animation",
     lastUpdated: "2026-08-12",
     readingMinutes: 12,
-    ctaLink: "https://theirs-page.sangukissu.workers.dev/ai-photo-animation",
-    ctaLink2: "https://theirs-page.sangukissu.workers.dev/login",
+    ctaLink: "https://theirs.page/ai-photo-animation",
+    ctaLink2: "https://theirs.page/login",
     meta: {
       title: "MyHeritage Deep Nostalgia Alternative for Old Photos | BringBack",
       description: "Compare MyHeritage Deep Nostalgia and its Photo subscription with BringBack’s five-second motion presets, one-time credits, restoration workflow, and storage model.",
@@ -2733,8 +2733,8 @@ export const compareData: Record<string, ComparePageData> = {
     niche: "merging",
     lastUpdated: "2026-08-12",
     readingMinutes: 14,
-    ctaLink: "https://theirs-page.sangukissu.workers.dev/ai-family-portrait",
-    ctaLink2: "https://theirs-page.sangukissu.workers.dev/login",
+    ctaLink: "https://theirs.page/ai-family-portrait",
+    ctaLink2: "https://theirs.page/login",
     meta: {
       title: "PixReunion Alternative for AI Family Portraits & Memorial Merges | BringBack",
       description: "Compare PixReunion and BringBack for AI family portraits from separate photos, memorial portraits, group size, styles, credit pricing, restoration, and privacy.",
@@ -2954,8 +2954,8 @@ export const compareData: Record<string, ComparePageData> = {
     "niche": "merging",
     "lastUpdated": "2026-08-12",
     "readingMinutes": 13,
-    "ctaLink": "https://theirs-page.sangukissu.workers.dev/ai-family-portrait",
-    "ctaLink2": "https://theirs-page.sangukissu.workers.dev/login",
+    "ctaLink": "https://theirs.page/ai-family-portrait",
+    "ctaLink2": "https://theirs.page/login",
     "meta": {
       "title": "Kinpict Alternative for Photoreal AI Family Portraits | BringBack",
       "description": "Compare Kinpict and BringBack for realistic family photos from separate pictures, credit use, free previews, pets and styles, restoration, animation, and privacy.",

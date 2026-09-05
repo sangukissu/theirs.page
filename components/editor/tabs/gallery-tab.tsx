@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useRef, useEffect } from "react"
+import { useState, useRef, useEffect, useMemo } from "react"
 import {
   Upload,
   Image as ImageIcon,
@@ -18,6 +18,8 @@ import {
   ArrowDown,
   Folder,
   Loader2,
+  MapPin,
+  Calendar,
 } from "lucide-react"
 import { UpgradeBanner } from "../upgrade-banner"
 import { ConfirmDeleteModal } from "../confirm-delete-modal"
@@ -79,6 +81,23 @@ export function GalleryTab({
   const [uploadProgress, setUploadProgress] = useState<string | null>(null)
   const [uploadError, setUploadError] = useState<string | null>(null)
   const [uploadingItems, setUploadingItems] = useState<UploadingFileItem[]>([])
+  const [selectedAlbumFilter, setSelectedAlbumFilter] = useState<string>("all")
+
+  // Dynamically derive all albums present across media items
+  const existingAlbums = useMemo(() => {
+    return Array.from(
+      new Set(mediaItems.map((m) => m.album?.trim()).filter(Boolean))
+    ) as string[]
+  }, [mediaItems])
+
+  // Filter media items by selected album
+  const displayedMediaItems = useMemo(() => {
+    return mediaItems.filter((item) => {
+      if (selectedAlbumFilter === "all") return true
+      if (selectedAlbumFilter === "__no_album__") return !item.album?.trim()
+      return item.album?.trim() === selectedAlbumFilter
+    })
+  }, [mediaItems, selectedAlbumFilter])
 
   const uploadingItemsRef = useRef<UploadingFileItem[]>([])
   uploadingItemsRef.current = uploadingItems
@@ -193,6 +212,10 @@ export function GalleryTab({
             media_type: uploadData.mediaType,
             caption: null,
             approx_year: null,
+            album:
+              selectedAlbumFilter !== "all" && selectedAlbumFilter !== "__no_album__"
+                ? selectedAlbumFilter
+                : null,
           }),
         })
 
@@ -271,7 +294,7 @@ export function GalleryTab({
   }
 
   return (
-    <div className="flex flex-col gap-6 max-w-4xl">
+    <div className="flex flex-col gap-6 max-w-2xl">
       {/* Header with Small Toggle */}
       <div className="flex flex-col gap-1 border-b border-black/[0.06] pb-4">
         <div className="flex items-center justify-between gap-4">
@@ -422,21 +445,89 @@ export function GalleryTab({
         />
       </label>
 
-      {/* Uploaded Media Grid */}
+      {/* Uploaded Media Grid & Album Filter Bar */}
       <div className="flex flex-col gap-3">
-        <div className="flex items-center justify-between text-xs text-[#71717a] px-1">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 px-1 text-xs text-[#71717a]">
           <span>
             {mediaItems.length} media item{mediaItems.length === 1 ? "" : "s"} preserved
             {uploadingItems.length > 0 && ` · ${uploadingItems.length} uploading...`}
           </span>
+
+          {selectedAlbumFilter !== "all" && (
+            <button
+              type="button"
+              onClick={() => setSelectedAlbumFilter("all")}
+              className="text-primary hover:underline text-xs font-medium cursor-pointer self-start sm:self-auto"
+            >
+              Show all ({mediaItems.length}) · filtered by &ldquo;{selectedAlbumFilter === "__no_album__" ? "Untagged" : selectedAlbumFilter}&rdquo;
+            </button>
+          )}
         </div>
 
-        {mediaItems.length === 0 && uploadingItems.length === 0 ? (
+        {/* Album Filter Chips in Editor */}
+        {existingAlbums.length > 0 && (
+          <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar py-1 select-none">
+            <span className="text-xs font-medium text-[#181925] shrink-0 mr-1 flex items-center gap-1">
+              <Folder className="size-3.5 text-primary" />
+              <span>Albums:</span>
+            </span>
+
+            <button
+              type="button"
+              onClick={() => setSelectedAlbumFilter("all")}
+              className={`text-xs px-3 py-1 rounded-full font-medium transition-all cursor-pointer shrink-0 ${
+                selectedAlbumFilter === "all"
+                  ? "bg-primary text-primary-foreground shadow-2xs"
+                  : "bg-[#f4f4f6] text-[#666] hover:text-[#181925]"
+              }`}
+            >
+              All ({mediaItems.length})
+            </button>
+
+            {existingAlbums.map((alb) => {
+              const count = mediaItems.filter((m) => m.album?.trim() === alb).length
+              return (
+                <button
+                  key={alb}
+                  type="button"
+                  onClick={() => setSelectedAlbumFilter(alb)}
+                  className={`text-xs px-3 py-1 rounded-full font-medium transition-all cursor-pointer shrink-0 flex items-center gap-1.5 ${
+                    selectedAlbumFilter === alb
+                      ? "bg-primary text-primary-foreground shadow-2xs"
+                      : "bg-[#f4f4f6] text-[#666] hover:text-[#181925]"
+                  }`}
+                >
+                  <Folder className="size-3 shrink-0" />
+                  <span>{alb}</span>
+                  <span className="text-[10px] opacity-75 font-mono">({count})</span>
+                </button>
+              )
+            })}
+
+            {mediaItems.some((m) => !m.album?.trim()) && (
+              <button
+                type="button"
+                onClick={() => setSelectedAlbumFilter("__no_album__")}
+                className={`text-xs px-3 py-1 rounded-full font-medium transition-all cursor-pointer shrink-0 ${
+                  selectedAlbumFilter === "__no_album__"
+                    ? "bg-neutral-800 text-white shadow-2xs"
+                    : "bg-[#f4f4f6] text-[#888] hover:text-[#181925]"
+                }`}
+              >
+                Untagged ({mediaItems.filter((m) => !m.album?.trim()).length})
+              </button>
+            )}
+          </div>
+        )}
+
+        {displayedMediaItems.length === 0 && uploadingItems.length === 0 ? (
           <div className="p-8 rounded-2xl bg-white border border-black/[0.05] text-center text-xs text-[#888]">
-            No media uploaded yet. Drag and drop photos, voice memos, or vintage home videos above.
+            {selectedAlbumFilter !== "all"
+              ? `No media in "${selectedAlbumFilter === "__no_album__" ? "Untagged" : selectedAlbumFilter}". Drop files above to add to this album.`
+              : "No media uploaded yet. Drag and drop photos, voice memos, or vintage home videos above."}
           </div>
         ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             {/* Optimistic Uploading Cards (Live thumbnail + Preserving status) */}
             {uploadingItems.map((item) => (
               <div
@@ -499,15 +590,19 @@ export function GalleryTab({
                 </div>
 
                 {/* Subtle Skeleton placeholders for metadata fields */}
-                <div className="flex flex-col gap-1.5 opacity-40 pointer-events-none">
+                <div className="flex flex-col gap-2 opacity-40 pointer-events-none">
                   <div className="h-7 rounded-lg bg-neutral-100 animate-pulse" />
-                  <div className="h-6 rounded-lg bg-neutral-100 animate-pulse" />
+                  <div className="h-7 rounded-lg bg-neutral-100 animate-pulse" />
+                  <div className="flex items-center gap-2">
+                    <div className="flex-1 h-7 rounded-lg bg-neutral-100 animate-pulse" />
+                    <div className="w-24 h-7 rounded-lg bg-neutral-100 animate-pulse" />
+                  </div>
                 </div>
               </div>
             ))}
 
             {/* Permanent Media Items */}
-            {mediaItems.map((item, index) => (
+            {displayedMediaItems.map((item, index) => (
               <div
                 key={item.id}
                 className={`p-3 rounded-2xl bg-white border flex flex-col gap-2.5 shadow-2xs group relative transition-all ${item.is_pinned ? "border-[#8b5a45]/40 bg-[#faf8f5]/40" : "border-black/[0.07]"
@@ -604,45 +699,58 @@ export function GalleryTab({
                   </div>
                 </div>
 
-                {/* Optional Inline Metadata */}
-                <div className="flex flex-col gap-1.5">
-                  <div className="flex items-center gap-2">
+                {/* Inline Metadata Form */}
+                <div className="flex flex-col gap-2">
+                  {/* Row 1: Caption */}
+                  <input
+                    type="text"
+                    defaultValue={item.caption || ""}
+                    onBlur={(e) => onUpdateMedia(item.id, "caption", e.target.value)}
+                    placeholder="Add caption (optional)"
+                    className="w-full px-3 py-1.5 rounded-lg bg-[#fafafb] border border-black/[0.06] text-xs text-[#181925] placeholder:text-[#aaa] outline-none focus:border-primary/50"
+                  />
+
+                  {/* Row 2: Album (With Folder Icon + Datalist Suggestions) */}
+                  <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#fafafb] border border-black/[0.06] focus-within:border-primary/50 transition-colors">
+                    <Folder className="size-3.5 text-primary/70 shrink-0" />
                     <input
                       type="text"
-                      defaultValue={item.caption || ""}
-                      onBlur={(e) => onUpdateMedia(item.id, "caption", e.target.value)}
-                      placeholder="Add caption (optional)"
-                      className="flex-1 px-2.5 py-1.5 rounded-lg bg-[#fafafb] border border-black/[0.06] text-xs text-[#181925] placeholder:text-[#aaa] outline-none focus:border-primary/50"
+                      list={`album-list-${item.id}`}
+                      defaultValue={item.album || ""}
+                      onBlur={(e) => onUpdateMedia(item.id, "album", e.target.value)}
+                      placeholder="Album (e.g. Family, Travels, Leh)"
+                      className="w-full min-w-0 bg-transparent text-xs text-[#181925] placeholder:text-[#aaa] outline-none"
                     />
-
-                    <input
-                      type="number"
-                      defaultValue={item.approx_year || ""}
-                      onBlur={(e) => onUpdateMedia(item.id, "approx_year", e.target.value ? Number(e.target.value) : null)}
-                      placeholder="Year"
-                      className="w-18 px-2 py-1.5 rounded-lg bg-[#fafafb] border border-black/[0.06] text-xs text-[#181925] font-mono placeholder:text-[#aaa] outline-none focus:border-primary/50 text-center"
-                    />
+                    <datalist id={`album-list-${item.id}`}>
+                      {existingAlbums.map((alb) => (
+                        <option key={alb} value={alb} />
+                      ))}
+                    </datalist>
                   </div>
 
+                  {/* Row 3: Location and Year */}
                   <div className="flex items-center gap-2">
-                    <div className="flex-1 flex items-center gap-1 px-2 py-1 rounded-lg bg-[#fafafb] border border-black/[0.06]">
-                      <Folder className="size-3 text-[#888] shrink-0" />
+                    <div className="flex-1 min-w-0 flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#fafafb] border border-black/[0.06] focus-within:border-primary/50 transition-colors">
+                      <MapPin className="size-3 text-[#888] shrink-0" />
                       <input
                         type="text"
-                        defaultValue={item.album || ""}
-                        onBlur={(e) => onUpdateMedia(item.id, "album", e.target.value)}
-                        placeholder="Album (e.g. Family)"
-                        className="w-full bg-transparent text-[11px] text-[#181925] placeholder:text-[#aaa] outline-none"
+                        defaultValue={item.location || ""}
+                        onBlur={(e) => onUpdateMedia(item.id, "location", e.target.value)}
+                        placeholder="Location"
+                        className="w-full min-w-0 bg-transparent text-xs text-[#181925] placeholder:text-[#aaa] outline-none"
                       />
                     </div>
 
-                    <input
-                      type="text"
-                      defaultValue={item.location || ""}
-                      onBlur={(e) => onUpdateMedia(item.id, "location", e.target.value)}
-                      placeholder="Location"
-                      className="flex-1 px-2.5 py-1 rounded-lg bg-[#fafafb] border border-black/[0.06] text-[11px] text-[#181925] placeholder:text-[#aaa] outline-none focus:border-primary/50"
-                    />
+                    <div className="w-24 shrink-0 flex items-center gap-1 px-2 py-1.5 rounded-lg bg-[#fafafb] border border-black/[0.06] focus-within:border-primary/50 transition-colors">
+                      <Calendar className="size-3 text-[#888] shrink-0" />
+                      <input
+                        type="number"
+                        defaultValue={item.approx_year || ""}
+                        onBlur={(e) => onUpdateMedia(item.id, "approx_year", e.target.value ? Number(e.target.value) : null)}
+                        placeholder="Year"
+                        className="w-full min-w-0 bg-transparent text-xs text-[#181925] font-mono text-center placeholder:text-[#aaa] outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                      />
+                    </div>
                   </div>
                 </div>
               </div>

@@ -12,7 +12,7 @@ export const metadata: Metadata = {
   openGraph: {
     title: "About BringBack",
     description: POSITIONING.supportingPromise,
-    url: "https://theirs-page.sangukissu.workers.dev/about",
+    url: "https://theirs.page/about",
     type: "website",
   },
 }

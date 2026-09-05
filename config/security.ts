@@ -71,7 +71,7 @@ const productionConfig: SecurityConfig = {
   ...baseConfig,
   enforceHttps: true,
   allowedOrigins: [
-    'https://theirs-page.sangukissu.workers.dev',
+    'https://theirs.page',
     'https://www.yourdomain.com'
   ],
   rateLimiting: {
@@ -97,7 +97,7 @@ const testConfig: SecurityConfig = {
 
 export function getSecurityConfig(): SecurityConfig {
   const env = process.env.NODE_ENV || 'development'
-  
+
   switch (env) {
     case 'production':
       return productionConfig
@@ -132,20 +132,20 @@ export function isOriginAllowed(origin: string | null, config: SecurityConfig): 
 export const SECURITY_HEADERS = {
   // Prevent clickjacking
   'X-Frame-Options': 'DENY',
-  
+
   // Prevent MIME type sniffing
   'X-Content-Type-Options': 'nosniff',
-  
+
   // Control referrer information
   'Referrer-Policy': 'origin-when-cross-origin',
-  
+
   // Restrict browser features
   'Permissions-Policy': 'camera=(), microphone=(), geolocation=(), payment=()',
-  
+
   // Cross-Origin policies
   'Cross-Origin-Opener-Policy': 'same-origin',
   'Cross-Origin-Resource-Policy': 'cross-origin',
-  
+
   // Additional security
   'X-DNS-Prefetch-Control': 'off',
   'X-Download-Options': 'noopen'

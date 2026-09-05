@@ -25,13 +25,13 @@ export const metadata: Metadata = {
     "remove unwanted person from image",
   ],
   alternates: {
-    canonical: "https://theirs-page.sangukissu.workers.dev/remove-person-from-photo",
+    canonical: "https://theirs.page/remove-person-from-photo",
   },
   openGraph: {
     title: "Remove Person from Photo AI | BringBack",
     description:
       "Seamlessly erase photobombers or unwanted figures from photos while AI synthesizes matching background patterns.",
-    url: "https://theirs-page.sangukissu.workers.dev/remove-person-from-photo",
+    url: "https://theirs.page/remove-person-from-photo",
     siteName: "BringBack",
     type: "website",
     images: [
@@ -49,17 +49,17 @@ export const metadata: Metadata = {
 const webAppJsonLd = {
   "@context": "https://schema.org",
   "@type": "WebApplication",
-  "@id": "https://theirs-page.sangukissu.workers.dev/remove-person-from-photo#webapp",
+  "@id": "https://theirs.page/remove-person-from-photo#webapp",
   name: "BringBack Remove Person from Photo AI",
   description:
     "Erase photobombers or unwanted figures from photos while AI synthesizes matching background patterns.",
-  url: "https://theirs-page.sangukissu.workers.dev/remove-person-from-photo",
+  url: "https://theirs.page/remove-person-from-photo",
   applicationCategory: "PhotoEditingApplication",
   operatingSystem: "Web",
   offers: {
     "@type": "Offer",
     name: "Remove Person Credit Pack",
-    url: "https://theirs-page.sangukissu.workers.dev/pricing",
+    url: "https://theirs.page/pricing",
     priceCurrency: "USD",
     price: "4.99",
     description: "4 credits — covers 4 Remove Person runs.",
@@ -77,28 +77,28 @@ const howToJsonLd = {
       position: 1,
       name: "Upload Your Photo",
       text: "Select the photo containing photobombers, strangers, or an unwanted person.",
-      url: "https://theirs-page.sangukissu.workers.dev/remove-person-from-photo#how-it-works",
+      url: "https://theirs.page/remove-person-from-photo#how-it-works",
     },
     {
       "@type": "HowToStep",
       position: 2,
       name: "Highlight Person to Remove",
       text: "Simply brush over or select the figure or object you want erased from the picture.",
-      url: "https://theirs-page.sangukissu.workers.dev/remove-person-from-photo#how-it-works",
+      url: "https://theirs.page/remove-person-from-photo#how-it-works",
     },
     {
       "@type": "HowToStep",
       position: 3,
       name: "AI Rebuilds the Background",
       text: "BringBack erases the figure and synthesizes matching background patterns in seconds.",
-      url: "https://theirs-page.sangukissu.workers.dev/remove-person-from-photo#how-it-works",
+      url: "https://theirs.page/remove-person-from-photo#how-it-works",
     },
     {
       "@type": "HowToStep",
       position: 4,
       name: "Download Clean Photo",
       text: "Review your photo side-by-side in your dashboard and download high-res print quality.",
-      url: "https://theirs-page.sangukissu.workers.dev/remove-person-from-photo#how-it-works",
+      url: "https://theirs.page/remove-person-from-photo#how-it-works",
     },
   ],
 }

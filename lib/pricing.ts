@@ -4,7 +4,7 @@
  * aligned with production payment_plans (4 / 20 / 60 credits).
  */
 
-export const SITE_URL = "https://theirs-page.sangukissu.workers.dev" as const
+export const SITE_URL = "https://theirs.page" as const
 
 export type CreditFeatureKey =
   | "restore"

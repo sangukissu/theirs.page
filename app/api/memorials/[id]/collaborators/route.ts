@@ -30,7 +30,7 @@ export async function GET(req: NextRequest, context: RouteContext) {
     const db = getSupabaseAdminSafe() || supabase
     const { data: collabs, error } = await db
       .from("collaborators")
-      .select("id, email, role, invitation_accepted, created_at")
+      .select("id, email, role, invitation_accepted, is_trusted, created_at")
       .eq("memorial_id", id)
       .order("created_at", { ascending: true })
 
@@ -260,3 +260,55 @@ export async function DELETE(req: NextRequest, context: RouteContext) {
     return NextResponse.json({ error: "Internal server error" }, { status: 500 })
   }
 }
+
+export async function PATCH(req: NextRequest, context: RouteContext) {
+  try {
+    const { id } = await context.params
+    const supabase = await createClient()
+    const {
+      data: { user },
+    } = await supabase.auth.getUser()
+
+    if (!user) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+    }
+
+    const authCheck = await assertMemorialOwner(id, user.id)
+    if (!authCheck.authorized || !authCheck.memorial) {
+      return authCheck.errorResponse || NextResponse.json({ error: "Forbidden" }, { status: 403 })
+    }
+
+    const body = await req.json().catch(() => ({}))
+    const { collaboratorId, is_trusted, role } = body
+
+    if (!collaboratorId) {
+      return NextResponse.json({ error: "collaboratorId is required" }, { status: 400 })
+    }
+
+    const db = getSupabaseAdminSafe() || supabase
+    const updatePayload: Record<string, any> = {}
+    if (typeof is_trusted === "boolean") {
+      updatePayload.is_trusted = is_trusted
+    }
+    if (role && ["co_admin", "contributor"].includes(role)) {
+      updatePayload.role = role
+    }
+
+    const { error } = await db
+      .from("collaborators")
+      .update(updatePayload)
+      .eq("id", collaboratorId)
+      .eq("memorial_id", id)
+
+    if (error) {
+      console.error("Collaborator PATCH error:", error)
+      return NextResponse.json({ error: "Failed to update collaborator." }, { status: 500 })
+    }
+
+    return NextResponse.json({ success: true, updated: updatePayload })
+  } catch (err: any) {
+    console.error("Collaborator PATCH error:", err)
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 })
+  }
+}
+

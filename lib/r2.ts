@@ -1,6 +1,5 @@
-import { CopyObjectCommand, S3Client, GetObjectCommand } from "@aws-sdk/client-s3";
+import { CopyObjectCommand, DeleteObjectCommand, S3Client, GetObjectCommand, PutObjectCommand } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
-import { PutObjectCommand } from "@aws-sdk/client-s3";
 
 const DEFAULT_R2_ACCOUNT_ID = "31553742a1d9a253c2d40b5834e281cc"
 const DEFAULT_R2_ACCESS_KEY_ID = "310f32cdb6aa5df7e64dfffda657e820"
@@ -364,6 +363,40 @@ export function resolveMediaUrl(rawUrl: string | null | undefined): string {
   const cleanEndpoint = endpoint.replace(/\/$/, "")
   const cleanKey = rawUrl.replace(/^\/+/, "")
   return `${cleanEndpoint}/${cleanKey}`
+}
+
+/**
+ * Promotes a media object from private quarantine to the public memorial storage path.
+ */
+export async function promoteQuarantinedMedia(
+  sourceKey: string,
+  destKey: string
+): Promise<string> {
+  const client = getR2Client()
+  const bucket = getR2BucketName()
+
+  try {
+    await client.send(
+      new CopyObjectCommand({
+        Bucket: bucket,
+        CopySource: `${bucket}/${sourceKey}`,
+        Key: destKey,
+        MetadataDirective: "COPY",
+      })
+    )
+
+    await client.send(
+      new DeleteObjectCommand({
+        Bucket: bucket,
+        Key: sourceKey,
+      })
+    )
+  } catch (err) {
+    console.error(`Failed to promote media from ${sourceKey} to ${destKey}:`, err)
+  }
+
+  const endpoint = process.env.R2_MEDIA_ENDPOINT || DEFAULT_R2_MEDIA_ENDPOINT
+  return `${endpoint.replace(/\/$/, "")}/${destKey}`
 }
 
 

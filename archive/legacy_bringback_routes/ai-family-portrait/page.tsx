@@ -35,14 +35,14 @@ export const metadata: Metadata = {
     "memorial family portrait",
   ],
   alternates: {
-    canonical: "https://theirs-page.sangukissu.workers.dev/ai-family-portrait",
+    canonical: "https://theirs.page/ai-family-portrait",
   },
   openGraph: {
     title: "AI Family Portrait Generator | BringBack",
     description:
       `Bring separate family photos into one shared portrait with up to 8 references, ${THEME_COUNT} curated themes, pet support, clothing control, and four canvas ratios.`,
     type: "website",
-    url: "https://theirs-page.sangukissu.workers.dev/ai-family-portrait",
+    url: "https://theirs.page/ai-family-portrait",
     images: [
       {
         url: "/family-og.png",
@@ -58,11 +58,11 @@ export const metadata: Metadata = {
 const familyPortraitWebAppJsonLd = {
   '@context': 'https://schema.org',
   '@type': 'WebApplication',
-  '@id': 'https://theirs-page.sangukissu.workers.dev/ai-family-portrait#webapp',
+  '@id': 'https://theirs.page/ai-family-portrait#webapp',
   name: 'BringBack AI Family Portrait Generator',
   description:
     `Create one generated family portrait from up to 8 separate reference photos with ${THEME_COUNT} curated themes, people and pet counts, clothing control, and selectable canvas ratios.`,
-  url: 'https://theirs-page.sangukissu.workers.dev/ai-family-portrait',
+  url: 'https://theirs.page/ai-family-portrait',
   applicationCategory: 'PhotoEditingApplication',
   operatingSystem: 'Web',
   featureList: [
@@ -75,7 +75,7 @@ const familyPortraitWebAppJsonLd = {
   offers: {
     '@type': 'Offer',
     name: 'Family Portrait Credit Pack',
-    url: 'https://theirs-page.sangukissu.workers.dev/pricing',
+    url: 'https://theirs.page/pricing',
     priceCurrency: 'USD',
     price: STARTER_PLAN.priceUsd.toFixed(2),
     description: `${STARTER_PLAN.credits} credits — covers ${Math.floor(STARTER_PLAN.credits / FEATURE_CREDIT_COSTS.familyPortrait.credits)} AI Family Portrait generations.`,
@@ -85,7 +85,7 @@ const familyPortraitWebAppJsonLd = {
 const familyPortraitHowToJsonLd = {
   '@context': 'https://schema.org',
   '@type': 'HowTo',
-  '@id': 'https://theirs-page.sangukissu.workers.dev/ai-family-portrait#how-it-works',
+  '@id': 'https://theirs.page/ai-family-portrait#how-it-works',
   name: FAMILY_PORTRAIT_HOW_TO.name,
   description: FAMILY_PORTRAIT_HOW_TO.description,
   step: FAMILY_PORTRAIT_HOW_TO_STEPS.map((step, index) => ({
@@ -100,7 +100,7 @@ const familyPortraitHowToJsonLd = {
 const familyPortraitFaqJsonLd = {
   '@context': 'https://schema.org',
   '@type': 'FAQPage',
-  '@id': 'https://theirs-page.sangukissu.workers.dev/ai-family-portrait#faq',
+  '@id': 'https://theirs.page/ai-family-portrait#faq',
   mainEntity: FAMILY_PORTRAIT_FAQS.map((faq) => ({
     '@type': 'Question',
     name: faq.question,

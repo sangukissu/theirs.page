@@ -18,7 +18,7 @@ export default async function TimelinePage({ params }: { params: Promise<{ slug:
   const timeline = await loadBrowsePage<TimelineMilestone>(context, "timeline")
 
   return (
-    <div className="pb-10">
+    <div className="pt-16 sm:pt-20 pb-10">
       <PagedTimeline slug={slug} initial={timeline} isDemo={context.identity.isDemo} />
     </div>
   )
