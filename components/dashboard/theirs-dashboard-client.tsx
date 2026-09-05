@@ -9,14 +9,9 @@ import {
   ArrowRight,
   ExternalLink,
   Sparkles,
-  Heart,
   Image as ImageIcon,
-  Clock,
-  Settings,
   Share2,
   Check,
-  Globe,
-  Lock,
   AlertCircle,
   CheckCircle2,
   Shield,
@@ -274,7 +269,7 @@ export function TheirsDashboardClient({
               Your Memorials
             </h1>
             <p className="text-xs sm:text-sm text-[#71717a]">
-              Quiet, dedicated places on the internet honoring the people you love.
+              A quiet place for the people you never want to forget.
             </p>
           </div>
 
@@ -298,19 +293,12 @@ export function TheirsDashboardClient({
                 <span className="text-xs font-mono font-medium text-primary uppercase tracking-wider">
                   New Memorial
                 </span>
-                {fullNameInput && (
-                  <span className="inline-flex items-center gap-1.5 text-[11px] font-medium text-primary bg-primary/10 px-2.5 py-0.5 rounded-full">
-                    <Sparkles className="size-3" />
-                    <span>Reserved: theirs.page/{slugInput || normalizeMemorialSlug(fullNameInput)}</span>
-                  </span>
-                )}
               </div>
               <h2 className="text-lg sm:text-xl font-medium text-[#181925]">
-                Who are we remembering?
+                Who would you like to remember?
               </h2>
               <p className="text-xs text-[#71717a]">
-                Enter their name to begin. You can add their story, photos, voice notes, and timeline at your own pace.
-              </p>
+                Start with their name. You can add their stories, photos, voice notes, and memories whenever you’re ready.              </p>
             </div>
 
             <form onSubmit={handleCreate} className="flex flex-col gap-5">
@@ -478,8 +466,8 @@ export function TheirsDashboardClient({
                         )}
                         <span
                           className={`px-2 py-0.5 rounded-full text-[10px] font-mono uppercase font-semibold ${m.status === "published"
-                              ? "bg-emerald-50 text-emerald-700 border border-emerald-200"
-                              : "bg-amber-50 text-amber-700 border border-amber-200"
+                            ? "bg-emerald-50 text-emerald-700 border border-emerald-200"
+                            : "bg-amber-50 text-amber-700 border border-amber-200"
                             }`}
                         >
                           {m.status}

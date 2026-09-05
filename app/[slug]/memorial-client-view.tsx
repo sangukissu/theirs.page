@@ -39,9 +39,17 @@ export interface MemorialData {
 export function MemorialClientView({ data }: { data: MemorialData }) {
   const [isContributeOpen, setIsContributeOpen] = useState(false)
   const [contributeType, setContributeType] = useState<ContributionType | null>(null)
+  const [contributePhotoUrl, setContributePhotoUrl] = useState<string | null>(null)
+  const [contributePhotoTitle, setContributePhotoTitle] = useState<string | null>(null)
 
-  const handleOpenContribute = (type?: ContributionType) => {
+  const handleOpenContribute = (
+    type?: ContributionType,
+    initialPhotoUrl?: string,
+    initialPhotoTitle?: string
+  ) => {
     setContributeType(type || null)
+    setContributePhotoUrl(initialPhotoUrl || null)
+    setContributePhotoTitle(initialPhotoTitle || null)
     setIsContributeOpen(true)
   }
 
@@ -138,13 +146,19 @@ export function MemorialClientView({ data }: { data: MemorialData }) {
       {/* Guest Contribution Modal */}
       <ContributeModal
         isOpen={isContributeOpen}
-        onClose={() => setIsContributeOpen(false)}
+        onClose={() => {
+          setIsContributeOpen(false)
+          setContributePhotoUrl(null)
+          setContributePhotoTitle(null)
+        }}
         memorialName={data.fullName}
         slug={data.slug}
         memorialId={data.id}
         isPaid={data.isPaid}
         photoCount={data.photosCount}
         initialType={contributeType}
+        initialPhotoUrl={contributePhotoUrl}
+        initialPhotoTitle={contributePhotoTitle}
       />
     </main>
   )

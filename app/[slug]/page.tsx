@@ -209,6 +209,8 @@ export default async function MemorialPage({ params, searchParams }: MemorialPag
         album: m.album || undefined,
         isPinned: Boolean(m.is_pinned),
         mediaUrl: resolveMediaUrl(m.url),
+        addedBy: m.uploaded_by || undefined,
+        people: m.tagged_people ? m.tagged_people.split(",").map((s: string) => s.trim()).filter(Boolean) : undefined,
       }))
 
       timelineEvents = (timelineRes.data || []).map((t: any) => ({

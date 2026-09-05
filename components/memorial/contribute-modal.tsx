@@ -35,6 +35,8 @@ interface ContributeModalProps {
   isPaid?: boolean
   photoCount?: number
   initialType?: ContributionType | null
+  initialPhotoUrl?: string | null
+  initialPhotoTitle?: string | null
 }
 
 export function ContributeModal({
@@ -46,6 +48,8 @@ export function ContributeModal({
   isPaid = false,
   photoCount = 0,
   initialType = null,
+  initialPhotoUrl = null,
+  initialPhotoTitle = null,
 }: ContributeModalProps) {
   const [selectedType, setSelectedType] = useState<ContributionType | null>(initialType)
   const [tributeRitual, setTributeRitual] = useState<TributeRitual>("flower")
@@ -127,11 +131,22 @@ export function ContributeModal({
       } else {
         setSelectedType(null)
       }
+
+      if (initialPhotoUrl) {
+        setMemoryPhotos([{ url: initialPhotoUrl, name: initialPhotoTitle || "Selected Photograph" }])
+        setUploadedFileUrl(initialPhotoUrl)
+        setUploadedFileName(initialPhotoTitle || "Selected Photograph")
+      } else {
+        setMemoryPhotos([])
+        setUploadedFileUrl(null)
+        setUploadedFileName(null)
+      }
+
       setIsSubmitted(false)
       setError(null)
       setMediaUploadError(null)
     }
-  }, [isOpen, initialType, isPaid, photoCount])
+  }, [isOpen, initialType, initialPhotoUrl, initialPhotoTitle, isPaid, photoCount])
 
   const handleFileSelect = async (file: File) => {
     if (!file) return

@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useRef, useEffect } from "react"
+import { useState, useRef, useEffect, useCallback, useMemo } from "react"
 import {
   Maximize2,
   X,
@@ -18,6 +18,11 @@ import {
   Film,
   RotateCcw,
   Pin,
+  Share2,
+  BookOpen,
+  Download,
+  ChevronLeft,
+  ChevronRight,
 } from "lucide-react"
 import { ContributionType } from "./contribute-modal"
 
@@ -39,6 +44,7 @@ export interface GalleryItem {
   hasUnknownPerson?: boolean
   story?: string
   audioTitle?: string
+  addedBy?: string
 }
 
 export const DEFAULT_GALLERY_ITEMS: GalleryItem[] = [
@@ -54,6 +60,7 @@ export const DEFAULT_GALLERY_ITEMS: GalleryItem[] = [
     aspectRatio: "portrait",
     people: ["Robert Carter"],
     story: "Calibrating a 19th-century mahogany bracket clock for the village church.",
+    addedBy: "Anita Carter",
   },
   // 2. VIDEO (Real playable clip)
   {
@@ -69,6 +76,7 @@ export const DEFAULT_GALLERY_ITEMS: GalleryItem[] = [
     duration: "0:12",
     people: ["Robert Carter", "Meena Carter", "Young Anita"],
     story: "Digitized 8mm home film reel. Robert talking about his peace roses while Meena pours Assam tea from the enamel pot.",
+    addedBy: "Anita Carter",
   },
   // 3. AUDIO (Real playable audio)
   {
@@ -82,6 +90,7 @@ export const DEFAULT_GALLERY_ITEMS: GalleryItem[] = [
     duration: "0:24",
     audioTitle: "“Make sure you put enough air in those front tyres...”",
     story: "Voicemail left on Anita’s phone on a rainy Friday before she drove back to London. You can hear his soft chuckle right at the end.",
+    addedBy: "Anita Carter",
   },
   // 4. PHOTO
   {
@@ -95,6 +104,7 @@ export const DEFAULT_GALLERY_ITEMS: GalleryItem[] = [
     aspectRatio: "landscape",
     people: ["Robert Carter", "Meena Sharma"],
     story: "July 20th, 1974. Meena wearing a hand-embroidered silk sari and Robert in his first tailored suit.",
+    addedBy: "Meena Carter",
   },
   // 5. VIDEO (Real playable clip)
   {
@@ -110,6 +120,7 @@ export const DEFAULT_GALLERY_ITEMS: GalleryItem[] = [
     duration: "0:08",
     people: ["Robert Carter"],
     story: "Recorded on apprentice Sarah’s camcorder. Robert looking up from the jeweler’s lathe with a calm, reassuring smile.",
+    addedBy: "Sarah (Apprentice)",
   },
   // 6. PHOTO
   {
@@ -123,6 +134,7 @@ export const DEFAULT_GALLERY_ITEMS: GalleryItem[] = [
     aspectRatio: "square",
     people: ["Robert Carter", "Anita Carter (baby)", "Meena Carter"],
     story: "First summer with granddaughter Anita in the cottage garden. Robert built the wooden pram himself.",
+    addedBy: "Meena Carter",
   },
   // 7. AUDIO (Real playable audio)
   {
@@ -136,6 +148,7 @@ export const DEFAULT_GALLERY_ITEMS: GalleryItem[] = [
     duration: "0:36",
     audioTitle: "“We took the car across the moors in dense fog...”",
     story: "Recorded by apprentice Sarah during tea break. Robert humming Beatles tunes and laughing about the slipping clutch.",
+    addedBy: "Sarah (Apprentice)",
   },
   // 8. VIDEO (Real playable clip)
   {
@@ -151,6 +164,7 @@ export const DEFAULT_GALLERY_ITEMS: GalleryItem[] = [
     duration: "0:06",
     people: ["Robert Carter"],
     story: "Resting on a granite boulder overlooking the river Dart after a long walk through the heather.",
+    addedBy: "Anita Carter",
   },
   // 9. PHOTO
   {
@@ -165,6 +179,7 @@ export const DEFAULT_GALLERY_ITEMS: GalleryItem[] = [
     people: ["Robert Carter", "Unknown boy on left"],
     hasUnknownPerson: true,
     story: "Robert sitting second from the right, front row. The boy holding the bat is unidentified.",
+    addedBy: "Anita Carter",
   },
 ]
 
@@ -173,7 +188,11 @@ interface MemorialGalleryProps {
   items?: GalleryItem[]
   isDemo?: boolean
   isPaid?: boolean
-  onOpenContribute: (type?: ContributionType) => void
+  onOpenContribute: (
+    type?: ContributionType,
+    initialPhotoUrl?: string,
+    initialPhotoTitle?: string
+  ) => void
 }
 
 export function MemorialGallery({
@@ -217,6 +236,15 @@ export function MemorialGallery({
     setIdentifiedMap((prev) => ({ ...prev, [id]: true }))
   }
 
+  // Modal & Slideshow State
+  const [isSlideshowPlaying, setIsSlideshowPlaying] = useState(false)
+  const [copiedLink, setCopiedLink] = useState(false)
+  const touchStartXRef = useRef<number | null>(null)
+
+  const currentIndex = selectedItem
+    ? filteredItems.findIndex((i) => i.id === selectedItem.id)
+    : -1
+
   // Format seconds to mm:ss
   const formatTime = (secs: number) => {
     if (isNaN(secs) || !isFinite(secs) || secs < 0) return "0:00"
@@ -224,6 +252,159 @@ export function MemorialGallery({
     const s = Math.floor(secs % 60)
     return `${m}:${s < 10 ? "0" : ""}${s}`
   }
+
+  // Navigation handlers
+  const handlePrev = useCallback(() => {
+    if (filteredItems.length <= 1) return
+    const nextIdx = (currentIndex - 1 + filteredItems.length) % filteredItems.length
+    setSelectedItem(filteredItems[nextIdx])
+  }, [filteredItems, currentIndex])
+
+  const handleNext = useCallback(() => {
+    if (filteredItems.length <= 1) return
+    const nextIdx = (currentIndex + 1) % filteredItems.length
+    setSelectedItem(filteredItems[nextIdx])
+  }, [filteredItems, currentIndex])
+
+  const handleCloseModal = useCallback(() => {
+    setSelectedItem(null)
+    setIsSlideshowPlaying(false)
+  }, [])
+
+  const toggleSlideshow = useCallback(() => {
+    setIsSlideshowPlaying((prev) => !prev)
+  }, [])
+
+  const handleShare = async (item: GalleryItem) => {
+    const shareUrl = typeof window !== "undefined" ? window.location.href : ""
+    if (typeof navigator !== "undefined" && navigator.share) {
+      try {
+        await navigator.share({
+          title: item.title || fullName,
+          text: item.story || `Remembering on ${fullName}'s memorial archive`,
+          url: shareUrl,
+        })
+        return
+      } catch {
+        // Ignored or cancelled
+      }
+    }
+    if (typeof navigator !== "undefined" && navigator.clipboard) {
+      try {
+        await navigator.clipboard.writeText(shareUrl)
+        setCopiedLink(true)
+        setTimeout(() => setCopiedLink(false), 2200)
+      } catch (err) {
+        console.error("Clipboard copy error:", err)
+      }
+    }
+  }
+
+  const handleDownload = (item: GalleryItem) => {
+    const a = document.createElement("a")
+    a.href = item.mediaUrl
+    const safeTitle = item.title
+      ? item.title.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "")
+      : "memorial-media"
+    const extension =
+      item.mediaType === "video" ? ".mp4" : item.mediaType === "audio" ? ".mp3" : ".jpg"
+    a.download = `${safeTitle}${extension}`
+    a.target = "_blank"
+    a.rel = "noopener noreferrer"
+    document.body.appendChild(a)
+    a.click()
+    document.body.removeChild(a)
+  }
+
+  const handleTellStory = () => {
+    const photoUrl =
+      selectedItem?.mediaType === "photo"
+        ? selectedItem.mediaUrl
+        : selectedItem?.posterUrl || undefined
+    const photoTitle = selectedItem?.title
+    handleCloseModal()
+    onOpenContribute("memory", photoUrl, photoTitle)
+  }
+
+  // Responsive Column Count for true Left-to-Right Masonry distribution
+  const [columnsCount, setColumnsCount] = useState(3)
+
+  useEffect(() => {
+    const updateColumns = () => {
+      if (window.innerWidth < 640) {
+        setColumnsCount(1)
+      } else if (window.innerWidth < 768) {
+        setColumnsCount(2)
+      } else {
+        setColumnsCount(3)
+      }
+    }
+    updateColumns()
+    window.addEventListener("resize", updateColumns)
+    return () => window.removeEventListener("resize", updateColumns)
+  }, [])
+
+  const columnItems = useMemo(() => {
+    const cols: GalleryItem[][] = Array.from({ length: columnsCount }, () => [])
+    filteredItems.forEach((item, index) => {
+      cols[index % columnsCount].push(item)
+    })
+    return cols
+  }, [filteredItems, columnsCount])
+
+  // Slideshow interval
+  useEffect(() => {
+    if (!isSlideshowPlaying || !selectedItem || filteredItems.length <= 1) return
+
+    const timer = setInterval(() => {
+      setSelectedItem((current) => {
+        if (!current) return null
+        const idx = filteredItems.findIndex((i) => i.id === current.id)
+        const nextIdx = (idx + 1) % filteredItems.length
+        return filteredItems[nextIdx]
+      })
+    }, 4500)
+
+    return () => clearInterval(timer)
+  }, [isSlideshowPlaying, selectedItem, filteredItems])
+
+  // Keyboard navigation
+  useEffect(() => {
+    if (!selectedItem) return
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "ArrowLeft") {
+        e.preventDefault()
+        handlePrev()
+      } else if (e.key === "ArrowRight") {
+        e.preventDefault()
+        handleNext()
+      } else if (e.key === "Escape") {
+        e.preventDefault()
+        handleCloseModal()
+      } else if (e.key === " ") {
+        const tag = (e.target as HTMLElement)?.tagName?.toLowerCase()
+        if (tag !== "input" && tag !== "textarea") {
+          e.preventDefault()
+          toggleSlideshow()
+        }
+      }
+    }
+
+    window.addEventListener("keydown", handleKeyDown)
+    return () => window.removeEventListener("keydown", handleKeyDown)
+  }, [selectedItem, handlePrev, handleNext, handleCloseModal, toggleSlideshow])
+
+  // Prevent background scroll when modal is open
+  useEffect(() => {
+    if (selectedItem) {
+      const originalOverflow = document.body.style.overflow
+      document.body.style.overflow = "hidden"
+      return () => {
+        document.body.style.overflow = originalOverflow
+      }
+    }
+  }, [selectedItem])
 
   // Proactively fetch metadata for audio items so duration is visible immediately
   useEffect(() => {
@@ -437,291 +618,367 @@ export function MemorialGallery({
           )}
         </div>
       ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
-          {filteredItems.map((item) => {
-          
-          // ===================================================================
-          // 1. REAL AUDIO CARD (Interactive Waveform Player)
-          // ===================================================================
-          if (item.mediaType === "audio") {
-            const isPlaying = playingAudioId === item.id
-            const progress = audioProgress[item.id] || 0
-            const currentFormattedTime = audioCurrentTime[item.id] || "0:00"
-            const durationDisplay =
-              audioDurations[item.id] ||
-              (item.duration && item.duration !== "undefined" ? item.duration : "")
+        /* FLUID MASONRY GRID (Left-to-right distributed, no empty leading slots, natural dimensions) */
+        <div
+          className={`grid gap-4 items-start ${
+            columnsCount === 1
+              ? "grid-cols-1"
+              : columnsCount === 2
+              ? "grid-cols-2"
+              : "grid-cols-3"
+          }`}
+        >
+          {columnItems.map((col, colIdx) => (
+            <div key={colIdx} className="flex flex-col gap-4 min-w-0">
+              {col.map((item) => {
+                // 1. REAL AUDIO CARD (Interactive Waveform Player in Masonry Flow)
+                if (item.mediaType === "audio") {
+                  const isPlaying = playingAudioId === item.id
+                  const progress = audioProgress[item.id] || 0
+                  const currentFormattedTime = audioCurrentTime[item.id] || "0:00"
+                  const durationDisplay =
+                    audioDurations[item.id] ||
+                    (item.duration && item.duration !== "undefined" ? item.duration : "")
 
-            return (
-              <div
-                key={item.id}
-                className="p-5 rounded-2xl bg-[#f7f7f8] border border-black/[0.06] hover:border-black/[0.12] transition-all flex flex-col justify-between gap-4 group"
-              >
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-1.5">
-                    <span className="inline-flex items-center gap-1 text-[11px] font-mono text-primary bg-primary/10 px-2 py-0.5 rounded-full font-medium">
-                      <Volume2 className="size-3" />
-                      <span>Voice recording</span>
-                    </span>
-                    {item.isPinned && (
-                      <span className="inline-flex items-center gap-1 text-[10px] font-mono font-medium text-[#8b5a45] bg-[#faf8f5] border border-[#8b5a45]/30 px-2 py-0.5 rounded-full">
-                        <Pin className="size-2.5 fill-[#8b5a45]" /> Featured
-                      </span>
-                    )}
-                  </div>
-                  <span className="text-[11px] font-mono text-[#888]">
-                    {isPlaying
-                      ? (durationDisplay ? `${currentFormattedTime} / ${durationDisplay}` : currentFormattedTime)
-                      : (durationDisplay || "Audio recording")}
-                  </span>
-                </div>
+                  return (
+                    <div key={item.id} className="w-full">
+                      <div className="p-5 rounded-2xl bg-[#f7f7f8] border border-black/[0.06] hover:border-black/[0.12] transition-all flex flex-col justify-between gap-4 group">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-1.5">
+                            <span className="inline-flex items-center gap-1 text-[11px] font-mono text-primary bg-primary/10 px-2 py-0.5 rounded-full font-medium">
+                              <Volume2 className="size-3" />
+                              <span>Voice recording</span>
+                            </span>
+                            {item.isPinned && (
+                              <span className="inline-flex items-center gap-1 text-[10px] font-mono font-medium text-[#8b5a45] bg-[#faf8f5] border border-[#8b5a45]/30 px-2 py-0.5 rounded-full">
+                                <Pin className="size-2.5 fill-[#8b5a45]" /> Featured
+                              </span>
+                            )}
+                          </div>
+                          <span className="text-[11px] font-mono text-[#888]">
+                            {isPlaying
+                              ? (durationDisplay ? `${currentFormattedTime} / ${durationDisplay}` : currentFormattedTime)
+                              : (durationDisplay || "Audio recording")}
+                          </span>
+                        </div>
 
-                <div className="flex flex-col gap-1">
-                  <h3 className="text-sm font-medium text-[#181925] line-clamp-2">
-                    {item.title}
-                  </h3>
-                  {item.story && (
-                    <p className="text-xs text-[#555] leading-relaxed line-clamp-2">
-                      “{item.story}”
-                    </p>
-                  )}
-                </div>
+                        <div
+                          onClick={() => setSelectedItem(item)}
+                          className="flex flex-col gap-1 cursor-pointer"
+                        >
+                          <h3 className="text-sm font-medium text-[#181925] line-clamp-2 hover:text-primary transition-colors">
+                            {item.title}
+                          </h3>
+                          {item.story && (
+                            <p className="text-xs text-[#555] leading-relaxed line-clamp-2">
+                              “{item.story}”
+                            </p>
+                          )}
+                        </div>
 
-                {/* Interactive Waveform Seekbar */}
-                <div className="p-3 rounded-xl bg-white border border-black/[0.06] flex items-center gap-3 select-none">
-                  <button
-                    type="button"
-                    onClick={() => handleToggleAudio(item)}
-                    className="size-9 rounded-full bg-primary text-white flex items-center justify-center shrink-0 hover:bg-primary/95 transition-transform active:scale-95 cursor-pointer shadow-xs"
-                    aria-label={isPlaying ? "Pause audio" : "Play audio"}
-                  >
-                    {isPlaying ? (
-                      <Pause className="size-4 fill-white" />
-                    ) : (
-                      <Play className="size-4 ml-0.5 fill-white" />
-                    )}
-                  </button>
+                        {/* Interactive Waveform Seekbar */}
+                        <div className="p-3 rounded-xl bg-white border border-black/[0.06] flex items-center gap-3 select-none">
+                          <button
+                            type="button"
+                            onClick={() => handleToggleAudio(item)}
+                            className="size-9 rounded-full bg-primary text-white flex items-center justify-center shrink-0 hover:bg-primary/95 transition-transform active:scale-95 cursor-pointer shadow-xs"
+                            aria-label={isPlaying ? "Pause audio" : "Play audio"}
+                          >
+                            {isPlaying ? (
+                              <Pause className="size-4 fill-white" />
+                            ) : (
+                              <Play className="size-4 ml-0.5 fill-white" />
+                            )}
+                          </button>
 
-                  {/* Clickable Scrubber Waveform */}
-                  <div
-                    onClick={(e) => handleSeekAudio(item, e)}
-                    className="flex-1 flex items-center gap-[2.5px] h-6 cursor-pointer relative"
-                    title="Click to seek"
-                  >
-                    {[35, 65, 95, 45, 80, 55, 75, 40, 90, 60, 30, 75, 50, 85, 40, 65, 90, 55].map((h, i) => {
-                      const barPct = (i / 18) * 100
-                      const isFilled = barPct <= progress
+                          {/* Clickable Scrubber Waveform */}
+                          <div
+                            onClick={(e) => handleSeekAudio(item, e)}
+                            className="flex-1 flex items-center gap-[2.5px] h-6 cursor-pointer relative"
+                            title="Click to seek"
+                          >
+                            {[35, 65, 95, 45, 80, 55, 75, 40, 90, 60, 30, 75, 50, 85, 40, 65, 90, 55].map((h, i) => {
+                              const barPct = (i / 18) * 100
+                              const isFilled = barPct <= progress
 
-                      return (
-                        <span
-                          key={i}
-                          className={`flex-1 rounded-full transition-all duration-150 ${
-                            isFilled
-                              ? "bg-primary"
-                              : "bg-neutral-200"
-                          } ${isPlaying && isFilled ? "animate-pulse" : ""}`}
-                          style={{ height: `${h}%` }}
-                        />
-                      )
-                    })}
-                  </div>
+                              return (
+                                <span
+                                  key={i}
+                                  className={`flex-1 rounded-full transition-all duration-150 ${
+                                    isFilled ? "bg-primary" : "bg-neutral-200"
+                                  } ${isPlaying && isFilled ? "animate-pulse" : ""}`}
+                                  style={{ height: `${h}%` }}
+                                />
+                              )
+                            })}
+                          </div>
 
-                  {item.year && (
-                    <span className="text-[10px] font-mono text-[#888] shrink-0">
-                      {item.year}
-                    </span>
-                  )}
-                </div>
-              </div>
-            )
-          }
+                          {item.year && (
+                            <span className="text-[10px] font-mono text-[#888] shrink-0">
+                              {item.year}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  )
+                }
 
-          // ===================================================================
-          // 2. REAL VIDEO CARD (Opens Theater Video Player Lightbox)
-          // ===================================================================
-          if (item.mediaType === "video") {
-            const videoDuration =
-              videoDurations[item.id] ||
-              (item.duration && item.duration !== "undefined" ? item.duration : "")
+                // 2. REAL VIDEO CARD (Uncropped in Masonry Grid with Play Glyph)
+                if (item.mediaType === "video") {
+                  const videoDuration =
+                    videoDurations[item.id] ||
+                    (item.duration && item.duration !== "undefined" ? item.duration : "")
 
-            return (
-              <div
-                key={item.id}
-                onClick={() => setSelectedItem(item)}
-                className="group relative rounded-2xl overflow-hidden bg-white border border-black/[0.06] p-2 cursor-pointer transition-all hover:border-black/[0.14] flex flex-col gap-2.5"
-              >
-                <div className="aspect-[3/2] rounded-xl overflow-hidden bg-neutral-900 relative">
-                  {item.posterUrl ? (
-                    <img
-                      src={item.posterUrl}
-                      alt={item.title}
-                      className="size-full object-cover group-hover:scale-105 transition-transform duration-300"
-                    />
-                  ) : (
-                    <video
-                      src={`${item.mediaUrl}#t=0.001`}
-                      preload="metadata"
-                      muted
-                      playsInline
-                      onLoadedMetadata={(e) => {
-                        const dur = e.currentTarget.duration
-                        if (dur && isFinite(dur)) {
-                          setVideoDurations((prev) => ({ ...prev, [item.id]: formatTime(dur) }))
-                        }
-                      }}
-                      className="size-full object-cover group-hover:scale-105 transition-transform duration-300 pointer-events-none"
-                    />
-                  )}
-                  
-                  {/* Glowing Video Play Button Overlay */}
-                  <div className="absolute inset-0 bg-black/40 group-hover:bg-black/25 transition-colors flex items-center justify-center">
-                    <div className="size-11 rounded-full bg-white/95 text-[#181925] flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform">
-                      <Play className="size-5 ml-0.5 fill-[#181925]" />
+                  return (
+                    <div key={item.id} className="w-full">
+                      <div
+                        onClick={() => setSelectedItem(item)}
+                        className="group relative rounded-2xl overflow-hidden bg-neutral-900 cursor-pointer shadow-xs hover:shadow-md transition-all duration-300 w-full"
+                      >
+                        {item.posterUrl ? (
+                          <img
+                            src={item.posterUrl}
+                            alt={item.title}
+                            loading="lazy"
+                            className="w-full h-auto object-cover block transition-transform duration-500 group-hover:scale-[1.02]"
+                          />
+                        ) : (
+                          <video
+                            src={`${item.mediaUrl}#t=0.001`}
+                            preload="metadata"
+                            muted
+                            playsInline
+                            onLoadedMetadata={(e) => {
+                              const dur = e.currentTarget.duration
+                              if (dur && isFinite(dur)) {
+                                setVideoDurations((prev) => ({ ...prev, [item.id]: formatTime(dur) }))
+                              }
+                            }}
+                            className="w-full h-auto object-cover block pointer-events-none"
+                          />
+                        )}
+                        
+                        {/* Glowing Video Play Button Overlay */}
+                        <div className="absolute inset-0 bg-black/35 group-hover:bg-black/20 transition-colors flex items-center justify-center">
+                          <div className="size-11 rounded-full bg-white/95 text-[#181925] flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform">
+                            <Play className="size-5 ml-0.5 fill-[#181925]" />
+                          </div>
+                        </div>
+
+                        {/* Pinned Featured Badge */}
+                        {item.isPinned && (
+                          <div className="absolute top-2.5 left-2.5 inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-[#8b5a45] text-white text-[10px] font-mono shadow-xs backdrop-blur-xs">
+                            <Pin className="size-2.5 fill-white" />
+                            <span>Featured</span>
+                          </div>
+                        )}
+
+                        {/* Video Duration Badge */}
+                        <div className="absolute bottom-2.5 right-2.5 inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-black/75 text-white text-[10px] font-mono backdrop-blur-xs">
+                          <Film className="size-2.5" />
+                          <span>{videoDuration || "Video"}</span>
+                        </div>
+
+                        {/* Subtle Hover Gradient & Info Overlay */}
+                        <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 p-3 pt-6 text-white pointer-events-none">
+                          <span className="text-xs font-medium text-white truncate block drop-shadow-xs">
+                            {item.title}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  )
+                }
+
+                // 3. PHOTO CARD (Clean Uncropped Photography in Masonry Grid)
+                return (
+                  <div key={item.id} className="w-full">
+                    <div
+                      onClick={() => setSelectedItem(item)}
+                      className="group relative rounded-2xl overflow-hidden bg-neutral-100 cursor-pointer shadow-xs hover:shadow-md transition-all duration-300 w-full"
+                    >
+                      <img
+                        src={item.mediaUrl}
+                        alt={item.title}
+                        loading="lazy"
+                        className="w-full h-auto object-cover block rounded-2xl transition-transform duration-500 group-hover:scale-[1.02]"
+                      />
+
+                      {/* Elegant Vignette Gradient & Details on Hover */}
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex flex-col justify-end p-3.5 text-white pointer-events-none">
+                        <div className="flex items-end justify-between gap-2">
+                          <div className="flex flex-col min-w-0">
+                            {item.title && item.title !== "Photograph" && (
+                              <span className="text-xs font-medium text-white truncate drop-shadow-xs">
+                                {item.title}
+                              </span>
+                            )}
+                            {(item.year || item.location) && (
+                              <span className="text-[10px] font-mono text-white/85 drop-shadow-xs truncate">
+                                {[item.year, item.location].filter(Boolean).join(" · ")}
+                              </span>
+                            )}
+                          </div>
+                          <div className="size-7 rounded-full bg-white/25 backdrop-blur-md flex items-center justify-center text-white shrink-0 shadow-xs">
+                            <Maximize2 className="size-3.5" />
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Pinned Featured Badge */}
+                      {item.isPinned && (
+                        <div className="absolute top-2.5 left-2.5 inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-[#8b5a45] text-white text-[10px] font-mono shadow-xs backdrop-blur-xs">
+                          <Pin className="size-2.5 fill-white" />
+                          <span>Featured</span>
+                        </div>
+                      )}
+
+                      {/* "Who is this?" flag for unidentified faces */}
+                      {item.hasUnknownPerson && !item.isPinned && (
+                        <div className="absolute top-2.5 left-2.5 inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-amber-500/90 text-white text-[10px] font-medium backdrop-blur-xs shadow-xs">
+                          <HelpCircle className="size-2.5" />
+                          <span>Who is this?</span>
+                        </div>
+                      )}
                     </div>
                   </div>
-
-                  {/* Pinned Featured Badge */}
-                  {item.isPinned && (
-                    <div className="absolute top-2 left-2 inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-[#8b5a45] text-white text-[10px] font-mono shadow-xs backdrop-blur-xs">
-                      <Pin className="size-2.5 fill-white" />
-                      <span>Featured</span>
-                    </div>
-                  )}
-
-                  {/* Video Duration Badge */}
-                  {videoDuration ? (
-                    <div className="absolute bottom-2 right-2 inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-black/75 text-white text-[10px] font-mono backdrop-blur-xs">
-                      <Film className="size-2.5" />
-                      <span>{videoDuration}</span>
-                    </div>
-                  ) : (
-                    <div className="absolute bottom-2 right-2 inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-black/75 text-white text-[10px] font-mono backdrop-blur-xs">
-                      <Film className="size-2.5" />
-                      <span>Video</span>
-                    </div>
-                  )}
-                </div>
-
-                <div className="px-1 pb-1 flex flex-col gap-0.5">
-                  <div className="flex items-center justify-between gap-2">
-                    <span className="text-xs font-medium text-[#181925] truncate">
-                      {item.title}
-                    </span>
-                    {item.year && (
-                      <span className="text-[11px] font-mono text-[#888] shrink-0">
-                        {item.year}
-                      </span>
-                    )}
-                  </div>
-                  {item.location && (
-                    <span className="text-[11px] text-[#71717a] truncate">
-                      {item.location}
-                    </span>
-                  )}
-                </div>
-              </div>
-            )
-          }
-
-          // ===================================================================
-          // 3. PHOTO CARD (Opens High-Res Photo Lightbox)
-          // ===================================================================
-          return (
-            <div
-              key={item.id}
-              onClick={() => setSelectedItem(item)}
-              className="group relative rounded-2xl overflow-hidden bg-white border border-black/[0.06] p-2 cursor-pointer transition-all hover:border-black/[0.14] flex flex-col gap-2.5"
-            >
-              <div
-                className={`rounded-xl overflow-hidden bg-neutral-100 relative ${
-                  item.aspectRatio === "portrait"
-                    ? "aspect-[4/5]"
-                    : item.aspectRatio === "square"
-                    ? "aspect-square"
-                    : "aspect-[3/2]"
-                }`}
-              >
-                <img
-                  src={item.mediaUrl}
-                  alt={item.title}
-                  className="size-full object-cover group-hover:scale-102 transition-transform duration-300"
-                />
-                <div className="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-white">
-                  <Maximize2 className="size-5 drop-shadow-sm" />
-                </div>
-
-                {/* Pinned Featured Badge */}
-                {item.isPinned && (
-                  <div className="absolute top-2 left-2 inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-[#8b5a45] text-white text-[10px] font-mono shadow-xs backdrop-blur-xs">
-                    <Pin className="size-2.5 fill-white" />
-                    <span>Featured</span>
-                  </div>
-                )}
-
-                {/* "Who is this?" flag for unidentified faces */}
-                {item.hasUnknownPerson && !item.isPinned && (
-                  <div className="absolute top-2 left-2 inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-amber-500/90 text-white text-[10px] font-medium backdrop-blur-xs shadow-xs">
-                    <HelpCircle className="size-2.5" />
-                    <span>Who is this?</span>
-                  </div>
-                )}
-              </div>
-
-              <div className="px-1 pb-1 flex flex-col gap-0.5">
-                <div className="flex items-center justify-between gap-2">
-                  <span className="text-xs font-medium text-[#181925] truncate">
-                    {item.title}
-                  </span>
-                  {item.year && (
-                    <span className="text-[11px] font-mono text-[#888] shrink-0">
-                      {item.year}
-                    </span>
-                  )}
-                </div>
-                {item.location && (
-                  <span className="text-[11px] text-[#71717a] truncate">
-                    {item.location}
-                  </span>
-                )}
-              </div>
+                )
+              })}
             </div>
-          )
-        })}
-      </div>
+          ))}
+        </div>
       )}
 
       {/* =================================================================== */}
-      {/* THEATER LIGHTBOX MODAL (Full Video Player or Photo Viewer)          */}
+      {/* THEATER LIGHTBOX MODAL (ForeverMissed-inspired Responsive Viewer)   */}
       {/* =================================================================== */}
       {selectedItem && (
         <div
-          onClick={() => setSelectedItem(null)}
-          className="fixed inset-0 z-50 bg-black/85 backdrop-blur-md p-4 sm:p-6 flex items-center justify-center select-none"
+          onClick={handleCloseModal}
+          className="fixed inset-0 z-50 bg-black/95 backdrop-blur-md flex flex-col justify-between text-white select-none overflow-hidden"
         >
+          {/* TOP TOOLBAR */}
           <div
             onClick={(e) => e.stopPropagation()}
-            className="max-w-3xl w-full bg-white rounded-3xl p-4 sm:p-6 flex flex-col gap-4 overflow-hidden shadow-2xl relative"
+            className="w-full flex items-center justify-between px-3 sm:px-6 py-3 sm:py-4 z-20 border-b border-white/10 bg-black/40 backdrop-blur-sm"
           >
+            {/* Center/Left Actions Inspired by ForeverMissed */}
+            <div className="flex items-center gap-1 sm:gap-2">
+              {/* Share */}
+              <button
+                type="button"
+                onClick={() => handleShare(selectedItem)}
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium text-white/80 hover:text-white hover:bg-white/10 transition-colors cursor-pointer"
+                title="Share this memory"
+              >
+                <Share2 className="size-3.5" />
+                <span>{copiedLink ? "Link Copied!" : "Share"}</span>
+              </button>
+
+              {/* Start / Pause Slideshow */}
+              {filteredItems.length > 1 && (
+                <button
+                  type="button"
+                  onClick={toggleSlideshow}
+                  className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium transition-colors cursor-pointer ${
+                    isSlideshowPlaying
+                      ? "bg-white/20 text-white"
+                      : "text-white/80 hover:text-white hover:bg-white/10"
+                  }`}
+                  title={isSlideshowPlaying ? "Pause slideshow" : "Start slideshow"}
+                >
+                  {isSlideshowPlaying ? (
+                    <>
+                      <Pause className="size-3.5 fill-current" />
+                      <span className="hidden sm:inline">Pause slideshow</span>
+                    </>
+                  ) : (
+                    <>
+                      <Play className="size-3.5 fill-current" />
+                      <span className="hidden sm:inline">Start slideshow</span>
+                    </>
+                  )}
+                </button>
+              )}
+
+              {/* Tell a Story */}
+              <button
+                type="button"
+                onClick={handleTellStory}
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium text-white/80 hover:text-white hover:bg-white/10 transition-colors cursor-pointer"
+                title="Tell a story about this memory"
+              >
+                <BookOpen className="size-3.5" />
+                <span className="hidden sm:inline">Tell a Story</span>
+              </button>
+
+              {/* Download */}
+              <button
+                type="button"
+                onClick={() => handleDownload(selectedItem)}
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium text-white/80 hover:text-white hover:bg-white/10 transition-colors cursor-pointer"
+                title="Download high-resolution file"
+                aria-label="Download original"
+              >
+                <Download className="size-3.5" />
+                <span className="sr-only sm:not-sr-only sm:inline">Download</span>
+              </button>
+            </div>
+
             {/* Close Button */}
             <button
               type="button"
-              onClick={() => setSelectedItem(null)}
-              className="absolute top-4 right-4 size-8 rounded-full bg-neutral-100 hover:bg-neutral-200 text-[#666] flex items-center justify-center transition-colors cursor-pointer z-10"
-              aria-label="Close media player"
+              onClick={handleCloseModal}
+              className="size-9 rounded-full bg-white/10 hover:bg-white/20 text-white flex items-center justify-center transition-colors cursor-pointer ml-2 shrink-0"
+              aria-label="Close media viewer"
             >
-              <X className="size-4" />
+              <X className="size-5" />
             </button>
+          </div>
 
-            {/* Main Media Player Container */}
-            <div className="max-h-[60vh] rounded-2xl overflow-hidden bg-black flex items-center justify-center relative">
+          {/* CENTER VIEWPORT (Media Stage + Prev/Next Chevrons) */}
+          <div
+            className="flex-1 relative flex items-center justify-center px-2 sm:px-14 py-2 sm:py-4 overflow-hidden"
+            onTouchStart={(e) => {
+              touchStartXRef.current = e.touches[0].clientX
+            }}
+            onTouchEnd={(e) => {
+              if (touchStartXRef.current === null) return
+              const diff = touchStartXRef.current - e.changedTouches[0].clientX
+              if (diff > 50) handleNext()
+              if (diff < -50) handlePrev()
+              touchStartXRef.current = null
+            }}
+          >
+            {/* Left Chevron */}
+            {filteredItems.length > 1 && (
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation()
+                  handlePrev()
+                }}
+                className="absolute left-2 sm:left-4 z-30 p-2 sm:p-3 rounded-full text-white/70 hover:text-white hover:bg-white/10 transition-all cursor-pointer group"
+                aria-label="Previous memory"
+              >
+                <ChevronLeft className="size-7 sm:size-9 group-active:scale-90 transition-transform" />
+              </button>
+            )}
+
+            {/* Main Media Content */}
+            <div
+              onClick={(e) => e.stopPropagation()}
+              className="relative flex items-center justify-center max-w-full max-h-full"
+            >
               {selectedItem.mediaType === "video" ? (
-                /* REAL HTML5 VIDEO PLAYER WITH FULL CONTROLS */
                 <video
                   controls
                   autoPlay
                   playsInline
-                  className="w-full max-h-[60vh] object-contain rounded-2xl"
                   src={selectedItem.mediaUrl}
                   poster={selectedItem.posterUrl}
+                  className="max-h-[68vh] sm:max-h-[74vh] max-w-[92vw] sm:max-w-[80vw] w-auto h-auto object-contain rounded-lg shadow-2xl"
                   onLoadedMetadata={(e) => {
                     const dur = e.currentTarget.duration
                     if (dur && isFinite(dur)) {
@@ -731,25 +988,22 @@ export function MemorialGallery({
                       }))
                     }
                   }}
-                >
-                  Your browser does not support HTML5 video playback.
-                </video>
+                />
               ) : selectedItem.mediaType === "audio" ? (
-                /* REAL AUDIO PLAYER IN LIGHTBOX */
-                <div className="py-12 px-6 w-full flex flex-col items-center justify-center gap-5 bg-[#181925] text-white rounded-2xl">
+                <div className="py-10 sm:py-12 px-6 sm:px-10 w-full max-w-md flex flex-col items-center justify-center gap-5 bg-[#181925] text-white rounded-3xl border border-white/10 shadow-2xl">
                   <div className="size-16 rounded-full bg-primary/20 flex items-center justify-center text-primary">
                     <Volume2 className="size-8" />
                   </div>
-                  <div className="text-center max-w-md">
-                    <h4 className="text-base font-medium">{selectedItem.title}</h4>
+                  <div className="text-center">
+                    <h4 className="text-base font-medium text-white">{selectedItem.title}</h4>
                     {selectedItem.story && (
-                      <p className="text-xs text-neutral-400 mt-1 line-clamp-2">“{selectedItem.story}”</p>
+                      <p className="text-xs text-neutral-300 mt-2 italic">“{selectedItem.story}”</p>
                     )}
                   </div>
                   <audio
                     controls
                     autoPlay
-                    className="w-full max-w-md mt-2"
+                    className="w-full mt-2"
                     src={selectedItem.mediaUrl}
                     onLoadedMetadata={(e) => {
                       const dur = e.currentTarget.duration
@@ -763,99 +1017,121 @@ export function MemorialGallery({
                   />
                 </div>
               ) : (
-                /* REAL HIGH-RES PHOTOGRAPH VIEWER */
                 <img
                   src={selectedItem.mediaUrl}
                   alt={selectedItem.title}
-                  className="size-full object-contain max-h-[60vh]"
+                  className="max-h-[68vh] sm:max-h-[74vh] max-w-[92vw] sm:max-w-[82vw] w-auto h-auto object-contain rounded-md shadow-2xl transition-all duration-300"
                 />
               )}
             </div>
 
-            {/* Media Information & Story Details */}
-            <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4 pt-1">
-              <div className="flex flex-col gap-1.5 max-w-xl">
-                <div className="flex items-baseline gap-2">
-                  <h3 className="text-base sm:text-lg font-medium text-[#181925]">
-                    {selectedItem.title}
-                  </h3>
-                  {selectedItem.year && (
-                    <span className="text-xs font-mono text-[#888]">
-                      {selectedItem.year}
-                    </span>
-                  )}
-                  {(() => {
-                    const dur =
-                      videoDurations[selectedItem.id] ||
-                      audioDurations[selectedItem.id] ||
-                      (selectedItem.duration && selectedItem.duration !== "undefined"
-                        ? selectedItem.duration
-                        : null)
-                    if (!dur) return null
-                    return (
-                      <span className="text-[11px] font-mono text-primary bg-primary/10 px-1.5 py-0.5 rounded">
-                        {dur}
-                      </span>
-                    )
-                  })()}
-                </div>
+            {/* Right Chevron */}
+            {filteredItems.length > 1 && (
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation()
+                  handleNext()
+                }}
+                className="absolute right-2 sm:right-4 z-30 p-2 sm:p-3 rounded-full text-white/70 hover:text-white hover:bg-white/10 transition-all cursor-pointer group"
+                aria-label="Next memory"
+              >
+                <ChevronRight className="size-7 sm:size-9 group-active:scale-90 transition-transform" />
+              </button>
+            )}
+          </div>
 
+          {/* BOTTOM METADATA BAR */}
+          <div
+            onClick={(e) => e.stopPropagation()}
+            className="w-full px-4 sm:px-8 py-3 sm:py-4 z-20 border-t border-white/10 bg-black/40 backdrop-blur-sm flex flex-col sm:flex-row items-center justify-between gap-2 sm:gap-4"
+          >
+            {/* Left: Counter "23 of 27" */}
+            <div className="text-xs sm:text-sm font-mono text-white/70 shrink-0 self-start sm:self-center">
+              {currentIndex >= 0 ? `${currentIndex + 1} of ${filteredItems.length}` : ""}
+            </div>
+
+            {/* Center: Caption & Details */}
+            <div className="flex flex-col items-center justify-center text-center max-w-xl mx-auto min-w-0">
+              {/* Caption / Title */}
+              <p className="text-xs sm:text-sm font-medium text-white truncate max-w-full">
+                {selectedItem.title && selectedItem.title !== "Photograph"
+                  ? selectedItem.title
+                  : (selectedItem.story || "Photograph")}
+              </p>
+
+              {/* Subtitle / Contributor Line */}
+              <div className="flex items-center gap-2 text-[11px] text-white/60 font-sans mt-0.5 flex-wrap justify-center">
+                {selectedItem.addedBy && (
+                  <span>
+                    Added by <strong className="font-medium text-white/85">{selectedItem.addedBy}</strong>
+                  </span>
+                )}
+                {selectedItem.year && (
+                  <>
+                    {selectedItem.addedBy && <span>·</span>}
+                    <span className="font-mono">{selectedItem.year}</span>
+                  </>
+                )}
                 {selectedItem.location && (
-                  <div className="flex items-center gap-1.5 text-xs text-[#71717a]">
-                    <MapPin className="size-3 text-[#999]" />
+                  <>
+                    <span>·</span>
                     <span>{selectedItem.location}</span>
-                  </div>
+                  </>
                 )}
-
-                {selectedItem.story && (
-                  <p className="text-xs sm:text-sm text-[#444] leading-relaxed mt-1">
-                    “{selectedItem.story}”
-                  </p>
-                )}
-
-                {selectedItem.people && selectedItem.people.length > 0 && (
-                  <div className="flex items-center gap-1.5 flex-wrap mt-2">
-                    <span className="text-[11px] font-mono text-[#888]">Pictured:</span>
-                    {selectedItem.people.map((p, idx) => (
-                      <span
-                        key={idx}
-                        className="px-2 py-0.5 rounded-full bg-[#f4f4f6] text-[#181925] text-[11px] font-medium"
-                      >
-                        {p}
-                      </span>
-                    ))}
-                  </div>
+                {selectedItem.album && (
+                  <>
+                    <span>·</span>
+                    <span className="text-primary/90">{selectedItem.album}</span>
+                  </>
                 )}
               </div>
 
-              {/* "Who is this?" Helper for Photos */}
-              {selectedItem.hasUnknownPerson && (
-                <div className="p-3 rounded-2xl bg-amber-50/80 border border-amber-200/60 flex flex-col gap-2 shrink-0 sm:max-w-[210px]">
-                  <div className="flex items-center gap-1.5 text-xs font-medium text-amber-900">
-                    <HelpCircle className="size-3.5 text-amber-600" />
-                    <span>Can you help identify?</span>
-                  </div>
-                  <p className="text-[11px] text-amber-800 leading-snug">
-                    Someone in this photograph is unknown. Help the family identify them.
-                  </p>
-                  {identifiedMap[selectedItem.id] ? (
-                    <span className="inline-flex items-center gap-1 text-[11px] font-medium text-emerald-700">
-                      <Check className="size-3" />
-                      <span>Note sent to family</span>
-                    </span>
-                  ) : (
-                    <button
-                      type="button"
-                      onClick={() => handleIdentify(selectedItem.id)}
-                      className="px-3 py-1.5 rounded-full bg-white hover:bg-amber-100/50 border border-amber-300 text-xs font-medium text-amber-900 transition-colors cursor-pointer"
+              {/* Separate story if not used as title */}
+              {selectedItem.story && selectedItem.title !== selectedItem.story && selectedItem.title !== "Photograph" && (
+                <p className="text-xs text-white/75 italic mt-1 line-clamp-2 max-w-md hidden sm:block">
+                  “{selectedItem.story}”
+                </p>
+              )}
+
+              {/* Pictured people chips */}
+              {selectedItem.people && selectedItem.people.length > 0 && (
+                <div className="flex items-center gap-1.5 flex-wrap mt-1.5 justify-center">
+                  <span className="text-[10px] font-mono text-white/50">Pictured:</span>
+                  {selectedItem.people.map((p, idx) => (
+                    <span
+                      key={idx}
+                      className="px-2 py-0.5 rounded-full bg-white/10 text-white text-[10px] font-medium"
                     >
-                      I know who this is
-                    </button>
-                  )}
+                      {p}
+                    </span>
+                  ))}
                 </div>
               )}
             </div>
 
+            {/* Right: Unknown person helper / spacer */}
+            <div className="shrink-0 flex items-center justify-end self-end sm:self-center">
+              {selectedItem.hasUnknownPerson ? (
+                identifiedMap[selectedItem.id] ? (
+                  <span className="inline-flex items-center gap-1 text-[11px] font-medium text-emerald-400 bg-emerald-950/60 px-2.5 py-1 rounded-full border border-emerald-500/30">
+                    <Check className="size-3" />
+                    <span>Note sent</span>
+                  </span>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => handleIdentify(selectedItem.id)}
+                    className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-500/20 hover:bg-amber-500/30 border border-amber-400/40 text-[11px] font-medium text-amber-200 transition-colors cursor-pointer"
+                  >
+                    <HelpCircle className="size-3" />
+                    <span>Identify person</span>
+                  </button>
+                )
+              ) : (
+                <div className="w-12 sm:w-16 hidden sm:block" />
+              )}
+            </div>
           </div>
         </div>
       )}
