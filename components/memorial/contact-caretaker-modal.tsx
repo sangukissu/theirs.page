@@ -20,7 +20,7 @@ export function ContactCaretakerModal({ isOpen, onClose, memorialId, memorialNam
   const [isSent, setIsSent] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const nameRef = useRef<HTMLInputElement>(null)
-  const siteKey = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY || "0x4AAAAAAElC6yv2vY7dR2dn"
+  const siteKey = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY || ""
 
   useEffect(() => {
     if (!isOpen) return
@@ -108,6 +108,7 @@ export function ContactCaretakerModal({ isOpen, onClose, memorialId, memorialNam
                   options={{
                     appearance: "interaction-only",
                     refreshExpired: "auto",
+                    action: "caretaker_message",
                   }}
                   onSuccess={setTurnstileToken}
                   onExpire={() => setTurnstileToken("")}
@@ -119,7 +120,7 @@ export function ContactCaretakerModal({ isOpen, onClose, memorialId, memorialNam
             <div className="mt-5 flex items-center justify-end">
               <button
                 type="submit"
-                disabled={isSending || (siteKey ? !turnstileToken : false) || !senderName.trim() || !senderEmail.trim() || message.trim().length < 10}
+                disabled={isSending || !siteKey || !turnstileToken || !senderName.trim() || !senderEmail.trim() || message.trim().length < 10}
                 className="inline-flex min-h-11 w-full sm:w-auto items-center justify-center gap-2 rounded-full bg-primary px-6 text-sm font-semibold text-white hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-50 transition-colors cursor-pointer"
               >
                 {isSending && <Loader2 className="size-4 animate-spin" />}

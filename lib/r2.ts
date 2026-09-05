@@ -1,20 +1,20 @@
 import { CopyObjectCommand, DeleteObjectCommand, S3Client, GetObjectCommand, PutObjectCommand } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 
-const DEFAULT_R2_ACCOUNT_ID = "31553742a1d9a253c2d40b5834e281cc"
-const DEFAULT_R2_ACCESS_KEY_ID = "310f32cdb6aa5df7e64dfffda657e820"
-const DEFAULT_R2_SECRET_ACCESS_KEY = Buffer.from("ZGNlNDBlMjdhNjI5NGNkODNlNWY4N2E0YTRhYTIxOTZmZTFiZWMyZmIwMWFhZTVmNDQ3M2EwODUwY2I2YjZkMA==", "base64").toString("utf8")
-const DEFAULT_R2_BUCKET_NAME = "theirs"
-export const DEFAULT_R2_MEDIA_ENDPOINT = "https://pub-3511ae96b3594eecbde1632d4cca06b6.r2.dev"
-
 function getR2BucketName() {
-  return process.env.R2_BUCKET_NAME || DEFAULT_R2_BUCKET_NAME;
+  const bucketName = process.env.R2_BUCKET_NAME?.trim();
+  if (!bucketName) throw new Error("R2_BUCKET_NAME is not configured");
+  return bucketName;
 }
 
 export function getR2Client() {
-  const accountId = process.env.R2_ACCOUNT_ID || DEFAULT_R2_ACCOUNT_ID;
-  const accessKeyId = process.env.R2_ACCESS_KEY_ID || DEFAULT_R2_ACCESS_KEY_ID;
-  const secretAccessKey = process.env.R2_SECRET_ACCESS_KEY || DEFAULT_R2_SECRET_ACCESS_KEY;
+  const accountId = process.env.R2_ACCOUNT_ID?.trim();
+  const accessKeyId = process.env.R2_ACCESS_KEY_ID?.trim();
+  const secretAccessKey = process.env.R2_SECRET_ACCESS_KEY?.trim();
+
+  if (!accountId || !accessKeyId || !secretAccessKey) {
+    throw new Error("R2 credentials are not configured");
+  }
 
   const endpoint = `https://${accountId}.r2.cloudflarestorage.com`;
   return new S3Client({
@@ -206,7 +206,8 @@ export async function deleteVideoFromR2(key: string): Promise<void> {
 export async function getR2PresignedUploadUrl(
   key: string,
   contentType: string,
-  expiresInSeconds = 600
+  expiresInSeconds = 600,
+  contentLength?: number
 ): Promise<string> {
   try {
     const client = getR2Client();
@@ -214,6 +215,7 @@ export async function getR2PresignedUploadUrl(
       Bucket: getR2BucketName(),
       Key: key,
       ContentType: contentType,
+      ...(contentLength ? { ContentLength: contentLength } : {}),
     });
 
     const uploadUrl = await getSignedUrl(client, command, { expiresIn: expiresInSeconds });
@@ -226,9 +228,10 @@ export async function getR2PresignedUploadUrl(
 
 export async function copyR2Object(sourceKey: string, destinationKey: string, contentType?: string) {
   const client = getR2Client();
+  const bucket = getR2BucketName();
   const command = new CopyObjectCommand({
-    Bucket: getR2BucketName(),
-    CopySource: `\/${sourceKey}`,
+    Bucket: bucket,
+    CopySource: `${bucket}/${sourceKey}`,
     Key: destinationKey,
     ContentType: contentType,
     MetadataDirective: contentType ? "REPLACE" : "COPY",
@@ -348,7 +351,17 @@ export function resolveMediaUrl(rawUrl: string | null | undefined): string {
   if (!rawUrl) return ""
   if (rawUrl.startsWith("data:") || rawUrl.startsWith("blob:")) return rawUrl
 
-  // If it's already a full HTTP(S) URL (e.g. direct public R2 URL or external media), return directly
+  const managedKey = extractManagedR2Key(rawUrl)
+  if (managedKey) {
+    if (
+      managedKey.startsWith("quarantine/") ||
+      managedKey.startsWith("contribution-staging/") ||
+      managedKey.startsWith("originals/")
+    ) return ""
+    return `/api/media?key=${encodeURIComponent(managedKey)}`
+  }
+
+  // External media remains external. New managed R2 objects are stored as keys.
   if (rawUrl.startsWith("http://") || rawUrl.startsWith("https://")) {
     return rawUrl
   }
@@ -358,11 +371,41 @@ export function resolveMediaUrl(rawUrl: string | null | undefined): string {
     return rawUrl
   }
 
-  // If it's a storage key (e.g. "memorials/..." or "uploads/..."), resolve to the public R2 CDN endpoint
-  const endpoint = process.env.R2_MEDIA_ENDPOINT || DEFAULT_R2_MEDIA_ENDPOINT
-  const cleanEndpoint = endpoint.replace(/\/$/, "")
+  // Treat non-URL values as managed storage keys.
   const cleanKey = rawUrl.replace(/^\/+/, "")
-  return `${cleanEndpoint}/${cleanKey}`
+  return `/api/media?key=${encodeURIComponent(cleanKey)}`
+}
+
+export function extractManagedR2Key(rawUrl: string | null | undefined): string | null {
+  if (!rawUrl) return null
+  if (/^(memorials|quarantine|contribution-staging|originals|uploads|images|videos)\//.test(rawUrl)) {
+    return rawUrl.replace(/^\/+/, "")
+  }
+
+  try {
+    const parsed = new URL(rawUrl, "https://theirs.page")
+    if (parsed.pathname === "/api/media") {
+      const key = parsed.searchParams.get("key")
+      return key ? key.replace(/^\/+/, "") : null
+    }
+
+    const configuredHosts = [
+      process.env.R2_MEDIA_ENDPOINT,
+      ...(process.env.R2_LEGACY_MEDIA_ENDPOINTS || "").split(","),
+    ]
+      .filter(Boolean)
+      .map((value) => {
+        try { return new URL(String(value).trim()).host.toLowerCase() } catch { return "" }
+      })
+      .filter(Boolean)
+
+    if (configuredHosts.includes(parsed.host.toLowerCase())) {
+      return decodeURIComponent(parsed.pathname).replace(/^\/+/, "")
+    }
+  } catch {
+    return null
+  }
+  return null
 }
 
 /**
@@ -375,28 +418,21 @@ export async function promoteQuarantinedMedia(
   const client = getR2Client()
   const bucket = getR2BucketName()
 
-  try {
-    await client.send(
-      new CopyObjectCommand({
-        Bucket: bucket,
-        CopySource: `${bucket}/${sourceKey}`,
-        Key: destKey,
-        MetadataDirective: "COPY",
-      })
-    )
+  await client.send(
+    new CopyObjectCommand({
+      Bucket: bucket,
+      CopySource: `${bucket}/${sourceKey}`,
+      Key: destKey,
+      MetadataDirective: "COPY",
+    })
+  )
 
-    await client.send(
-      new DeleteObjectCommand({
-        Bucket: bucket,
-        Key: sourceKey,
-      })
-    )
-  } catch (err) {
-    console.error(`Failed to promote media from ${sourceKey} to ${destKey}:`, err)
-  }
+  await client.send(
+    new DeleteObjectCommand({
+      Bucket: bucket,
+      Key: sourceKey,
+    })
+  )
 
-  const endpoint = process.env.R2_MEDIA_ENDPOINT || DEFAULT_R2_MEDIA_ENDPOINT
-  return `${endpoint.replace(/\/$/, "")}/${destKey}`
+  return destKey
 }
-
-

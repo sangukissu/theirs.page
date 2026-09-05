@@ -7,7 +7,10 @@ import {
   signUploadIntent,
   ALLOWED_GUEST_MIME_TYPES,
   MAX_GUEST_UPLOAD_BYTES,
+  getUploadClientBinding,
 } from "@/lib/upload-intent"
+import { getMemorialPinCookieName, verifyPinAccessToken } from "@/lib/security/pin"
+import type { ContributionSettings } from "@/types/theirs"
 
 interface RouteContext {
   params: Promise<{ id: string }>
@@ -28,21 +31,20 @@ export async function POST(req: NextRequest, context: RouteContext) {
   try {
     const { id } = await context.params
     const body = await req.json().catch(() => ({}))
-    const mime_type = (body.mime_type || body.fileType || body.type || "image/jpeg") as string
-    const file_size = (body.file_size || body.fileSize || body.size || 0) as number
+    const mime_type = body.mime_type || body.fileType || body.type
+    const file_size = Number(body.file_size ?? body.fileSize ?? body.size)
     const turnstile_token = body.turnstile_token || body.turnstileToken
+    const contributionType = body.contribution_type
 
     const clientIp = getClientIp(req)
 
-    // 1. Turnstile Verification (verified if present at intent stage; final contribute submission strictly enforces it)
-    if (turnstile_token) {
-      const isValidCaptcha = await verifyTurnstileToken(turnstile_token, clientIp)
-      if (!isValidCaptcha) {
-        return NextResponse.json(
-          { error: "Security check failed. Please refresh the page and try again." },
-          { status: 400 }
-        )
-      }
+    // 1. A valid challenge is mandatory before storage is allocated.
+    const isValidCaptcha = await verifyTurnstileToken(turnstile_token, clientIp, "contribution")
+    if (!isValidCaptcha) {
+      return NextResponse.json(
+        { error: "Security check expired or failed. Please try the upload again." },
+        { status: 400 }
+      )
     }
 
     // 2. Durable Edge Rate Limiting (30 upload intents per 10 minutes per IP)
@@ -57,18 +59,21 @@ export async function POST(req: NextRequest, context: RouteContext) {
     }
 
     // 3. MIME Type & File Size Validation
-    const normalizedMime = mime_type.toLowerCase().trim()
+    const normalizedMime = typeof mime_type === "string" ? mime_type.toLowerCase().trim() : ""
+    if (contributionType !== "photo" && contributionType !== "memory") {
+      return NextResponse.json({ error: "Invalid photograph contribution type." }, { status: 400 })
+    }
     if (!ALLOWED_GUEST_MIME_TYPES.has(normalizedMime)) {
       return NextResponse.json(
         {
           error:
-            "Unsupported file format. Guest contributions only accept photos (JPEG, PNG, WebP, HEIC) or audio voice memos.",
+            "Please choose a JPEG, PNG, or WebP photograph.",
         },
         { status: 400 }
       )
     }
 
-    if (typeof file_size === "number" && file_size > MAX_GUEST_UPLOAD_BYTES) {
+    if (!Number.isSafeInteger(file_size) || file_size < 1 || file_size > MAX_GUEST_UPLOAD_BYTES) {
       return NextResponse.json(
         { error: "Guest contribution files must be under 15MB." },
         { status: 400 }
@@ -81,7 +86,7 @@ export async function POST(req: NextRequest, context: RouteContext) {
     const db = adminClient || serverClient
 
     const isUuid = UUID_REGEX.test(id)
-    let query = db.from("memorials").select("id, slug, status, privacy, is_paid, owner_id")
+    let query = db.from("memorials").select("id, slug, status, privacy, is_paid, owner_id, access_pin_hash, contribution_settings")
     query = isUuid ? query.eq("id", id) : query.eq("slug", id)
     const { data: memorial } = await query.maybeSingle()
 
@@ -96,17 +101,21 @@ export async function POST(req: NextRequest, context: RouteContext) {
       )
     }
 
+    const contributionSettings = (memorial.contribution_settings || {}) as ContributionSettings
+    if (
+      contributionSettings.accept_contributions === false ||
+      contributionSettings.photos === false ||
+      (contributionType === "memory" && contributionSettings.memories === false)
+    ) {
+      return NextResponse.json(
+        { error: "The family is not currently accepting photograph contributions." },
+        { status: 403 }
+      )
+    }
+
     // 5. Enforce Tier Restrictions for Guest Contributions
     const isPaid = Boolean(memorial.is_paid)
     if (!isPaid) {
-      // Audio is not available on free tier
-      if (normalizedMime.startsWith("audio/") || normalizedMime.startsWith("video/")) {
-        return NextResponse.json(
-          { error: "Voice notes and audio files require Pro Plan." },
-          { status: 403 }
-        )
-      }
-
       // Check 5-photo limit on free tier
       if (normalizedMime.startsWith("image/")) {
         const { count, error: countErr } = await db
@@ -122,19 +131,16 @@ export async function POST(req: NextRequest, context: RouteContext) {
           )
         }
       }
-    } else {
-      if (normalizedMime.startsWith("video/")) {
-        return NextResponse.json(
-          { error: "Video uploads are reserved for memorial caretakers in the dashboard." },
-          { status: 400 }
-        )
-      }
     }
 
     // 6. Enforce Private Memorial PIN Gate
     if (memorial.privacy === "private") {
       const cookieKey = memorial.slug || memorial.id
-      const isUnlocked = req.cookies.get(`theirs_pin_${cookieKey}`)?.value === "unlocked"
+      const isUnlocked = verifyPinAccessToken(
+        req.cookies.get(getMemorialPinCookieName(cookieKey))?.value,
+        memorial.id,
+        memorial.access_pin_hash
+      )
 
       if (!isUnlocked) {
         // Check if current user is memorial admin
@@ -152,6 +158,7 @@ export async function POST(req: NextRequest, context: RouteContext) {
               .select("id")
               .eq("memorial_id", memorial.id)
               .eq("user_id", user.id)
+              .eq("invitation_accepted", true)
               .maybeSingle()
             if (collab) isOwnerOrAdmin = true
           }
@@ -169,10 +176,11 @@ export async function POST(req: NextRequest, context: RouteContext) {
     // 6. Generate Short-Lived HMAC Upload Intent Token (10 minutes)
     const uploadIntentToken = signUploadIntent({
       memorialId: memorial.id,
-      allowedMime: normalizedMime,
+      allowedMime: "image/*",
       maxBytes: MAX_GUEST_UPLOAD_BYTES,
+      contributionType,
+      clientBinding: getUploadClientBinding(clientIp),
       nonce: crypto.randomBytes(16).toString("hex"),
-      exp: Date.now() + 10 * 60 * 1000,
     })
 
     return NextResponse.json({

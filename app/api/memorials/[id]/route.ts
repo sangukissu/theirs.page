@@ -50,8 +50,9 @@ export async function GET(req: NextRequest, context: RouteContext) {
       db.from("memories").select("*").eq("memorial_id", id).order("created_at", { ascending: false }),
     ])
 
+    const { access_pin_hash: accessPinHash, ...safeMemorial } = memorial
     return NextResponse.json({
-      memorial,
+      memorial: { ...safeMemorial, has_access_pin: Boolean(accessPinHash) },
       mediaItems: mediaRes.data || [],
       timelineEvents: timelineRes.data || [],
       memories: memoriesRes.data || [],
@@ -91,6 +92,7 @@ export async function PATCH(req: NextRequest, context: RouteContext) {
       "access_pin_hash",
       "successor_name",
       "successor_email",
+      "contribution_settings",
     ]
 
     const attemptedOwnerField = ownerOnlyFields.find((f) => body[f] !== undefined)
@@ -145,7 +147,24 @@ export async function PATCH(req: NextRequest, context: RouteContext) {
       if (body.successor_email !== undefined) updates.successor_email = body.successor_email
 
       if (body.pin !== undefined) {
-        updates.access_pin_hash = body.pin ? hashPin(String(body.pin).trim()) : null
+        const nextPin = String(body.pin).trim()
+        if (!/^\d{4}$/.test(nextPin)) {
+          return NextResponse.json({ error: "PIN must contain exactly four digits." }, { status: 400 })
+        }
+        updates.access_pin_hash = hashPin(nextPin)
+      }
+
+      if (body.privacy === "private" && body.pin === undefined) {
+        const { data: pinState } = await db.from("memorials")
+          .select("access_pin_hash")
+          .eq("id", id)
+          .maybeSingle()
+        if (!pinState?.access_pin_hash) {
+          return NextResponse.json(
+            { error: "Set a four-digit PIN before making this memorial private." },
+            { status: 400 }
+          )
+        }
       }
 
       // If slug update requested, validate and ensure uniqueness

@@ -1,6 +1,12 @@
 import crypto from "crypto"
+import { getRequiredSecret } from "@/lib/security/secrets"
 
-const INVITE_SECRET = process.env.SUPABASE_SECRET_KEY || "theirs-invitation-signing-secret"
+function getInviteSecret(): string {
+  return getRequiredSecret(
+    ["INVITATION_SIGNING_SECRET", "SUPABASE_SECRET_KEY"],
+    "Invitation signing"
+  )
+}
 
 export interface InvitationPayload {
   collaboratorId: string
@@ -26,7 +32,7 @@ export function createInvitationToken(data: {
 
   const encodedPayload = Buffer.from(JSON.stringify(payload)).toString("base64url")
   const signature = crypto
-    .createHmac("sha256", INVITE_SECRET)
+    .createHmac("sha256", getInviteSecret())
     .update(encodedPayload)
     .digest("base64url")
 
@@ -51,7 +57,7 @@ export function verifyInvitationToken(token: string): {
   }
 
   const expectedSignature = crypto
-    .createHmac("sha256", INVITE_SECRET)
+    .createHmac("sha256", getInviteSecret())
     .update(encodedPayload)
     .digest("base64url")
 

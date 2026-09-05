@@ -1,20 +1,18 @@
 import { MetadataRoute } from "next"
 
 // Paths that should never be crawlable by any user agent (dashboard, API,
-// share links, auth, internal Next assets, admin).
+// auth, internal Next assets, admin).
 const PRIVATE_PATHS = [
   "/api/",
   "/dashboard/",
-  "/m/",
   "/private/",
   "/auth/",
   "/_next/",
   "/admin/",
 ]
 
-// Live answer engines: these fetch at query time to build AI answers. Blocking
-// them removes Theirs.page from Perplexity, ChatGPT Search and Claude — where
-// a large share of "how do I add my late father to a photo" demand now lands.
+// Live answer engines: these fetch at query time to build AI answers. Allowing
+// them helps discovery of Theirs.page memorials on Perplexity, ChatGPT Search, and Claude.
 const GEO_DISCOVERY_BOTS = [
   "OAI-SearchBot",
   "PerplexityBot",

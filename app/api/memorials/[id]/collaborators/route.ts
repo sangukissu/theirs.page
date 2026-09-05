@@ -10,6 +10,18 @@ interface RouteContext {
   params: Promise<{ id: string }>
 }
 
+const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+
+function escapeHtml(value: string): string {
+  return value.replace(/[&<>'"]/g, (character) => ({
+    "&": "&amp;",
+    "<": "&lt;",
+    ">": "&gt;",
+    "'": "&#39;",
+    '"': "&quot;",
+  })[character] || character)
+}
+
 export async function GET(req: NextRequest, context: RouteContext) {
   try {
     const { id } = await context.params
@@ -97,7 +109,7 @@ export async function POST(req: NextRequest, context: RouteContext) {
     const body = await req.json().catch(() => ({}))
     const { email, role } = body
 
-    if (!email || !email.includes("@")) {
+    if (typeof email !== "string" || email.length > 254 || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) {
       return NextResponse.json({ error: "Valid email address is required" }, { status: 400 })
     }
 
@@ -175,23 +187,23 @@ export async function POST(req: NextRequest, context: RouteContext) {
         await resend.emails.send({
           from: "Theirs <invites@theirs.page>",
           to: cleanEmail,
-          subject: `Invitation to care for ${authCheck.memorial.full_name}'s memorial`,
+          subject: `Invitation to care for ${String(authCheck.memorial.full_name).replace(/[\r\n]/g, " ")}'s memorial`,
           html: `
             <div style="font-family: serif; max-width: 520px; margin: 0 auto; padding: 40px 20px; color: #181925; line-height: 1.6;">
               <h2 style="font-size: 22px; font-weight: normal; margin-bottom: 16px;">Family Caretaker Invitation</h2>
               <p style="font-size: 15px; color: #444;">
-                You have been invited to help care for the memory and life story of <strong>${authCheck.memorial.full_name}</strong> on Theirs.
+                You have been invited to help care for the memory and life story of <strong>${escapeHtml(String(authCheck.memorial.full_name))}</strong> on Theirs.
               </p>
               <p style="font-size: 14px; color: #666; margin: 24px 0;">
                 As a ${assignedRole === "co_admin" ? "co-admin" : "collaborator"}, you can approve contributed memories, write stories, and upload original photos.
               </p>
               <div style="margin: 32px 0;">
-                <a href="${inviteLink}" style="background-color: #181925; color: #ffffff; padding: 12px 24px; border-radius: 24px; text-decoration: none; font-size: 13px; font-family: sans-serif; font-weight: 500; display: inline-block;">
+                <a href="${escapeHtml(inviteLink)}" style="background-color: #181925; color: #ffffff; padding: 12px 24px; border-radius: 24px; text-decoration: none; font-size: 13px; font-family: sans-serif; font-weight: 500; display: inline-block;">
                   Accept Invitation
                 </a>
               </div>
               <p style="font-size: 12px; color: #888; margin-top: 32px; border-top: 1px solid #eaeaea; padding-top: 16px;">
-                Direct link: <a href="${inviteLink}" style="color: #444;">${inviteLink}</a>
+                Direct link: <a href="${escapeHtml(inviteLink)}" style="color: #444;">${escapeHtml(inviteLink)}</a>
               </p>
             </div>
           `,
@@ -238,7 +250,7 @@ export async function DELETE(req: NextRequest, context: RouteContext) {
     const { searchParams } = new URL(req.url)
     const collaboratorId = searchParams.get("collaboratorId")
 
-    if (!collaboratorId) {
+    if (typeof collaboratorId !== "string" || !UUID_REGEX.test(collaboratorId)) {
       return NextResponse.json({ error: "collaboratorId is required" }, { status: 400 })
     }
 
@@ -281,17 +293,34 @@ export async function PATCH(req: NextRequest, context: RouteContext) {
     const body = await req.json().catch(() => ({}))
     const { collaboratorId, is_trusted, role } = body
 
-    if (!collaboratorId) {
+    if (typeof collaboratorId !== "string" || !UUID_REGEX.test(collaboratorId)) {
       return NextResponse.json({ error: "collaboratorId is required" }, { status: 400 })
     }
 
     const db = getSupabaseAdminSafe() || supabase
-    const updatePayload: Record<string, any> = {}
+    const updatePayload: Record<string, boolean | string> = {}
     if (typeof is_trusted === "boolean") {
+      if (is_trusted) {
+        const { data: accepted } = await db.from("collaborators")
+          .select("id")
+          .eq("id", collaboratorId)
+          .eq("memorial_id", id)
+          .eq("invitation_accepted", true)
+          .maybeSingle()
+        if (!accepted) {
+          return NextResponse.json(
+            { error: "Trust can be enabled after the invitation is accepted." },
+            { status: 409 }
+          )
+        }
+      }
       updatePayload.is_trusted = is_trusted
     }
     if (role && ["co_admin", "contributor"].includes(role)) {
       updatePayload.role = role
+    }
+    if (Object.keys(updatePayload).length === 0) {
+      return NextResponse.json({ error: "No valid collaborator change was provided." }, { status: 400 })
     }
 
     const { error } = await db
@@ -311,4 +340,3 @@ export async function PATCH(req: NextRequest, context: RouteContext) {
     return NextResponse.json({ error: "Internal server error" }, { status: 500 })
   }
 }
-

@@ -1,6 +1,21 @@
 import crypto from "crypto"
+import { getRequiredSecret } from "@/lib/security/secrets"
 
-const PIN_SALT = process.env.SUPABASE_SECRET_KEY || "theirs-pin-security-salt"
+const PIN_TOKEN_TTL_MS = 30 * 24 * 60 * 60 * 1000
+
+function getPinHashSecret(): string {
+  return getRequiredSecret(
+    ["PIN_HASH_SECRET", "SUPABASE_SECRET_KEY"],
+    "Memorial PIN hashing"
+  )
+}
+
+function getPinSigningSecret(): string {
+  return getRequiredSecret(
+    ["PIN_SIGNING_SECRET", "SUPABASE_SECRET_KEY"],
+    "Memorial PIN access signing"
+  )
+}
 
 /**
  * Generates a secure HMAC-SHA256 hash for a memorial access PIN
@@ -8,7 +23,7 @@ const PIN_SALT = process.env.SUPABASE_SECRET_KEY || "theirs-pin-security-salt"
 export function hashPin(pin: string): string {
   const trimmed = pin.trim()
   return crypto
-    .createHmac("sha256", PIN_SALT)
+    .createHmac("sha256", getPinHashSecret())
     .update(`theirs_pin_${trimmed}`)
     .digest("hex")
 }
@@ -33,146 +48,86 @@ export function verifyPin(pin: string, storedHashOrPlain: string): boolean {
     }
   }
 
-  // 2. Backward compatibility: if existing record had plaintext PIN
-  if (trimmedPin === trimmedStored) {
-    return true
+  // One-time compatibility for old rows. The verification route immediately
+  // replaces a matching plaintext value with a keyed hash.
+  if (isLegacyPlaintextPin(trimmedStored)) {
+    const pinBytes = Buffer.from(trimmedPin)
+    const storedBytes = Buffer.from(trimmedStored)
+    if (
+      pinBytes.length === storedBytes.length &&
+      crypto.timingSafeEqual(pinBytes, storedBytes)
+    ) return true
   }
 
   return false
 }
 
-import { getSupabaseAdminSafe } from "@/utils/supabase/admin"
-
-// In-memory fallback sliding window rate-limiter for PIN attempts
-interface AttemptRecord {
-  attempts: number
-  lockedUntil: number
+export function isLegacyPlaintextPin(value: string): boolean {
+  return !/^[a-f0-9]{64}$/i.test(value.trim())
 }
 
-const memoryPinAttempts = new Map<string, AttemptRecord>()
-const PIN_LOCK_WINDOW_SECONDS = 15 * 60 // 15 minutes
-const MAX_PIN_ATTEMPTS = 5
+export function getMemorialPinCookieName(slugOrId: string): string {
+  const safeId = slugOrId.toLowerCase().replace(/[^a-z0-9_-]/g, "_")
+  return `theirs_pin_${safeId}`
+}
 
-/**
- * Check if the current IP/memorial is locked due to excessive failed attempts
- */
-export async function checkPinRateLimit(key: string): Promise<{ allowed: boolean; remainingSeconds?: number }> {
-  const admin = getSupabaseAdminSafe()
+interface PinAccessPayload {
+  memorialId: string
+  pinVersion: string
+  exp: number
+}
 
-  if (!admin) {
-    const now = Date.now()
-    const record = memoryPinAttempts.get(key)
-    if (!record) return { allowed: true }
+function getPinVersion(accessPinHash: string): string {
+  return crypto.createHash("sha256").update(accessPinHash).digest("base64url").slice(0, 16)
+}
 
-    if (record.lockedUntil > now) {
-      return {
-        allowed: false,
-        remainingSeconds: Math.ceil((record.lockedUntil - now) / 1000),
-      }
-    }
-    return { allowed: true }
+export function createPinAccessToken(memorialId: string, accessPinHash: string): string {
+  if (!memorialId || !accessPinHash) throw new Error("Cannot grant PIN access without a memorial and PIN")
+
+  const payload: PinAccessPayload = {
+    memorialId,
+    pinVersion: getPinVersion(accessPinHash),
+    exp: Date.now() + PIN_TOKEN_TTL_MS,
   }
+  const encoded = Buffer.from(JSON.stringify(payload)).toString("base64url")
+  const signature = crypto
+    .createHmac("sha256", getPinSigningSecret())
+    .update(encoded)
+    .digest("base64url")
+  return `${encoded}.${signature}`
+}
+
+export function verifyPinAccessToken(
+  token: string | null | undefined,
+  memorialId: string,
+  accessPinHash: string | null | undefined
+): boolean {
+  if (!token || !memorialId || !accessPinHash) return false
+  const parts = token.split(".")
+  if (parts.length !== 2) return false
+  const [encoded, receivedSignature] = parts
 
   try {
-    const windowStart = new Date(Date.now() - PIN_LOCK_WINDOW_SECONDS * 1000).toISOString()
-    const { data, count, error } = await admin
-      .from("rate_limit_events")
-      .select("created_at", { count: "exact" })
-      .eq("action", "pin_attempt")
-      .eq("identifier", key)
-      .gte("created_at", windowStart)
-      .order("created_at", { ascending: true })
-
-    if (error) {
-      console.error("Durable PIN rate limit check error:", error.message)
-      return { allowed: true }
+    const expectedSignature = crypto
+      .createHmac("sha256", getPinSigningSecret())
+      .update(encoded)
+      .digest("base64url")
+    const received = Buffer.from(receivedSignature)
+    const expected = Buffer.from(expectedSignature)
+    if (received.length !== expected.length || !crypto.timingSafeEqual(received, expected)) {
+      return false
     }
 
-    const total = typeof count === "number" ? count : data?.length || 0
-
-    if (total >= MAX_PIN_ATTEMPTS) {
-      const oldestIso = data && data[0]?.created_at
-      const oldestMs = oldestIso ? new Date(oldestIso).getTime() : Date.now() - PIN_LOCK_WINDOW_SECONDS * 1000
-      const expiresAt = oldestMs + PIN_LOCK_WINDOW_SECONDS * 1000
-      const remainingSeconds = Math.max(1, Math.ceil((expiresAt - Date.now()) / 1000))
-
-      return { allowed: false, remainingSeconds }
-    }
-
-    return { allowed: true }
-  } catch (err) {
-    console.error("Durable PIN rate limit exception:", err)
-    return { allowed: true }
+    const payload = JSON.parse(
+      Buffer.from(encoded, "base64url").toString("utf8")
+    ) as Partial<PinAccessPayload>
+    return (
+      payload.memorialId === memorialId &&
+      payload.pinVersion === getPinVersion(accessPinHash) &&
+      typeof payload.exp === "number" &&
+      payload.exp > Date.now()
+    )
+  } catch {
+    return false
   }
 }
-
-/**
- * Record a failed attempt. Locks for 15 minutes after 5 failures.
- */
-export async function recordFailedPinAttempt(key: string): Promise<{ locked: boolean; attemptsLeft: number }> {
-  const admin = getSupabaseAdminSafe()
-
-  // Always update memory fallback
-  const now = Date.now()
-  const memRecord = memoryPinAttempts.get(key) || { attempts: 0, lockedUntil: 0 }
-  if (memRecord.lockedUntil > 0 && memRecord.lockedUntil <= now) {
-    memRecord.attempts = 0
-    memRecord.lockedUntil = 0
-  }
-  memRecord.attempts += 1
-  if (memRecord.attempts >= MAX_PIN_ATTEMPTS) {
-    memRecord.lockedUntil = now + PIN_LOCK_WINDOW_SECONDS * 1000
-  }
-  memoryPinAttempts.set(key, memRecord)
-
-  if (!admin) {
-    const locked = memRecord.attempts >= MAX_PIN_ATTEMPTS
-    return { locked, attemptsLeft: Math.max(0, MAX_PIN_ATTEMPTS - memRecord.attempts) }
-  }
-
-  try {
-    // Insert failed attempt event
-    await admin.from("rate_limit_events").insert({
-      action: "pin_attempt",
-      identifier: key,
-    })
-
-    const windowStart = new Date(Date.now() - PIN_LOCK_WINDOW_SECONDS * 1000).toISOString()
-    const { count, error } = await admin
-      .from("rate_limit_events")
-      .select("id", { count: "exact", head: true })
-      .eq("action", "pin_attempt")
-      .eq("identifier", key)
-      .gte("created_at", windowStart)
-
-    const total = error || typeof count !== "number" ? memRecord.attempts : count
-    const locked = total >= MAX_PIN_ATTEMPTS
-
-    return { locked, attemptsLeft: Math.max(0, MAX_PIN_ATTEMPTS - total) }
-  } catch (err) {
-    console.error("Durable PIN recording exception:", err)
-    const locked = memRecord.attempts >= MAX_PIN_ATTEMPTS
-    return { locked, attemptsLeft: Math.max(0, MAX_PIN_ATTEMPTS - memRecord.attempts) }
-  }
-}
-
-/**
- * Reset failed attempts upon successful PIN entry
- */
-export async function clearPinAttempts(key: string): Promise<void> {
-  memoryPinAttempts.delete(key)
-
-  const admin = getSupabaseAdminSafe()
-  if (!admin) return
-
-  try {
-    await admin
-      .from("rate_limit_events")
-      .delete()
-      .eq("action", "pin_attempt")
-      .eq("identifier", key)
-  } catch (err) {
-    console.error("Failed to clear durable PIN attempts:", err)
-  }
-}
-

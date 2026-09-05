@@ -131,7 +131,7 @@ export function MemoriesStream({
   const [formError, setFormError] = useState<string | null>(null)
   const formNameInputRef = useRef<HTMLInputElement>(null)
 
-  const siteKey = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY || "0x4AAAAAAElC6yv2vY7dR2dn"
+  const siteKey = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY || ""
   const firstName = fullName.split(" ")[0] || fullName
 
   const optimisticReceipts = useOptimisticReceipts(slug || memorialId || "", items)
@@ -220,7 +220,7 @@ export function MemoriesStream({
       }
 
       if (data.item && data.receipt_token) {
-        saveLocalReceipt(memorialId || slug || "", {
+        saveLocalReceipt(slug || memorialId || "", {
           id: data.item.id,
           receipt_token: data.receipt_token,
           memorial_slug: slug || "",
@@ -635,6 +635,11 @@ export function MemoriesStream({
               {siteKey ? (
                 <Turnstile
                   siteKey={siteKey}
+                  options={{
+                    appearance: "interaction-only",
+                    refreshExpired: "auto",
+                    action: "contribution",
+                  }}
                   onSuccess={setTurnstileToken}
                   onExpire={() => setTurnstileToken("")}
                   onError={() => setTurnstileToken("")}
@@ -645,7 +650,7 @@ export function MemoriesStream({
 
               <button
                 type="submit"
-                disabled={isSubmitting || !authorName.trim()}
+                disabled={isSubmitting || !authorName.trim() || !siteKey || !turnstileToken}
                 className="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-full font-medium transition-all cursor-pointer bg-primary hover:bg-primary/90 text-primary-foreground shadow-xs active:scale-[0.98] h-10 px-6 text-xs select-none disabled:opacity-50 disabled:cursor-not-allowed w-full sm:w-auto"
               >
                 {isSubmitting ? (

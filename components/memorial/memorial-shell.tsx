@@ -1,6 +1,6 @@
 "use client"
 
-import { createContext, useContext, useState } from "react"
+import { createContext, useContext, useEffect, useState } from "react"
 import Link from "next/link"
 import { useRouter, useSearchParams } from "next/navigation"
 import { MemorialNav } from "./memorial-nav"
@@ -8,7 +8,14 @@ import { MemorialFooter } from "./memorial-footer"
 import { ContributeModal, type ContributionType } from "./contribute-modal"
 import type { MemorialIdentity } from "@/types/memorial-view"
 
-interface MemorialActions { openContribute: (type?: ContributionType, photoUrl?: string, photoTitle?: string) => void }
+interface MemorialActions {
+  openContribute: (
+    type?: ContributionType,
+    photoUrl?: string,
+    photoTitle?: string,
+    mediaId?: string
+  ) => void
+}
 const MemorialActionsContext = createContext<MemorialActions | null>(null)
 
 export function useMemorialActions() {
@@ -24,12 +31,19 @@ export function MemorialShell({ identity, children }: { identity: MemorialIdenti
   const [type, setType] = useState<ContributionType | null>(null)
   const [photoUrl, setPhotoUrl] = useState<string | null>(null)
   const [photoTitle, setPhotoTitle] = useState<string | null>(null)
-  const openContribute = (nextType?: ContributionType, nextPhotoUrl?: string, nextPhotoTitle?: string) => {
-    setType(nextType || null); setPhotoUrl(nextPhotoUrl || null); setPhotoTitle(nextPhotoTitle || null); setIsOpen(true)
+  const [mediaId, setMediaId] = useState<string | null>(null)
+  const openContribute = (nextType?: ContributionType, nextPhotoUrl?: string, nextPhotoTitle?: string, nextMediaId?: string) => {
+    setType(nextType || null); setPhotoUrl(nextPhotoUrl || null); setPhotoTitle(nextPhotoTitle || null); setMediaId(nextMediaId || null); setIsOpen(true)
   }
-  const closeContribute = () => { setIsOpen(false); setPhotoUrl(null); setPhotoTitle(null) }
+  const closeContribute = () => { setIsOpen(false); setPhotoUrl(null); setPhotoTitle(null); setMediaId(null) }
   const visitorPreview = identity.isOwner && searchParams.get("preview") === "visitor"
   const draftPreview = identity.status === "draft" && identity.isOwner && !visitorPreview
+
+  useEffect(() => {
+    const refreshPublishedReceipt = () => router.refresh()
+    window.addEventListener("theirs_receipt_published", refreshPublishedReceipt)
+    return () => window.removeEventListener("theirs_receipt_published", refreshPublishedReceipt)
+  }, [router])
 
   return (
     <MemorialActionsContext.Provider value={{ openContribute }}>
@@ -75,6 +89,7 @@ export function MemorialShell({ identity, children }: { identity: MemorialIdenti
           initialType={type}
           initialPhotoUrl={photoUrl}
           initialPhotoTitle={photoTitle}
+          initialMediaId={mediaId}
         />
       </main>
     </MemorialActionsContext.Provider>

@@ -1,8 +1,8 @@
 -- ==============================================================================
 -- THEIRS (theirs.page) — STORAGE BUCKET & POLICIES
 -- Migration: 03_storage_setup.sql
--- Description: Sets up the public storage bucket for portraits, album images,
---              audio recordings, and memory attachments.
+-- Description: Sets up a private storage bucket. Application routes enforce
+--              memorial privacy; raw object URLs must not bypass those checks.
 -- Re-runnable: Safe to execute repeatedly without "already exists" errors.
 -- ==============================================================================
 
@@ -11,7 +11,7 @@ insert into storage.buckets (id, name, public, file_size_limit, allowed_mime_typ
 values (
   'theirs-media',
   'theirs-media',
-  true,
+  false,
   52428800, -- 50MB max file size per item
   array[
     'image/jpeg',
@@ -31,36 +31,15 @@ values (
   ]
 )
 on conflict (id) do update set
-  public = true,
+  public = false,
   file_size_limit = 52428800;
 
 
 -- 2. STORAGE POLICIES (Idempotent: drop if exists before create)
 drop policy if exists "Public read access for theirs-media" on storage.objects;
-create policy "Public read access for theirs-media"
-  on storage.objects for select
-  using (bucket_id = 'theirs-media');
-
 drop policy if exists "Authenticated users can upload media" on storage.objects;
-create policy "Authenticated users can upload media"
-  on storage.objects for insert
-  with check (
-    bucket_id = 'theirs-media'
-    and auth.role() = 'authenticated'
-  );
-
 drop policy if exists "Users can update their own uploads" on storage.objects;
-create policy "Users can update their own uploads"
-  on storage.objects for update
-  using (
-    bucket_id = 'theirs-media'
-    and auth.uid() = owner
-  );
-
 drop policy if exists "Users can delete their own uploads" on storage.objects;
-create policy "Users can delete their own uploads"
-  on storage.objects for delete
-  using (
-    bucket_id = 'theirs-media'
-    and auth.uid() = owner
-  );
+
+-- No direct browser policies are created. The server-side R2/media pipeline is
+-- the single authorization boundary for current Theirs media.

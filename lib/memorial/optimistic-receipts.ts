@@ -19,7 +19,12 @@ export interface OptimisticReceiptItem {
   contribution_type?: "tribute" | "story" | "photo" | "voice" | "video" | "moment"
   status: "pending_approval" | "approved" | "blocked"
   created_at: string
+  expires_at?: number
 }
+
+const RECEIPT_TTL_MS = 30 * 24 * 60 * 60 * 1000
+const MAX_LOCAL_RECEIPTS = 20
+const lastRemoteCheckByMemorial = new Map<string, number>()
 
 function getStorageKey(slugOrId: string): string {
   return `theirs_receipts_${(slugOrId || "default").toLowerCase()}`
@@ -31,7 +36,21 @@ export function getLocalReceipts(slugOrId: string): OptimisticReceiptItem[] {
     const raw = localStorage.getItem(getStorageKey(slugOrId))
     if (!raw) return []
     const parsed = JSON.parse(raw)
-    return Array.isArray(parsed) ? parsed : []
+    if (!Array.isArray(parsed)) return []
+    const now = Date.now()
+    const valid = parsed.filter((item): item is OptimisticReceiptItem => Boolean(
+      item &&
+      typeof item === "object" &&
+      typeof item.id === "string" &&
+      typeof item.receipt_token === "string" &&
+      /^cr_[A-Za-z0-9_-]{43}$/.test(item.receipt_token) &&
+      typeof item.story === "string" &&
+      (typeof item.expires_at !== "number" || item.expires_at > now)
+    )).slice(0, MAX_LOCAL_RECEIPTS)
+    if (valid.length !== parsed.length) {
+      localStorage.setItem(getStorageKey(slugOrId), JSON.stringify(valid))
+    }
+    return valid
   } catch (err) {
     console.warn("Failed to read local receipts:", err)
     return []
@@ -46,7 +65,10 @@ export function saveLocalReceipt(slugOrId: string, item: OptimisticReceiptItem):
     const filtered = existing.filter(
       (r) => r.id !== item.id && r.receipt_token !== item.receipt_token
     )
-    const updated = [item, ...filtered]
+    const updated = [
+      { ...item, expires_at: item.expires_at || Date.now() + RECEIPT_TTL_MS },
+      ...filtered,
+    ].slice(0, MAX_LOCAL_RECEIPTS)
     localStorage.setItem(getStorageKey(slugOrId), JSON.stringify(updated))
 
     window.dispatchEvent(
@@ -133,6 +155,67 @@ export function useOptimisticReceipts(slugOrId: string, liveItems?: { id: string
       window.removeEventListener("storage", refresh)
     }
   }, [slugOrId, refresh])
+
+  useEffect(() => {
+    if (!slugOrId) return
+    let cancelled = false
+
+    const checkReceiptStatuses = async () => {
+      const now = Date.now()
+      const lastCheck = lastRemoteCheckByMemorial.get(slugOrId) || 0
+      if (now - lastCheck < 50_000) return
+      lastRemoteCheckByMemorial.set(slugOrId, now)
+
+      const current = getLocalReceipts(slugOrId)
+      if (current.length === 0) return
+
+      let published = false
+      let changed = false
+      const next = await Promise.all(current.map(async (receipt) => {
+        try {
+          const response = await fetch(
+            `/api/memorials/${encodeURIComponent(slugOrId)}/contributions/receipt?token=${encodeURIComponent(receipt.receipt_token)}`,
+            { cache: "no-store" }
+          )
+          const data = await response.json()
+          if (data.status === "published") {
+            published = true
+            changed = true
+            return null
+          }
+          if (data.status === "not_published") {
+            changed = true
+            return null
+          }
+          if (Array.isArray(data.photo_urls) && data.photo_urls.length > 0) {
+            changed = true
+            return {
+              ...receipt,
+              photo_url: data.photo_urls[0],
+              photo_urls: data.photo_urls,
+            }
+          }
+        } catch {
+          // A transient receipt check must not discard the contributor's copy.
+        }
+        return receipt
+      }))
+
+      if (cancelled || !changed) return
+      const remaining = next.filter((item): item is OptimisticReceiptItem => Boolean(item))
+      localStorage.setItem(getStorageKey(slugOrId), JSON.stringify(remaining))
+      setReceipts(remaining)
+      window.dispatchEvent(new CustomEvent("theirs_receipts_updated", { detail: { slugOrId } }))
+      if (published) window.dispatchEvent(new CustomEvent("theirs_receipt_published"))
+    }
+
+    void checkReceiptStatuses()
+    const timer = window.setInterval(checkReceiptStatuses, 60_000)
+    return () => {
+      cancelled = true
+      window.clearInterval(timer)
+    }
+  }, [slugOrId])
 
   return receipts
 }

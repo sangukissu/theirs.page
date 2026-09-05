@@ -9,7 +9,7 @@ import { promisify } from "node:util"
 const scrypt = promisify(scryptCallback)
 
 function getShareSecret() {
-  const secret = process.env.MEMORY_BOOK_SHARE_SECRET || process.env.SUPABASE_SECRET_KEY
+  const secret = process.env.MEMORY_BOOK_SHARE_SECRET
 
   if (!secret) {
     throw new Error("MEMORY_BOOK_SHARE_SECRET is not configured")

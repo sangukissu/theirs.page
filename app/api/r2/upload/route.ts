@@ -1,20 +1,46 @@
 import { NextRequest, NextResponse } from "next/server"
 import { createClient } from "@/utils/supabase/server"
 import { getSupabaseAdminSafe } from "@/utils/supabase/admin"
-import { putR2Object } from "@/lib/r2"
+import { deleteR2Object, getR2SignedUrl, putR2Object } from "@/lib/r2"
 import { assertMemorialAdmin } from "@/lib/memorial-auth"
 import { assertMediaQuota } from "@/lib/paywall"
 import {
   verifyUploadIntent,
+  signUploadedMediaReference,
+  type UploadIntentPayload,
   ALLOWED_GUEST_MIME_TYPES,
   MAX_GUEST_UPLOAD_BYTES,
+  getUploadClientBinding,
 } from "@/lib/upload-intent"
-import { validateMagicBytes, stripExifAndGps } from "@/lib/safety/moderation"
-
-const R2_PUBLIC_ENDPOINT =
-  process.env.R2_MEDIA_ENDPOINT || "https://pub-3511ae96b3594eecbde1632d4cca06b6.r2.dev"
+import {
+  getImageDimensions,
+  screenImageWithGemini,
+  stripExifAndGps,
+  validateMagicBytes,
+} from "@/lib/safety/moderation"
+import { getMemorialPinCookieName, verifyPinAccessToken } from "@/lib/security/pin"
+import { checkDurableRateLimit } from "@/lib/turnstile"
+import type { ContributionSettings } from "@/types/theirs"
 
 const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+const MAX_IMAGE_EDGE = 12_000
+const MAX_IMAGE_PIXELS = 40_000_000
+const MAX_UPLOAD_REQUEST_BYTES = 55 * 1024 * 1024
+
+function getClientIp(req: NextRequest): string {
+  return (
+    req.headers.get("cf-connecting-ip") ||
+    req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ||
+    req.headers.get("x-real-ip") ||
+    "127.0.0.1"
+  )
+}
+
+function extensionForMime(mime: string): string {
+  if (mime === "image/png") return "png"
+  if (mime === "image/webp") return "webp"
+  return "jpg"
+}
 
 function detectMediaType(filename: string, mime: string): "image" | "audio" | "video" {
   const lower = filename.toLowerCase()
@@ -65,6 +91,11 @@ function resolveContentType(filename: string, mime: string): string {
 
 export async function POST(req: NextRequest) {
   try {
+    const declaredLength = Number(req.headers.get("content-length") || 0)
+    if (declaredLength > MAX_UPLOAD_REQUEST_BYTES) {
+      return NextResponse.json({ error: "Upload exceeds the 50MB limit." }, { status: 413 })
+    }
+
     const supabase = await createClient()
     const {
       data: { user },
@@ -83,6 +114,7 @@ export async function POST(req: NextRequest) {
     const mediaType = detectMediaType(file.name, file.type)
     const contentType = resolveContentType(file.name, file.type)
     let resolvedMemorialId: string | null = null
+    let contributionIntent: UploadIntentPayload | null = null
 
     // 1. Contribution Upload (Guest or Logged-in Contributor with signed intent) vs. Admin Dashboard Upload
     const isContribution = Boolean(uploadIntentToken) || folder === "contributions"
@@ -95,42 +127,49 @@ export async function POST(req: NextRequest) {
         )
       }
 
-      const verifiedIntent = verifyUploadIntent(uploadIntentToken)
-      if (!verifiedIntent) {
+      contributionIntent = verifyUploadIntent(uploadIntentToken)
+      if (!contributionIntent) {
         return NextResponse.json(
           { error: "Upload authorization expired or invalid. Please refresh and try again." },
           { status: 403 }
         )
       }
 
+      if (contributionIntent.clientBinding !== getUploadClientBinding(getClientIp(req))) {
+        return NextResponse.json(
+          { error: "This upload authorization belongs to a different browser session." },
+          { status: 403 }
+        )
+      }
+
       // Guest / contributor file must be within 15MB
-      if (file.size > MAX_GUEST_UPLOAD_BYTES || file.size > verifiedIntent.maxBytes) {
+      if (file.size < 1 || file.size > MAX_GUEST_UPLOAD_BYTES || file.size > contributionIntent.maxBytes) {
         return NextResponse.json(
           { error: "Contribution files must be under 15MB." },
           { status: 400 }
         )
       }
 
-      // Contribution only permits whitelisted image & audio MIME types
-      if (!ALLOWED_GUEST_MIME_TYPES.has(contentType) && !ALLOWED_GUEST_MIME_TYPES.has(file.type)) {
+      // Contributions currently permit only the signed photograph allowlist.
+      if (!ALLOWED_GUEST_MIME_TYPES.has(contentType) || contributionIntent.allowedMime !== "image/*") {
         return NextResponse.json(
-          { error: "Contribution uploads only accept photo and audio files." },
+          { error: "The selected file does not match the authorized photograph type." },
           { status: 400 }
         )
       }
 
       // Verify memorial exists and matches intent
       const admin = getSupabaseAdminSafe() || supabase
-      const isUuid = UUID_REGEX.test(verifiedIntent.memorialId)
-      let query = admin.from("memorials").select("id, slug, status, privacy, is_paid")
-      query = isUuid ? query.eq("id", verifiedIntent.memorialId) : query.eq("slug", verifiedIntent.memorialId)
+      const isUuid = UUID_REGEX.test(contributionIntent.memorialId)
+      let query = admin.from("memorials").select("id, slug, status, privacy, is_paid, owner_id, access_pin_hash, contribution_settings")
+      query = isUuid ? query.eq("id", contributionIntent.memorialId) : query.eq("slug", contributionIntent.memorialId)
       const { data: memorial } = await query.maybeSingle()
 
       if (!memorial) {
         return NextResponse.json({ error: "Memorial not found" }, { status: 404 })
       }
 
-      if (memorial.id !== verifiedIntent.memorialId) {
+      if (memorial.id !== contributionIntent.memorialId) {
         return NextResponse.json(
           { error: "Upload authorization does not match the target memorial." },
           { status: 403 }
@@ -144,14 +183,68 @@ export async function POST(req: NextRequest) {
         )
       }
 
+      const contributionSettings = (memorial.contribution_settings || {}) as ContributionSettings
+      if (
+        contributionSettings.accept_contributions === false ||
+        contributionSettings.photos === false
+      ) {
+        return NextResponse.json(
+          { error: "The family is not currently accepting photograph contributions." },
+          { status: 403 }
+        )
+      }
+
+      const uploadRateLimit = await checkDurableRateLimit(
+        "contribution_upload",
+        getClientIp(req),
+        12,
+        600
+      )
+      if (!uploadRateLimit.allowed) {
+        return NextResponse.json(
+          { error: "Too many uploads were attempted. Please wait a few minutes and try again." },
+          { status: 429 }
+        )
+      }
+      const sessionRateLimit = await checkDurableRateLimit(
+        "contribution_upload_session",
+        contributionIntent.nonce,
+        3,
+        600
+      )
+      if (!sessionRateLimit.allowed) {
+        return NextResponse.json(
+          { error: "This contribution already has the maximum of three photographs." },
+          { status: 429 }
+        )
+      }
+
       if (memorial.privacy === "private") {
         const cookieKey = memorial.slug || memorial.id
-        const isUnlocked = req.cookies.get(`theirs_pin_${cookieKey}`)?.value === "unlocked"
+        const isUnlocked = verifyPinAccessToken(
+          req.cookies.get(getMemorialPinCookieName(cookieKey))?.value,
+          memorial.id,
+          memorial.access_pin_hash
+        )
         if (!isUnlocked) {
-          return NextResponse.json(
-            { error: "This memorial is private. Please enter the family PIN before uploading." },
-            { status: 403 }
-          )
+          const isOwner = user?.id === memorial.owner_id
+          let isAcceptedCollaborator = false
+          if (user && !isOwner) {
+            const { data: collaborator } = await admin
+              .from("collaborators")
+              .select("id")
+              .eq("memorial_id", memorial.id)
+              .eq("user_id", user.id)
+              .eq("invitation_accepted", true)
+              .maybeSingle()
+            isAcceptedCollaborator = Boolean(collaborator)
+          }
+          if (!isOwner && !isAcceptedCollaborator) {
+            return NextResponse.json(
+              { error: "This memorial is private. Please enter the family PIN before uploading." },
+              { status: 403 }
+            )
+          }
         }
       }
 
@@ -193,28 +286,41 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ error: "Authentication required" }, { status: 401 })
       }
 
-      if (memorialIdOrSlug) {
-        const authCheck = await assertMemorialAdmin(memorialIdOrSlug, user.id)
-        if (!authCheck.authorized || !authCheck.memorial) {
-          return NextResponse.json(
-            { error: authCheck.error || "You do not have permission to upload to this memorial" },
-            { status: 403 }
-          )
-        }
+      if (!memorialIdOrSlug) {
+        return NextResponse.json({ error: "A memorial is required for dashboard uploads." }, { status: 400 })
+      }
+      const authCheck = await assertMemorialAdmin(memorialIdOrSlug, user.id)
+      if (!authCheck.authorized || !authCheck.memorial) {
+        return NextResponse.json(
+          { error: authCheck.error || "You do not have permission to upload to this memorial" },
+          { status: 403 }
+        )
+      }
 
-        resolvedMemorialId = authCheck.memorial.id
+      resolvedMemorialId = authCheck.memorial.id
+      const adminUploadLimit = await checkDurableRateLimit(
+        "dashboard_upload",
+        `${user.id}:${resolvedMemorialId}`,
+        120,
+        3600
+      )
+      if (!adminUploadLimit.allowed) {
+        return NextResponse.json(
+          { error: "Too many uploads were attempted. Please wait before trying again." },
+          { status: 429 }
+        )
+      }
 
-        // Check storage quota & format restrictions via paywall rules
-        const { count, error: countErr } = await supabase
-          .from("media_items")
-          .select("id", { count: "exact", head: true })
-          .eq("memorial_id", resolvedMemorialId)
+      // Check storage quota & format restrictions via paywall rules
+      const { count, error: countErr } = await supabase
+        .from("media_items")
+        .select("id", { count: "exact", head: true })
+        .eq("memorial_id", resolvedMemorialId)
 
-        const currentCount = !countErr && typeof count === "number" ? count : 0
-        const quotaCheck = assertMediaQuota(authCheck.memorial, currentCount, mediaType)
-        if (!quotaCheck.allowed) {
-          return NextResponse.json({ error: quotaCheck.error }, { status: quotaCheck.status || 403 })
-        }
+      const currentCount = !countErr && typeof count === "number" ? count : 0
+      const quotaCheck = assertMediaQuota(authCheck.memorial, currentCount, mediaType)
+      if (!quotaCheck.allowed) {
+        return NextResponse.json({ error: quotaCheck.error }, { status: quotaCheck.status || 403 })
       }
 
       // Max 50MB for authenticated admin uploads
@@ -236,23 +342,105 @@ export async function POST(req: NextRequest) {
         { status: 400 }
       )
     }
-
-    // 4. Privacy & Safety: Strip EXIF and GPS coordinates for image contributions
-    if (isContribution && validation.mediaType === "image") {
-      buffer = Buffer.from(stripExifAndGps(buffer, validation.detectedMime))
+    if (!isContribution && validation.mediaType !== mediaType) {
+      return NextResponse.json(
+        { error: "The uploaded bytes do not match the selected media type." },
+        { status: 400 }
+      )
     }
 
-    // 5. Generate clean storage key
+    if (isContribution) {
+      if (
+        !contributionIntent ||
+        !resolvedMemorialId ||
+        validation.mediaType !== "image" ||
+        validation.detectedMime !== contentType ||
+        !ALLOWED_GUEST_MIME_TYPES.has(validation.detectedMime)
+      ) {
+        return NextResponse.json(
+          { error: "The uploaded bytes do not match the authorized photograph type." },
+          { status: 400 }
+        )
+      }
+
+      const dimensions = getImageDimensions(buffer, validation.detectedMime)
+      if (
+        !dimensions ||
+        dimensions.width < 1 ||
+        dimensions.height < 1 ||
+        dimensions.width > MAX_IMAGE_EDGE ||
+        dimensions.height > MAX_IMAGE_EDGE ||
+        dimensions.width * dimensions.height > MAX_IMAGE_PIXELS
+      ) {
+        return NextResponse.json(
+          { error: "This photograph is damaged or has unusually large dimensions." },
+          { status: 400 }
+        )
+      }
+
+      let displayBuffer: Buffer
+      try {
+        displayBuffer = Buffer.from(stripExifAndGps(buffer, validation.detectedMime))
+      } catch (sanitizationError) {
+        console.warn("Contribution image sanitization rejected:", sanitizationError)
+        return NextResponse.json(
+          { error: "We could not safely prepare this photograph. Please export it as a new JPEG and try again." },
+          { status: 400 }
+        )
+      }
+
+      const safety = await screenImageWithGemini(displayBuffer, validation.detectedMime)
+      const objectId = crypto.randomUUID()
+      const extension = extensionForMime(validation.detectedMime)
+      const stagingPrefix = `contribution-staging/${resolvedMemorialId}/${contributionIntent.nonce}`
+      const originalKey = `${stagingPrefix}/original/${objectId}.${extension}`
+      const displayKey = `${stagingPrefix}/display/${objectId}.${extension}`
+
+      try {
+        await putR2Object(originalKey, buffer, validation.detectedMime, "private, no-store")
+        await putR2Object(displayKey, displayBuffer, validation.detectedMime, "private, no-store")
+      } catch (storageError) {
+        await Promise.allSettled([
+          deleteR2Object(originalKey),
+          deleteR2Object(displayKey),
+        ])
+        throw storageError
+      }
+
+      const mediaReference = signUploadedMediaReference({
+        memorialId: resolvedMemorialId,
+        originalKey,
+        displayKey,
+        detectedMime: validation.detectedMime,
+        mediaType: "image",
+        contributionType: contributionIntent.contributionType,
+        intentNonce: contributionIntent.nonce,
+        safety,
+      })
+      const previewUrl = await getR2SignedUrl(displayKey, 15 * 60)
+
+      return NextResponse.json({
+        success: true,
+        mediaRef: mediaReference,
+        previewUrl,
+        mediaType: "image",
+        filename: file.name.slice(0, 200),
+        contentType: validation.detectedMime,
+        size: buffer.length,
+        width: dimensions.width,
+        height: dimensions.height,
+        isQuarantined: true,
+      })
+    }
+
+    // 4. Authenticated caretaker upload
     const timestamp = Date.now()
-    const randomId = Math.random().toString(36).substring(2, 9)
-    const cleanFilename = file.name.replace(/[^a-zA-Z0-9.-]/g, "_")
+    const randomId = crypto.randomUUID()
+    const cleanFilename = file.name.replace(/[^a-zA-Z0-9.-]/g, "_").slice(-180)
     const safeFolder = folder.replace(/[^a-zA-Z0-9_-]/g, "")
 
-    // Contributions are placed in private quarantine prefix until caretaker approval
     let key: string
-    if (isContribution && resolvedMemorialId) {
-      key = `quarantine/${resolvedMemorialId}/${safeFolder}/${timestamp}_${randomId}_${cleanFilename}`
-    } else if (resolvedMemorialId) {
+    if (resolvedMemorialId) {
       key = `memorials/${resolvedMemorialId}/${safeFolder}/${timestamp}_${randomId}_${cleanFilename}`
     } else {
       key = `uploads/${user?.id || "guest"}/${safeFolder}/${timestamp}_${randomId}_${cleanFilename}`
@@ -261,17 +449,15 @@ export async function POST(req: NextRequest) {
     // 6. Upload to Cloudflare R2
     await putR2Object(key, buffer, validation.detectedMime || contentType, "public, max-age=31536000, immutable")
 
-    const publicUrl = `${R2_PUBLIC_ENDPOINT.replace(/\/$/, "")}/${key}`
-
     return NextResponse.json({
       success: true,
       key,
-      publicUrl,
+      publicUrl: `/api/media?key=${encodeURIComponent(key)}`,
       mediaType: validation.mediaType,
       filename: file.name,
       contentType: validation.detectedMime || contentType,
       size: buffer.length,
-      isQuarantined: isContribution,
+      isQuarantined: false,
     })
   } catch (err: any) {
     console.error("Server upload error:", err)

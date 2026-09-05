@@ -1,12 +1,13 @@
 import { NextRequest, NextResponse } from "next/server"
 import { getSupabaseAdminSafe } from "@/utils/supabase/admin"
-import { createClient } from "@/utils/supabase/server"
 import {
+  createPinAccessToken,
+  getMemorialPinCookieName,
+  hashPin,
+  isLegacyPlaintextPin,
   verifyPin,
-  checkPinRateLimit,
-  recordFailedPinAttempt,
-  clearPinAttempts,
 } from "@/lib/security/pin"
+import { checkDurableRateLimit, clearDurableRateLimit } from "@/lib/turnstile"
 
 interface RouteContext {
   params: Promise<{ id: string }>
@@ -26,39 +27,27 @@ function getClientIp(req: NextRequest): string {
 export async function POST(req: NextRequest, context: RouteContext) {
   try {
     const { id } = await context.params
+    if (Number(req.headers.get("content-length") || 0) > 4096) {
+      return NextResponse.json({ error: "Invalid request." }, { status: 413 })
+    }
     const body = await req.json().catch(() => ({}))
     const { pin } = body
 
-    if (!pin || typeof pin !== "string") {
-      return NextResponse.json({ error: "PIN is required" }, { status: 400 })
+    if (typeof pin !== "string" || !/^\d{4}$/.test(pin)) {
+      return NextResponse.json({ error: "Enter the four-digit PIN." }, { status: 400 })
     }
 
     const isUuid = UUID_REGEX.test(id)
-    let memorial: any = null
-
     const admin = getSupabaseAdminSafe()
-    if (admin) {
-      try {
-        let query = admin
-          .from("memorials")
-          .select("id, slug, access_pin_hash, privacy")
-        query = isUuid ? query.eq("id", id) : query.eq("slug", id)
-        const res = await query.maybeSingle()
-        memorial = res.data
-      } catch (adminErr) {
-        console.error("Admin pin query error:", adminErr)
-      }
+    if (!admin) {
+      return NextResponse.json(
+        { error: "Private memorial access is temporarily unavailable." },
+        { status: 503 }
+      )
     }
-
-    if (!memorial) {
-      const supabase = await createClient()
-      let query = supabase
-        .from("memorials")
-        .select("id, slug, access_pin_hash, privacy")
-      query = isUuid ? query.eq("id", id) : query.eq("slug", id)
-      const res = await query.maybeSingle()
-      memorial = res.data
-    }
+    let query = admin.from("memorials").select("id, slug, access_pin_hash, privacy")
+    query = isUuid ? query.eq("id", id) : query.eq("slug", id)
+    const { data: memorial } = await query.maybeSingle()
 
     if (!memorial) {
       return NextResponse.json({ error: "Memorial not found" }, { status: 404 })
@@ -72,7 +61,7 @@ export async function POST(req: NextRequest, context: RouteContext) {
     const rateLimitKey = `${clientIp}:${memorial.id}`
 
     // Check brute-force lock
-    const rateCheck = await checkPinRateLimit(rateLimitKey)
+    const rateCheck = await checkDurableRateLimit("pin_attempt", rateLimitKey, 5, 900)
     if (!rateCheck.allowed) {
       return NextResponse.json(
         {
@@ -86,35 +75,48 @@ export async function POST(req: NextRequest, context: RouteContext) {
     const isMatch = verifyPin(pin, memorial.access_pin_hash || "")
 
     if (!isMatch) {
-      const attemptResult = await recordFailedPinAttempt(rateLimitKey)
-      if (attemptResult.locked) {
-        return NextResponse.json(
-          { error: "Too many failed attempts. Access locked for 15 minutes." },
-          { status: 429 }
-        )
-      }
-
       return NextResponse.json(
-        {
-          error: `Incorrect PIN code. ${attemptResult.attemptsLeft} attempt${attemptResult.attemptsLeft === 1 ? "" : "s"} remaining.`,
-        },
+        { error: "Incorrect PIN code. Please check it and try again." },
         { status: 401 }
       )
     }
 
     // PIN is correct - clear failed attempt tracker
-    await clearPinAttempts(rateLimitKey)
+    await clearDurableRateLimit("pin_attempt", rateLimitKey)
 
-    // Set unlock cookie for 30 days
-    const cookieKey = memorial.slug || id
+    let effectivePinHash = memorial.access_pin_hash as string
+    if (isLegacyPlaintextPin(effectivePinHash)) {
+      if (!admin) {
+        return NextResponse.json(
+          { error: "This private memorial needs its access PIN refreshed by the owner." },
+          { status: 503 }
+        )
+      }
+      effectivePinHash = hashPin(pin)
+      const { error: migrationError } = await admin
+        .from("memorials")
+        .update({ access_pin_hash: effectivePinHash })
+        .eq("id", memorial.id)
+      if (migrationError) {
+        console.error("Failed to migrate legacy memorial PIN:", migrationError)
+        return NextResponse.json({ error: "Unable to finish unlocking this memorial." }, { status: 500 })
+      }
+    }
+
+    // Set a signed, memorial-bound unlock cookie for 30 days.
+    const cookieKey = memorial.slug || memorial.id
     const response = NextResponse.json({ success: true })
-    response.cookies.set(`theirs_pin_${cookieKey}`, "unlocked", {
+    response.cookies.set(
+      getMemorialPinCookieName(cookieKey),
+      createPinAccessToken(memorial.id, effectivePinHash),
+      {
       path: "/",
       maxAge: 60 * 60 * 24 * 30, // 30 days
       httpOnly: true,
       sameSite: "lax",
       secure: process.env.NODE_ENV === "production",
-    })
+      }
+    )
 
     return response
   } catch (err: any) {

@@ -1,6 +1,7 @@
 import { type NextRequest, NextResponse } from "next/server"
 import { fal } from "@fal-ai/client"
 import { createClient } from "@/utils/supabase/server"
+import { getSupabaseAdmin } from "@/utils/supabase/admin"
 import {
   buildRestorationInput,
   getWebhookBaseUrl,
@@ -38,11 +39,10 @@ function isValidItem(value: unknown): value is BatchRestoreItem {
 }
 
 async function refundFailedRestoration(
-  supabase: Awaited<ReturnType<typeof createClient>>,
   restorationId: string,
   message: string,
 ) {
-  await supabase.rpc("fail_restoration_and_refund", {
+  await getSupabaseAdmin().rpc("fail_restoration_and_refund", {
     p_restoration_id: restorationId,
     p_error_message: message,
   })
@@ -170,7 +170,7 @@ export async function POST(request: NextRequest) {
           }
         } catch (error) {
           const message = error instanceof Error ? error.message : "Failed to start restoration"
-          await refundFailedRestoration(supabase, row.id, message)
+          await refundFailedRestoration(row.id, message)
 
           return {
             clientId: item.clientId,

@@ -20,6 +20,7 @@ import type {
   PagedCollection,
 } from "@/types/memorial-view"
 import type { SectionSettings } from "@/types/theirs"
+import { getMemorialPinCookieName, verifyPinAccessToken } from "@/lib/security/pin"
 
 const DEFAULT_SECTIONS: Required<SectionSettings> = {
   story: true,
@@ -188,7 +189,14 @@ export const getMemorialViewContext = cache(async (slug: string): Promise<Memori
   if (memorial && memorial.status !== "published" && !isOwner) return null
 
   const cookieStore = await cookies()
-  const pinUnlocked = memorial?.privacy === "private" && cookieStore.get(`theirs_pin_${slug}`)?.value === "unlocked"
+  const pinUnlocked = Boolean(
+    memorial?.privacy === "private" &&
+      verifyPinAccessToken(
+        cookieStore.get(getMemorialPinCookieName(slug))?.value,
+        memorial.id,
+        memorial.access_pin_hash
+      )
+  )
   const requiresPin = Boolean(memorial?.privacy === "private" && !isOwner && !pinUnlocked)
   const sections = { ...DEFAULT_SECTIONS, ...(memorial?.section_settings || {}) }
   let photoCount = DEMO_GALLERY.filter((item) => item.mediaType === "photo").length

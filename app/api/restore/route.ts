@@ -1,6 +1,8 @@
 import { type NextRequest, NextResponse } from "next/server"
 import { fal } from "@fal-ai/client"
 import { createClient } from "@/utils/supabase/server"
+import { getSupabaseAdmin } from "@/utils/supabase/admin"
+import { getImageDimensions, validateMagicBytes } from "@/lib/safety/moderation"
 import {
   buildRestorationInput,
   getWebhookBaseUrl,
@@ -14,8 +16,9 @@ fal.config({
   credentials: process.env.FAL_KEY,
 })
 
-const ALLOWED_TYPES = ["image/jpeg", "image/jpg", "image/png", "image/gif", "image/webp"]
+const ALLOWED_TYPES = ["image/jpeg", "image/jpg", "image/png", "image/webp"]
 const MAX_FILE_SIZE = 10 * 1024 * 1024
+const MAX_REQUEST_BYTES = 16 * 1024 * 1024
 
 function sanitizeInput(input: any): any {
   if (typeof input === "string") {
@@ -53,14 +56,13 @@ function validateFile(file: File): { valid: boolean; error?: string } {
 }
 
 async function markFailedAndRefund(
-  supabase: Awaited<ReturnType<typeof createClient>>,
   restorationId: string,
   message: string,
 ): Promise<number | null> {
   // The RPC refunds the credit (if it was reserved) and returns the user's
   // updated balance. We return it so the client can resync without a second
   // round-trip.
-  const { data, error } = await supabase.rpc("fail_restoration_and_refund", {
+  const { data, error } = await getSupabaseAdmin().rpc("fail_restoration_and_refund", {
     p_restoration_id: restorationId,
     p_error_message: message,
   })
@@ -73,6 +75,11 @@ async function markFailedAndRefund(
 
 export async function POST(request: NextRequest) {
   try {
+    const declaredLength = Number(request.headers.get("content-length") || 0)
+    if (declaredLength > MAX_REQUEST_BYTES) {
+      return NextResponse.json({ error: "The uploaded photograph is too large." }, { status: 413 })
+    }
+
     const supabase = await createClient()
     const {
       data: { user },
@@ -89,7 +96,6 @@ export async function POST(request: NextRequest) {
     const contentTypeHeader = request.headers.get("content-type") || ""
     let uploadedFile: string
     let outputFormat = "png"
-    let safetyTolerance: string | undefined
     let seed: string | undefined
     let preserveOriginalColors = false
     let originalImageKey: string | null = null
@@ -99,7 +105,6 @@ export async function POST(request: NextRequest) {
       const body = await request.json().catch(() => ({}))
       const key = typeof body?.key === "string" ? body.key : undefined
       const bodyOutputFormat = typeof body?.output_format === "string" ? body.output_format : undefined
-      const bodySafety = typeof body?.safety_tolerance === "string" ? body.safety_tolerance : undefined
       const bodySeed = typeof body?.seed === "string" ? body.seed : undefined
       const bodyPreserveOriginalColors = body?.preserveOriginalColors === true || body?.preserve_original_colors === true
       const filename = typeof body?.filename === "string" ? body.filename : key?.split("/").pop() || "original"
@@ -116,7 +121,6 @@ export async function POST(request: NextRequest) {
         }
         outputFormat = bodyOutputFormat
       }
-      if (bodySafety) safetyTolerance = bodySafety
       if (bodySeed) seed = bodySeed
       preserveOriginalColors = bodyPreserveOriginalColors
 
@@ -133,8 +137,14 @@ export async function POST(request: NextRequest) {
       const formData = await request.formData()
       const file = formData.get("image") as File
       seed = (formData.get("seed") as string) || undefined
-      outputFormat = (formData.get("output_format") as string) || "png"
-      safetyTolerance = (formData.get("safety_tolerance") as string) || undefined
+      const requestedOutput = formData.get("output_format")
+      if (
+        requestedOutput !== null &&
+        (typeof requestedOutput !== "string" || !["jpeg", "jpg", "png", "webp"].includes(requestedOutput))
+      ) {
+        return NextResponse.json({ error: "Invalid output format" }, { status: 400 })
+      }
+      outputFormat = typeof requestedOutput === "string" ? requestedOutput : "png"
       preserveOriginalColors = formData.get("preserve_original_colors") === "true"
 
       if (!file) {
@@ -148,7 +158,28 @@ export async function POST(request: NextRequest) {
 
       const bytes = await file.arrayBuffer()
       const buffer = Buffer.from(bytes)
-      const blob = new Blob([buffer], { type: file.type })
+      const validation = validateMagicBytes(buffer, file.name, file.type)
+      const claimedMime = file.type === "image/jpg" ? "image/jpeg" : file.type
+      const dimensions = validation.valid
+        ? getImageDimensions(buffer, validation.detectedMime)
+        : null
+      if (
+        !validation.valid ||
+        !["image/jpeg", "image/png", "image/webp"].includes(validation.detectedMime) ||
+        validation.detectedMime !== claimedMime ||
+        !dimensions ||
+        dimensions.width < 1 ||
+        dimensions.height < 1 ||
+        dimensions.width > 12000 ||
+        dimensions.height > 12000 ||
+        dimensions.width * dimensions.height > 40_000_000
+      ) {
+        return NextResponse.json(
+          { error: "The uploaded bytes are not a valid supported photograph." },
+          { status: 400 }
+        )
+      }
+      const blob = new Blob([buffer], { type: validation.detectedMime })
       uploadedFile = await fal.storage.upload(blob)
     } else {
       return NextResponse.json(
@@ -160,7 +191,6 @@ export async function POST(request: NextRequest) {
     const sanitizedSeed = seed ? sanitizeInput(Number.parseInt(seed)) : undefined
     const input = buildRestorationInput(uploadedFile, {
       outputFormat,
-      safetyTolerance,
       seed: typeof sanitizedSeed === "number" && !isNaN(sanitizedSeed) ? sanitizedSeed : undefined,
       preserveOriginalColors,
     })
@@ -235,7 +265,7 @@ export async function POST(request: NextRequest) {
       const rawMessage = falError instanceof Error ? falError.message : "Unknown error"
       // Refund the credit (best-effort) and capture the user's updated balance
       // so we can hand it back to the client in one round-trip.
-      const refundedBalance = await markFailedAndRefund(supabase, restoration.id, rawMessage)
+      const refundedBalance = await markFailedAndRefund(restoration.id, rawMessage)
 
       if (falError instanceof Error) {
         if (rawMessage.includes("authentication") || rawMessage.includes("401")) {

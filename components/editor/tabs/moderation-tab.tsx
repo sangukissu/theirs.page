@@ -61,6 +61,11 @@ interface ModerationTabProps {
   onDeleteCaretakerMessage: (id: string) => void
 }
 
+function mediaPreviewUrl(value: string): string {
+  if (/^(?:https?:|blob:|data:|\/)/.test(value)) return value
+  return `/api/media?key=${encodeURIComponent(value)}`
+}
+
 export function ModerationTab({
   memorialId,
   initialSubTab = "memories",
@@ -158,7 +163,7 @@ export function ModerationTab({
 
   // Separate memories into the 3 discrete queues
   const pendingMemories = memories.filter(
-    (m) => (m.status === "pending_approval" || m.status === "rejected") && m.safety_decision !== "blocked"
+    (m) => m.status === "pending_approval" && m.safety_decision !== "blocked"
   )
   const publishedMemories = memories.filter((m) => m.status === "approved")
   const blockedMemories = memories.filter(
@@ -352,7 +357,7 @@ export function ModerationTab({
                       {mem.photo_url && (
                         <div className="pt-1">
                           <img
-                            src={mem.photo_url}
+                            src={mediaPreviewUrl(mem.photo_url)}
                             alt="Contributed photo"
                             className="h-28 w-auto rounded-xl object-cover border border-black/[0.08]"
                           />
@@ -440,7 +445,7 @@ export function ModerationTab({
 
                     {mem.photo_url && (
                       <img
-                        src={mem.photo_url}
+                        src={mediaPreviewUrl(mem.photo_url)}
                         alt="Photo"
                         className="h-24 w-auto rounded-xl object-cover border border-black/[0.08]"
                       />
@@ -570,21 +575,17 @@ export function ModerationTab({
                         {/* Blurred text/media with explicit reveal toggle */}
                         <div className="relative p-3 rounded-xl bg-neutral-100 border border-black/[0.05]">
                           <p
-                            className={`text-xs text-[#444] transition-all ${
-                              isRevealed ? "filter-none" : "blur-xs select-none"
-                            }`}
+                            className="text-xs text-[#444]"
                           >
-                            {mem.story}
+                            {isRevealed ? mem.story : "Content is hidden to protect the family."}
                           </p>
 
-                          {mem.photo_url && (
+                          {isRevealed && mem.photo_url && (
                             <div className="mt-2">
                               <img
-                                src={mem.photo_url}
+                                src={mediaPreviewUrl(mem.photo_url)}
                                 alt="Quarantined attachment"
-                                className={`h-24 w-auto rounded-lg object-cover transition-all ${
-                                  isRevealed ? "filter-none" : "blur-md select-none"
-                                }`}
+                                className="h-24 w-auto rounded-lg object-cover"
                               />
                             </div>
                           )}

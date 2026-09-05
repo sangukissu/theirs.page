@@ -50,7 +50,8 @@ interface InitialMemorialData {
   portrait_photo_url?: string | null
   status: "draft" | "published" | "archived"
   privacy: "public" | "unlisted" | "private"
-  access_pin_hash?: string | null
+  has_access_pin?: boolean
+  can_manage_owner_settings?: boolean
   successor_name?: string | null
   successor_email?: string | null
   section_settings?: SectionSettings | null
@@ -100,7 +101,7 @@ export function MemorialEditorClient({
     slug: initialMemorial.slug || "",
     status: initialMemorial.status || "draft",
     privacy: (!isPaid && initialMemorial.privacy === "private") ? "public" : (initialMemorial.privacy || "public"),
-    pin: isPaid ? (initialMemorial.access_pin_hash || "") : "",
+    pin: "",
     successor_name: initialMemorial.successor_name || "",
     successor_email: initialMemorial.successor_email || "",
     section_settings: initialMemorial.section_settings || {
@@ -115,8 +116,8 @@ export function MemorialEditorClient({
       tributes: true,
       memories: true,
       photos: true,
-      voice: true,
-      videos: true,
+      voice: false,
+      videos: false,
       moments: true,
     },
   })
@@ -196,27 +197,33 @@ export function MemorialEditorClient({
       const safePin = !isPaid ? null : (currentForm.pin || null)
 
       try {
-        const res = await fetch(`/api/memorials/${initialMemorial.id}`, {
-          method: "PATCH",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            full_name: currentForm.full_name,
-            preferred_name: currentForm.preferred_name || null,
-            birth_year: currentForm.birth_year ? Number(currentForm.birth_year) : null,
-            death_year: currentForm.death_year ? Number(currentForm.death_year) : null,
-            location: currentForm.location || null,
-            headline: currentForm.headline || null,
-            biography: currentForm.biography || null,
-            portrait_photo_url: currentForm.portrait_photo_url || null,
+        const payload: Record<string, unknown> = {
+          full_name: currentForm.full_name,
+          preferred_name: currentForm.preferred_name || null,
+          birth_year: currentForm.birth_year ? Number(currentForm.birth_year) : null,
+          death_year: currentForm.death_year ? Number(currentForm.death_year) : null,
+          location: currentForm.location || null,
+          headline: currentForm.headline || null,
+          biography: currentForm.biography || null,
+          portrait_photo_url: currentForm.portrait_photo_url || null,
+          section_settings: currentForm.section_settings || null,
+        }
+        if (initialMemorial.can_manage_owner_settings) {
+          Object.assign(payload, {
             slug: currentForm.slug,
             status: currentForm.status,
             privacy: safePrivacy,
-            pin: safePin,
             successor_name: currentForm.successor_name || null,
             successor_email: currentForm.successor_email || null,
-            section_settings: currentForm.section_settings || null,
             contribution_settings: currentForm.contribution_settings || null,
-          }),
+          })
+          if (/^\d{4}$/.test(safePin || "")) payload.pin = safePin
+        }
+
+        const res = await fetch(`/api/memorials/${initialMemorial.id}`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
         })
 
         if (res.ok) {
@@ -392,7 +399,9 @@ export function MemorialEditorClient({
       icon: MessageSquare,
       count: pendingContributions,
     },
-    { id: "settings", label: "Settings", icon: Settings },
+    ...(initialMemorial.can_manage_owner_settings
+      ? [{ id: "settings" as const, label: "Settings", icon: Settings }]
+      : []),
   ]
 
   const currentIndex = tabs.findIndex((t) => t.id === activeTab)
@@ -654,6 +663,7 @@ export function MemorialEditorClient({
               status={form.status}
               privacy={form.privacy}
               pin={form.pin}
+              hasPin={Boolean(initialMemorial.has_access_pin)}
               successorName={form.successor_name}
               successorEmail={form.successor_email}
               sectionSettings={form.section_settings}

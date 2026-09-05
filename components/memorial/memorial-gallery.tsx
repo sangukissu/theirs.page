@@ -195,7 +195,8 @@ interface MemorialGalleryProps {
   onOpenContribute: (
     type?: ContributionType,
     initialPhotoUrl?: string,
-    initialPhotoTitle?: string
+    initialPhotoTitle?: string,
+    initialMediaId?: string
   ) => void
   browseSlug?: string
   slug?: string
@@ -496,7 +497,7 @@ export function MemorialGallery({
         : selectedItem?.posterUrl || undefined
     const photoTitle = selectedItem?.title
     handleCloseModal()
-    onOpenContribute("memory", photoUrl, photoTitle)
+    onOpenContribute("memory", photoUrl, photoTitle, selectedItem?.id)
   }
 
   // Responsive Column Count for true Left-to-Right Masonry distribution

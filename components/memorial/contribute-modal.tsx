@@ -15,8 +15,9 @@ import {
   AlertCircle,
   Sparkles,
   Film,
+  Calendar,
 } from "lucide-react"
-import { Turnstile } from "@marsidev/react-turnstile"
+import { Turnstile, type TurnstileInstance } from "@marsidev/react-turnstile"
 import {
   BotanicalFlowerEmblem,
   CandleFlameEmblem,
@@ -40,6 +41,7 @@ interface ContributeModalProps {
   initialType?: ContributionType | null
   initialPhotoUrl?: string | null
   initialPhotoTitle?: string | null
+  initialMediaId?: string | null
   onSubmitted?: () => void
 }
 
@@ -55,6 +57,7 @@ export function ContributeModal({
   initialType = null,
   initialPhotoUrl = null,
   initialPhotoTitle = null,
+  initialMediaId = null,
   onSubmitted,
 }: ContributeModalProps) {
   const [selectedType, setSelectedType] = useState<ContributionType | null>(initialType)
@@ -70,13 +73,17 @@ export function ContributeModal({
   // Cloudflare Turnstile state
   const siteKey = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY || ""
   const [turnstileToken, setTurnstileToken] = useState("")
+  const turnstileRef = useRef<TurnstileInstance>(null)
 
   // Media upload state
   const fileInputRef = useRef<HTMLInputElement | null>(null)
   const memoryPhotoInputRef = useRef<HTMLInputElement | null>(null)
   const [uploadedFileUrl, setUploadedFileUrl] = useState<string | null>(null)
+  const [uploadedMediaRef, setUploadedMediaRef] = useState<string | null>(null)
   const [uploadedFileName, setUploadedFileName] = useState<string | null>(null)
-  const [memoryPhotos, setMemoryPhotos] = useState<{ url: string; name: string }[]>([])
+  const [memoryPhotos, setMemoryPhotos] = useState<{ url: string; name: string; mediaRef?: string }[]>([])
+  const [selectedExistingMediaId, setSelectedExistingMediaId] = useState<string | null>(null)
+  const [uploadAuthorization, setUploadAuthorization] = useState<string | null>(null)
   const [isUploadingMedia, setIsUploadingMedia] = useState(false)
   const [mediaUploadError, setMediaUploadError] = useState<string | null>(null)
 
@@ -111,12 +118,20 @@ export function ContributeModal({
       available: !allContributionsDisabled && !isPhotosFull && contributionSettings?.photos !== false,
     },
     {
+      type: "moment" as const,
+      icon: Calendar,
+      title: "Suggest a life moment",
+      desc: `Help the family place an important chapter of ${firstName}'s life in time.`,
+      color: "text-primary bg-primary/5",
+      available: !allContributionsDisabled && contributionSettings?.moments !== false,
+    },
+    {
       type: "voice" as const,
       icon: Mic,
       title: "Share a voice note",
       desc: "A voicemail or spoken story worth keeping forever.",
       color: "text-primary bg-primary/5",
-      available: !allContributionsDisabled && Boolean(isPaid) && contributionSettings?.voice !== false,
+      available: false,
     },
     {
       type: "video" as const,
@@ -124,7 +139,7 @@ export function ContributeModal({
       title: "Share a video clip",
       desc: "Home movies, celebrations, or recorded messages.",
       color: "text-primary bg-primary/5",
-      available: !allContributionsDisabled && Boolean(isPaid) && contributionSettings?.videos !== false,
+      available: false,
     },
   ]
 
@@ -143,18 +158,66 @@ export function ContributeModal({
       if (initialPhotoUrl) {
         setMemoryPhotos([{ url: initialPhotoUrl, name: initialPhotoTitle || "Selected Photograph" }])
         setUploadedFileUrl(initialPhotoUrl)
+        setUploadedMediaRef(null)
         setUploadedFileName(initialPhotoTitle || "Selected Photograph")
+        setSelectedExistingMediaId(initialMediaId)
       } else {
         setMemoryPhotos([])
         setUploadedFileUrl(null)
+        setUploadedMediaRef(null)
         setUploadedFileName(null)
+        setSelectedExistingMediaId(null)
       }
 
+      setUploadAuthorization(null)
       setIsSubmitted(false)
       setError(null)
       setMediaUploadError(null)
     }
-  }, [isOpen, initialType, initialPhotoUrl, initialPhotoTitle, isPaid, photoCount])
+  }, [isOpen, initialType, initialPhotoUrl, initialPhotoTitle, initialMediaId, isPaid, photoCount])
+
+  const getUploadAuthorization = async (file: File): Promise<string> => {
+    if (uploadAuthorization) return uploadAuthorization
+    if (siteKey && !turnstileToken) {
+      throw new Error("The security check is still loading. Please wait a moment and try again.")
+    }
+
+    const targetIdentifier = slug || memorialId
+    const intentRes = await fetch(`/api/memorials/${targetIdentifier}/upload-intent`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        turnstile_token: turnstileToken,
+        mime_type: file.type || "application/octet-stream",
+        file_size: file.size,
+        contribution_type: selectedType === "photo" ? "photo" : "memory",
+      }),
+    })
+    const intentData = await intentRes.json()
+    if (!intentRes.ok) throw new Error(intentData.error || "Failed to authorize file upload")
+
+    setUploadAuthorization(intentData.uploadIntentToken)
+    setTurnstileToken("")
+    turnstileRef.current?.reset()
+    return intentData.uploadIntentToken as string
+  }
+
+  const uploadContributionFile = async (file: File) => {
+    const authorization = await getUploadAuthorization(file)
+    const formData = new FormData()
+    formData.append("file", file)
+    formData.append("folder", "contributions")
+    formData.append("memorialId", memorialId || slug)
+    formData.append("uploadIntentToken", authorization)
+
+    const response = await fetch("/api/r2/upload", { method: "POST", body: formData })
+    const data = await response.json()
+    if (!response.ok) {
+      if (response.status === 403) setUploadAuthorization(null)
+      throw new Error(data.error || "Failed to upload photograph")
+    }
+    return data as { previewUrl: string; mediaRef: string }
+  }
 
   const handleFileSelect = async (file: File) => {
     if (!file) return
@@ -162,42 +225,9 @@ export function ContributeModal({
     setMediaUploadError(null)
 
     try {
-      // 1. Request signed Upload Intent token using slug or memorialId
-      const targetIdentifier = slug || memorialId
-      const intentRes = await fetch(`/api/memorials/${targetIdentifier}/upload-intent`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          turnstile_token: turnstileToken,
-          mime_type: file.type || "application/octet-stream",
-          file_size: file.size,
-          file_name: file.name,
-        }),
-      })
-
-      const intentData = await intentRes.json()
-      if (!intentRes.ok) {
-        throw new Error(intentData.error || "Failed to authorize file upload")
-      }
-
-      // 2. Upload file directly to R2 with upload intent token
-      const formData = new FormData()
-      formData.append("file", file)
-      formData.append("folder", "contributions")
-      formData.append("memorialId", intentData.memorialId || memorialId || slug)
-      formData.append("uploadIntentToken", intentData.uploadIntentToken)
-
-      const res = await fetch("/api/r2/upload", {
-        method: "POST",
-        body: formData,
-      })
-
-      const data = await res.json()
-      if (!res.ok) {
-        throw new Error(data.error || "Failed to upload file")
-      }
-
-      setUploadedFileUrl(data.publicUrl)
+      const data = await uploadContributionFile(file)
+      setUploadedFileUrl(data.previewUrl)
+      setUploadedMediaRef(data.mediaRef)
       setUploadedFileName(file.name)
     } catch (err: any) {
       console.error("Media upload error:", err)
@@ -218,40 +248,11 @@ export function ContributeModal({
     setMediaUploadError(null)
 
     try {
-      const targetIdentifier = slug || memorialId
-      const intentRes = await fetch(`/api/memorials/${targetIdentifier}/upload-intent`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          turnstile_token: turnstileToken,
-          mime_type: file.type || "image/jpeg",
-          file_size: file.size,
-          file_name: file.name,
-        }),
-      })
-
-      const intentData = await intentRes.json()
-      if (!intentRes.ok) {
-        throw new Error(intentData.error || "Failed to authorize photo upload")
-      }
-
-      const formData = new FormData()
-      formData.append("file", file)
-      formData.append("folder", "contributions")
-      formData.append("memorialId", intentData.memorialId || memorialId || slug)
-      formData.append("uploadIntentToken", intentData.uploadIntentToken)
-
-      const res = await fetch("/api/r2/upload", {
-        method: "POST",
-        body: formData,
-      })
-
-      const data = await res.json()
-      if (!res.ok) {
-        throw new Error(data.error || "Failed to upload photo")
-      }
-
-      setMemoryPhotos((prev) => [...prev, { url: data.publicUrl, name: file.name }])
+      const data = await uploadContributionFile(file)
+      setMemoryPhotos((prev) => [
+        ...prev,
+        { url: data.previewUrl, name: file.name, mediaRef: data.mediaRef },
+      ])
     } catch (err: any) {
       console.error("Photo upload error:", err)
       setMediaUploadError(err.message || "Failed to upload photo. Please try again.")
@@ -289,7 +290,7 @@ export function ContributeModal({
       }
     }
 
-    if (!effectiveContent) return
+    if (!effectiveContent && (!isTributeMode || tributeRitual === "note")) return
 
     setIsSubmitting(true)
     setError(null)
@@ -298,31 +299,27 @@ export function ContributeModal({
       const targetIdentifier = memorialId || slug
       const approxYearNum = extraField ? parseInt(extraField.replace(/\D/g, ""), 10) : null
 
-      const resolvedPhotoUrls = isMedia
-        ? (uploadedFileUrl ? [uploadedFileUrl] : [])
-        : memoryPhotos.map((p) => p.url)
-      const primaryPhotoUrl = resolvedPhotoUrls[0] || null
+      const mediaRefs = isMedia
+        ? (uploadedMediaRef ? [uploadedMediaRef] : [])
+        : memoryPhotos.flatMap((photo) => photo.mediaRef ? [photo.mediaRef] : [])
 
-      let safeTributeType: "flower" | "candle" | "note" | "photo" = "note"
+      let safeTributeType: "flower" | "candle" | "note" = "note"
       if (isTributeMode) {
         safeTributeType = tributeRitual
-      } else if (primaryPhotoUrl || selectedType === "photo") {
-        safeTributeType = "photo"
-      } else {
-        safeTributeType = "note"
       }
 
       const res = await fetch(`/api/memorials/${targetIdentifier}/contribute`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          type: isTributeMode ? "tribute" : "story",
+          type: selectedType === "message" ? "tribute" : selectedType,
           author_name: authorName.trim(),
           author_relationship: relationship.trim() || null,
           content: effectiveContent,
           approx_year: isNaN(approxYearNum as number) ? null : approxYearNum,
-          photo_url: primaryPhotoUrl,
-          photo_urls: resolvedPhotoUrls,
+          media_refs: mediaRefs,
+          existing_media_id: selectedExistingMediaId,
+          upload_authorization: uploadAuthorization,
           tribute_type: safeTributeType,
           turnstile_token: turnstileToken,
         }),
@@ -375,8 +372,11 @@ export function ContributeModal({
     setContent("")
     setExtraField("")
     setUploadedFileUrl(null)
+    setUploadedMediaRef(null)
     setUploadedFileName(null)
     setMemoryPhotos([])
+    setSelectedExistingMediaId(null)
+    setUploadAuthorization(null)
     setIsUploadingMedia(false)
     setMediaUploadError(null)
     setError(null)
@@ -384,18 +384,20 @@ export function ContributeModal({
   }
 
   const isMedia = selectedType === "photo" || selectedType === "voice" || selectedType === "video"
+  const hasSecurityProof = Boolean(siteKey && (turnstileToken || uploadAuthorization))
 
   // Determine if form is ready to submit
   const canSubmit =
     !isSubmitting &&
     !isUploadingMedia &&
+    hasSecurityProof &&
     Boolean(authorName.trim()) &&
     (isTributeMode
-      ? Boolean(content.trim())
+      ? tributeRitual !== "note" || Boolean(content.trim())
       : selectedType === "memory"
         ? Boolean(content.trim())
         : isMedia
-          ? Boolean(uploadedFileUrl)
+          ? Boolean(uploadedMediaRef)
           : Boolean(content.trim()))
 
   return (
@@ -620,6 +622,7 @@ export function ContributeModal({
                         required
                         value={authorName}
                         onChange={(e) => setAuthorName(e.target.value)}
+                        maxLength={100}
                         placeholder="e.g. David Miller"
                         className="w-full px-3 py-2 rounded-xl bg-[#f7f7f8] border border-black/[0.08] text-sm text-[#181925] placeholder:text-[#aaa] outline-none focus:border-primary/50 transition-colors"
                       />
@@ -633,6 +636,7 @@ export function ContributeModal({
                         type="text"
                         value={relationship}
                         onChange={(e) => setRelationship(e.target.value)}
+                        maxLength={80}
                         placeholder="e.g. Daughter, Old neighbour, Colleague"
                         className="w-full px-3 py-2 rounded-xl bg-[#f7f7f8] border border-black/[0.08] text-sm text-[#181925] placeholder:text-[#aaa] outline-none focus:border-primary/50 transition-colors"
                       />
@@ -650,6 +654,7 @@ export function ContributeModal({
                           type="text"
                           value={extraField}
                           onChange={(e) => setExtraField(e.target.value)}
+                          maxLength={20}
                           placeholder="e.g. 1984 or Summer 1992"
                           className="w-full px-3 py-2 rounded-xl bg-[#f7f7f8] border border-black/[0.08] text-sm text-[#181925] placeholder:text-[#aaa] outline-none focus:border-primary/50 transition-colors"
                         />
@@ -704,8 +709,9 @@ export function ContributeModal({
                           <button
                             type="button"
                             onClick={() => {
-                              setUploadedFileUrl(null)
-                              setUploadedFileName(null)
+                               setUploadedFileUrl(null)
+                               setUploadedMediaRef(null)
+                               setUploadedFileName(null)
                               if (fileInputRef.current) fileInputRef.current.value = ""
                             }}
                             className="size-8 rounded-full hover:bg-rose-50 text-neutral-400 hover:text-rose-600 flex items-center justify-center transition-colors cursor-pointer"
@@ -782,10 +788,15 @@ export function ContributeModal({
                                 : "Milestone story *"}
                     </label>
                     <textarea
-                      required={isTributeMode || selectedType === "memory"}
+                      required={
+                        selectedType === "memory" ||
+                        selectedType === "moment" ||
+                        (isTributeMode && tributeRitual === "note")
+                      }
                       rows={isTributeMode || selectedType === "memory" ? 4 : 3}
                       value={content}
                       onChange={(e) => setContent(e.target.value)}
+                      maxLength={4000}
                       placeholder={
                         isTributeMode
                           ? tributeRitual === "flower"
@@ -851,7 +862,10 @@ export function ContributeModal({
                                 <img src={p.url} alt="Attached photo" className="size-full object-cover" />
                                 <button
                                   type="button"
-                                  onClick={() => setMemoryPhotos(memoryPhotos.filter((_, i) => i !== idx))}
+                                  onClick={() => {
+                                    if (!p.mediaRef) setSelectedExistingMediaId(null)
+                                    setMemoryPhotos(memoryPhotos.filter((_, i) => i !== idx))
+                                  }}
                                   className="absolute top-1 right-1 size-6 rounded-full bg-black/60 hover:bg-rose-600 text-white flex items-center justify-center transition-colors cursor-pointer shadow-xs"
                                   title="Remove photo"
                                 >
@@ -907,17 +921,23 @@ export function ContributeModal({
                   {siteKey ? (
                     <div className="flex justify-center empty:hidden">
                       <Turnstile
+                        ref={turnstileRef}
                         siteKey={siteKey}
                         options={{
                           appearance: "interaction-only",
                           refreshExpired: "auto",
+                          action: "contribution",
                         }}
                         onSuccess={setTurnstileToken}
                         onExpire={() => setTurnstileToken("")}
                         onError={() => setTurnstileToken("")}
                       />
                     </div>
-                  ) : null}
+                  ) : (
+                    <div className="p-2.5 rounded-xl bg-amber-50 border border-amber-200 text-xs text-amber-800">
+                      Contributions are temporarily unavailable while the security check is being configured.
+                    </div>
+                  )}
 
                   {/* Submit Button */}
                   <div className="pt-2 flex items-center justify-end gap-2.5">
@@ -936,26 +956,28 @@ export function ContributeModal({
                       {isSubmitting ? (
                         <>
                           <Loader2 className="size-3.5 animate-spin" />
-                          <span>Publishing...</span>
+                          <span>Sending...</span>
                         </>
                       ) : isTributeMode ? (
                         <span>
                           {tributeRitual === "flower"
-                            ? "Lay Flower & Publish"
+                            ? "Lay flower"
                             : tributeRitual === "candle"
-                              ? "Light Candle & Publish"
-                              : "Publish Tribute"}
+                              ? "Light candle"
+                              : "Send tribute"}
                         </span>
                       ) : selectedType === "memory" ? (
-                        <span>Publish Memory</span>
+                        <span>Share memory</span>
                       ) : selectedType === "photo" ? (
-                        <span>Publish Photograph</span>
+                        <span>Share photograph</span>
+                      ) : selectedType === "moment" ? (
+                        <span>Send life moment</span>
                       ) : selectedType === "voice" ? (
-                        <span>Publish Recording</span>
+                        <span>Share recording</span>
                       ) : selectedType === "video" ? (
-                        <span>Publish Video</span>
+                        <span>Share video</span>
                       ) : (
-                        <span>Publish</span>
+                        <span>Send</span>
                       )}
                     </button>
                   </div>

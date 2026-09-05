@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from "next/server"
 import { getR2ObjectStream } from "@/lib/r2"
 import { getSupabaseAdminSafe } from "@/utils/supabase/admin"
 import { createClient } from "@/utils/supabase/server"
+import { getMemorialPinCookieName, verifyPinAccessToken } from "@/lib/security/pin"
+import { assertMemorialAdmin } from "@/lib/memorial-auth"
 
 const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
 
@@ -44,6 +46,12 @@ function getAccurateContentType(key: string, detectedType?: string): string {
   }
 }
 
+function safeResponseContentType(contentType: string): string {
+  return /^(?:image\/(?:jpeg|png|webp|gif|avif)|audio\/[a-z0-9.+-]+|video\/[a-z0-9.+-]+)$/i.test(contentType)
+    ? contentType
+    : "application/octet-stream"
+}
+
 const CORS_HEADERS = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Methods": "GET, HEAD, OPTIONS",
@@ -78,21 +86,87 @@ async function handleMediaRequest(req: NextRequest, isHead: boolean) {
       return NextResponse.json({ error: "Missing media path" }, { status: 400 })
     }
 
-    // Clean key and prevent path traversal
-    const key = decodeURIComponent(rawKey).replace(/^\/+/, "").replace(/\.\./g, "")
+    // Accept canonical R2 keys only. Do not "repair" traversal attempts.
+    const key = rawKey.replace(/^\/+/, "")
+    if (
+      !key ||
+      key.length > 1024 ||
+      key.includes("\\") ||
+      key.split("/").some((segment) => segment === ".." || segment === ".") ||
+      /[\u0000-\u001f\u007f]/.test(key)
+    ) {
+      return NextResponse.json({ error: "Invalid media path" }, { status: 400 })
+    }
 
     // Verify key targets memorials
     const memorialMatch = key.match(/^memorials\/([^/]+)\//)
+    const quarantineMatch = key.match(/^quarantine\/([^/]+)\/(?:original|display)\//)
+    const stagingMatch = key.match(/^contribution-staging\/([^/]+)\/[a-f0-9]{32}\/(?:original|display)\//i)
+    const originalMatch = key.match(/^originals\/([^/]+)\//)
+    const protectedMatch = quarantineMatch || stagingMatch || originalMatch
+    const tempMatch = key.match(/^temp\/[^/]+\/([^/]+)\//)
     const range = req.headers.get("range")
 
+    if (protectedMatch) {
+      const supabase = await createClient()
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+      const { errorResponse } = await assertMemorialAdmin(protectedMatch[1], user.id)
+      if (errorResponse) return errorResponse
+
+      const stream = await getR2ObjectStream(key, range)
+      const contentType = safeResponseContentType(getAccurateContentType(key, stream.contentType))
+      const status = range && stream.contentRange ? 206 : 200
+      const headers: Record<string, string> = {
+        "Content-Type": contentType,
+        "X-Content-Type-Options": "nosniff",
+        "Accept-Ranges": "bytes",
+        "Cache-Control": "private, no-store, must-revalidate",
+      }
+      if (stream.contentLength) headers["Content-Length"] = String(stream.contentLength)
+      if (stream.contentRange) headers["Content-Range"] = stream.contentRange
+      return new Response(isHead ? null : stream.body as any, { status, headers })
+    }
+
+
+    if (tempMatch) {
+      const supabase = await createClient()
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user || user.id !== tempMatch[1]) {
+        return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+      }
+      const stream = await getR2ObjectStream(key, range)
+      const contentType = safeResponseContentType(getAccurateContentType(key, stream.contentType))
+      const headers: Record<string, string> = {
+        "Content-Type": contentType,
+        "X-Content-Type-Options": "nosniff",
+        "Accept-Ranges": "bytes",
+        "Cache-Control": "private, no-store, must-revalidate",
+      }
+      if (stream.contentLength) headers["Content-Length"] = String(stream.contentLength)
+      if (stream.contentRange) headers["Content-Range"] = stream.contentRange
+      return new Response(isHead ? null : stream.body as any, {
+        status: range && stream.contentRange ? 206 : 200,
+        headers,
+      })
+    }
+
     if (!memorialMatch) {
+      if (
+        key.startsWith("quarantine/") ||
+        key.startsWith("contribution-staging/") ||
+        key.startsWith("originals/")
+      ) {
+        return NextResponse.json({ error: "Media not found" }, { status: 404 })
+      }
       // Non-memorial public assets
       const stream = await getR2ObjectStream(key, range)
-      const contentType = getAccurateContentType(key, stream.contentType)
+      const contentType = safeResponseContentType(getAccurateContentType(key, stream.contentType))
       const status = range && stream.contentRange ? 206 : 200
 
       const headers: Record<string, string> = {
         "Content-Type": contentType,
+        "X-Content-Type-Options": "nosniff",
         "Accept-Ranges": "bytes",
         "Cache-Control": "public, max-age=31536000, immutable",
         ...CORS_HEADERS,
@@ -116,7 +190,7 @@ async function handleMediaRequest(req: NextRequest, isHead: boolean) {
     const isUuid = UUID_REGEX.test(memorialIdOrSlug)
 
     const admin = getSupabaseAdminSafe() || (await createClient())
-    let query = admin.from("memorials").select("id, slug, privacy, status, owner_id")
+    let query = admin.from("memorials").select("id, slug, privacy, status, owner_id, access_pin_hash")
     query = isUuid ? query.eq("id", memorialIdOrSlug) : query.eq("slug", memorialIdOrSlug)
     const { data: memorial } = await query.maybeSingle()
 
@@ -124,13 +198,18 @@ async function handleMediaRequest(req: NextRequest, isHead: boolean) {
       return NextResponse.json({ error: "Media not found" }, { status: 404 })
     }
 
-    // Access Control: Private Memorial Gate
-    if (memorial.privacy === "private") {
+    // Access Control: private and unpublished memorial media requires a valid
+    // PIN grant or an authenticated memorial administrator.
+    if (memorial.privacy === "private" || memorial.status !== "published") {
       const cookieKey = memorial.slug || memorial.id
-      const isPinUnlocked = req.cookies.get(`theirs_pin_${cookieKey}`)?.value === "unlocked"
+      const isPinUnlocked = verifyPinAccessToken(
+        req.cookies.get(getMemorialPinCookieName(cookieKey))?.value,
+        memorial.id,
+        memorial.access_pin_hash
+      )
 
       let isOwnerOrAdmin = false
-      if (!isPinUnlocked) {
+      if (!isPinUnlocked || memorial.status !== "published") {
         const supabase = await createClient()
         const {
           data: { user },
@@ -142,17 +221,22 @@ async function handleMediaRequest(req: NextRequest, isHead: boolean) {
           } else {
             const { data: collab } = await admin
               .from("collaborators")
-              .select("id")
+              .select("id, role")
               .eq("memorial_id", memorial.id)
               .eq("user_id", user.id)
               .eq("invitation_accepted", true)
               .maybeSingle()
-            if (collab) isOwnerOrAdmin = true
+            if (collab && (memorial.status === "published" || collab.role === "co_admin")) {
+              isOwnerOrAdmin = true
+            }
           }
         }
       }
 
-      if (!isPinUnlocked && !isOwnerOrAdmin) {
+      if (
+        (memorial.status !== "published" && !isOwnerOrAdmin) ||
+        (memorial.privacy === "private" && !isPinUnlocked && !isOwnerOrAdmin)
+      ) {
         return NextResponse.json(
           { error: "Access to private memorial media requires unlocking with the family PIN." },
           { status: 403 }
@@ -161,11 +245,12 @@ async function handleMediaRequest(req: NextRequest, isHead: boolean) {
     }
 
     const stream = await getR2ObjectStream(key, range)
-    const contentType = getAccurateContentType(key, stream.contentType)
+    const contentType = safeResponseContentType(getAccurateContentType(key, stream.contentType))
     const status = range && stream.contentRange ? 206 : 200
 
     const headers: Record<string, string> = {
       "Content-Type": contentType,
+      "X-Content-Type-Options": "nosniff",
       "Accept-Ranges": "bytes",
       ...CORS_HEADERS,
     }

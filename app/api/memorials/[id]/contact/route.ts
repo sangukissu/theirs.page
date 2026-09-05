@@ -3,6 +3,7 @@ import { getSupabaseAdminSafe } from "@/utils/supabase/admin"
 import { createClient } from "@/utils/supabase/server"
 import { checkDurableRateLimit, verifyTurnstileToken } from "@/lib/turnstile"
 import { resend } from "@/lib/resend"
+import { getMemorialPinCookieName, verifyPinAccessToken } from "@/lib/security/pin"
 
 interface RouteContext {
   params: Promise<{ id: string }>
@@ -37,14 +38,14 @@ export async function POST(request: NextRequest, context: RouteContext) {
       return NextResponse.json({ error: `Please wait ${rateLimit.remainingSeconds || 60} seconds before sending another message.` }, { status: 429 })
     }
 
-    if (!(await verifyTurnstileToken(body.turnstile_token, ip))) {
+    if (!(await verifyTurnstileToken(body.turnstile_token, ip, "caretaker_message"))) {
       return NextResponse.json({ error: "Security check failed. Please refresh and try again." }, { status: 400 })
     }
 
     const db = getSupabaseAdminSafe()
     if (!db) return NextResponse.json({ error: "Private messaging is temporarily unavailable." }, { status: 503 })
 
-    let memorialQuery = db.from("memorials").select("id, slug, full_name, owner_id, status, privacy")
+    let memorialQuery = db.from("memorials").select("id, slug, full_name, owner_id, status, privacy, access_pin_hash")
     memorialQuery = UUID_REGEX.test(id) ? memorialQuery.eq("id", id) : memorialQuery.eq("slug", id)
     const { data: memorial } = await memorialQuery.maybeSingle()
     if (!memorial) return NextResponse.json({ error: "Memorial not found." }, { status: 404 })
@@ -52,7 +53,12 @@ export async function POST(request: NextRequest, context: RouteContext) {
     const serverClient = await createClient()
     const { data: { user } } = await serverClient.auth.getUser()
     const isOwner = Boolean(user?.id && user.id === memorial.owner_id)
-    if (memorial.privacy === "private" && !isOwner && request.cookies.get(`theirs_pin_${memorial.slug}`)?.value !== "unlocked") {
+    const hasPinAccess = verifyPinAccessToken(
+      request.cookies.get(getMemorialPinCookieName(memorial.slug))?.value,
+      memorial.id,
+      memorial.access_pin_hash
+    )
+    if (memorial.privacy === "private" && !isOwner && !hasPinAccess) {
       return NextResponse.json({ error: "Please unlock this private memorial before sending a message." }, { status: 403 })
     }
 

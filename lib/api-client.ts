@@ -46,6 +46,7 @@ export async function uploadRestoreImageToR2(imageFile: File): Promise<string> {
     body: JSON.stringify({
       filename: imageFile.name,
       contentType: imageFile.type,
+      fileSize: imageFile.size,
       folder: "restorations",
     }),
   })

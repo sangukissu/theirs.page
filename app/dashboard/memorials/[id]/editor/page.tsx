@@ -27,6 +27,8 @@ export default async function MemorialEditorPage({ params }: PageProps) {
     redirect("/dashboard")
   }
 
+  const { access_pin_hash: accessPinHash, ...safeMemorial } = memorial
+
   // 2. Fetch associated relations
   const [mediaRes, timelineRes, memoriesRes, caretakerMessagesRes] = await Promise.all([
     supabase.from("media_items").select("*").eq("memorial_id", id).order("order_index", { ascending: true }),
@@ -37,7 +39,11 @@ export default async function MemorialEditorPage({ params }: PageProps) {
 
   return (
     <MemorialEditorClient
-      initialMemorial={memorial}
+      initialMemorial={{
+        ...safeMemorial,
+        has_access_pin: Boolean(accessPinHash),
+        can_manage_owner_settings: memorial.owner_id === user.id,
+      }}
       initialMediaItems={(mediaRes.data as any[]) || []}
       initialTimelineEvents={(timelineRes.data as any[]) || []}
       initialMemories={(memoriesRes.data as any[]) || []}

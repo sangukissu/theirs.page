@@ -44,6 +44,7 @@ interface SettingsTabProps {
   status: "draft" | "published" | "archived"
   privacy: "public" | "unlisted" | "private"
   pin?: string
+  hasPin?: boolean
   successorName: string
   successorEmail: string
   sectionSettings?: SectionSettings | null
@@ -59,6 +60,7 @@ export function SettingsTab({
   status,
   privacy,
   pin = "",
+  hasPin = false,
   successorName,
   successorEmail,
   sectionSettings,
@@ -104,8 +106,8 @@ export function SettingsTab({
     tributes: true,
     memories: true,
     photos: true,
-    voice: true,
-    videos: true,
+    voice: false,
+    videos: false,
     moments: true,
   }
 
@@ -616,13 +618,17 @@ export function SettingsTab({
                   const cleaned = e.target.value.replace(/\D/g, "").slice(0, 4)
                   onChange("pin", cleaned)
                 }}
-                placeholder="1234"
+                placeholder={hasPin ? "••••" : "1234"}
                 className="w-32 px-3 py-2 rounded-xl bg-white border border-black/[0.12] text-center text-sm font-mono font-bold tracking-widest text-[#181925] outline-none focus:border-primary disabled:bg-neutral-100 disabled:text-neutral-500 disabled:cursor-not-allowed"
               />
               <span className="text-xs text-[#71717a]">
                 {!isPaid ? (
                   <span className="text-amber-700 font-medium">Upgrade to Pro to activate PIN</span>
                 ) : pin && pin.length === 4 ? (
+                  <span className="text-emerald-600 font-medium flex items-center gap-1">
+                    <CheckCircle2 className="size-3.5" /> New PIN ready
+                  </span>
+                ) : hasPin ? (
                   <span className="text-emerald-600 font-medium flex items-center gap-1">
                     <CheckCircle2 className="size-3.5" /> PIN active
                   </span>
@@ -822,12 +828,14 @@ export function SettingsTab({
               {
                 key: "voice" as const,
                 title: "Voice Notes",
-                desc: "Voicemails or spoken memories uploaded by family and friends.",
+                desc: "Coming after transcript safety review is ready.",
+                unavailable: true,
               },
               {
                 key: "videos" as const,
                 title: "Video Clips",
-                desc: "Home movies, celebrations, or recorded video clips.",
+                desc: "Coming after audio and frame safety review is ready.",
+                unavailable: true,
               },
               {
                 key: "moments" as const,
@@ -835,7 +843,8 @@ export function SettingsTab({
                 desc: "Timeline additions and significant milestone suggestions.",
               },
             ].map((opt) => {
-              const active = currentContributionSettings[opt.key] !== false
+              const unavailable = "unavailable" in opt
+              const active = !unavailable && currentContributionSettings[opt.key] !== false
               return (
                 <div
                   key={opt.key}
@@ -850,10 +859,12 @@ export function SettingsTab({
                     type="button"
                     role="switch"
                     aria-checked={active}
-                    onClick={() => handleToggleContributionSetting(opt.key, !active)}
-                    className={`relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
-                      active ? "bg-emerald-600" : "bg-neutral-300"
+                    onClick={() => !unavailable && handleToggleContributionSetting(opt.key, !active)}
+                    disabled={unavailable}
+                    className={`relative inline-flex h-5 w-9 shrink-0 rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
+                      active ? "bg-emerald-600 cursor-pointer" : "bg-neutral-300"
                     }`}
+                    title={unavailable ? "Not available yet" : undefined}
                   >
                     <span
                       aria-hidden="true"

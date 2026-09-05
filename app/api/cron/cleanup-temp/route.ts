@@ -8,7 +8,10 @@ export const maxDuration = 60
 
 // Temp staging prefixes that hold one-shot uploads (presigned-upload-url writes
 // under these). They are safe to sweep once older than the retention window.
-const TEMP_PREFIXES = ["temp/family-portraits/", "temp/restorations/", "temp/add-person/", "temp/remove-person/"]
+const TEMP_PREFIXES = [
+  "temp/restorations/",
+  "contribution-staging/",
+]
 
 // Keep temp objects for this long before deleting, so in-flight uploads and
 // retries have a comfortable window. Temp files are consumed within seconds of
@@ -35,9 +38,8 @@ function isAuthorized(request: Request): boolean {
 /**
  * Sweep stale temp staging objects from R2.
  *
- * Called hourly by Vercel Cron (see vercel.json). The 6h retention is enforced
- * inside this handler regardless of how often the cron actually fires, so a
- * missed/delayed run never deletes objects too early.
+ * Call this from the production scheduler with CRON_SECRET. The 6h retention
+ * is enforced inside the handler, so a missed run never deletes objects early.
  */
 export async function GET(request: Request) {
   if (!isAuthorized(request)) {
