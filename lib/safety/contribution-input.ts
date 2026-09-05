@@ -25,8 +25,8 @@ export const contributionInputSchema = z.object({
   tribute_type: z.enum(["flower", "note", "candle"]).optional().default("note"),
   media_refs: z.array(z.string().min(40).max(16_384)).max(3).optional().default([]),
   existing_media_id: z.string().uuid().nullable().optional(),
-  turnstile_token: z.string().max(2_048).optional(),
-  upload_authorization: z.string().max(8_192).optional(),
+  turnstile_token: z.string().max(2_048).nullable().optional(),
+  upload_authorization: z.string().max(8_192).nullable().optional(),
 }).strict()
 
 export type ContributionInput = z.infer<typeof contributionInputSchema>

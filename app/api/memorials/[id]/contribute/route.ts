@@ -131,6 +131,7 @@ export async function POST(req: NextRequest, context: RouteContext) {
 
     const parsed = contributionInputSchema.safeParse(rawBody)
     if (!parsed.success) {
+      console.warn("Contribution input validation failed:", parsed.error.issues)
       return NextResponse.json(
         { error: "Please check the contribution details and try again." },
         { status: 400 }
