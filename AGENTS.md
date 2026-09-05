@@ -72,3 +72,5 @@ All schema tables and DTOs are strongly typed in **[`types/theirs.ts`](./types/t
 3. **Protect Core Infrastructure**: When modifying routes, never delete or break R2 storage, Dodo payment webhooks, or the Memory Book media pipeline.
 4. **Idempotency Always**: Any future SQL migrations must be idempotent (`create table if not exists`, `drop policy if exists ... before create policy`).
 5. **Always Type-Check**: Run `npx tsc --noEmit` before finishing any task to guarantee zero type regressions.
+
+## NOte : never remove   "keep_vars": true from wrangler.jsonc file. never add secrets in this file
