@@ -2,7 +2,8 @@
 
 import { useState, useEffect, useRef } from "react"
 import Link from "next/link"
-import { useRouter } from "next/navigation"
+import { useRouter, useSearchParams } from "next/navigation"
+import { normalizeMemorialSlug } from "@/lib/memorial-slug"
 import {
   Plus,
   ArrowRight,
@@ -41,6 +42,8 @@ interface TheirsDashboardClientProps {
   userEmail: string
   userId: string
   initialMemorials: MemorialSummary[]
+  initialName?: string
+  initialSlug?: string
 }
 
 interface SlugCheckResult {
@@ -54,12 +57,19 @@ export function TheirsDashboardClient({
   userEmail,
   userId,
   initialMemorials,
+  initialName = "",
+  initialSlug = "",
 }: TheirsDashboardClientProps) {
   const router = useRouter()
+  const searchParams = useSearchParams()
+
+  const computedInitialSlug =
+    initialSlug || (initialName ? normalizeMemorialSlug(initialName) : "")
+
   const [memorials, setMemorials] = useState<MemorialSummary[]>(initialMemorials)
-  const [isCreating, setIsCreating] = useState(false)
-  const [fullNameInput, setFullNameInput] = useState("")
-  const [slugInput, setSlugInput] = useState("")
+  const [isCreating, setIsCreating] = useState(Boolean(initialName.trim()))
+  const [fullNameInput, setFullNameInput] = useState(initialName)
+  const [slugInput, setSlugInput] = useState(computedInitialSlug)
   const [slugCheck, setSlugCheck] = useState<SlugCheckResult>({
     checking: false,
     available: null,
@@ -93,6 +103,49 @@ export function TheirsDashboardClient({
       setCheckingOutId(null)
     }
   }
+
+  // Auto-fill and verify slug on initial load if pending memorial exists
+  useEffect(() => {
+    let nameToUse = initialName
+    let slugToUse = computedInitialSlug
+
+    if (!nameToUse) {
+      const paramName = searchParams.get("name")?.trim()
+      const paramSlug = searchParams.get("slug")?.trim()
+      if (paramName) {
+        nameToUse = paramName
+        slugToUse = paramSlug || normalizeMemorialSlug(paramName)
+      } else {
+        // Fallback to cookie
+        const nameMatch = document.cookie.match(/(?:^|;\s*)theirs_pending_name=([^;]+)/)
+        const slugMatch = document.cookie.match(/(?:^|;\s*)theirs_pending_slug=([^;]+)/)
+        if (nameMatch && nameMatch[1]) {
+          nameToUse = decodeURIComponent(nameMatch[1]).trim()
+          slugToUse = slugMatch && slugMatch[1] ? decodeURIComponent(slugMatch[1]).trim() : normalizeMemorialSlug(nameToUse)
+        } else {
+          // Fallback to localStorage
+          try {
+            const stored = localStorage.getItem("theirs_pending_memorial")
+            if (stored) {
+              const parsed = JSON.parse(stored)
+              if (parsed?.name) {
+                nameToUse = parsed.name.trim()
+                slugToUse = parsed.slug?.trim() || normalizeMemorialSlug(nameToUse)
+              }
+            }
+          } catch { }
+        }
+      }
+    }
+
+    if (nameToUse) {
+      setFullNameInput(nameToUse)
+      const finalSlug = slugToUse || normalizeMemorialSlug(nameToUse)
+      setSlugInput(finalSlug)
+      setIsCreating(true)
+      checkSlugAvailability(finalSlug, nameToUse)
+    }
+  }, [initialName, computedInitialSlug, searchParams])
 
   // Live availability check
   const checkSlugAvailability = (slug: string, name: string) => {
@@ -168,11 +221,36 @@ export function TheirsDashboardClient({
         throw new Error(data.error || "Failed to create memorial")
       }
 
+      // Clean up pending memorial storage & cookies
+      try {
+        localStorage.removeItem("theirs_pending_memorial")
+        document.cookie = "theirs_pending_name=; path=/; max-age=0"
+        document.cookie = "theirs_pending_slug=; path=/; max-age=0"
+      } catch { }
+
       // Route immediately into the low-friction Memorial Editor
       router.push(`/dashboard/memorials/${data.memorial.id}/editor`)
     } catch (err: any) {
       setErrorMsg(err.message)
       setIsSubmitting(false)
+    }
+  }
+
+  const handleCancelCreate = () => {
+    setIsCreating(false)
+    setFullNameInput("")
+    setSlugInput("")
+    setSlugCheck({ checking: false, available: null, message: null, suggestions: [] })
+    try {
+      localStorage.removeItem("theirs_pending_memorial")
+      document.cookie = "theirs_pending_name=; path=/; max-age=0"
+      document.cookie = "theirs_pending_slug=; path=/; max-age=0"
+    } catch { }
+    const url = new URL(window.location.href)
+    if (url.searchParams.has("name") || url.searchParams.has("slug")) {
+      url.searchParams.delete("name")
+      url.searchParams.delete("slug")
+      window.history.replaceState({}, "", url.pathname + (url.search ? url.search : ""))
     }
   }
 
@@ -188,7 +266,7 @@ export function TheirsDashboardClient({
 
       {/* Main Container */}
       <main className="max-w-4xl w-full mx-auto px-4 sm:px-6 py-10 sm:py-14 flex-1 flex flex-col gap-10">
-        
+
         {/* Title Header */}
         <div className="flex flex-col sm:flex-row sm:items-baseline justify-between gap-4">
           <div className="flex flex-col gap-1">
@@ -216,9 +294,17 @@ export function TheirsDashboardClient({
         {(memorials.length === 0 || isCreating) && (
           <div className="p-6 sm:p-8 rounded-3xl bg-white border border-black/[0.08] shadow-xs flex flex-col gap-6">
             <div className="flex flex-col gap-1 border-b border-black/[0.05] pb-4">
-              <span className="text-xs font-mono font-medium text-primary uppercase tracking-wider">
-                New Memorial
-              </span>
+              <div className="flex items-center justify-between gap-2 flex-wrap">
+                <span className="text-xs font-mono font-medium text-primary uppercase tracking-wider">
+                  New Memorial
+                </span>
+                {fullNameInput && (
+                  <span className="inline-flex items-center gap-1.5 text-[11px] font-medium text-primary bg-primary/10 px-2.5 py-0.5 rounded-full">
+                    <Sparkles className="size-3" />
+                    <span>Reserved: theirs.page/{slugInput || normalizeMemorialSlug(fullNameInput)}</span>
+                  </span>
+                )}
+              </div>
               <h2 className="text-lg sm:text-xl font-medium text-[#181925]">
                 Who are we remembering?
               </h2>
@@ -252,7 +338,7 @@ export function TheirsDashboardClient({
               {/* Web Address (Slug) with Live Collision Checking & Suggestions */}
               <div className="flex flex-col gap-2">
                 <label className="text-xs font-medium text-[#181925]">
-                  Their Web Address (Slug)
+                  Their Memorial Page
                 </label>
                 <div className="flex items-center px-4 py-2.5 rounded-xl bg-[#fafafb] border border-black/[0.08] text-xs text-[#888] font-mono">
                   <span>theirs.page/</span>
@@ -310,7 +396,7 @@ export function TheirsDashboardClient({
                 {memorials.length > 0 && (
                   <button
                     type="button"
-                    onClick={() => setIsCreating(false)}
+                    onClick={handleCancelCreate}
                     className="px-4 py-2 rounded-full text-xs font-medium text-[#666] hover:text-[#181925] hover:bg-neutral-100 transition-colors cursor-pointer"
                   >
                     Cancel
@@ -378,7 +464,7 @@ export function TheirsDashboardClient({
                       <img
                         src={m.portrait_photo_url || "/memorial-family-portrait-grandfather.jpg"}
                         alt={m.full_name}
-                        className="size-full object-cover grayscale contrast-105"
+                        className="size-full object-cover"
                       />
                     </div>
 
@@ -391,11 +477,10 @@ export function TheirsDashboardClient({
                           <span className="text-xs text-[#888]">“{m.preferred_name}”</span>
                         )}
                         <span
-                          className={`px-2 py-0.5 rounded-full text-[10px] font-mono uppercase font-semibold ${
-                            m.status === "published"
+                          className={`px-2 py-0.5 rounded-full text-[10px] font-mono uppercase font-semibold ${m.status === "published"
                               ? "bg-emerald-50 text-emerald-700 border border-emerald-200"
                               : "bg-amber-50 text-amber-700 border border-amber-200"
-                          }`}
+                            }`}
                         >
                           {m.status}
                         </span>

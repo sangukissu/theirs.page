@@ -2,6 +2,7 @@ import { createServerClient } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
 import { isAuthRetryableFetchError } from '@supabase/supabase-js'
 import { sanitizeAuthDestination } from '@/lib/auth/redirect'
+import { normalizeMemorialSlug } from '@/lib/memorial-slug'
 
 function markAuthResponsePrivate(response: NextResponse) {
   response.headers.set(
@@ -132,8 +133,23 @@ export async function updateSession(request: NextRequest) {
   const isProtectedApi = pathname.startsWith('/api/admin')
 
   if (claims?.sub && isLoginPage) {
+    const nextParam = request.nextUrl.searchParams.get('next')
+    const nameParam = request.nextUrl.searchParams.get('name')
+    const slugParam = request.nextUrl.searchParams.get('slug')
+    const cookieName = request.cookies.get('theirs_pending_name')?.value
+    const cookieSlug = request.cookies.get('theirs_pending_slug')?.value
+
+    let fallback = '/dashboard'
+    const finalName = (nameParam || (cookieName ? decodeURIComponent(cookieName) : '')).trim()
+    const finalSlug = (slugParam || (cookieSlug ? decodeURIComponent(cookieSlug) : '')).trim()
+
+    if (finalName) {
+      fallback = `/dashboard?name=${encodeURIComponent(finalName)}&slug=${encodeURIComponent(finalSlug || normalizeMemorialSlug(finalName))}`
+    }
+
     const destination = sanitizeAuthDestination(
-      request.nextUrl.searchParams.get('next'),
+      nextParam,
+      fallback,
     )
     const response = NextResponse.redirect(new URL(destination, request.url))
     return copySupabaseSessionState(supabaseResponse, response)

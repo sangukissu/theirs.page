@@ -109,7 +109,7 @@ export function MemorialPinGate({ fullName, portraitUrl, slug }: MemorialPinGate
             <img
               src={portraitUrl}
               alt={fullName}
-              className="size-full object-cover grayscale"
+              className="size-full object-cover"
             />
           ) : (
             firstName.charAt(0)

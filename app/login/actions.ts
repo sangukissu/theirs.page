@@ -16,8 +16,10 @@ export async function signInWithMagicLink(
   const supabase = await createClient()
   const email = formData.get('email') as string
   const captchaToken = (formData.get('captchaToken') as string) || undefined
-  const nextPath = sanitizeAuthDestination(formData.get('next') as string | null)
-  const callbackUrl = new URL('/auth/callback', process.env.NEXT_PUBLIC_SITE_URL!)
+  const rawNext = (formData.get('next') as string | null) || '/dashboard'
+  const nextPath = sanitizeAuthDestination(rawNext)
+  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'
+  const callbackUrl = new URL('/auth/callback', siteUrl)
   callbackUrl.searchParams.set('next', nextPath)
 
   // Process magic link request
@@ -45,7 +47,8 @@ export async function signInWithMagicLink(
 export async function signInWithGoogle(next?: string): Promise<void> {
   const supabase = await createClient()
   const nextPath = sanitizeAuthDestination(next)
-  const callbackUrl = new URL('/auth/callback', process.env.NEXT_PUBLIC_SITE_URL!)
+  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'
+  const callbackUrl = new URL('/auth/callback', siteUrl)
   callbackUrl.searchParams.set('next', nextPath)
 
   // Start Google OAuth

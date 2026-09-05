@@ -137,7 +137,7 @@ export function HeaderUser({ user, initialCreditBalance, onBuyCredits }: HeaderU
               })
 
               if (response.ok) {
-                window.location.href = '/login'
+                window.location.href = '/'
               }
             } catch (error) {
               // no-op

@@ -279,7 +279,7 @@ export function TimelineTab({
               <img
                 src={photoUrl}
                 alt="Milestone preview"
-                className="size-7 rounded-lg object-cover grayscale"
+                className="size-7 rounded-lg object-cover"
               />
               <span className="text-[11px] text-[#444] font-medium">Photo attached</span>
               <button
@@ -360,7 +360,7 @@ export function TimelineTab({
                     <img
                       src={evt.photo_url}
                       alt={evt.title}
-                      className="size-full object-cover grayscale"
+                      className="size-full object-cover"
                     />
                   </div>
                 ) : (

@@ -36,7 +36,7 @@ export function MemorialHero({
           <img
             src={portraitUrl || "/memorial-family-portrait-grandfather.jpg"}
             alt={fullName}
-            className="size-full object-cover object-top filter grayscale contrast-105"
+            className="size-full object-cover object-top"
           />
           {/* Subtle bottom vignette */}
           <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent pointer-events-none" />

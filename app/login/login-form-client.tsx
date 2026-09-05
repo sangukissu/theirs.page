@@ -11,6 +11,7 @@ import { signInWithMagicLink, signInWithGoogle, type AuthState } from "./actions
 import { createClient } from "@/utils/supabase/client"
 import { isAuthRetryableFetchError } from "@supabase/supabase-js"
 import { DitherGradient } from "@/components/theirs/dither-gradient"
+import { normalizeMemorialSlug } from "@/lib/memorial-slug"
 
 function MagicLinkSubmit() {
   const { pending } = useFormStatus()
@@ -117,8 +118,69 @@ function LoginFormWithSearchParams({ nextPath: propNextPath }: { nextPath?: stri
   const [lastUsed, setLastUsed] = useState<"google" | "magic" | null>(null)
   const siteKey = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY || ""
 
-  const nextPath = propNextPath || searchParams.get("next") || "/dashboard"
-  const memorialName = searchParams.get("name") || ""
+  const queryName = searchParams.get("name")?.trim() || ""
+  const querySlug = searchParams.get("slug")?.trim() || ""
+
+  const [persistedData, setPersistedData] = useState<{ name: string; slug: string }>({
+    name: queryName,
+    slug: querySlug,
+  })
+
+  useEffect(() => {
+    if (!persistedData.name) {
+      // Check cookies
+      const nameMatch = document.cookie.match(/(?:^|;\s*)theirs_pending_name=([^;]+)/)
+      const slugMatch = document.cookie.match(/(?:^|;\s*)theirs_pending_slug=([^;]+)/)
+      if (nameMatch && nameMatch[1]) {
+        const decodedName = decodeURIComponent(nameMatch[1]).trim()
+        const decodedSlug = slugMatch && slugMatch[1] ? decodeURIComponent(slugMatch[1]).trim() : normalizeMemorialSlug(decodedName)
+        setPersistedData({ name: decodedName, slug: decodedSlug })
+        return
+      }
+      // Check localStorage
+      try {
+        const stored = localStorage.getItem("theirs_pending_memorial")
+        if (stored) {
+          const parsed = JSON.parse(stored)
+          if (parsed?.name) {
+            setPersistedData({
+              name: parsed.name.trim(),
+              slug: parsed.slug?.trim() || normalizeMemorialSlug(parsed.name.trim()),
+            })
+          }
+        }
+      } catch {}
+    } else {
+      // Ensure cookie and localStorage are set
+      const slug = persistedData.slug || normalizeMemorialSlug(persistedData.name)
+      try {
+        localStorage.setItem("theirs_pending_memorial", JSON.stringify({ name: persistedData.name, slug }))
+        document.cookie = `theirs_pending_name=${encodeURIComponent(persistedData.name)}; path=/; max-age=86400; SameSite=Lax`
+        document.cookie = `theirs_pending_slug=${encodeURIComponent(slug)}; path=/; max-age=86400; SameSite=Lax`
+      } catch {}
+    }
+  }, [persistedData.name, persistedData.slug])
+
+  const memorialName = queryName || persistedData.name
+  const memorialSlug = querySlug || persistedData.slug || (memorialName ? normalizeMemorialSlug(memorialName) : "")
+
+  let nextPath = propNextPath || searchParams.get("next") || "/dashboard"
+  if (memorialName) {
+    try {
+      const dummyUrl = new URL(nextPath, "https://theirs.page")
+      if (dummyUrl.pathname === "/dashboard") {
+        if (!dummyUrl.searchParams.has("name")) {
+          dummyUrl.searchParams.set("name", memorialName)
+        }
+        if (memorialSlug && !dummyUrl.searchParams.has("slug")) {
+          dummyUrl.searchParams.set("slug", memorialSlug)
+        }
+        nextPath = `${dummyUrl.pathname}${dummyUrl.search}${dummyUrl.hash}`
+      }
+    } catch {
+      nextPath = `/dashboard?name=${encodeURIComponent(memorialName)}&slug=${encodeURIComponent(memorialSlug)}`
+    }
+  }
 
   useEffect(() => {
     const error = searchParams.get("error")
@@ -173,7 +235,7 @@ function LoginFormWithSearchParams({ nextPath: propNextPath }: { nextPath?: stri
               <>
                 <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-primary/10 text-primary text-xs font-medium w-fit">
                   <Sparkles className="size-3" />
-                  <span>Reserving theirs.page/{memorialName.toLowerCase().replace(/[^a-z0-9]+/g, "-")}</span>
+                  <span>Reserving theirs.page/{memorialSlug}</span>
                 </div>
                 <h1 className="text-2xl sm:text-3xl font-medium tracking-tight text-[#181925] leading-tight">
                   Begin {memorialName}&apos;s memorial
@@ -212,6 +274,10 @@ function LoginFormWithSearchParams({ nextPath: propNextPath }: { nextPath?: stri
               action={formAction}
               onSubmit={() => {
                 document.cookie = "last_auth=magic; path=/; max-age=31536000; SameSite=Lax"
+                if (memorialName) {
+                  document.cookie = `theirs_pending_name=${encodeURIComponent(memorialName)}; path=/; max-age=86400; SameSite=Lax`
+                  document.cookie = `theirs_pending_slug=${encodeURIComponent(memorialSlug)}; path=/; max-age=86400; SameSite=Lax`
+                }
               }}
               className="flex flex-col gap-3"
             >
@@ -324,7 +390,7 @@ function LoginFormWithSearchParams({ nextPath: propNextPath }: { nextPath?: stri
               <img
                 src="/memorial-family-portrait-grandfather.jpg"
                 alt="Preserved Memorial Portrait"
-                className="size-full object-cover object-top filter grayscale contrast-105"
+                className="size-full object-cover object-top"
               />
               <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/10 to-transparent pointer-events-none" />
 

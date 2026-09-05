@@ -77,7 +77,7 @@ export function IdentityTab({
           <img
             src={portraitUrl || "/memorial-family-portrait-grandfather.jpg"}
             alt={fullName || "Portrait"}
-            className="size-full object-cover grayscale contrast-105"
+            className="size-full object-cover"
           />
           {isUploading && (
             <div className="absolute inset-0 bg-black/60 flex items-center justify-center text-white text-xs">

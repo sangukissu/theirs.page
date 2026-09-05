@@ -44,7 +44,7 @@ function ShowcaseOne() {
                 <img
                   src="/memorial-family-portrait-grandfather.jpg"
                   alt="Robert Carter"
-                  className="size-full object-cover grayscale contrast-105"
+                  className="size-full object-cover"
                 />
                 <span className="absolute bottom-1 right-1 size-4 rounded-full bg-emerald-500 text-white flex items-center justify-center text-[9px] font-bold">
                   ✓

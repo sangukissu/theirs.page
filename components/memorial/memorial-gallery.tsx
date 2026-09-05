@@ -554,7 +554,7 @@ export function MemorialGallery({
                     <img
                       src={item.posterUrl}
                       alt={item.title}
-                      className="size-full object-cover grayscale contrast-105 group-hover:scale-105 transition-transform duration-300"
+                      className="size-full object-cover group-hover:scale-105 transition-transform duration-300"
                     />
                   ) : (
                     <video
@@ -568,7 +568,7 @@ export function MemorialGallery({
                           setVideoDurations((prev) => ({ ...prev, [item.id]: formatTime(dur) }))
                         }
                       }}
-                      className="size-full object-cover grayscale contrast-105 group-hover:scale-105 transition-transform duration-300 pointer-events-none"
+                      className="size-full object-cover group-hover:scale-105 transition-transform duration-300 pointer-events-none"
                     />
                   )}
                   
@@ -643,7 +643,7 @@ export function MemorialGallery({
                 <img
                   src={item.mediaUrl}
                   alt={item.title}
-                  className="size-full object-cover grayscale contrast-105 group-hover:scale-102 transition-transform duration-300"
+                  className="size-full object-cover group-hover:scale-102 transition-transform duration-300"
                 />
                 <div className="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-white">
                   <Maximize2 className="size-5 drop-shadow-sm" />

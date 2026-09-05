@@ -179,7 +179,7 @@ export function PhotoAlbums({
               <img
                 src={photo.url}
                 alt={photo.title}
-                className="size-full object-cover grayscale contrast-105 group-hover:scale-102 transition-transform duration-300"
+                className="size-full object-cover group-hover:scale-102 transition-transform duration-300"
               />
               <div className="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-white">
                 <Maximize2 className="size-5 drop-shadow-sm" />

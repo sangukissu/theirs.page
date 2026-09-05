@@ -130,7 +130,7 @@ export function LifeTimeline({ milestones, isDemo = false }: LifeTimelineProps) 
                     <img
                       src={item.photoUrl}
                       alt={item.title}
-                      className="w-full h-44 object-cover filter grayscale contrast-105"
+                      className="w-full h-44 object-cover"
                     />
                   </div>
                 )}

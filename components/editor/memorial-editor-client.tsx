@@ -579,8 +579,12 @@ export function MemorialEditorClient({
               mediaItems={mediaItems}
               isPaid={Boolean(initialMemorial.is_paid)}
               onUpgrade={handleUpgradeComplete}
-              onAddMedia={(item) => setMediaItems([item, ...mediaItems])}
-              onRemoveMedia={(id) => setMediaItems(mediaItems.filter((m) => m.id !== id))}
+              onAddMedia={(item) =>
+                setMediaItems((prev) => [item, ...prev.filter((m) => m.id !== item.id)])
+              }
+              onRemoveMedia={(id) =>
+                setMediaItems((prev) => prev.filter((m) => m.id !== id))
+              }
               onUpdateMedia={handleUpdateMedia}
               onReorderMedia={handleReorderMedia}
             />
@@ -593,8 +597,12 @@ export function MemorialEditorClient({
               events={timelineEvents}
               isPaid={Boolean(initialMemorial.is_paid)}
               onUpgrade={handleUpgradeComplete}
-              onAddEvent={(evt) => setTimelineEvents([...timelineEvents, evt])}
-              onRemoveEvent={(id) => setTimelineEvents(timelineEvents.filter((e) => e.id !== id))}
+              onAddEvent={(evt) =>
+                setTimelineEvents((prev) => [...prev.filter((e) => e.id !== evt.id), evt])
+              }
+              onRemoveEvent={(id) =>
+                setTimelineEvents((prev) => prev.filter((e) => e.id !== id))
+              }
             />
           )}
 

@@ -2,6 +2,7 @@
 
 import { useState } from "react"
 import { useRouter } from "next/navigation"
+import { normalizeMemorialSlug } from "@/lib/memorial-slug"
 import { LifePanorama } from "./life-panorama"
 
 export function TheirsHero() {
@@ -10,8 +11,15 @@ export function TheirsHero() {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
-    if (!name.trim()) return
-    router.push(`/login?name=${encodeURIComponent(name.trim())}`)
+    const trimmed = name.trim()
+    if (!trimmed) return
+    const slug = normalizeMemorialSlug(trimmed)
+    try {
+      localStorage.setItem("theirs_pending_memorial", JSON.stringify({ name: trimmed, slug }))
+      document.cookie = `theirs_pending_name=${encodeURIComponent(trimmed)}; path=/; max-age=86400; SameSite=Lax`
+      document.cookie = `theirs_pending_slug=${encodeURIComponent(slug)}; path=/; max-age=86400; SameSite=Lax`
+    } catch {}
+    router.push(`/login?name=${encodeURIComponent(trimmed)}&slug=${encodeURIComponent(slug)}`)
   }
 
   return (

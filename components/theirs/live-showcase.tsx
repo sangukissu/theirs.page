@@ -3,6 +3,7 @@
 import { useState } from "react"
 import { useRouter } from "next/navigation"
 import { motion } from "framer-motion"
+import { normalizeMemorialSlug } from "@/lib/memorial-slug"
 import {
   Sparkles,
   ArrowRight,
@@ -26,11 +27,7 @@ export function LiveShowcase() {
   const [hasApprovedAll, setHasApprovedAll] = useState(false)
 
   // Derived slug from name
-  const slug = name
-    .toLowerCase()
-    .trim()
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/(^-|-$)/g, "") || "their-name"
+  const slug = normalizeMemorialSlug(name) || "their-name"
 
   const handleApproveAll = () => {
     setHasApprovedAll(true)
@@ -60,8 +57,15 @@ export function LiveShowcase() {
           <form
             onSubmit={(e) => {
               e.preventDefault()
-              if (!name.trim()) return
-              router.push(`/login?name=${encodeURIComponent(name.trim())}`)
+              const trimmed = name.trim()
+              if (!trimmed) return
+              const slugVal = normalizeMemorialSlug(trimmed)
+              try {
+                localStorage.setItem("theirs_pending_memorial", JSON.stringify({ name: trimmed, slug: slugVal }))
+                document.cookie = `theirs_pending_name=${encodeURIComponent(trimmed)}; path=/; max-age=86400; SameSite=Lax`
+                document.cookie = `theirs_pending_slug=${encodeURIComponent(slugVal)}; path=/; max-age=86400; SameSite=Lax`
+              } catch {}
+              router.push(`/login?name=${encodeURIComponent(trimmed)}&slug=${encodeURIComponent(slugVal)}`)
             }}
             className="w-full max-w-xl mt-2 flex flex-col sm:flex-row items-stretch sm:items-center gap-2 p-1.5 rounded-2xl bg-[#f7f7f8] border border-black/[0.08]"
           >

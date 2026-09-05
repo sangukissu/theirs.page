@@ -121,7 +121,7 @@ export function NavUser({
                   })
 
                   if (response.ok) {
-                    window.location.href = '/login'
+                    window.location.href = '/'
                   }
                 } catch (error) {
                   // no-op: keep UX simple for signout failures

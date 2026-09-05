@@ -158,7 +158,7 @@ export function InvitationAcceptClient({
               <img
                 src={memorial.portrait_photo_url}
                 alt={memorial.full_name}
-                className="size-full object-cover grayscale contrast-105"
+                className="size-full object-cover"
               />
             </div>
           ) : (
@@ -227,7 +227,7 @@ export function InvitationAcceptClient({
             <img
               src={memorial.portrait_photo_url}
               alt={memorial.full_name}
-              className="size-full object-cover grayscale contrast-105"
+              className="size-full object-cover"
             />
           </div>
         ) : (

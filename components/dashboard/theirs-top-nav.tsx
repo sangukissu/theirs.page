@@ -3,6 +3,7 @@
 import React, { useState, useRef, useEffect } from "react"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
+import { createClient } from "@/utils/supabase/client"
 import {
   Sparkles,
   Wand2,
@@ -26,9 +27,22 @@ export function TheirsTopNav({ userEmail }: TheirsTopNavProps) {
   const pathname = usePathname()
   const [isStudioOpen, setIsStudioOpen] = useState(false)
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false)
+  const [isSigningOut, setIsSigningOut] = useState(false)
 
   const studioRef = useRef<HTMLDivElement>(null)
   const userMenuRef = useRef<HTMLDivElement>(null)
+
+  const handleSignOut = async () => {
+    setIsSigningOut(true)
+    try {
+      const supabase = createClient()
+      await supabase.auth.signOut()
+    } catch (err) {
+      console.error("Sign out error:", err)
+    } finally {
+      window.location.href = "/"
+    }
+  }
 
   // Close dropdowns on click outside
   useEffect(() => {
@@ -245,15 +259,15 @@ export function TheirsTopNav({ userEmail }: TheirsTopNavProps) {
                 <span>Your Memorials</span>
               </Link>
 
-              <form action="/api/auth/signout" method="POST" className="w-full">
-                <button
-                  type="submit"
-                  className="w-full flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-medium text-rose-600 hover:bg-rose-50 transition-colors cursor-pointer text-left"
-                >
-                  <LogOut className="size-3.5" />
-                  <span>Sign out</span>
-                </button>
-              </form>
+              <button
+                type="button"
+                disabled={isSigningOut}
+                onClick={handleSignOut}
+                className="w-full flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-medium text-rose-600 hover:bg-rose-50 transition-colors cursor-pointer text-left disabled:opacity-50"
+              >
+                <LogOut className="size-3.5" />
+                <span>{isSigningOut ? "Signing out..." : "Sign out"}</span>
+              </button>
             </div>
           )}
         </div>

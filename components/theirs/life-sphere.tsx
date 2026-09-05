@@ -108,7 +108,7 @@ export function LifeSphere() {
               <img
                 src="/memorial-family-portrait-grandfather.jpg"
                 alt="Robert Edward Carter"
-                className="size-full object-cover object-top filter grayscale contrast-105"
+                className="size-full object-cover object-top"
               />
             </div>
 
