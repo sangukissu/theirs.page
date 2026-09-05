@@ -11,7 +11,7 @@ export async function createClient() {
   const supabaseKey =
     process.env.SUPABASE_PUBLISHABLE_KEY ||
     process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY ||
-    "sb_publishable_u6G1XBNqkcnViZKobrF3SQ_9w-6uANu"
+    "sb_publishable_Cf1i82YTBDJIS0xjFeYGCA_D-rxCua1"
 
   return createServerClient(
     supabaseUrl,

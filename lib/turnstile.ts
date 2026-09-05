@@ -65,6 +65,12 @@ export async function verifyTurnstileToken(
       .split(",")
       .map((hostname) => hostname.trim().toLowerCase())
       .filter(Boolean)
+
+    if (process.env.NODE_ENV !== "production") {
+      if (!expectedHostnames.includes("localhost")) expectedHostnames.push("localhost")
+      if (!expectedHostnames.includes("127.0.0.1")) expectedHostnames.push("127.0.0.1")
+    }
+
     if (process.env.NODE_ENV === "production" && expectedHostnames.length === 0) {
       console.error("Turnstile verification rejected: TURNSTILE_EXPECTED_HOSTNAMES is not configured")
       return false
@@ -73,7 +79,9 @@ export async function verifyTurnstileToken(
       expectedHostnames.length > 0 &&
       (!data.hostname || !expectedHostnames.includes(data.hostname.toLowerCase()))
     ) {
-      console.warn("Turnstile verification rejected: hostname mismatch")
+      console.warn(
+        `Turnstile verification rejected: hostname mismatch (received "${data.hostname}", expected: ${expectedHostnames.join(", ")})`
+      )
       return false
     }
 

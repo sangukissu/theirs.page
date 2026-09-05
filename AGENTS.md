@@ -74,3 +74,9 @@ All schema tables and DTOs are strongly typed in **[`types/theirs.ts`](./types/t
 5. **Always Type-Check**: Run `npx tsc --noEmit` before finishing any task to guarantee zero type regressions.
 
 ## NOte : never remove   "keep_vars": true from wrangler.jsonc file. never add secrets in this file
+
+
+### Strict Privacy & Secrets Policy
+- **FORBIDDEN FILES**: Do not under any circumstance use `view_file`, `grep_search`, or command tools to inspect `.env`, `.env.local`, or any `.env*` files.
+- If an environment variable is missing or failing, provide the variable name and ask the user to verify it manually.
+- Never output, log, or execute commands containing API keys, private tokens, or database passwords.
