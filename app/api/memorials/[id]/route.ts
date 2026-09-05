@@ -3,7 +3,7 @@ import { createClient } from "@/utils/supabase/server"
 import { getSupabaseAdminSafe } from "@/utils/supabase/admin"
 import { assertMemorialAdmin, assertMemorialOwner } from "@/lib/memorial-auth"
 import { canAccessFeature } from "@/lib/paywall"
-import { deleteR2MemorialFolder } from "@/lib/r2"
+import { deleteR2MemorialFolder, extractManagedR2Key } from "@/lib/r2"
 import {
   normalizeMemorialSlug,
   memorialSlugSchema,
@@ -129,7 +129,6 @@ export async function PATCH(req: NextRequest, context: RouteContext) {
       "location",
       "headline",
       "biography",
-      "portrait_photo_url",
       "section_settings",
       "contribution_settings",
     ]
@@ -137,6 +136,23 @@ export async function PATCH(req: NextRequest, context: RouteContext) {
     for (const f of editorialFields) {
       if (body[f] !== undefined) {
         updates[f] = body[f]
+      }
+    }
+
+    if (body.portrait_photo_url !== undefined) {
+      if (!body.portrait_photo_url) {
+        updates.portrait_photo_url = null
+      } else {
+        const portraitKey = typeof body.portrait_photo_url === "string"
+          ? extractManagedR2Key(body.portrait_photo_url)
+          : null
+        if (!portraitKey?.startsWith(`memorials/${authCheck.memorial.id}/`)) {
+          return NextResponse.json(
+            { error: "Portrait photograph does not belong to this memorial." },
+            { status: 400 }
+          )
+        }
+        updates.portrait_photo_url = portraitKey
       }
     }
 

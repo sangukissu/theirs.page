@@ -5,14 +5,14 @@ const PIN_TOKEN_TTL_MS = 30 * 24 * 60 * 60 * 1000
 
 function getPinHashSecret(): string {
   return getRequiredSecret(
-    ["PIN_HASH_SECRET", "SUPABASE_SECRET_KEY"],
+    ["PIN_HASH_SECRET"],
     "Memorial PIN hashing"
   )
 }
 
 function getPinSigningSecret(): string {
   return getRequiredSecret(
-    ["PIN_SIGNING_SECRET", "SUPABASE_SECRET_KEY"],
+    ["PIN_SIGNING_SECRET"],
     "Memorial PIN access signing"
   )
 }

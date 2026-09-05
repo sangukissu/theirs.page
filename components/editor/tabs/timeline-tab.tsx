@@ -120,7 +120,7 @@ export function TimelineTab({
 
       const data = await res.json()
       if (res.ok && data.event) {
-        onAddEvent(data.event)
+        onAddEvent({ ...data.event, photo_url: photoUrl })
         setYearInput("")
         setTitleInput("")
         setDescInput("")

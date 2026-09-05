@@ -57,6 +57,40 @@ const RETIRED_BRINGBACK_APIS = [
 export async function proxy(request: NextRequest) {
   const pathname = request.nextUrl.pathname
 
+  // media.theirs.page is an application-controlled delivery hostname, not a
+  // direct public R2 bucket. Only canonical memorial display keys enter the
+  // media authorization route; quarantine, originals, temp and restoration
+  // paths never do.
+  if (request.nextUrl.hostname.toLowerCase() === "media.theirs.page") {
+    if (!["GET", "HEAD", "OPTIONS"].includes(request.method)) {
+      return new Response("Method Not Allowed", {
+        status: 405,
+        headers: { Allow: "GET, HEAD, OPTIONS" },
+      })
+    }
+    let key: string
+    try {
+      key = decodeURIComponent(pathname).replace(/^\/+/, "")
+    } catch {
+      return new Response("Not Found", { status: 404 })
+    }
+    if (
+      !/^memorials\/[a-z0-9_-]+\/.+/i.test(key) ||
+      key.length > 1024 ||
+      key.includes("\\") ||
+      key.split("/").some((segment) => segment === "." || segment === "..") ||
+      /[\u0000-\u001f\u007f]/.test(key)
+    ) {
+      return new Response("Not Found", { status: 404 })
+    }
+
+    const mediaUrl = request.nextUrl.clone()
+    mediaUrl.pathname = "/api/media"
+    mediaUrl.search = ""
+    mediaUrl.searchParams.set("key", key)
+    return NextResponse.rewrite(mediaUrl)
+  }
+
   // 1. Block malicious vulnerability scanner probes & path traversal early
   if (isMaliciousProbe(pathname)) {
     return new Response("Not Found", {
@@ -166,6 +200,10 @@ export async function proxy(request: NextRequest) {
 // Intercept application routes and APIs, excluding static assets and media files
 export const config = {
   matcher: [
+    {
+      source: "/:path*",
+      has: [{ type: "host", value: "media.theirs.page" }],
+    },
     "/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp|avif|ico|mp3|mp4|webm|woff|woff2|ttf|otf|css|js)$).*)",
   ],
 }

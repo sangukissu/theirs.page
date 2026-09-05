@@ -3,7 +3,7 @@ import { getRequiredSecret } from "@/lib/security/secrets"
 
 function getInviteSecret(): string {
   return getRequiredSecret(
-    ["INVITATION_SIGNING_SECRET", "SUPABASE_SECRET_KEY"],
+    ["INVITATION_SIGNING_SECRET"],
     "Invitation signing"
   )
 }

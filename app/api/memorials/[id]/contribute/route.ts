@@ -457,7 +457,10 @@ export async function POST(req: NextRequest, context: RouteContext) {
     const optimisticUrls = await Promise.all(
       storedPhotoUrls.map((key) =>
         status === "approved" || key === existingPhotoKey
-          ? Promise.resolve(resolveMediaUrl(key))
+          ? Promise.resolve(resolveMediaUrl(key, {
+              publicDelivery:
+                status === "approved" && memorial.privacy !== "private",
+            }))
           : getR2SignedUrl(key, 60 * 60)
       )
     )

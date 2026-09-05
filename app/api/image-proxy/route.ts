@@ -31,7 +31,10 @@ export async function GET(request: Request) {
 
         // 3. Security check: ensure image key belongs to this user
         // Images are stored with path: images/{userId}/{timestamp}-{filename}
-        if (!key.includes(user.id)) {
+        if (
+            !key.startsWith(`images/${user.id}/`) &&
+            !key.startsWith(`temp/restorations/${user.id}/`)
+        ) {
             return NextResponse.json({ error: "Forbidden" }, { status: 403 });
         }
 

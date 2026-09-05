@@ -153,9 +153,12 @@ Do not call the work production-complete until all of these are done:
    earlier Theirs migrations. The Gemini note saying migration 11 was applied
    is not evidence of the current live schema; verify policies and function
    grants in Supabase afterward.
-3. **Disable public R2 access.** Disable the bucket's `r2.dev` public URL and any
-   public custom domain. R2 prefixes are naming conventions, not authorization
-   boundaries. Keep any previous public origins only in
+3. **Disable direct public R2 access.** Disable the bucket's `r2.dev` URL and do
+   not attach `media.theirs.page` directly to the mixed private bucket. Route
+   that hostname to the Theirs application Worker instead; its host gateway
+   accepts only `memorials/...` display paths and `/api/media` verifies that the
+   memorial is published and non-private. R2 prefixes are naming conventions,
+   not authorization boundaries. Keep previous public origins only in
    `R2_LEGACY_MEDIA_ENDPOINTS` so stored legacy URLs can be translated.
 4. **Set independent production secrets.** At minimum configure
    `CONTRIBUTION_SIGNING_SECRET`, `INVITATION_SIGNING_SECRET`,

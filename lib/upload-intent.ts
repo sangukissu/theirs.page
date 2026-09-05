@@ -10,7 +10,7 @@ const MEDIA_REFERENCE_MAX_AGE_MS = 24 * 60 * 60 * 1000
 
 function getSigningSecret(): string {
   return getRequiredSecret(
-    ["CONTRIBUTION_SIGNING_SECRET", "SUPABASE_SECRET_KEY"],
+    ["CONTRIBUTION_SIGNING_SECRET"],
     "Contribution token signing"
   )
 }

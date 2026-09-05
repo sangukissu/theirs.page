@@ -94,7 +94,7 @@ function displayDate(value?: string | null) {
   return date.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })
 }
 
-function mapMedia(row: MemorialRow): GalleryItem {
+function mapMedia(row: MemorialRow, publicDelivery = false): GalleryItem {
   return {
     id: row.id,
     title: row.caption || (row.media_type === "video" ? "Video Clip" : row.media_type === "audio" ? "Voice Note" : "Photograph"),
@@ -103,8 +103,8 @@ function mapMedia(row: MemorialRow): GalleryItem {
     location: row.location || undefined,
     album: row.album || undefined,
     isPinned: Boolean(row.is_pinned),
-    mediaUrl: resolveMediaUrl(row.url),
-    posterUrl: row.poster_url ? resolveMediaUrl(row.poster_url) : undefined,
+    mediaUrl: resolveMediaUrl(row.url, { publicDelivery }),
+    posterUrl: row.poster_url ? resolveMediaUrl(row.poster_url, { publicDelivery }) : undefined,
     addedBy: row.uploaded_by || undefined,
     people: row.tagged_people ? row.tagged_people.split(",").map((item: string) => item.trim()).filter(Boolean) : undefined,
   }
@@ -115,12 +115,13 @@ export async function loadGalleryItem(context: MemorialViewContext, mediaId?: st
   if (context.identity.isDemo) return DEMO_GALLERY.find((item) => item.id === mediaId) || null
   if (!context.db || !context.memorial?.id) return null
   const result = await context.db.from("media_items").select("*").eq("memorial_id", context.memorial.id).eq("id", mediaId).maybeSingle()
-  return result.data ? mapMedia(result.data) : null
+  const publicDelivery = context.memorial?.status === "published" && context.memorial?.privacy !== "private"
+  return result.data ? mapMedia(result.data, publicDelivery) : null
 }
 
-function mapStory(row: MemorialRow): StoryItem {
+function mapStory(row: MemorialRow, publicDelivery = false): StoryItem {
   const rawUrls = Array.isArray(row.photo_urls) && row.photo_urls.length ? row.photo_urls : row.photo_url ? [row.photo_url] : []
-  const photoUrls = rawUrls.map((url: string) => resolveMediaUrl(url))
+  const photoUrls = rawUrls.map((url: string) => resolveMediaUrl(url, { publicDelivery }))
   return {
     id: row.id,
     authorName: row.author_name,
@@ -149,14 +150,14 @@ function mapTribute(row: MemorialRow): MemoryItem {
   }
 }
 
-function mapTimeline(row: MemorialRow): TimelineMilestone {
+function mapTimeline(row: MemorialRow, publicDelivery = false): TimelineMilestone {
   return {
     year: row.year,
     chapter: `Year ${row.year}`,
     title: row.title,
     description: row.description || "",
     location: row.location || undefined,
-    photoUrl: row.photo_url ? resolveMediaUrl(row.photo_url) : undefined,
+    photoUrl: row.photo_url ? resolveMediaUrl(row.photo_url, { publicDelivery }) : undefined,
   }
 }
 
@@ -220,7 +221,11 @@ export const getMemorialViewContext = cache(async (slug: string): Promise<Memori
       location: memorial?.location || (isDemo ? "Devon, England" : null),
       epitaph: memorial?.headline || (isDemo ? "Watchmaker, master woodworker, and an unhurried listener. Built grandfather clocks by day, fixed bicycles for neighborhood children by evening." : null),
       biography: memorial?.biography || null,
-      portraitUrl: memorial?.portrait_photo_url ? resolveMediaUrl(memorial.portrait_photo_url) : "/memorial-family-portrait-grandfather.jpg",
+      portraitUrl: memorial?.portrait_photo_url
+        ? resolveMediaUrl(memorial.portrait_photo_url, {
+            publicDelivery: memorial.status === "published" && memorial.privacy !== "private",
+          })
+        : "/memorial-family-portrait-grandfather.jpg",
       isDemo,
       isPaid: isDemo || Boolean(memorial?.is_paid),
       isOwner,
@@ -295,6 +300,7 @@ export async function loadBrowsePage<T>(context: MemorialViewContext, collection
   const db = context.db
   const memorialId = context.memorial?.id
   if (!db || !memorialId || context.requiresPin) return { items: [], total: 0, hasMore: false, nextCursor: null }
+  const publicDelivery = context.memorial?.status === "published" && context.memorial?.privacy !== "private"
 
   if (collection === "gallery") {
     const offset = cursor.offset || 0
@@ -312,7 +318,7 @@ export async function loadBrowsePage<T>(context: MemorialViewContext, collection
       .order("id", { ascending: true })
       .range(offset, offset + pageSize - 1)
     const result = await query
-    const items = (result.data || []).map(mapMedia)
+    const items = (result.data || []).map((row: MemorialRow) => mapMedia(row, publicDelivery))
     const total = result.count || 0
     const nextOffset = offset + items.length
     let facets: GalleryFacets | undefined
@@ -345,7 +351,7 @@ export async function loadBrowsePage<T>(context: MemorialViewContext, collection
       .range(offset, offset + pageSize - 1)
     if (!context.canSeeFamilyOnly) query = query.eq("visibility", "everyone")
     const result = await query
-    const items = (result.data || []).map(mapStory)
+    const items = (result.data || []).map((row: MemorialRow) => mapStory(row, publicDelivery))
     const total = result.count || 0
     const nextOffset = offset + items.length
     return { items, total, hasMore: nextOffset < total, nextCursor: nextOffset < total ? encodeCursor({ ...cursor, offset: nextOffset }) : null } as PagedCollection<T>
@@ -356,7 +362,7 @@ export async function loadBrowsePage<T>(context: MemorialViewContext, collection
     let query = db.from("timeline_events").select("*", { count: "exact" }).eq("memorial_id", memorialId).lte("created_at", cursor.snapshot)
     if (options.decade) query = query.gte("year", options.decade).lt("year", options.decade + 10)
     const result = await query.order("year", { ascending: true }).order("order_index", { ascending: true }).order("id", { ascending: true }).range(offset, offset + pageSize - 1)
-    const items = (result.data || []).map(mapTimeline)
+    const items = (result.data || []).map((row: MemorialRow) => mapTimeline(row, publicDelivery))
     const total = result.count || 0
     const nextOffset = offset + items.length
     return { items, total, hasMore: nextOffset < total, nextCursor: nextOffset < total ? encodeCursor({ ...cursor, offset: nextOffset }) : null } as PagedCollection<T>

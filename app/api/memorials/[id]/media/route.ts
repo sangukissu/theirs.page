@@ -3,7 +3,7 @@ import { createClient } from "@/utils/supabase/server"
 import { getSupabaseAdminSafe } from "@/utils/supabase/admin"
 import { assertMemorialAdmin } from "@/lib/memorial-auth"
 import { assertMediaQuota } from "@/lib/paywall"
-import { deleteR2Object } from "@/lib/r2"
+import { deleteR2Object, extractManagedR2Key } from "@/lib/r2"
 
 interface RouteContext {
   params: Promise<{ id: string }>
@@ -36,8 +36,12 @@ export async function POST(req: NextRequest, context: RouteContext) {
     const body = await req.json()
     const { url, media_type, caption, approx_year, location, album, is_pinned, order_index } = body
 
-    if (!url) {
+    if (typeof url !== "string" || !url) {
       return NextResponse.json({ error: "Media URL is required" }, { status: 400 })
+    }
+    const storageKey = extractManagedR2Key(url)
+    if (!storageKey?.startsWith(`memorials/${authCheck.memorial.id}/`)) {
+      return NextResponse.json({ error: "Media does not belong to this memorial." }, { status: 400 })
     }
 
     const db = getSupabaseAdminSafe() || supabase
@@ -65,7 +69,7 @@ export async function POST(req: NextRequest, context: RouteContext) {
       .from("media_items")
       .insert({
         memorial_id: memorialId,
-        url,
+        url: storageKey,
         media_type: media_type || "image",
         caption: caption?.trim() || null,
         approx_year: approx_year ? Number(approx_year) : null,

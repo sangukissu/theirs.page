@@ -3,6 +3,7 @@ import { createClient } from "@/utils/supabase/server"
 import { getSupabaseAdminSafe } from "@/utils/supabase/admin"
 import { assertMemorialAdmin } from "@/lib/memorial-auth"
 import { canAccessFeature } from "@/lib/paywall"
+import { extractManagedR2Key } from "@/lib/r2"
 
 interface RouteContext {
   params: Promise<{ id: string }>
@@ -40,6 +41,10 @@ export async function POST(req: NextRequest, context: RouteContext) {
     if (!year || !title) {
       return NextResponse.json({ error: "Year and title are required" }, { status: 400 })
     }
+    const photoKey = photo_url ? extractManagedR2Key(photo_url) : null
+    if (photo_url && !photoKey?.startsWith(`memorials/${authCheck.memorial.id}/`)) {
+      return NextResponse.json({ error: "Timeline photograph does not belong to this memorial." }, { status: 400 })
+    }
 
     const db = getSupabaseAdminSafe() || supabase
     const { data: event, error } = await db
@@ -50,7 +55,7 @@ export async function POST(req: NextRequest, context: RouteContext) {
         title: title.trim(),
         description: description?.trim() || null,
         location: location?.trim() || null,
-        photo_url: photo_url || null,
+        photo_url: photoKey,
       })
       .select()
       .single()

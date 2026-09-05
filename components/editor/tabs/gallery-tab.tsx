@@ -221,7 +221,10 @@ export function GalleryTab({
         }
 
         // 3. Immediately load into dashboard UI!
-        onAddMedia(dbData.mediaItem)
+        onAddMedia({
+          ...dbData.mediaItem,
+          url: uploadData.publicUrl,
+        })
 
         // Clean up preview object URL
         try {

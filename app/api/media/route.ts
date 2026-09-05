@@ -152,14 +152,16 @@ async function handleMediaRequest(req: NextRequest, isHead: boolean) {
     }
 
     if (!memorialMatch) {
-      if (
-        key.startsWith("quarantine/") ||
-        key.startsWith("contribution-staging/") ||
-        key.startsWith("originals/")
-      ) {
+      const userOwnedMatch = key.match(/^(?:images|videos|uploads)\/([^/]+)\//)
+      if (!userOwnedMatch) {
         return NextResponse.json({ error: "Media not found" }, { status: 404 })
       }
-      // Non-memorial public assets
+      const supabase = await createClient()
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user || user.id !== userOwnedMatch[1]) {
+        return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+      }
+
       const stream = await getR2ObjectStream(key, range)
       const contentType = safeResponseContentType(getAccurateContentType(key, stream.contentType))
       const status = range && stream.contentRange ? 206 : 200
@@ -168,8 +170,7 @@ async function handleMediaRequest(req: NextRequest, isHead: boolean) {
         "Content-Type": contentType,
         "X-Content-Type-Options": "nosniff",
         "Accept-Ranges": "bytes",
-        "Cache-Control": "public, max-age=31536000, immutable",
-        ...CORS_HEADERS,
+        "Cache-Control": "private, no-store, must-revalidate",
       }
 
       if (stream.contentLength) {
@@ -267,7 +268,9 @@ async function handleMediaRequest(req: NextRequest, isHead: boolean) {
     if (memorial.privacy === "private") {
       headers["Cache-Control"] = "private, no-cache, no-store, must-revalidate"
     } else {
-      headers["Cache-Control"] = "public, max-age=31536000, immutable"
+      // Memorial privacy can change. Keep a useful edge cache without leaving
+      // an old public response available for a year after it becomes private.
+      headers["Cache-Control"] = "public, max-age=60, s-maxage=300, must-revalidate"
     }
 
     if (isHead) {

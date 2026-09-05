@@ -129,7 +129,7 @@ export async function checkDurableRateLimit(
 ): Promise<{ allowed: boolean; remainingSeconds?: number }> {
   const admin = getSupabaseAdminSafe()
   const rateLimitSecret = getRequiredSecret(
-    ["RATE_LIMIT_HASH_SECRET", "SUPABASE_SECRET_KEY"],
+    ["RATE_LIMIT_HASH_SECRET"],
     "Rate-limit identifier hashing"
   )
   const protectedIdentifier = crypto
@@ -174,7 +174,7 @@ export async function clearDurableRateLimit(
   identifier: string
 ): Promise<void> {
   const rateLimitSecret = getRequiredSecret(
-    ["RATE_LIMIT_HASH_SECRET", "SUPABASE_SECRET_KEY"],
+    ["RATE_LIMIT_HASH_SECRET"],
     "Rate-limit identifier hashing"
   )
   const protectedIdentifier = crypto

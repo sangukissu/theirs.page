@@ -347,7 +347,32 @@ export async function deleteR2MemorialFolder(memorialId: string): Promise<void> 
  * Resolves a media URL, ensuring that direct Cloudflare R2 public URLs, static local assets,
  * or raw storage keys are cleanly resolved for fast, reliable client-side rendering.
  */
-export function resolveMediaUrl(rawUrl: string | null | undefined): string {
+interface MediaUrlOptions {
+  publicDelivery?: boolean
+}
+
+function getPublicMediaEndpoint(): string | null {
+  const configured = process.env.R2_MEDIA_ENDPOINT?.trim()
+  if (!configured) return null
+  try {
+    const parsed = new URL(configured)
+    // r2.dev is deliberately legacy-only. Production public delivery must go
+    // through the access-checking media worker, not a public bucket endpoint.
+    if (parsed.protocol !== "https:" || parsed.hostname.endsWith(".r2.dev")) return null
+    return parsed.origin
+  } catch {
+    return null
+  }
+}
+
+function encodeObjectKey(key: string): string {
+  return key.split("/").map(encodeURIComponent).join("/")
+}
+
+export function resolveMediaUrl(
+  rawUrl: string | null | undefined,
+  options: MediaUrlOptions = {}
+): string {
   if (!rawUrl) return ""
   if (rawUrl.startsWith("data:") || rawUrl.startsWith("blob:")) return rawUrl
 
@@ -358,6 +383,10 @@ export function resolveMediaUrl(rawUrl: string | null | undefined): string {
       managedKey.startsWith("contribution-staging/") ||
       managedKey.startsWith("originals/")
     ) return ""
+    const publicEndpoint = options.publicDelivery ? getPublicMediaEndpoint() : null
+    if (publicEndpoint && managedKey.startsWith("memorials/")) {
+      return `${publicEndpoint}/${encodeObjectKey(managedKey)}`
+    }
     return `/api/media?key=${encodeURIComponent(managedKey)}`
   }
 
@@ -373,6 +402,10 @@ export function resolveMediaUrl(rawUrl: string | null | undefined): string {
 
   // Treat non-URL values as managed storage keys.
   const cleanKey = rawUrl.replace(/^\/+/, "")
+  const publicEndpoint = options.publicDelivery ? getPublicMediaEndpoint() : null
+  if (publicEndpoint && cleanKey.startsWith("memorials/")) {
+    return `${publicEndpoint}/${encodeObjectKey(cleanKey)}`
+  }
   return `/api/media?key=${encodeURIComponent(cleanKey)}`
 }
 

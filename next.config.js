@@ -46,7 +46,7 @@ const nextConfig = {
           "img-src 'self' data: https: blob: https://www.google-analytics.com https://www.clarity.ms https://*.clarity.ms https://*.crisp.chat",
           "font-src 'self' data: https://client.crisp.chat",
           "connect-src 'self' https://api.supabase.co https://*.supabase.co wss://*.supabase.co https://fal.ai https://*.fal.ai https://*.fal.media wss://*.fal.ai https://dodopayments.com https://*.dodopayments.com https://*.r2.cloudflarestorage.com https://www.google-analytics.com https://www.googletagmanager.com https://region1.google-analytics.com https://challenges.cloudflare.com https://*.cloudflare.com https://www.clarity.ms https://*.clarity.ms https://client.crisp.chat https://storage.crisp.chat wss://client.relay.crisp.chat wss://stream.relay.crisp.chat",
-          "media-src 'self' blob: https://*.fal.media",
+          "media-src 'self' blob: https://media.theirs.page https://*.fal.media",
           "frame-src 'self' https://www.youtube.com https://youtube.com https://challenges.cloudflare.com https://*.crisp.chat",
           "object-src 'none'",
           "base-uri 'self'",
@@ -142,6 +142,12 @@ const nextConfig = {
         hostname: 'secure.gravatar.com',
         port: '',
         pathname: '/**',
+      },
+      {
+        protocol: 'https',
+        hostname: 'media.theirs.page',
+        port: '',
+        pathname: '/memorials/**',
       },
       {
         protocol: 'https',
