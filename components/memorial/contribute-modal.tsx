@@ -55,7 +55,7 @@ export function ContributeModal({
   slug,
   memorialId,
   isPaid = false,
-  photoCount = 0,
+  photoCount,
   contributionSettings,
   initialType = null,
   initialPhotoUrl = null,
@@ -125,12 +125,13 @@ export function ContributeModal({
   }, [isOpen, isPaid, photoCount, memorialId, slug])
 
   const effectivePhotoCount = lazyLimits ? lazyLimits.photoCount : photoCount
-  const isPhotosFull = !isPaid && effectivePhotoCount !== undefined && effectivePhotoCount >= 5
+  // If Free tier and photo count is unknown/loading, treat as not available until confirmed
+  const isPhotosFull = !isPaid && (effectivePhotoCount === undefined || effectivePhotoCount >= 5)
   const remainingNewPhotoSlots = isPaid
     ? 3
     : effectivePhotoCount !== undefined
     ? Math.max(0, 5 - effectivePhotoCount)
-    : 5
+    : 0
   const newMemoryPhotoCount = memoryPhotos.filter((photo) => Boolean(photo.mediaRef)).length
   const canAddMemoryPhoto = memoryPhotos.length < 3 && newMemoryPhotoCount < remainingNewPhotoSlots
   const firstName = memorialName.split(" ")[0] || memorialName

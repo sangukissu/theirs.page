@@ -31,6 +31,7 @@ export async function GET(req: NextRequest, context: RouteContext) {
       .from("media_items")
       .select("id", { count: "exact", head: true })
       .eq("memorial_id", memorial.id)
+      .eq("media_type", "image")
 
     const isPaid = Boolean(memorial.is_paid)
     const photoCount = !countErr && typeof count === "number" ? count : 0

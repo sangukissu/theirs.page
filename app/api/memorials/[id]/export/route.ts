@@ -193,9 +193,9 @@ PACKAGE CONTENTS:
    Contains the complete structured life story, biography, timeline events,
    family memories and tributes.
 
-2. /photos/
-   Original high-resolution photographs preserved untouched in their native
-   formats.
+2. /photos/ & /photos/timeline/
+   Original high-resolution photographs, portraits, and milestone photos
+   preserved untouched in their native formats.
 
 3. /audio/
    Voice notes and audio memos shared by family and friends.
@@ -290,6 +290,35 @@ Thank you for trusting Theirs to help preserve ${memorial.full_name}'s memory.
 
         yield {
           name: `${folder}/${filename}`,
+          input: media.stream,
+          size: media.contentLength,
+          lastModified: media.lastModified || new Date(),
+        }
+      }
+
+      // Sequentially stream timeline milestone photographs
+      const timelineEvents = timelineRes.data || []
+      const streamedTimelineKeys = new Set<string>()
+      let timelinePhotoIndex = 0
+
+      for (const event of timelineEvents) {
+        if (!event.photo_url) continue
+        const rawKey = extractManagedR2Key(event.photo_url) || event.photo_url
+        if (streamedTimelineKeys.has(rawKey)) continue
+        streamedTimelineKeys.add(rawKey)
+
+        const media = await fetchMediaStream(event.photo_url)
+        if (!media) continue
+
+        timelinePhotoIndex++
+        const cleanTitle = (event.title || "milestone")
+          .replace(/[^a-zA-Z0-9_-]/g, "_")
+          .substring(0, 30)
+        const ext = getMediaExtension(event.photo_url, "jpg")
+        const filename = `${String(timelinePhotoIndex).padStart(2, "0")}_${event.year}_${cleanTitle}.${ext}`
+
+        yield {
+          name: `photos/timeline/${filename}`,
           input: media.stream,
           size: media.contentLength,
           lastModified: media.lastModified || new Date(),

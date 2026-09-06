@@ -255,6 +255,7 @@ export async function PATCH(req: NextRequest, context: RouteContext) {
       const replacements = new Map<string, string>()
       const updatedRecords: ContributionMediaRecord[] = []
       const copiedSources: string[] = []
+      const newlyCreatedPermanentKeys: string[] = []
 
       try {
         for (const record of records) {
@@ -266,10 +267,12 @@ export async function PATCH(req: NextRequest, context: RouteContext) {
           if (displaySource !== displayDestination) {
             await copyR2Object(displaySource, displayDestination)
             copiedSources.push(displaySource)
+            newlyCreatedPermanentKeys.push(displayDestination)
           }
           if (originalSource !== originalDestination) {
             await copyR2Object(originalSource, originalDestination)
             copiedSources.push(originalSource)
+            newlyCreatedPermanentKeys.push(originalDestination)
           }
           replacements.set(displaySource, displayDestination)
           updatedRecords.push({
@@ -280,18 +283,73 @@ export async function PATCH(req: NextRequest, context: RouteContext) {
         }
       } catch (error) {
         console.error("Contribution media copy failed:", error)
+        await Promise.allSettled(newlyCreatedPermanentKeys.map(deleteR2Object))
         return NextResponse.json(
           { error: "The contribution was approved, but its media could not be published. Please try again." },
           { status: 503 }
         )
       }
 
+      // 1. ATTEMPT ALL media_items INSERTS FIRST (before updating memory or deleting quarantine!)
+      const insertedMediaIds: string[] = []
+      let mediaInsertError: any = null
+
+      for (const record of updatedRecords) {
+        const { data: existing } = await db.from("media_items")
+          .select("id").eq("memorial_id", memorialId).eq("url", record.display_key).maybeSingle()
+        if (!existing) {
+          const { data: inserted, error: insertErr } = await db.from("media_items").insert({
+            memorial_id: memorialId,
+            media_type: mediaTypeForMime(record.mime),
+            url: record.display_key,
+            caption: `Shared by ${memory.author_name}`,
+            approx_year: memory.approx_year || null,
+            album: "Community Memories",
+          }).select("id").single()
+
+          if (insertErr) {
+            mediaInsertError = insertErr
+            break
+          } else if (inserted?.id) {
+            insertedMediaIds.push(inserted.id)
+          }
+        }
+      }
+
+      // If ANY media_item insert failed (e.g. concurrent race condition tripped 5-photo quota trigger):
+      if (mediaInsertError) {
+        console.error("Media insert error on approval:", mediaInsertError)
+        // Rollback inserted media_items
+        if (insertedMediaIds.length > 0) {
+          await db.from("media_items").delete().in("id", insertedMediaIds)
+        }
+        // Rollback newly created permanent R2 files
+        await Promise.allSettled(newlyCreatedPermanentKeys.map(deleteR2Object))
+        // Quarantine sources are NOT deleted; memory remains in its previous pending state!
+
+        const isQuotaError =
+          mediaInsertError.message?.includes("5-photo limit") ||
+          mediaInsertError.message?.includes("Complete plan") ||
+          mediaInsertError.code === "P0001"
+
+        return NextResponse.json(
+          {
+            error: isQuotaError
+              ? "This memorial has reached the 5-photo limit on the free plan. Upgrade to Complete to approve additional photographs."
+              : "Failed to publish media items for this contribution.",
+          },
+          { status: isQuotaError ? 402 : 500 }
+        )
+      }
+
+      // 2. All media_items rows successfully passed the DB trigger!
+      // NOW update memory to approved status:
       const updatedUrls = replaceMediaUrls(memory.photo_urls, replacements)
       const details = {
         ...(memory.safety_details || {}),
         media: updatedRecords,
       }
-      const { error } = await db.from("memories").update({
+      const { error: updateErr } = await db.from("memories").update({
         status: "approved",
         approved_at: new Date().toISOString(),
         is_quarantined: false,
@@ -302,35 +360,18 @@ export async function PATCH(req: NextRequest, context: RouteContext) {
         safety_details: details,
       }).eq("id", targetId).eq("memorial_id", memorialId)
 
-      if (error) {
-        console.error("Contribution approval update failed:", error)
+      if (updateErr) {
+        console.error("Contribution approval update failed:", updateErr)
+        // Rollback inserted media items and permanent files
+        if (insertedMediaIds.length > 0) {
+          await db.from("media_items").delete().in("id", insertedMediaIds)
+        }
+        await Promise.allSettled(newlyCreatedPermanentKeys.map(deleteR2Object))
         return NextResponse.json({ error: "Failed to approve contribution." }, { status: 500 })
       }
 
+      // 3. ONLY AFTER memory update succeeds: delete quarantine sources
       await Promise.allSettled(copiedSources.map(deleteR2Object))
-      for (const record of updatedRecords) {
-        const { data: existing } = await db.from("media_items")
-          .select("id").eq("memorial_id", memorialId).eq("url", record.display_key).maybeSingle()
-        if (!existing) {
-          const { error: insertErr } = await db.from("media_items").insert({
-            memorial_id: memorialId,
-            media_type: mediaTypeForMime(record.mime),
-            url: record.display_key,
-            caption: `Shared by ${memory.author_name}`,
-            approx_year: memory.approx_year || null,
-            album: "Community Memories",
-          })
-          if (insertErr) {
-            console.error("Media insert error on approval:", insertErr)
-            if (insertErr.message?.includes("5-photo limit") || insertErr.code === "P0001") {
-              return NextResponse.json(
-                { error: "This memorial has reached the 5-photo limit on the free plan. Upgrade to Complete to approve additional photographs." },
-                { status: 402 }
-              )
-            }
-          }
-        }
-      }
 
       return NextResponse.json({ success: true, status: "approved" })
     }

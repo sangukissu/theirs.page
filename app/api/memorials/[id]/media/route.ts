@@ -208,7 +208,7 @@ export async function DELETE(req: NextRequest, context: RouteContext) {
 
     const db = getSupabaseAdminSafe() || supabase
 
-    // 1. Fetch media item to extract R2 storage key before deleting row
+    // 1. Fetch media item to extract R2 storage key
     const { data: item } = await db
       .from("media_items")
       .select("id, url")
@@ -216,18 +216,7 @@ export async function DELETE(req: NextRequest, context: RouteContext) {
       .eq("memorial_id", memorialId)
       .maybeSingle()
 
-    if (item?.url) {
-      const key = extractR2KeyFromUrl(item.url)
-      if (key) {
-        try {
-          await deleteR2Object(key)
-        } catch (cleanupErr) {
-          console.warn(`Failed to delete R2 object ${key}:`, cleanupErr)
-        }
-      }
-    }
-
-    // 2. Delete row from database
+    // 2. Delete row from database first
     const { error } = await db
       .from("media_items")
       .delete()
@@ -237,6 +226,18 @@ export async function DELETE(req: NextRequest, context: RouteContext) {
     if (error) {
       console.error("Media delete error:", error)
       return NextResponse.json({ error: "Failed to delete media item." }, { status: 500 })
+    }
+
+    // 3. Only after DB deletion succeeds: clean up R2 file
+    if (item?.url) {
+      const key = extractR2KeyFromUrl(item.url)
+      if (key) {
+        try {
+          await deleteR2Object(key)
+        } catch (cleanupErr) {
+          console.warn(`Failed to delete R2 object ${key}:`, cleanupErr)
+        }
+      }
     }
 
     return NextResponse.json({ success: true })

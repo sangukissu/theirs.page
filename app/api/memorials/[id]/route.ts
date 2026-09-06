@@ -152,6 +152,12 @@ export async function PATCH(req: NextRequest, context: RouteContext) {
       }
     }
 
+    let stagedPortraitToDelete: string | null = null
+    let newlyPromotedPortraitKey: string | null = null
+    const oldPortraitKey = authCheck.memorial.portrait_photo_url
+      ? extractManagedR2Key(authCheck.memorial.portrait_photo_url)
+      : null
+
     if (body.portrait_photo_url !== undefined) {
       if (!body.portrait_photo_url) {
         updates.portrait_photo_url = null
@@ -171,7 +177,8 @@ export async function PATCH(req: NextRequest, context: RouteContext) {
           const ext = portraitKey.split(".").pop() || "jpg"
           const permanentKey = `memorials/${authCheck.memorial.id}/portraits/${crypto.randomUUID()}.${ext}`
           await copyR2Object(portraitKey, permanentKey)
-          await deleteR2Object(portraitKey).catch(() => {})
+          newlyPromotedPortraitKey = permanentKey
+          stagedPortraitToDelete = portraitKey
           updates.portrait_photo_url = permanentKey
         } else if (portraitKey.startsWith(`memorials/${authCheck.memorial.id}/`)) {
           updates.portrait_photo_url = portraitKey
@@ -256,8 +263,24 @@ export async function PATCH(req: NextRequest, context: RouteContext) {
       .single()
 
     if (updateError) {
+      if (newlyPromotedPortraitKey) {
+        await deleteR2Object(newlyPromotedPortraitKey).catch(() => {})
+      }
       console.error("Memorial update error:", updateError)
       return NextResponse.json({ error: "Failed to update memorial" }, { status: 500 })
+    }
+
+    // DB update succeeded: Clean up staging file and old portrait file
+    if (stagedPortraitToDelete) {
+      await deleteR2Object(stagedPortraitToDelete).catch(() => {})
+    }
+    if (
+      body.portrait_photo_url !== undefined &&
+      oldPortraitKey &&
+      oldPortraitKey !== updates.portrait_photo_url &&
+      oldPortraitKey.startsWith(`memorials/${authCheck.memorial.id}/`)
+    ) {
+      await deleteR2Object(oldPortraitKey).catch(() => {})
     }
 
     if (authCheck.memorial.status !== "published" && updated.status === "published") {

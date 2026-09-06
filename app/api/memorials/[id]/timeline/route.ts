@@ -133,7 +133,7 @@ export async function DELETE(req: NextRequest, context: RouteContext) {
 
     const db = getSupabaseAdminSafe() || supabase
 
-    // Check for associated photo to clean up from R2
+    // 1. Check for associated photo to clean up from R2
     const { data: existingEvent } = await db
       .from("timeline_events")
       .select("photo_url")
@@ -141,13 +141,7 @@ export async function DELETE(req: NextRequest, context: RouteContext) {
       .eq("memorial_id", memorialId)
       .maybeSingle()
 
-    if (existingEvent?.photo_url) {
-      const key = extractManagedR2Key(existingEvent.photo_url)
-      if (key?.startsWith(`memorials/${memorialId}/`)) {
-        await deleteR2Object(key).catch(() => {})
-      }
-    }
-
+    // 2. Delete row from database first
     const { error } = await db
       .from("timeline_events")
       .delete()
@@ -157,6 +151,16 @@ export async function DELETE(req: NextRequest, context: RouteContext) {
     if (error) {
       console.error("Timeline delete error:", error)
       return NextResponse.json({ error: "Failed to delete timeline event." }, { status: 500 })
+    }
+
+    // 3. Only after DB deletion succeeds: clean up R2 file
+    if (existingEvent?.photo_url) {
+      const key = extractManagedR2Key(existingEvent.photo_url)
+      if (key?.startsWith(`memorials/${memorialId}/`)) {
+        await deleteR2Object(key).catch((cleanupErr) => {
+          console.warn(`Failed to clean up timeline R2 photo ${key}:`, cleanupErr)
+        })
+      }
     }
 
     return NextResponse.json({ success: true })
