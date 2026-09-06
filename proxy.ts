@@ -33,7 +33,6 @@ const RETIRED_BRINGBACK_PAGES = [
   "/blog",
   "/app",
   "/referral",
-  "/refunds",
 ]
 
 /**

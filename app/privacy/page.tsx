@@ -15,7 +15,7 @@ export default function PrivacyPage() {
     <LegalPageLayout
       title="Privacy Policy"
       description="A life archive holds deeply personal memories. Here is exactly what information Theirs receives, why we need it, how it is safeguarded, and the control you retain."
-      lastUpdated="March 2026"
+      lastUpdated="September 2026"
       highlights={[
         {
           title: "Zero Data Selling",
@@ -40,7 +40,7 @@ export default function PrivacyPage() {
           1. Introduction & Core Philosophy
         </h2>
         <p>
-          Theirs (<strong className="font-medium text-[#181925]">theirs.page</strong>, referred to as &ldquo;Theirs&rdquo;, &ldquo;we&rdquo;, &ldquo;our&rdquo;, or &ldquo;us&rdquo;) is dedicated to preserving the story, voice, and memories of human lives. Unlike commercial social media networks or data-broker obituaries, Theirs is built on quiet reverence, archival preservation, and intentional family privacy.
+          Theirs (<strong className="font-medium text-[#181925]">theirs.page</strong>, referred to as &ldquo;Theirs&rdquo;, &ldquo;we&rdquo;, &ldquo;our&rdquo;, or &ldquo;us&rdquo;) is dedicated to preserving the story, voice, and memories of human lives. Our platform is built on quiet reverence, archival preservation, and intentional family privacy.
         </p>
         <p>
           This Privacy Policy explains what personal data we collect, how it is processed, where it is stored, and how you can exercise your rights under applicable privacy frameworks, including the Digital Personal Data Protection Act (DPDP Act, India 2025/2026), the General Data Protection Regulation (GDPR / UK GDPR), and the California Consumer Privacy Act (CCPA / CPRA).
@@ -148,8 +148,8 @@ export default function PrivacyPage() {
         </p>
         <p>
           Memorial creators and contributors represent that they have the appropriate permission or lawful basis to share personal information, photographs, or recordings concerning living individuals. Theirs respects the privacy of living individuals: if you are a living person named, depicted, or described in a memorial and wish for that content to be removed or corrected, you may contact our team directly at{" "}
-          <a href="mailto:privacy@theirs.page" className="text-primary underline font-medium">
-            privacy@theirs.page
+          <a href="mailto:suport@theirs.page" className="text-primary underline font-medium">
+            suport@theirs.page
           </a>
           . We review and act upon verified privacy concerns promptly.
         </p>
@@ -163,7 +163,7 @@ export default function PrivacyPage() {
         <p>
           We use automated tools (including Google Gemini models) strictly for security and safety purposes:
         </p>
-        <ul className="list-disc pl-5 space-y-1.5 text-xs sm:text-sm text-[#555]">
+        <ul className="list-disc pl-5 space-y-1.5 text-md text-[#555]">
           <li>
             <strong>Safety & Malware Screening:</strong> Uploaded media is scanned to detect spam, malicious code, sexually explicit material, and severe abuse before it reaches caretakers.
           </li>
@@ -187,7 +187,7 @@ export default function PrivacyPage() {
         <p>
           We engage trusted, industry-leading infrastructure providers to host and operate Theirs under strict data processing agreements:
         </p>
-        <ul className="list-disc pl-5 space-y-1.5 text-xs sm:text-sm text-[#555]">
+        <ul className="list-disc pl-5 space-y-1.5 text-md text-[#555]">
           <li><strong>Cloudflare, Inc.</strong> (Global Edge Network, Cloudflare R2 object storage, Turnstile bot protection)</li>
           <li><strong>Supabase, Inc.</strong> (PostgreSQL database, encrypted authentication, managed cloud infrastructure)</li>
           <li><strong>Dodo Payments, Inc.</strong> (Merchant of Record, credit card processing, sales tax compliance, fraud prevention)</li>
@@ -204,11 +204,11 @@ export default function PrivacyPage() {
         <p>
           We retain information according to transparent, purposeful criteria:
         </p>
-        <ul className="list-disc pl-5 space-y-1.5 text-xs sm:text-sm text-[#555]">
+        <ul className="list-disc pl-5 space-y-1.5 text-md text-[#555]">
           <li><strong>Active Memorials:</strong> Stored securely as long as the account and memorial remain active.</li>
-          <li><strong>Abandoned Staging Uploads:</strong> Uncommitted upload files in temporary staging prefixes are automatically purged by background cleanup routines.</li>
-          <li><strong>Quarantined / Rejected Media:</strong> Unapproved or blocked media is held for a limited quarantine period before automatic permanent deletion.</li>
-          <li><strong>Memorial Deletion:</strong> When a memorial owner deletes a memorial via the dashboard, the memorial record and all associated R2 storage files (photographs, audio, video) are permanently erased from active systems.</li>
+          <li><strong>Incomplete Uploads:</strong> Temporary files from interrupted or canceled uploads are automatically removed by regular maintenance routines.</li>
+          <li><strong>Quarantined Media:</strong> Uploads flagged or rejected by automated security checks are held in temporary isolation before permanent deletion.</li>
+          <li><strong>Memorial Deletion:</strong> When a memorial owner deletes a memorial via the dashboard, the memorial record and all associated storage files (photographs, audio, video) are permanently erased from active systems.</li>
           <li><strong>System Backups:</strong> Residual copies in encrypted database backups are overwritten according to routine retention cycles (typically 30 days).</li>
         </ul>
       </section>
@@ -221,7 +221,7 @@ export default function PrivacyPage() {
         <p>
           Depending on your location, you hold statutory rights regarding your personal data:
         </p>
-        <ul className="list-disc pl-5 space-y-1.5 text-xs sm:text-sm text-[#555]">
+        <ul className="list-disc pl-5 space-y-1.5 text-md text-[#555]">
           <li><strong>Right of Access & Portability:</strong> You may request a copy of your personal data. Memorial caretakers on paid plans can download a complete, uncompressed ZIP archive containing all original media, biographies, and written tributes at any time.</li>
           <li><strong>Right to Correction:</strong> You can edit or update memorial information directly in the memorial editor.</li>
           <li><strong>Right to Erasure:</strong> You can delete your account or individual memorials at any time from your account settings.</li>
@@ -229,8 +229,8 @@ export default function PrivacyPage() {
         </ul>
         <p>
           To exercise any of these rights, email our Data Privacy Officer at{" "}
-          <a href="mailto:privacy@theirs.page" className="text-primary underline font-medium">
-            privacy@theirs.page
+          <a href="mailto:suport@theirs.page" className="text-primary underline font-medium">
+            suport@theirs.page
           </a>
           . We acknowledge and respond to verified requests within statutory timeframes.
         </p>
@@ -245,8 +245,8 @@ export default function PrivacyPage() {
           For questions, privacy requests, or grievances concerning this policy or the treatment of your personal data, contact:
         </p>
         <div className="p-4 rounded-2xl bg-[#fafafb] border border-black/[0.06] text-xs sm:text-sm font-mono text-[#555] flex flex-col gap-1 mt-1">
-          <span>Theirs Privacy & Data Protection Office</span>
-          <span>Email: privacy@theirs.page</span>
+          <span>Theirs.page Privacy & Data Protection Concerns</span>
+          <span>Email: suport@theirs.page</span>
           <span>Website: theirs.page</span>
         </div>
       </section>

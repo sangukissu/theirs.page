@@ -30,7 +30,7 @@ const POLICY_TABS = [
 export function LegalPageLayout({
   title,
   description,
-  lastUpdated = "March 2026",
+  lastUpdated = "September 2026",
   highlights = [],
   children,
 }: LegalPageLayoutProps) {
@@ -79,8 +79,8 @@ export function LegalPageLayout({
                   key={tab.href}
                   href={tab.href}
                   className={`inline-flex items-center gap-2 px-3.5 sm:px-4 py-1.5 rounded-full text-xs sm:text-sm font-medium transition-all select-none whitespace-nowrap ${isActive
-                      ? "bg-white text-[#181925] shadow-xs"
-                      : "text-[#666] hover:text-[#181925] hover:bg-black/[0.03]"
+                    ? "bg-white text-[#181925] shadow-xs"
+                    : "text-[#666] hover:text-[#181925] hover:bg-black/[0.03]"
                     }`}
                 >
                   <Icon className={`size-3.5 shrink-0 ${isActive ? "text-primary" : "text-[#888]"}`} />

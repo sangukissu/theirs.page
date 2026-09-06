@@ -16,7 +16,7 @@ export default function GuidelinesPage() {
     <LegalPageLayout
       title="Memorial & Content Guidelines"
       description="Theirs exists to celebrate human lives with honesty, dignity, and warmth. These guidelines establish what is welcomed, what is moderated, and how we keep memorials safe for grieving families."
-      lastUpdated="March 2026"
+      lastUpdated="September 2026"
       highlights={[
         {
           title: "Authentic Remembrance",
@@ -44,7 +44,7 @@ export default function GuidelinesPage() {
           We believe that visiting a memorial should feel like visiting someone&apos;s life, not visiting their obituary. A full life includes quirky habits, passionate arguments, acts of quiet generosity, funny holiday mishaps, and real human character.
         </p>
         <p>
-          We do not require sterile eulogies or forced solemnity. A memory that recounts how someone was stubborn as a mule, burned the Sunday roast, or could never fix a lawnmower is often the truest, most loving tribute. However, freedom of honest memory must never become a weapon for cruelty, harassment, or family warfare.
+          We do not require sterile eulogies or forced solemnity. A memory that recounts humorous mishaps, eccentricities, or real human moments is often the truest, most loving tribute. However, personal recollection must never be used for cruelty, harassment, or attacks on others.
         </p>
       </section>
 

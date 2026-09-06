@@ -15,23 +15,23 @@ export default function TermsPage() {
   return (
     <LegalPageLayout
       title="Terms of Service"
-      description="These terms establish how Theirs operates, who owns contributed content, how family disagreements are handled, and why we build for long-term preservation without false promises of eternity."
-      lastUpdated="March 2026"
+      description="These terms govern the use of Theirs, establishing content ownership, editorial guidelines for memorial caretakers, and our commitments to durable archival preservation."
+      lastUpdated="September 2026"
       highlights={[
         {
           title: "You Own Your Content",
           description:
-            "You retain full copyright and ownership of all uploaded photographs, recordings, and stories. You grant Theirs only a limited license to host and display them.",
+            "You retain full ownership and copyright of all uploaded photographs, audio recordings, video clips, and stories. Theirs receives only a limited license to host and display them.",
         },
         {
           title: "Caretaker Authority",
           description:
-            "The primary memorial owner holds editorial authority. Theirs does not arbitrate subjective family disagreements or act as a family court.",
+            "The memorial caretaker maintains editorial stewardship over contributions to ensure a consistent, respectful celebration of their loved one’s life.",
         },
         {
           title: "Durable Preservation",
           description:
-            "We build for high-durability archival storage and provide full exportable archives. We do not make reckless marketing promises of ‘eternal lifetime hosting’.",
+            "We engineer for high-durability cloud storage and provide complete, uncompressed, downloadable family archives at any time without platform lock-in.",
         },
       ]}
     >
@@ -68,7 +68,7 @@ export default function TermsPage() {
         <p>
           Anyone creating a memorial represents and warrants that:
         </p>
-        <ul className="list-disc pl-5 space-y-1.5 text-xs sm:text-sm text-[#555]">
+        <ul className="list-disc pl-5 space-y-1.5 text-md text-[#555]">
           <li>The memorial is created in genuine good faith to remember and celebrate a deceased individual;</li>
           <li>The information provided is not knowingly false, deceptive, or defamatory;</li>
           <li>The memorial is not created to harass, mock, exploit, or embarrass any person living or deceased;</li>
@@ -106,29 +106,29 @@ export default function TermsPage() {
         </p>
       </section>
 
-      {/* 5. Family Disagreements & Caretaker Discretion */}
+      {/* 5. Editorial Stewardship & Memorial Management */}
       <section className="flex flex-col gap-3">
         <h2 className="text-xl sm:text-2xl font-medium text-[#181925]">
-          5. Family Disagreements &amp; Editorial Discretion
+          5. Editorial Stewardship &amp; Memorial Management
         </h2>
         <p>
-          Grief and family relationships are complex. To maintain stability, Theirs operates under clear structural rules:
+          Family relationships and remembrance are deeply personal. To ensure each memorial remains a peaceful, organized, and respectful tribute, Theirs maintains clear principles of editorial stewardship:
         </p>
-        <ul className="list-disc pl-5 space-y-1.5 text-xs sm:text-sm text-[#555]">
+        <ul className="list-disc pl-5 space-y-1.5 text-md text-[#555]">
           <li>
-            <strong>The Primary Caretaker Controls the Memorial:</strong> The account holder who created the memorial (or their designated successor) holds administrative authority over settings, design, and contributor approvals.
+            <strong>Caretaker Stewardship:</strong> The account holder who established the memorial (or their designated successor) holds administrative authority over page settings, visual presentation, and visitor contribution approvals.
           </li>
           <li>
-            <strong>Contributing Does Not Grant Ownership:</strong> Submitting a photograph, story, or condolence does not grant a contributor administrative authority or veto power over the memorial.
+            <strong>Independent Editorial Discretion:</strong> Caretakers have full discretion to accept, decline, or unpublish contributions according to the family&apos;s wishes. Submitting a memory or condolence does not convey administrative or editorial control over the memorial.
           </li>
           <li>
-            <strong>Theirs Does Not Act as a Family Court:</strong> We do not arbitrate subjective family disagreements regarding which memories are published, which relatives are highlighted, or nuanced wording in biographies. Caretakers have full discretion to accept or decline contributions.
+            <strong>Neutral Platform Role:</strong> Theirs is a hosting and archival service. We do not mediate interpersonal disagreements regarding family dynamics, personal recollections, or which relatives are mentioned in biographies.
           </li>
           <li>
-            <strong>Intervention Thresholds:</strong> We will only intervene in memorial disputes where there are credible, substantiated allegations of harassment, doxxing, impersonation, copyright infringement, privacy violations against living individuals, or unlawful conduct.
+            <strong>Safety &amp; Compliance Intervention:</strong> Theirs will intervene only when there are credible reports of harassment, unauthorized publication of private personal information of living individuals, impersonation, copyright infringement, or violations of our Memorial &amp; Content Guidelines.
           </li>
           <li>
-            <strong>Dispute Holds:</strong> During a verified legal dispute or ownership contest between legal next of kin, Theirs may temporarily lock editing, contribution, or public visibility while the dispute is formally resolved.
+            <strong>Dispute Review:</strong> In the event of a formal legal dispute regarding authority over a memorial, Theirs reserves the right to temporarily restrict editing or public visibility while the parties resolve the matter.
           </li>
         </ul>
       </section>
@@ -146,32 +146,37 @@ export default function TermsPage() {
         </p>
       </section>
 
-      {/* 7. Durable Preservation & No Forever Guarantees */}
+      {/* 7. Archival Durability & Data Portability */}
       <section className="flex flex-col gap-3">
         <h2 className="text-xl sm:text-2xl font-medium text-[#181925]">
-          7. Archival Preservation &amp; The &ldquo;No Forever&rdquo; Principle
+          7. Archival Durability &amp; Data Portability
         </h2>
         <p>
-          We engineer Theirs for extreme durability. Original media is preserved in high-resolution multi-region Cloudflare R2 object storage with immutable backup protocols.
+          We design Theirs for long-term digital preservation. Your original full-resolution photographs, audio recordings, and video clips are stored in resilient, multi-region cloud storage with automated redundancy.
         </p>
         <p>
-          However, <strong>no technology company can honestly promise eternity</strong>. Server hardware evolves, formats shift, and corporate entities change over decades. We explicitly reject manipulative &ldquo;lifetime hosting&rdquo; claims.
+          Online technology and digital media formats naturally evolve across generations. Because no digital service can guarantee infinite availability, our core commitment is grounded in absolute transparency and freedom from platform lock-in:
         </p>
-        <div className="p-4 rounded-2xl bg-[#fafafb] border border-black/[0.06] text-xs sm:text-sm text-[#454545] leading-relaxed">
-          <strong>The Preservation Guarantee:</strong> We guarantee that your family will never be held hostage. Paid memorial caretakers can download a complete, uncompressed, self-contained ZIP archive of the memorial at any time—containing original full-resolution photographs, audio notes, video files, biographies, milestones, and written stories. In the unlikely event that Theirs ever ceases operations or materially sunsets services, we commit to providing advance notice and a generous window to download your family archive.
+        <div className="p-4 rounded-2xl bg-[#fafafb] border border-black/[0.06] text-xs sm:text-sm text-[#454545] leading-relaxed flex flex-col gap-2">
+          <p>
+            <strong>The Preservation &amp; Portability Guarantee:</strong> Your family&apos;s memories belong to you. Memorial caretakers on paid plans can download a complete, uncompressed ZIP archive of the entire memorial at any time—including original full-resolution media, audio notes, video files, written biographies, timeline milestones, and visitor tributes.
+          </p>
+          <p>
+            In the event that Theirs ever materially alters or discontinues any aspect of the service, we commit to providing caretakers with clear advance notice and an ample window to download and preserve their complete archive.
+          </p>
         </div>
       </section>
 
-      {/* 8. Service Availability & Personal Backups */}
+      {/* 8. Service Availability & Archival Best Practices */}
       <section className="flex flex-col gap-3">
         <h2 className="text-xl sm:text-2xl font-medium text-[#181925]">
-          8. Service Availability &amp; Media Backups
+          8. Service Availability &amp; Archival Best Practices
         </h2>
         <p>
-          While we maintain high-availability cloud infrastructure with automated monitoring and DDoS protection, service interruptions, edge network outages, or scheduled maintenance can occur.
+          While we operate high-availability cloud infrastructure with automated monitoring and edge redundancy, occasional maintenance or network interruptions may occur.
         </p>
         <p>
-          Theirs provides an accessible, beautiful platform to view and share a life story—it should not serve as your family&apos;s sole, irreplaceable copy of historic photographs or priceless recordings. We strongly encourage families to maintain independent offline backups of their primary physical and digital archives.
+          Theirs provides a beautiful, accessible space to honor and share a life story. As a sound archival practice, we always recommend that families maintain their own physical or digital copies of irreplaceable original photographs and home recordings alongside their online memorial.
         </p>
       </section>
 
@@ -195,15 +200,14 @@ export default function TermsPage() {
       {/* 10. Copyright & DMCA Takedowns */}
       <section className="flex flex-col gap-3">
         <h2 className="text-xl sm:text-2xl font-medium text-[#181925]">
-          10. Copyright Infringement &amp; DMCA Agent
+          10. Copyright Infringement
         </h2>
         <p>
           Theirs respects the intellectual property rights of others and complies with the safe-harbor provisions of the Digital Millennium Copyright Act (17 U.S.C. § 512) and international copyright directives. If you believe your copyrighted work has been uploaded without authorization, send a written notice to our designated copyright agent:
         </p>
         <div className="p-4 rounded-2xl bg-[#fafafb] border border-black/[0.06] text-xs sm:text-sm font-mono text-[#555] flex flex-col gap-1 mt-1">
-          <span>Copyright &amp; DMCA Agent</span>
-          <span>Theirs Legal Department</span>
-          <span>Email: copyright@theirs.page</span>
+          <span>Copyright &amp; DMCA</span>
+          <span>Email: support@theirs.page</span>
           <span>Notice Requirements: Identify work, provide infringing URL, your contact details, and statement of good-faith belief.</span>
         </div>
       </section>

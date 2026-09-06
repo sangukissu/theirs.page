@@ -16,7 +16,7 @@ export default function RefundsPage() {
     <LegalPageLayout
       title="Refund Policy"
       description="We believe in fair, dignified pricing. You can try Theirs completely free before paying, and all purchases of Theirs Complete are protected by our 14-day money-back guarantee."
-      lastUpdated="March 2026"
+      lastUpdated="September 2026"
       highlights={[
         {
           title: "Try Free First",
@@ -43,7 +43,7 @@ export default function RefundsPage() {
         <p>
           We want every family to feel confident before spending a single dollar. Theirs provides a fully functional Free Plan that includes:
         </p>
-        <ul className="list-disc pl-5 space-y-1.5 text-xs sm:text-sm text-[#555]">
+        <ul className="list-disc pl-5 space-y-1.5 text-md text-[#555]">
           <li>Creating and publishing a dedicated memorial page with a clean, custom web link (e.g. <code>theirs.page/first-last</code>);</li>
           <li>Adding a primary portrait photo and up to 5 high-resolution gallery photographs;</li>
           <li>Unlimited written stories, anecdotes, and milestones;</li>
@@ -66,7 +66,7 @@ export default function RefundsPage() {
         <div className="p-4 rounded-2xl bg-[#fafafb] border border-black/[0.06] text-xs sm:text-sm text-[#454545] leading-relaxed flex flex-col gap-1.5">
           <span className="font-medium text-[#181925]">How to Request a Refund:</span>
           <span>Email our support team at <a href="mailto:support@theirs.page" className="text-primary underline font-medium">support@theirs.page</a> with your memorial URL or the email address used at checkout.</span>
-          <span>We will process your refund without interrogation, delay, or unnecessary hurdles.</span>
+          <span>We will process your refund promptly, courteously, and without hassle.</span>
         </div>
         <p className="text-xs text-[#71717a]">
           This 14-day policy complies with and honors statutory consumer cancellation and withdrawal rights in the European Union, United Kingdom, and international consumer protection jurisdictions.
@@ -79,17 +79,17 @@ export default function RefundsPage() {
           3. What Happens to Your Memorial After a Refund
         </h2>
         <p>
-          A family memorial is sacred. <strong>A refund will never result in the sudden destruction or deletion of your loved one&apos;s memorial.</strong>
+          A family memorial is sacred. <strong>A refund will never result in the loss or deletion of your loved one&apos;s memorial.</strong>
         </p>
         <p>
           Instead, your memorial transitions gracefully:
         </p>
-        <ul className="list-disc pl-5 space-y-1.5 text-xs sm:text-sm text-[#555]">
+        <ul className="list-disc pl-5 space-y-1.5 text-md text-[#555]">
           <li>The memorial transitions from Complete back to the Free Plan;</li>
           <li>The memorial page and custom web link remain active and accessible online;</li>
           <li>All written stories, biography, tributes, and the first 5 gallery photos remain publicly published;</li>
           <li>Complete-exclusive features (such as audio voice notes and video clips) become inactive on the public view;</li>
-          <li>You are provided a 7-day grace period to download your full archive before inactive Pro media is scheduled for archival storage.</li>
+          <li>You are provided a 7-day grace period to download your full archive before inactive media is scheduled for storage cleanup.</li>
         </ul>
       </section>
 
@@ -130,7 +130,7 @@ export default function RefundsPage() {
           <a href="mailto:support@theirs.page" className="text-primary underline font-medium">
             support@theirs.page
           </a>{" "}
-          before initiating a bank dispute or chargeback. We resolve requests within 24 to 48 hours. When a bank dispute or chargeback is filed, the payment network automatically freezes the transaction and related Pro entitlements until the review is closed.
+          before initiating a bank dispute or chargeback. We resolve requests within 24 to 48 hours. When a bank dispute or chargeback is filed, the payment network automatically holds the transaction and associated Complete features until the inquiry is resolved.
         </p>
       </section>
 
