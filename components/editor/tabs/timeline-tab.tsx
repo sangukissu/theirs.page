@@ -4,6 +4,7 @@ import { useState, useRef } from "react"
 import { Plus, Trash2, Calendar, MapPin, Lock, Upload, Image as ImageIcon, X, Loader2 } from "lucide-react"
 import { UpgradeBanner } from "../upgrade-banner"
 import { ConfirmDeleteModal } from "../confirm-delete-modal"
+import { TEXT_LIMITS } from "@/lib/validation/text-limits"
 
 export interface EditorTimelineEvent {
   id: string
@@ -277,6 +278,7 @@ export function TimelineTab({
           <input
             type="text"
             required
+            maxLength={TEXT_LIMITS.timelineTitle}
             disabled={!isPaid}
             value={titleInput}
             onChange={(e) => {
@@ -295,6 +297,7 @@ export function TimelineTab({
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <input
             type="text"
+            maxLength={TEXT_LIMITS.timelineDescription}
             disabled={!isPaid}
             value={descInput}
             onChange={(e) => {
@@ -307,6 +310,7 @@ export function TimelineTab({
 
           <input
             type="text"
+            maxLength={TEXT_LIMITS.location}
             disabled={!isPaid}
             value={locationInput}
             onChange={(e) => {

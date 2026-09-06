@@ -4,7 +4,6 @@ import { getSupabaseAdminSafe } from "@/utils/supabase/admin"
 import { assertMemorialAdmin, assertMemorialOwner } from "@/lib/memorial-auth"
 import { canAccessFeature } from "@/lib/paywall"
 import {
-  copyR2Object,
   deleteR2Object,
   deleteR2MemorialFolder,
   extractManagedR2Key,
@@ -18,6 +17,9 @@ import {
 import { hashPin } from "@/lib/security/pin"
 import { sendMemorialDeletedEmail, sendMemorialPublishedEmail } from "@/lib/email/lifecycle-emails"
 import { finalizeMemorialStorage, releaseMemorialStorage } from "@/lib/storage-quota"
+import { TEXT_LIMITS } from "@/lib/validation/text-limits"
+import { isValidEmail, sanitizeAndValidateRichText, validateTextFields } from "@/lib/validation/server-text"
+import { archivalHeicKeyForDisplay, promoteStagedMemorialImage } from "@/lib/memorial-image-promotion"
 
 interface RouteContext {
   params: Promise<{ id: string }>
@@ -91,6 +93,24 @@ export async function PATCH(req: NextRequest, context: RouteContext) {
     const db = getSupabaseAdminSafe() || supabase
     const body = await req.json().catch(() => ({}))
 
+    const textError = validateTextFields(body, {
+      full_name: TEXT_LIMITS.personFullName,
+      preferred_name: TEXT_LIMITS.preferredName,
+      location: TEXT_LIMITS.location,
+      headline: TEXT_LIMITS.headline,
+      successor_name: TEXT_LIMITS.successorName,
+      successor_email: TEXT_LIMITS.email,
+    })
+    if (textError) return NextResponse.json({ error: textError }, { status: 400 })
+    if (typeof body.successor_email === "string" && body.successor_email.trim() && !isValidEmail(body.successor_email.trim())) {
+      return NextResponse.json({ error: "Please enter a valid successor email address." }, { status: 400 })
+    }
+    if (body.biography !== undefined) {
+      const biography = sanitizeAndValidateRichText(body.biography, TEXT_LIMITS.biography)
+      if (biography.error) return NextResponse.json({ error: biography.error }, { status: 400 })
+      body.biography = biography.html
+    }
+
     if (body.status !== undefined && !["draft", "published", "archived"].includes(body.status)) {
       return NextResponse.json({ error: "Invalid publication status." }, { status: 400 })
     }
@@ -156,6 +176,7 @@ export async function PATCH(req: NextRequest, context: RouteContext) {
 
     let stagedPortraitToDelete: string | null = null
     let newlyPromotedPortraitKey: string | null = null
+    let newlyPromotedPortraitOriginalKey: string | null = null
     const oldPortraitKey = authCheck.memorial.portrait_photo_url
       ? extractManagedR2Key(authCheck.memorial.portrait_photo_url)
       : null
@@ -175,13 +196,15 @@ export async function PATCH(req: NextRequest, context: RouteContext) {
         }
 
         if (portraitKey.startsWith(`dashboard-staging/${authCheck.memorial.id}/`)) {
-          // Promote from dashboard staging to permanent memorial portraits
-          const ext = portraitKey.split(".").pop() || "jpg"
-          const permanentKey = `memorials/${authCheck.memorial.id}/portraits/${crypto.randomUUID()}.${ext}`
-          await copyR2Object(portraitKey, permanentKey)
-          newlyPromotedPortraitKey = permanentKey
+          const promoted = await promoteStagedMemorialImage(
+            portraitKey,
+            authCheck.memorial.id,
+            "portraits",
+          )
+          newlyPromotedPortraitKey = promoted.displayKey
+          newlyPromotedPortraitOriginalKey = promoted.originalKey
           stagedPortraitToDelete = portraitKey
-          updates.portrait_photo_url = permanentKey
+          updates.portrait_photo_url = promoted.displayKey
         } else if (portraitKey.startsWith(`memorials/${authCheck.memorial.id}/`)) {
           updates.portrait_photo_url = portraitKey
         } else {
@@ -268,6 +291,9 @@ export async function PATCH(req: NextRequest, context: RouteContext) {
       if (newlyPromotedPortraitKey) {
         await deleteR2Object(newlyPromotedPortraitKey).catch(() => {})
       }
+      if (newlyPromotedPortraitOriginalKey && newlyPromotedPortraitOriginalKey !== newlyPromotedPortraitKey) {
+        await deleteR2Object(newlyPromotedPortraitOriginalKey).catch(() => {})
+      }
       if (stagedPortraitToDelete) {
         await releaseMemorialStorage(db, id, stagedPortraitToDelete).catch(() => {})
       }
@@ -277,10 +303,18 @@ export async function PATCH(req: NextRequest, context: RouteContext) {
 
     if (stagedPortraitToDelete && newlyPromotedPortraitKey) {
       try {
-        await finalizeMemorialStorage(db, id, stagedPortraitToDelete, newlyPromotedPortraitKey)
+        await finalizeMemorialStorage(
+          db,
+          id,
+          stagedPortraitToDelete,
+          newlyPromotedPortraitOriginalKey || newlyPromotedPortraitKey,
+        )
       } catch (quotaError) {
         await db.from("memorials").update({ portrait_photo_url: oldPortraitKey }).eq("id", id)
         await deleteR2Object(newlyPromotedPortraitKey).catch(() => {})
+        if (newlyPromotedPortraitOriginalKey && newlyPromotedPortraitOriginalKey !== newlyPromotedPortraitKey) {
+          await deleteR2Object(newlyPromotedPortraitOriginalKey).catch(() => {})
+        }
         await releaseMemorialStorage(db, id, stagedPortraitToDelete).catch(() => {})
         console.error("Portrait storage finalization error:", quotaError)
         return NextResponse.json({ error: "Failed to finalize portrait storage." }, { status: 500 })
@@ -299,6 +333,11 @@ export async function PATCH(req: NextRequest, context: RouteContext) {
     ) {
       await deleteR2Object(oldPortraitKey).catch(() => {})
       await releaseMemorialStorage(db, id, oldPortraitKey).catch(() => {})
+      const oldOriginalKey = archivalHeicKeyForDisplay(oldPortraitKey)
+      if (oldOriginalKey) {
+        await deleteR2Object(oldOriginalKey).catch(() => {})
+        await releaseMemorialStorage(db, id, oldOriginalKey).catch(() => {})
+      }
     }
 
     if (authCheck.memorial.status !== "published" && updated.status === "published") {

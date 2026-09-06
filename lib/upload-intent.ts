@@ -48,6 +48,8 @@ export const ALLOWED_GUEST_IMAGE_MIME_TYPES = new Set([
   "image/jpeg",
   "image/png",
   "image/webp",
+  "image/heic",
+  "image/heif",
 ])
 
 export const ALLOWED_GUEST_AUDIO_MIME_TYPES = new Set([
@@ -254,9 +256,10 @@ export function verifyUploadedMediaReference(
 
   const expectedOriginalPrefix = `contribution-staging/${payload.memorialId}/${payload.intentNonce}/original/`
   const expectedDisplayPrefix = `contribution-staging/${payload.memorialId}/${payload.intentNonce}/display/`
+  const isUntransformedMedia = rule.mediaType === "audio" || rule.mediaType === "video"
   if (
     !payload.originalKey.startsWith(expectedOriginalPrefix) ||
-    !payload.displayKey.startsWith(expectedDisplayPrefix) ||
+    !(payload.displayKey.startsWith(expectedDisplayPrefix) || (isUntransformedMedia && payload.displayKey === payload.originalKey)) ||
     payload.originalKey.includes("..") ||
     payload.displayKey.includes("..")
   ) return null

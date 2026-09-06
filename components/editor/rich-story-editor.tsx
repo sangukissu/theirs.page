@@ -15,11 +15,14 @@ import {
   Redo2,
   X,
 } from "lucide-react"
+import { MAX_RICH_TEXT_HTML_BYTES, utf8ByteLength } from "@/lib/validation/text-limits"
 
 interface RichStoryEditorProps {
   value: string
   onChange: (value: string) => void
   placeholder?: string
+  maxPlainTextLength?: number
+  maxHtmlBytes?: number
 }
 
 /**
@@ -96,10 +99,13 @@ export function RichStoryEditor({
   value,
   onChange,
   placeholder = "Write their life story here...",
+  maxPlainTextLength,
+  maxHtmlBytes = MAX_RICH_TEXT_HTML_BYTES,
 }: RichStoryEditorProps) {
   const editorRef = useRef<HTMLDivElement>(null)
   const isTypingRef = useRef(false)
   const lastEmittedValueRef = useRef(value || "")
+  const lastAcceptedHtmlRef = useRef("")
 
   // Active formats state for toolbar highlights
   const [activeFormats, setActiveFormats] = useState({
@@ -119,6 +125,7 @@ export function RichStoryEditor({
 
   // Word counter
   const [stats, setStats] = useState({ words: 0, characters: 0, readTimeMinutes: 1 })
+  const [limitMessage, setLimitMessage] = useState<string | null>(null)
   const isInitializedRef = useRef(false)
 
   const updateStats = (text: string) => {
@@ -136,6 +143,7 @@ export function RichStoryEditor({
     if (!isInitializedRef.current) {
       const htmlContent = markdownOrPlainToHtml(value || "")
       editorRef.current.innerHTML = htmlContent
+      lastAcceptedHtmlRef.current = htmlContent
       lastEmittedValueRef.current = value || ""
       updateStats(editorRef.current.innerText || "")
       isInitializedRef.current = true
@@ -146,6 +154,7 @@ export function RichStoryEditor({
     if (value !== lastEmittedValueRef.current) {
       const htmlContent = markdownOrPlainToHtml(value || "")
       editorRef.current.innerHTML = htmlContent
+      lastAcceptedHtmlRef.current = htmlContent
       lastEmittedValueRef.current = value || ""
       updateStats(editorRef.current.innerText || "")
     }
@@ -215,6 +224,22 @@ export function RichStoryEditor({
 
     const currentHtml = editorRef.current.innerHTML
     const cleaned = cleanSemanticHtml(currentHtml)
+    const plainText = editorRef.current.innerText || ""
+
+    if (maxPlainTextLength && plainText.trim().length > maxPlainTextLength) {
+      editorRef.current.innerHTML = lastAcceptedHtmlRef.current
+      updateStats(editorRef.current.innerText || "")
+      setLimitMessage(`Writing is limited to ${maxPlainTextLength.toLocaleString()} visible characters.`)
+      return
+    }
+    if (utf8ByteLength(cleaned) > maxHtmlBytes) {
+      editorRef.current.innerHTML = lastAcceptedHtmlRef.current
+      updateStats(editorRef.current.innerText || "")
+      setLimitMessage("This entry contains too much formatting. Simplify the formatting to continue.")
+      return
+    }
+    lastAcceptedHtmlRef.current = currentHtml
+    setLimitMessage(null)
 
     // Only notify parent if content actually changed
     if (cleaned !== lastEmittedValueRef.current) {
@@ -532,11 +557,13 @@ export function RichStoryEditor({
 
       {/* 3. BOTTOM STATS BAR */}
       <div className="flex items-center justify-between px-4 py-2 bg-[#fafafb] border-t border-black/[0.05] text-[11px] text-[#71717a]">
-        <span>Formatted automatically with editorial leading on the public memorial.</span>
+        <span className={limitMessage ? "text-rose-700" : undefined}>
+          {limitMessage || "Formatted automatically with editorial leading on the public memorial."}
+        </span>
         <div className="flex items-center gap-3 font-mono">
           <span>{stats.words} words</span>
           <span>·</span>
-          <span>~{stats.readTimeMinutes} min read</span>
+          <span>{maxPlainTextLength ? `${stats.characters.toLocaleString()}/${maxPlainTextLength.toLocaleString()}` : `~${stats.readTimeMinutes} min read`}</span>
         </div>
       </div>
 

@@ -26,6 +26,7 @@ import {
 import { UpgradeBanner } from "../upgrade-banner"
 import { ConfirmDeleteModal } from "../confirm-delete-modal"
 import { SectionSettings, ContributionSettings } from "@/types/theirs"
+import { TEXT_LIMITS } from "@/lib/validation/text-limits"
 
 interface CollaboratorItem {
   id: string
@@ -851,6 +852,7 @@ export function SettingsTab({
           <input
             type="email"
             required
+            maxLength={TEXT_LIMITS.email}
             disabled={!isPaid}
             value={collabEmail}
             onChange={(e) => setCollabEmail(e.target.value)}
@@ -1024,6 +1026,7 @@ export function SettingsTab({
           <input
             type="text"
             disabled={!isPaid}
+            maxLength={TEXT_LIMITS.successorName}
             value={successorName}
             onChange={(e) => onChange("successor_name", e.target.value)}
             placeholder="Successor Name (e.g. Anita Carter)"
@@ -1033,6 +1036,7 @@ export function SettingsTab({
           <input
             type="email"
             disabled={!isPaid}
+            maxLength={TEXT_LIMITS.email}
             value={successorEmail}
             onChange={(e) => onChange("successor_email", e.target.value)}
             placeholder="Successor Email"
@@ -1053,6 +1057,7 @@ export function SettingsTab({
             <input
               type="email"
               disabled={!isPaid}
+              maxLength={TEXT_LIMITS.email}
               value={transferTargetEmail}
               onChange={(e) => setTransferTargetEmail(e.target.value)}
               placeholder="New owner's email address..."

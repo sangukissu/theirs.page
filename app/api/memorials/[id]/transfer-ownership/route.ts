@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server"
 import { createClient } from "@/utils/supabase/server"
 import { getSupabaseAdminSafe } from "@/utils/supabase/admin"
+import { TEXT_LIMITS } from "@/lib/validation/text-limits"
+import { isValidEmail } from "@/lib/validation/server-text"
 
 interface RouteContext {
   params: Promise<{ id: string }>
@@ -33,8 +35,11 @@ export async function POST(req: NextRequest, context: RouteContext) {
     const body = await req.json()
     const { targetEmail, targetName } = body
 
-    if (!targetEmail || !targetEmail.includes("@")) {
+    if (typeof targetEmail !== "string" || !isValidEmail(targetEmail.trim())) {
       return NextResponse.json({ error: "Valid recipient email is required" }, { status: 400 })
+    }
+    if (targetName !== undefined && targetName !== null && (typeof targetName !== "string" || targetName.trim().length > TEXT_LIMITS.successorName)) {
+      return NextResponse.json({ error: `Successor name must be ${TEXT_LIMITS.successorName} characters or fewer.` }, { status: 400 })
     }
 
     const cleanEmail = targetEmail.trim().toLowerCase()

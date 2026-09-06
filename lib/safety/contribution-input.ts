@@ -1,4 +1,5 @@
 import { z } from "zod"
+import { MAX_RICH_TEXT_HTML_BYTES, TEXT_LIMITS } from "@/lib/validation/text-limits"
 
 export const CONTRIBUTION_TYPES = [
   "tribute",
@@ -16,11 +17,13 @@ const optionalTrimmed = (max: number) =>
 
 export const contributionInputSchema = z.object({
   type: z.enum(CONTRIBUTION_TYPES),
-  author_name: z.string().trim().min(1).max(100),
-  author_relationship: optionalTrimmed(80),
-  content: z.string().trim().max(4_000).optional().default(""),
+  author_name: z.string().trim().min(1).max(TEXT_LIMITS.contributorName),
+  author_relationship: optionalTrimmed(TEXT_LIMITS.relationship),
+  // Byte size and visible-text limits are applied after sanitization in the
+  // route. This character ceiling prevents oversized values reaching it.
+  content: z.string().trim().max(MAX_RICH_TEXT_HTML_BYTES).optional().default(""),
   approx_year: z.union([z.number(), z.string(), z.null(), z.undefined()]),
-  location: optionalTrimmed(120),
+  location: optionalTrimmed(TEXT_LIMITS.location),
   tribute_type: z.enum(["flower", "note", "candle"]).optional().default("note"),
   media_refs: z.array(z.string().min(40).max(16_384)).max(3).optional().default([]),
   existing_media_id: z.string().uuid().nullable().optional(),

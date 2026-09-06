@@ -6,6 +6,7 @@ import { Turnstile, type TurnstileInstance } from "@marsidev/react-turnstile"
 import { RichStoryEditor } from "@/components/editor/rich-story-editor"
 import { useContributionDraft } from "@/hooks/use-contribution-draft"
 import { saveLocalReceipt } from "@/lib/memorial/optimistic-receipts"
+import { TEXT_LIMITS } from "@/lib/validation/text-limits"
 
 interface MemoryComposerProps {
   memorialId?: string
@@ -136,19 +137,19 @@ export function MemoryComposer({ memorialId, slug, fullName, onSubmitted }: Memo
       </div>
       <div className="mb-4 grid gap-3 sm:grid-cols-2">
         <label className="text-sm font-medium text-[#333]">Your name
-          <input required maxLength={100} value={authorName} onChange={(e) => setAuthorName(e.target.value)} className="mt-1.5 w-full rounded-xl border border-black/[0.1] bg-white px-3 py-2.5 text-base font-normal outline-none focus:border-primary/50" />
+          <input required maxLength={TEXT_LIMITS.contributorName} value={authorName} onChange={(e) => setAuthorName(e.target.value)} className="mt-1.5 w-full rounded-xl border border-black/[0.1] bg-white px-3 py-2.5 text-base font-normal outline-none focus:border-primary/50" />
         </label>
         <label className="text-sm font-medium text-[#333]">Relationship to {firstName}
-          <input maxLength={80} value={relationship} onChange={(e) => setRelationship(e.target.value)} className="mt-1.5 w-full rounded-xl border border-black/[0.1] bg-white px-3 py-2.5 text-base font-normal outline-none focus:border-primary/50" />
+          <input maxLength={TEXT_LIMITS.relationship} value={relationship} onChange={(e) => setRelationship(e.target.value)} className="mt-1.5 w-full rounded-xl border border-black/[0.1] bg-white px-3 py-2.5 text-base font-normal outline-none focus:border-primary/50" />
         </label>
         <label className="text-sm font-medium text-[#333]">Approximate year
           <input inputMode="numeric" maxLength={4} placeholder="e.g. 1998" value={year} onChange={(e) => setYear(e.target.value.replace(/\D/g, "").slice(0, 4))} className="mt-1.5 w-full rounded-xl border border-black/[0.1] bg-white px-3 py-2.5 text-base font-normal outline-none focus:border-primary/50" />
         </label>
         <label className="text-sm font-medium text-[#333]">Location
-          <input maxLength={120} value={location} onChange={(e) => setLocation(e.target.value)} className="mt-1.5 w-full rounded-xl border border-black/[0.1] bg-white px-3 py-2.5 text-base font-normal outline-none focus:border-primary/50" />
+          <input maxLength={TEXT_LIMITS.location} value={location} onChange={(e) => setLocation(e.target.value)} className="mt-1.5 w-full rounded-xl border border-black/[0.1] bg-white px-3 py-2.5 text-base font-normal outline-none focus:border-primary/50" />
         </label>
       </div>
-      <RichStoryEditor value={content} onChange={setContent} placeholder={`I remember when ${firstName}…`} />
+      <RichStoryEditor value={content} onChange={setContent} maxPlainTextLength={TEXT_LIMITS.memory} placeholder={`I remember when ${firstName}…`} />
       {error && <p role="alert" className="mt-3 flex items-center gap-2 text-sm text-rose-700"><AlertCircle className="size-4" />{error}</p>}
       <div className="mt-4 flex flex-col items-center justify-between gap-4 sm:flex-row">
         {siteKey ? (

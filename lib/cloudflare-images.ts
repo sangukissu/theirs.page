@@ -17,7 +17,7 @@ interface TransformImageOptions {
  * public source URL or additional copy of the original is required.
  */
 export async function transformImage(
-  input: Uint8Array,
+  input: Uint8Array | ReadableStream<Uint8Array>,
   options: TransformImageOptions,
 ) {
   const { env } = await getCloudflareContext({ async: true })
@@ -27,10 +27,10 @@ export async function transformImage(
     throw new Error("Cloudflare Images binding is not configured")
   }
 
-  const bytes = new Uint8Array(input.byteLength)
-  bytes.set(input)
-
-  const source = images.input(new Blob([bytes]).stream())
+  const stream = input instanceof Uint8Array
+    ? new Blob([new Uint8Array(input)]).stream()
+    : input
+  const source = images.input(stream)
   const transformed = options.width || options.height
     ? source.transform({
         ...(options.width ? { width: options.width } : {}),

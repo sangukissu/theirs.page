@@ -6,6 +6,9 @@ import { assertMemorialAdmin } from "@/lib/memorial-auth"
 import { assertMediaQuota } from "@/lib/paywall"
 import { copyR2Object, deleteR2Object, extractManagedR2Key, resolveMediaUrl } from "@/lib/r2"
 import { finalizeMemorialStorage, releaseMemorialStorage } from "@/lib/storage-quota"
+import { TEXT_LIMITS } from "@/lib/validation/text-limits"
+import { validateTextFields } from "@/lib/validation/server-text"
+import { archivalHeicKeyForDisplay, promoteStagedMemorialImage } from "@/lib/memorial-image-promotion"
 
 interface RouteContext {
   params: Promise<{ id: string }>
@@ -36,7 +39,16 @@ export async function POST(req: NextRequest, context: RouteContext) {
     }
 
     const body = await req.json()
+    const textError = validateTextFields(body, {
+      caption: TEXT_LIMITS.photoCaption,
+      location: TEXT_LIMITS.location,
+      album: TEXT_LIMITS.albumName,
+    })
+    if (textError) return NextResponse.json({ error: textError }, { status: 400 })
     const { url, stagingKey, media_type, caption, approx_year, location, album, is_pinned, order_index } = body
+    if (!['image', 'audio', 'video'].includes(media_type || 'image')) {
+      return NextResponse.json({ error: "Invalid media type." }, { status: 400 })
+    }
 
     const inputKey = extractManagedR2Key(stagingKey || url)
     if (!inputKey) {
@@ -50,12 +62,24 @@ export async function POST(req: NextRequest, context: RouteContext) {
     }
 
     let finalKey = inputKey
+    let finalOriginalKey = inputKey
     if (isStaging) {
-      const filename = inputKey.split("/").pop() || "upload"
-      const timestamp = Date.now()
-      const randomId = crypto.randomUUID()
-      finalKey = `memorials/${authCheck.memorial.id}/gallery/${timestamp}_${randomId}_${filename}`
-      await copyR2Object(inputKey, finalKey)
+      if ((media_type || "image") === "image") {
+        const promoted = await promoteStagedMemorialImage(
+          inputKey,
+          authCheck.memorial.id,
+          "gallery",
+        )
+        finalKey = promoted.displayKey
+        finalOriginalKey = promoted.originalKey
+      } else {
+        const filename = inputKey.split("/").pop() || "upload"
+        const timestamp = Date.now()
+        const randomId = crypto.randomUUID()
+        finalKey = `memorials/${authCheck.memorial.id}/gallery/${timestamp}_${randomId}_${filename}`
+        finalOriginalKey = finalKey
+        await copyR2Object(inputKey, finalKey)
+      }
     }
 
     const db = getSupabaseAdminSafe() || supabase
@@ -75,6 +99,7 @@ export async function POST(req: NextRequest, context: RouteContext) {
     if (!quotaCheck.allowed) {
       if (isStaging) {
         await deleteR2Object(finalKey).catch(() => {})
+        if (finalOriginalKey !== finalKey) await deleteR2Object(finalOriginalKey).catch(() => {})
         await releaseMemorialStorage(db, memorialId, inputKey).catch(() => {})
       }
       return NextResponse.json(
@@ -103,6 +128,7 @@ export async function POST(req: NextRequest, context: RouteContext) {
       console.error("Media insert error:", error)
       if (isStaging) {
         await deleteR2Object(finalKey).catch(() => {})
+        if (finalOriginalKey !== finalKey) await deleteR2Object(finalOriginalKey).catch(() => {})
         await releaseMemorialStorage(db, memorialId, inputKey).catch(() => {})
       }
       if (error.message?.includes("5-photo limit") || error.code === "P0001") {
@@ -116,10 +142,11 @@ export async function POST(req: NextRequest, context: RouteContext) {
 
     if (isStaging) {
       try {
-        await finalizeMemorialStorage(db, memorialId, inputKey, finalKey)
+        await finalizeMemorialStorage(db, memorialId, inputKey, finalOriginalKey)
       } catch (quotaError) {
         await db.from("media_items").delete().eq("id", mediaItem.id)
         await deleteR2Object(finalKey).catch(() => {})
+        if (finalOriginalKey !== finalKey) await deleteR2Object(finalOriginalKey).catch(() => {})
         await releaseMemorialStorage(db, memorialId, inputKey).catch(() => {})
         console.error("Media storage finalization error:", quotaError)
         return NextResponse.json({ error: "Failed to finalize media storage." }, { status: 500 })
@@ -162,6 +189,12 @@ export async function PATCH(req: NextRequest, context: RouteContext) {
     }
 
     const body = await req.json()
+    const textError = validateTextFields(body, {
+      caption: TEXT_LIMITS.photoCaption,
+      location: TEXT_LIMITS.location,
+      album: TEXT_LIMITS.albumName,
+    })
+    if (textError) return NextResponse.json({ error: textError }, { status: 400 })
     const { mediaId, caption, approx_year, location, album, is_pinned, order_index } = body
 
     if (!mediaId) {
@@ -250,6 +283,11 @@ export async function DELETE(req: NextRequest, context: RouteContext) {
         try {
           await deleteR2Object(key)
           await releaseMemorialStorage(db, memorialId, key).catch(() => {})
+          const originalKey = archivalHeicKeyForDisplay(key)
+          if (originalKey) {
+            await deleteR2Object(originalKey).catch(() => {})
+            await releaseMemorialStorage(db, memorialId, originalKey).catch(() => {})
+          }
         } catch (cleanupErr) {
           console.warn(`Failed to delete R2 object ${key}:`, cleanupErr)
         }

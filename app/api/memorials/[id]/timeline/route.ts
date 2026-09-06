@@ -4,12 +4,14 @@ import { getSupabaseAdminSafe } from "@/utils/supabase/admin"
 import { assertMemorialAdmin } from "@/lib/memorial-auth"
 import { canAccessFeature } from "@/lib/paywall"
 import {
-  copyR2Object,
   deleteR2Object,
   extractManagedR2Key,
   resolveMediaUrl,
 } from "@/lib/r2"
 import { finalizeMemorialStorage, releaseMemorialStorage } from "@/lib/storage-quota"
+import { TEXT_LIMITS } from "@/lib/validation/text-limits"
+import { validateTextFields } from "@/lib/validation/server-text"
+import { archivalHeicKeyForDisplay, promoteStagedMemorialImage } from "@/lib/memorial-image-promotion"
 
 interface RouteContext {
   params: Promise<{ id: string }>
@@ -42,6 +44,12 @@ export async function POST(req: NextRequest, context: RouteContext) {
     }
 
     const body = await req.json()
+    const textError = validateTextFields(body, {
+      title: TEXT_LIMITS.timelineTitle,
+      description: TEXT_LIMITS.timelineDescription,
+      location: TEXT_LIMITS.location,
+    })
+    if (textError) return NextResponse.json({ error: textError }, { status: 400 })
     const { year, title, description, photo_url, location } = body
 
     if (!year || !title) {
@@ -49,6 +57,7 @@ export async function POST(req: NextRequest, context: RouteContext) {
     }
 
     let finalPhotoKey: string | null = null
+    let finalOriginalPhotoKey: string | null = null
     let stagingKeyToDelete: string | null = null
 
     if (photo_url) {
@@ -58,10 +67,13 @@ export async function POST(req: NextRequest, context: RouteContext) {
       }
 
       if (photoKey.startsWith(`dashboard-staging/${authCheck.memorial.id}/`)) {
-        // Promote from dashboard staging to permanent timeline folder
-        const ext = photoKey.split(".").pop() || "jpg"
-        finalPhotoKey = `memorials/${authCheck.memorial.id}/timeline/${crypto.randomUUID()}.${ext}`
-        await copyR2Object(photoKey, finalPhotoKey)
+        const promoted = await promoteStagedMemorialImage(
+          photoKey,
+          authCheck.memorial.id,
+          "timeline",
+        )
+        finalPhotoKey = promoted.displayKey
+        finalOriginalPhotoKey = promoted.originalKey
         stagingKeyToDelete = photoKey
       } else if (photoKey.startsWith(`memorials/${authCheck.memorial.id}/`)) {
         finalPhotoKey = photoKey
@@ -87,6 +99,9 @@ export async function POST(req: NextRequest, context: RouteContext) {
     if (error) {
       if (stagingKeyToDelete && finalPhotoKey) {
         await deleteR2Object(finalPhotoKey).catch(() => {})
+        if (finalOriginalPhotoKey && finalOriginalPhotoKey !== finalPhotoKey) {
+          await deleteR2Object(finalOriginalPhotoKey).catch(() => {})
+        }
         await releaseMemorialStorage(db, memorialId, stagingKeyToDelete).catch(() => {})
       }
       console.error("Timeline insert error:", error)
@@ -95,10 +110,13 @@ export async function POST(req: NextRequest, context: RouteContext) {
 
     if (stagingKeyToDelete && finalPhotoKey) {
       try {
-        await finalizeMemorialStorage(db, memorialId, stagingKeyToDelete, finalPhotoKey)
+        await finalizeMemorialStorage(db, memorialId, stagingKeyToDelete, finalOriginalPhotoKey || finalPhotoKey)
       } catch (quotaError) {
         await db.from("timeline_events").delete().eq("id", event.id)
         await deleteR2Object(finalPhotoKey).catch(() => {})
+        if (finalOriginalPhotoKey && finalOriginalPhotoKey !== finalPhotoKey) {
+          await deleteR2Object(finalOriginalPhotoKey).catch(() => {})
+        }
         await releaseMemorialStorage(db, memorialId, stagingKeyToDelete).catch(() => {})
         console.error("Timeline storage finalization error:", quotaError)
         return NextResponse.json({ error: "Failed to finalize timeline photograph." }, { status: 500 })
@@ -175,6 +193,11 @@ export async function DELETE(req: NextRequest, context: RouteContext) {
           console.warn(`Failed to clean up timeline R2 photo ${key}:`, cleanupErr)
         })
         await releaseMemorialStorage(db, memorialId, key).catch(() => {})
+        const originalKey = archivalHeicKeyForDisplay(key)
+        if (originalKey) {
+          await deleteR2Object(originalKey).catch(() => {})
+          await releaseMemorialStorage(db, memorialId, originalKey).catch(() => {})
+        }
       }
     }
 

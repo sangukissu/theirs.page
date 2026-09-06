@@ -156,7 +156,11 @@ function mediaRecords(details: unknown, memorialId: string): ContributionMediaRe
     const validDisplay =
       displayKey.startsWith(`quarantine/${memorialId}/display/`) ||
       displayKey.startsWith(`memorials/${memorialId}/community/`)
-    if (validOriginal && validDisplay) {
+    const validSingleObject =
+      originalKey === displayKey &&
+      (originalKey.startsWith(`quarantine/${memorialId}/original/`) ||
+        originalKey.startsWith(`memorials/${memorialId}/community/`))
+    if ((validOriginal && validDisplay) || validSingleObject) {
       records.push({ ...candidate, original_key: originalKey, display_key: displayKey })
     }
   }
@@ -165,7 +169,7 @@ function mediaRecords(details: unknown, memorialId: string): ContributionMediaRe
 
 function filenameFromKey(key: string): string {
   const filename = key.split("/").pop() || ""
-  if (!/^[a-f0-9-]+\.(?:jpg|png|webp|mp3|wav|ogg|m4a|mp4|webm|mov)$/i.test(filename)) {
+  if (!/^[a-f0-9-]+\.(?:jpg|png|webp|heic|heif|mp3|wav|ogg|m4a|mp4|webm|mov)$/i.test(filename)) {
     throw new Error("Invalid contribution media key")
   }
   return filename
@@ -192,6 +196,7 @@ function replaceMediaUrls(
 async function removeManagedContributionMedia(
   db: NonNullable<ReturnType<typeof getSupabaseAdminSafe>>,
   memorialId: string,
+  sourceMemoryId: string,
   details: unknown,
   photoUrls: unknown
 ) {
@@ -202,7 +207,7 @@ async function removeManagedContributionMedia(
         return key?.startsWith(`quarantine/${memorialId}/`) ? [key] : []
       })
     : []
-  const keys = [...records.flatMap((item) => [item.original_key, item.display_key]), ...legacyQuarantineKeys]
+  const keys = [...new Set([...records.flatMap((item) => [item.original_key, item.display_key]), ...legacyQuarantineKeys])]
   await Promise.allSettled(keys.map(deleteR2Object))
   await Promise.allSettled(records.map((item) => releaseMemorialStorage(db, memorialId, item.original_key)))
   const publicKeys = records
@@ -212,7 +217,7 @@ async function removeManagedContributionMedia(
     await db.from("media_items")
       .delete()
       .eq("memorial_id", memorialId)
-      .in("url", publicKeys)
+      .eq("source_memory_id", sourceMemoryId)
   }
 }
 
@@ -283,6 +288,7 @@ export async function PATCH(req: NextRequest, context: RouteContext) {
       await removeManagedContributionMedia(
         db,
         memorialId,
+        targetId,
         memory.safety_details,
         [...(Array.isArray(memory.photo_urls) ? memory.photo_urls : []), memory.photo_url].filter(Boolean)
       )
@@ -304,6 +310,7 @@ export async function PATCH(req: NextRequest, context: RouteContext) {
       await removeManagedContributionMedia(
         db,
         memorialId,
+        targetId,
         memory.safety_details,
         [...(Array.isArray(memory.photo_urls) ? memory.photo_urls : []), memory.photo_url].filter(Boolean)
       )
@@ -375,11 +382,23 @@ export async function PATCH(req: NextRequest, context: RouteContext) {
       const updatedRecords: ContributionMediaRecord[] = []
       const copiedSources: string[] = []
       const newlyCreatedPermanentKeys: string[] = []
+      const storageMoves: Array<{ from: string; to: string }> = []
 
       try {
         for (const record of records) {
           const displaySource = extractManagedR2Key(record.display_key) || record.display_key
           const originalSource = extractManagedR2Key(record.original_key) || record.original_key
+          if (displaySource === originalSource) {
+            const destination = `memorials/${memorialId}/community/${filenameFromKey(originalSource)}`
+            if (originalSource !== destination) {
+              await copyR2Object(originalSource, destination)
+              copiedSources.push(originalSource)
+              newlyCreatedPermanentKeys.push(destination)
+            }
+            replacements.set(displaySource, destination)
+            updatedRecords.push({ ...record, display_key: destination, original_key: destination })
+            continue
+          }
           const displayDestination = `memorials/${memorialId}/community/${filenameFromKey(displaySource)}`
           const originalDestination = `originals/${memorialId}/community/${filenameFromKey(originalSource)}`
 
@@ -409,6 +428,24 @@ export async function PATCH(req: NextRequest, context: RouteContext) {
         )
       }
 
+      try {
+        for (let index = 0; index < records.length; index += 1) {
+          const from = records[index].original_key
+          const to = updatedRecords[index].original_key
+          if (from !== to) {
+            await finalizeMemorialStorage(db, memorialId, from, to)
+            storageMoves.push({ from, to })
+          }
+        }
+      } catch (storageError) {
+        await Promise.allSettled(storageMoves.reverse().map((move) =>
+          finalizeMemorialStorage(db, memorialId, move.to, move.from)
+        ))
+        await Promise.allSettled(newlyCreatedPermanentKeys.map(deleteR2Object))
+        console.error("Contribution storage ledger update failed:", storageError)
+        return NextResponse.json({ error: "The contribution media could not be finalized. Please try again." }, { status: 503 })
+      }
+
       // 1. ATTEMPT ALL media_items INSERTS FIRST (before updating memory or deleting quarantine!)
       const insertedMediaIds: string[] = []
       let mediaInsertError: any = null
@@ -424,6 +461,7 @@ export async function PATCH(req: NextRequest, context: RouteContext) {
             caption: `Shared by ${memory.author_name}`,
             approx_year: memory.approx_year || null,
             album: "Community Memories",
+            source_memory_id: targetId,
           }).select("id").single()
 
           if (insertErr) {
@@ -444,6 +482,9 @@ export async function PATCH(req: NextRequest, context: RouteContext) {
         }
         // Rollback newly created permanent R2 files
         await Promise.allSettled(newlyCreatedPermanentKeys.map(deleteR2Object))
+        await Promise.allSettled(storageMoves.reverse().map((move) =>
+          finalizeMemorialStorage(db, memorialId, move.to, move.from)
+        ))
         // Quarantine sources are NOT deleted; memory remains in its previous pending state!
 
         const isQuotaError =
@@ -486,16 +527,10 @@ export async function PATCH(req: NextRequest, context: RouteContext) {
           await db.from("media_items").delete().in("id", insertedMediaIds)
         }
         await Promise.allSettled(newlyCreatedPermanentKeys.map(deleteR2Object))
-        return NextResponse.json({ error: "Failed to approve contribution." }, { status: 500 })
-      }
-
-      try {
-        await Promise.all(records.map((record, index) =>
-          finalizeMemorialStorage(db, memorialId, record.original_key, updatedRecords[index].original_key)
+        await Promise.allSettled(storageMoves.reverse().map((move) =>
+          finalizeMemorialStorage(db, memorialId, move.to, move.from)
         ))
-      } catch (storageError) {
-        console.error("Contribution storage ledger update failed:", storageError)
-        return NextResponse.json({ error: "The contribution was published, but storage accounting needs to be retried." }, { status: 503 })
+        return NextResponse.json({ error: "Failed to approve contribution." }, { status: 500 })
       }
 
       // 3. ONLY AFTER memory update succeeds: delete quarantine sources
@@ -509,10 +544,22 @@ export async function PATCH(req: NextRequest, context: RouteContext) {
       const replacements = new Map<string, string>()
       const updatedRecords: ContributionMediaRecord[] = []
       const publicSources: string[] = []
+      const storageMoves: Array<{ from: string; to: string }> = []
 
       try {
         for (const record of records) {
           const displaySource = extractManagedR2Key(record.display_key) || record.display_key
+          const originalSource = extractManagedR2Key(record.original_key) || record.original_key
+          if (displaySource === originalSource) {
+            const destination = `quarantine/${memorialId}/original/${filenameFromKey(displaySource)}`
+            if (displaySource !== destination) {
+              await copyR2Object(displaySource, destination)
+              publicSources.push(displaySource)
+            }
+            replacements.set(displaySource, destination)
+            updatedRecords.push({ ...record, display_key: destination, original_key: destination })
+            continue
+          }
           const destination = `quarantine/${memorialId}/display/${filenameFromKey(displaySource)}`
           if (displaySource !== destination) {
             await copyR2Object(displaySource, destination)
@@ -526,6 +573,27 @@ export async function PATCH(req: NextRequest, context: RouteContext) {
         return NextResponse.json({ error: "Failed to unpublish contribution media." }, { status: 503 })
       }
 
+      try {
+        for (let index = 0; index < records.length; index += 1) {
+          const from = records[index].original_key
+          const to = updatedRecords[index].original_key
+          if (from !== to) {
+            await finalizeMemorialStorage(db, memorialId, from, to)
+            storageMoves.push({ from, to })
+          }
+        }
+      } catch (storageError) {
+        await Promise.allSettled(storageMoves.reverse().map((move) =>
+          finalizeMemorialStorage(db, memorialId, move.to, move.from)
+        ))
+        const quarantineCopies = updatedRecords
+          .map((record) => record.display_key)
+          .filter((key, index) => key !== records[index]?.display_key)
+        await Promise.allSettled(quarantineCopies.map(deleteR2Object))
+        console.error("Contribution storage ledger quarantine update failed:", storageError)
+        return NextResponse.json({ error: "Failed to account for unpublished media. Please try again." }, { status: 503 })
+      }
+
       const { error } = await db.from("memories").update({
         status: "pending_approval",
         approved_at: null,
@@ -536,11 +604,16 @@ export async function PATCH(req: NextRequest, context: RouteContext) {
         photo_urls: replaceMediaUrls(memory.photo_urls, replacements),
         safety_details: { ...(memory.safety_details || {}), media: updatedRecords },
       }).eq("id", targetId).eq("memorial_id", memorialId)
-      if (error) return NextResponse.json({ error: "Failed to unpublish contribution." }, { status: 500 })
+      if (error) {
+        await Promise.allSettled(storageMoves.reverse().map((move) =>
+          finalizeMemorialStorage(db, memorialId, move.to, move.from)
+        ))
+        return NextResponse.json({ error: "Failed to unpublish contribution." }, { status: 500 })
+      }
 
       if (publicSources.length > 0) {
         await db.from("media_items").delete()
-          .eq("memorial_id", memorialId).in("url", publicSources)
+          .eq("memorial_id", memorialId).eq("source_memory_id", targetId)
         await Promise.allSettled(publicSources.map(deleteR2Object))
       }
       return NextResponse.json({ success: true, status: "pending_approval" })

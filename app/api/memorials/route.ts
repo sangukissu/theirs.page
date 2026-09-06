@@ -8,6 +8,7 @@ import {
   createMemorialSlugCandidates,
 } from "@/lib/memorial-slug"
 import { sendMemorialCreatedEmail } from "@/lib/email/lifecycle-emails"
+import { TEXT_LIMITS } from "@/lib/validation/text-limits"
 
 function cleanDisplayName(value: unknown, maxLength: number): string {
   if (typeof value !== "string") return ""
@@ -82,7 +83,10 @@ export async function POST(req: NextRequest) {
     if (!body || typeof body !== "object" || Array.isArray(body)) {
       return NextResponse.json({ error: "Invalid request." }, { status: 400 })
     }
-    const fullName = cleanDisplayName(body.full_name, 120)
+    if (typeof body.full_name !== "string" || body.full_name.trim().length > TEXT_LIMITS.personFullName) {
+      return NextResponse.json({ error: `Full name must be ${TEXT_LIMITS.personFullName} characters or fewer.` }, { status: 400 })
+    }
+    const fullName = cleanDisplayName(body.full_name, TEXT_LIMITS.personFullName)
     const desiredSlug = typeof body.desired_slug === "string" ? body.desired_slug : ""
 
     if (fullName.length < 2) {

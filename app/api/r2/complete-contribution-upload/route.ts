@@ -1,7 +1,6 @@
 import crypto from "crypto"
 import { NextRequest, NextResponse } from "next/server"
 import {
-  copyR2Object,
   deleteR2Object,
   getR2ObjectPrefixBuffer,
   getR2SignedUrl,
@@ -22,7 +21,7 @@ function getClientIp(req: NextRequest): string {
 }
 
 export async function POST(req: NextRequest) {
-  let cleanup: { memorialId: string; key: string; displayKey?: string } | null = null
+  let cleanup: { memorialId: string; key: string } | null = null
   try {
     const body = await req.json().catch(() => ({}))
     const authorization = typeof body.uploadIntentToken === "string"
@@ -65,14 +64,11 @@ export async function POST(req: NextRequest) {
     if (!filename || !/^[a-f0-9-]+\.(?:mp3|wav|ogg|m4a|mp4|webm|mov)$/i.test(filename)) {
       throw new Error("UPLOADED_OBJECT_MISMATCH")
     }
-    const displayKey = `contribution-staging/${authorization.memorialId}/${authorization.nonce}/display/${filename}`
-    cleanup.displayKey = displayKey
-    await copyR2Object(authorization.directUploadKey, displayKey, object.contentType)
-
     const mediaRef = signUploadedMediaReference({
       memorialId: authorization.memorialId,
       originalKey: authorization.directUploadKey,
-      displayKey,
+      // Until a real transcode exists, audio/video uses one canonical object.
+      displayKey: authorization.directUploadKey,
       detectedMime: validation.detectedMime,
       mediaType: validation.mediaType,
       contributionType: authorization.contributionType,
@@ -83,7 +79,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({
       success: true,
       mediaRef,
-      previewUrl: await getR2SignedUrl(displayKey, 15 * 60),
+      previewUrl: await getR2SignedUrl(authorization.directUploadKey, 15 * 60),
       mediaType: validation.mediaType,
       contentType: validation.detectedMime,
       size: object.contentLength,
@@ -92,7 +88,6 @@ export async function POST(req: NextRequest) {
   } catch (error) {
     if (cleanup) {
       await deleteR2Object(cleanup.key).catch(() => {})
-      if (cleanup.displayKey) await deleteR2Object(cleanup.displayKey).catch(() => {})
       const db = getSupabaseAdminSafe()
       if (db) await releaseMemorialStorage(db, cleanup.memorialId, cleanup.key).catch(() => {})
     }

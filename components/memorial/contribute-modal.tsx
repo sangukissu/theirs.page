@@ -25,6 +25,7 @@ import {
 import { saveLocalReceipt } from "@/lib/memorial/optimistic-receipts"
 import type { ContributionSettings } from "@/types/theirs"
 import { useContributionDraft } from "@/hooks/use-contribution-draft"
+import { TEXT_LIMITS } from "@/lib/validation/text-limits"
 
 export type ContributionType = "tribute" | "memory" | "photo" | "voice" | "video" | "message"
 export type TributeRitual = "flower" | "candle" | "note"
@@ -767,7 +768,7 @@ export function ContributeModal({
                         required
                         value={authorName}
                         onChange={(e) => setAuthorName(e.target.value)}
-                        maxLength={100}
+                        maxLength={TEXT_LIMITS.contributorName}
                         placeholder="e.g. David Miller"
                         className="w-full px-3 py-2 rounded-xl bg-[#f7f7f8] border border-black/[0.08] text-sm text-[#181925] placeholder:text-[#aaa] outline-none focus:border-primary/50 transition-colors"
                       />
@@ -781,7 +782,7 @@ export function ContributeModal({
                         type="text"
                         value={relationship}
                         onChange={(e) => setRelationship(e.target.value)}
-                        maxLength={80}
+                        maxLength={TEXT_LIMITS.relationship}
                         placeholder="e.g. Daughter, Old neighbour, Colleague"
                         className="w-full px-3 py-2 rounded-xl bg-[#f7f7f8] border border-black/[0.08] text-sm text-[#181925] placeholder:text-[#aaa] outline-none focus:border-primary/50 transition-colors"
                       />
@@ -813,7 +814,7 @@ export function ContributeModal({
                             type="text"
                             value={location}
                             onChange={(e) => setLocation(e.target.value)}
-                            maxLength={120}
+                            maxLength={TEXT_LIMITS.location}
                             placeholder="e.g. Grandma’s kitchen"
                             className="w-full px-3 py-2 rounded-xl bg-[#f7f7f8] border border-black/[0.08] text-sm text-[#181925] placeholder:text-[#aaa] outline-none focus:border-primary/50 transition-colors"
                           />
@@ -835,7 +836,7 @@ export function ContributeModal({
                             ? "video/mp4,video/webm,video/quicktime,.mov"
                             : selectedType === "voice"
                               ? "audio/mpeg,audio/wav,audio/ogg,audio/mp4,audio/m4a,.mp3,.wav,.ogg,.m4a"
-                              : "image/jpeg,image/png,image/webp"
+                              : "image/jpeg,image/png,image/webp,image/heic,image/heif,.heic,.heif"
                         }
                         className="hidden"
                         disabled={isUploadingMedia}
@@ -916,7 +917,7 @@ export function ContributeModal({
                             </span>
                             <span className="text-[10px] text-[#71717a]">
                               {selectedType === "photo"
-                                ? "JPEG, PNG, or WebP · up to 15MB"
+                                ? "JPEG, PNG, WebP, or HEIC · up to 15MB"
                                 : selectedType === "video"
                                   ? "MP4, WebM, or MOV · up to 100MB"
                                   : "MP3, WAV, OGG, or M4A · up to 50MB"}
@@ -963,7 +964,13 @@ export function ContributeModal({
                       rows={isTributeMode || selectedType === "memory" ? 4 : 3}
                       value={content}
                       onChange={(e) => setContent(e.target.value)}
-                      maxLength={4000}
+                      maxLength={
+                        selectedType === "memory"
+                          ? TEXT_LIMITS.memory
+                          : isTributeMode
+                            ? TEXT_LIMITS.tribute
+                            : TEXT_LIMITS.photoCaption
+                      }
                       placeholder={
                         isTributeMode
                           ? tributeRitual === "flower"
@@ -991,7 +998,7 @@ export function ContributeModal({
                       <input
                         ref={memoryPhotoInputRef}
                         type="file"
-                        accept="image/jpeg,image/png,image/webp"
+                        accept="image/jpeg,image/png,image/webp,image/heic,image/heif,.heic,.heif"
                         className="hidden"
                         disabled={isUploadingMedia}
                         onChange={(e) => {

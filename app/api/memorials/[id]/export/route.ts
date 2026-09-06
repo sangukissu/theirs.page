@@ -5,6 +5,7 @@ import { getSupabaseAdminSafe } from "@/utils/supabase/admin"
 import { assertMemorialAdmin } from "@/lib/memorial-auth"
 import { canAccessFeature } from "@/lib/paywall"
 import { extractManagedR2Key, getR2ObjectWebStream } from "@/lib/r2"
+import { archivalHeicKeyForDisplay } from "@/lib/memorial-image-promotion"
 
 interface RouteContext {
   params: Promise<{ id: string }>
@@ -14,7 +15,7 @@ function getMediaExtension(url: string, defaultExt: string): string {
   try {
     const cleanUrl = url.split("?")[0]
     const ext = cleanUrl.split(".").pop()?.toLowerCase() || ""
-    if (["jpg", "jpeg", "png", "webp", "gif", "mp3", "wav", "m4a", "ogg", "mp4", "webm", "mov"].includes(ext)) {
+    if (["jpg", "jpeg", "png", "webp", "gif", "heic", "heif", "mp3", "wav", "m4a", "ogg", "mp4", "webm", "mov"].includes(ext)) {
       return ext === "jpeg" ? "jpg" : ext
     }
   } catch {
@@ -248,9 +249,13 @@ Thank you for trusting Theirs to help preserve ${memorial.full_name}'s memory.
 
       // Portrait photo if configured
       if (memorial.portrait_photo_url) {
-        const portraitMedia = await fetchMediaStream(memorial.portrait_photo_url)
+        const portraitKey = extractManagedR2Key(memorial.portrait_photo_url) || memorial.portrait_photo_url
+        const portraitOriginal = archivalHeicKeyForDisplay(portraitKey)
+        const portraitMedia = portraitOriginal
+          ? await fetchMediaStream(portraitOriginal) || await fetchMediaStream(memorial.portrait_photo_url)
+          : await fetchMediaStream(memorial.portrait_photo_url)
         if (portraitMedia) {
-          const ext = getMediaExtension(memorial.portrait_photo_url, "jpg")
+          const ext = getMediaExtension(portraitOriginal || memorial.portrait_photo_url, "jpg")
           yield {
             name: `photos/000_portrait_photo.${ext}`,
             input: portraitMedia.stream,
@@ -267,7 +272,7 @@ Thank you for trusting Theirs to help preserve ${memorial.full_name}'s memory.
 
         const itemKey = extractManagedR2Key(item.url) || item.url
         // If this item was contributed by community and has an untouched high-res original in originals/, prefer it
-        const originalKey = displayToOriginalKeyMap.get(itemKey)
+        const originalKey = displayToOriginalKeyMap.get(itemKey) || archivalHeicKeyForDisplay(itemKey)
         const targetSource = originalKey || item.url
 
         let media = await fetchMediaStream(targetSource)
@@ -307,14 +312,17 @@ Thank you for trusting Theirs to help preserve ${memorial.full_name}'s memory.
         if (streamedTimelineKeys.has(rawKey)) continue
         streamedTimelineKeys.add(rawKey)
 
-        const media = await fetchMediaStream(event.photo_url)
+        const originalKey = archivalHeicKeyForDisplay(rawKey)
+        const media = originalKey
+          ? await fetchMediaStream(originalKey) || await fetchMediaStream(event.photo_url)
+          : await fetchMediaStream(event.photo_url)
         if (!media) continue
 
         timelinePhotoIndex++
         const cleanTitle = (event.title || "milestone")
           .replace(/[^a-zA-Z0-9_-]/g, "_")
           .substring(0, 30)
-        const ext = getMediaExtension(event.photo_url, "jpg")
+        const ext = getMediaExtension(originalKey || event.photo_url, "jpg")
         const filename = `${String(timelinePhotoIndex).padStart(2, "0")}_${event.year}_${cleanTitle}.${ext}`
 
         yield {

@@ -35,13 +35,19 @@ import type {
   MemoryStatus,
 } from "@/types/theirs"
 import { finalizeMemorialStorage, releaseMemorialStorage } from "@/lib/storage-quota"
+import {
+  MAX_CONTRIBUTION_BODY_BYTES,
+  MAX_RICH_TEXT_HTML_BYTES,
+  TEXT_LIMITS,
+  utf8ByteLength,
+} from "@/lib/validation/text-limits"
 
 interface RouteContext {
   params: Promise<{ id: string }>
 }
 
 const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
-const MAX_BODY_BYTES = 64 * 1024
+const MAX_BODY_BYTES = MAX_CONTRIBUTION_BODY_BYTES
 
 function getClientIp(req: NextRequest): string {
   return (
@@ -91,7 +97,7 @@ function defaultContent(input: ContributionInput): string {
 
 function destinationForMedia(memorialId: string, displayKey: string): string {
   const filename = displayKey.split("/").pop()
-  if (!filename || !/^[a-f0-9-]+\.(?:jpg|png|webp|mp3|wav|ogg|m4a|mp4|webm|mov)$/i.test(filename)) {
+  if (!filename || !/^[a-f0-9-]+\.(?:jpg|png|webp|heic|heif|mp3|wav|ogg|m4a|mp4|webm|mov)$/i.test(filename)) {
     throw new Error("Invalid quarantined media key")
   }
   return `memorials/${memorialId}/community/${filename}`
@@ -99,7 +105,7 @@ function destinationForMedia(memorialId: string, displayKey: string): string {
 
 function destinationForOriginal(memorialId: string, originalKey: string): string {
   const filename = originalKey.split("/").pop()
-  if (!filename || !/^[a-f0-9-]+\.(?:jpg|png|webp|mp3|wav|ogg|m4a|mp4|webm|mov)$/i.test(filename)) {
+  if (!filename || !/^[a-f0-9-]+\.(?:jpg|png|webp|heic|heif|mp3|wav|ogg|m4a|mp4|webm|mov)$/i.test(filename)) {
     throw new Error("Invalid original media key")
   }
   return `originals/${memorialId}/community/${filename}`
@@ -107,7 +113,7 @@ function destinationForOriginal(memorialId: string, originalKey: string): string
 
 function filenameFromStagedKey(key: string): string {
   const filename = key.split("/").pop()
-  if (!filename || !/^[a-f0-9-]+\.(?:jpg|png|webp|mp3|wav|ogg|m4a|mp4|webm|mov)$/i.test(filename)) {
+  if (!filename || !/^[a-f0-9-]+\.(?:jpg|png|webp|heic|heif|mp3|wav|ogg|m4a|mp4|webm|mov)$/i.test(filename)) {
     throw new Error("Invalid staged media key")
   }
   return filename
@@ -140,6 +146,29 @@ export async function POST(req: NextRequest, context: RouteContext) {
     const effectiveContent = input.type === "memory" || input.type === "story"
       ? sanitizeContributionHtml(rawContent)
       : rawContent
+    const visibleContent = input.type === "memory" || input.type === "story"
+      ? contributionPlainText(effectiveContent)
+      : effectiveContent.trim()
+    const visibleLimit = input.type === "memory" || input.type === "story"
+      ? TEXT_LIMITS.memory
+      : input.type === "tribute" || input.type === "message"
+        ? TEXT_LIMITS.tribute
+        : TEXT_LIMITS.photoCaption
+    if (visibleContent.length > visibleLimit) {
+      return NextResponse.json(
+        { error: `Please keep this ${input.type === "memory" || input.type === "story" ? "memory" : "message"} within ${visibleLimit.toLocaleString()} characters.` },
+        { status: 400 }
+      )
+    }
+    if (
+      (input.type === "memory" || input.type === "story") &&
+      utf8ByteLength(effectiveContent) > MAX_RICH_TEXT_HTML_BYTES
+    ) {
+      return NextResponse.json(
+        { error: "This memory contains too much formatting. Please simplify it and try again." },
+        { status: 400 }
+      )
+    }
     if (!effectiveContent) {
       return NextResponse.json({ error: "Please write a memory or message to share." }, { status: 400 })
     }
@@ -335,8 +364,18 @@ export async function POST(req: NextRequest, context: RouteContext) {
     const finalOriginalKeys: string[] = []
     try {
       for (const item of verifiedMedia) {
+        const isSingleObject = item.displayKey === item.originalKey
         const filename = filenameFromStagedKey(item.displayKey)
         const originalFilename = filenameFromStagedKey(item.originalKey)
+        if (isSingleObject) {
+          const destination = status === "approved"
+            ? destinationForMedia(memorial.id, item.displayKey)
+            : `quarantine/${memorial.id}/original/${originalFilename}`
+          await promoteQuarantinedMedia(item.originalKey, destination)
+          finalDisplayKeys.push(destination)
+          finalOriginalKeys.push(destination)
+          continue
+        }
         const displayDestination = status === "approved"
           ? destinationForMedia(memorial.id, item.displayKey)
           : `quarantine/${memorial.id}/display/${filename}`
@@ -352,7 +391,7 @@ export async function POST(req: NextRequest, context: RouteContext) {
     } catch (promotionError) {
       console.error("Contribution media finalization failed:", promotionError)
       await Promise.allSettled(
-        [...finalDisplayKeys, ...finalOriginalKeys].map(deleteR2Object)
+        [...new Set([...finalDisplayKeys, ...finalOriginalKeys])].map(deleteR2Object)
       )
       await Promise.allSettled(
         verifiedMedia.map((item) => releaseMemorialStorage(admin, memorial.id, item.originalKey))
@@ -373,7 +412,7 @@ export async function POST(req: NextRequest, context: RouteContext) {
         .maybeSingle()
       if (!existingMedia || existingMedia.media_type !== "image") {
         await Promise.allSettled(
-          [...finalDisplayKeys, ...finalOriginalKeys].map(deleteR2Object)
+          [...new Set([...finalDisplayKeys, ...finalOriginalKeys])].map(deleteR2Object)
         )
         return NextResponse.json({ error: "The selected memorial photograph was not found." }, { status: 400 })
       }
@@ -425,7 +464,7 @@ export async function POST(req: NextRequest, context: RouteContext) {
     if (insertError || !insertedMemory) {
       console.error("Memory submission error:", insertError)
       await Promise.allSettled(
-        [...finalDisplayKeys, ...finalOriginalKeys].map(deleteR2Object)
+        [...new Set([...finalDisplayKeys, ...finalOriginalKeys])].map(deleteR2Object)
       )
       await Promise.allSettled(
         verifiedMedia.map((item) => releaseMemorialStorage(admin, memorial.id, item.originalKey))
@@ -442,7 +481,7 @@ export async function POST(req: NextRequest, context: RouteContext) {
       ))
     } catch (storageError) {
       await admin.from("memories").delete().eq("id", insertedMemory.id)
-      await Promise.allSettled([...finalDisplayKeys, ...finalOriginalKeys].map(deleteR2Object))
+      await Promise.allSettled([...new Set([...finalDisplayKeys, ...finalOriginalKeys])].map(deleteR2Object))
       await Promise.allSettled(
         verifiedMedia.map((item) => releaseMemorialStorage(admin, memorial.id, item.originalKey))
       )
@@ -458,6 +497,7 @@ export async function POST(req: NextRequest, context: RouteContext) {
         caption: `Shared by ${input.author_name}`,
         approx_year: approxYear,
         album: "Community Memories",
+        source_memory_id: insertedMemory.id,
       }))
       const { error: galleryError } = await admin.from("media_items").insert(rows)
       if (galleryError) console.error("Approved contribution gallery sync failed:", galleryError)

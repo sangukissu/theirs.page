@@ -54,6 +54,8 @@ const MAX_MEMORIAL_AUDIO_BYTES = 50 * 1024 * 1024
 const MAX_MEMORIAL_VIDEO_BYTES = 100 * 1024 * 1024
 
 function extensionForContentType(contentType: string): string {
+  if (contentType === "image/heic") return "heic"
+  if (contentType === "image/heif") return "heif"
   if (contentType === "image/png") return "png"
   if (contentType === "image/webp") return "webp"
   return "jpg"
@@ -96,6 +98,8 @@ function resolveContentType(filename: string, mime: string): string {
   if (lower.endsWith(".png")) return "image/png"
   if (lower.endsWith(".webp")) return "image/webp"
   if (lower.endsWith(".gif")) return "image/gif"
+  if (lower.endsWith(".heic")) return "image/heic"
+  if (lower.endsWith(".heif")) return "image/heif"
   if (lower.endsWith(".mp3")) return "audio/mpeg"
   if (lower.endsWith(".wav")) return "audio/wav"
   if (lower.endsWith(".m4a")) return "audio/m4a"

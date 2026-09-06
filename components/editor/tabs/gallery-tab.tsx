@@ -23,6 +23,7 @@ import {
 } from "lucide-react"
 import { UpgradeBanner } from "../upgrade-banner"
 import { ConfirmDeleteModal } from "../confirm-delete-modal"
+import { TEXT_LIMITS } from "@/lib/validation/text-limits"
 
 export interface EditorMediaItem {
   id: string
@@ -711,6 +712,7 @@ export function GalleryTab({
                   {/* Row 1: Caption */}
                   <input
                     type="text"
+                    maxLength={TEXT_LIMITS.photoCaption}
                     defaultValue={item.caption || ""}
                     onBlur={(e) => onUpdateMedia(item.id, "caption", e.target.value)}
                     placeholder="Add caption (optional)"
@@ -722,6 +724,7 @@ export function GalleryTab({
                     <Folder className="size-3.5 text-primary/70 shrink-0" />
                     <input
                       type="text"
+                      maxLength={TEXT_LIMITS.albumName}
                       list={`album-list-${item.id}`}
                       defaultValue={item.album || ""}
                       onBlur={(e) => onUpdateMedia(item.id, "album", e.target.value)}
@@ -741,6 +744,7 @@ export function GalleryTab({
                       <MapPin className="size-3 text-[#888] shrink-0" />
                       <input
                         type="text"
+                        maxLength={TEXT_LIMITS.location}
                         defaultValue={item.location || ""}
                         onBlur={(e) => onUpdateMedia(item.id, "location", e.target.value)}
                         placeholder="Location"

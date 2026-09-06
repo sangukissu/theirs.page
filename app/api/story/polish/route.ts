@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server"
 import { GoogleGenAI } from "@google/genai"
 import { createClient } from "@/utils/supabase/server"
+import { TEXT_LIMITS } from "@/lib/validation/text-limits"
+import { sanitizeAndValidateRichText, validateTextFields } from "@/lib/validation/server-text"
 
 export async function POST(req: NextRequest) {
   try {
@@ -15,7 +17,12 @@ export async function POST(req: NextRequest) {
 
     const { text, personName } = await req.json()
 
-    if (!text || typeof text !== "string" || text.trim().length < 15) {
+    const nameError = validateTextFields({ personName }, { personName: TEXT_LIMITS.personFullName })
+    if (nameError) return NextResponse.json({ error: nameError }, { status: 400 })
+    const source = sanitizeAndValidateRichText(text, TEXT_LIMITS.biography)
+    if (source.error) return NextResponse.json({ error: source.error }, { status: 400 })
+
+    if (source.plainText.length < 15) {
       return NextResponse.json(
         { error: "Please write at least a sentence or two of rough notes to polish." },
         { status: 400 }
@@ -26,7 +33,7 @@ export async function POST(req: NextRequest) {
     if (!geminiKey) {
       // Fallback: gentle formatting without AI
       return NextResponse.json({
-        polishedText: text.trim(),
+        polishedText: source.html,
       })
     }
 
@@ -35,7 +42,7 @@ export async function POST(req: NextRequest) {
 A grieving family member has written rough notes or a story about ${personName || "their loved one"}:
 
 """
-${text}
+${source.html}
 """
 
 Rules:
@@ -57,16 +64,20 @@ Rules:
       response.candidates?.[0]?.content?.parts?.find((part) => "text" in part)?.text
 
     if (!responseText) {
-      return NextResponse.json({ polishedText: text })
+      return NextResponse.json({ polishedText: source.html })
     }
 
     const cleanedHtml = responseText
       .replace(/```html/gi, "")
       .replace(/```/g, "")
       .trim()
+    const polished = sanitizeAndValidateRichText(cleanedHtml, TEXT_LIMITS.biography)
+    if (polished.error) {
+      return NextResponse.json({ polishedText: source.html })
+    }
 
     return NextResponse.json({
-      polishedText: cleanedHtml,
+      polishedText: polished.html,
     })
   } catch (err: any) {
     console.error("Story polish error:", err)

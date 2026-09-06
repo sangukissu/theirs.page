@@ -23,6 +23,7 @@ import { getMemorialPinCookieName, verifyPinAccessToken } from "@/lib/security/p
 import { checkDurableRateLimit } from "@/lib/turnstile"
 import type { ContributionSettings } from "@/types/theirs"
 import { isStorageQuotaError, releaseMemorialStorage, reserveMemorialStorage } from "@/lib/storage-quota"
+import { transformImage } from "@/lib/cloudflare-images"
 
 const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
 const MAX_IMAGE_EDGE = 12_000
@@ -39,6 +40,8 @@ function getClientIp(req: NextRequest): string {
 }
 
 function extensionForMime(mime: string): string {
+  if (mime === "image/heic") return "heic"
+  if (mime === "image/heif") return "heif"
   if (mime === "image/png") return "png"
   if (mime === "image/webp") return "webp"
   if (mime === "audio/mpeg") return "mp3"
@@ -88,6 +91,8 @@ function resolveContentType(filename: string, mime: string): string {
   if (lower.endsWith(".png")) return "image/png"
   if (lower.endsWith(".webp")) return "image/webp"
   if (lower.endsWith(".gif")) return "image/gif"
+  if (lower.endsWith(".heic")) return "image/heic"
+  if (lower.endsWith(".heif")) return "image/heif"
   if (lower.endsWith(".mp3")) return "audio/mpeg"
   if (lower.endsWith(".wav")) return "audio/wav"
   if (lower.endsWith(".m4a")) return "audio/m4a"
@@ -409,7 +414,20 @@ export async function POST(req: NextRequest) {
       let displayBuffer = buffer
       let safety = requireHumanMediaReview("Audio or video is held for caretaker approval; automated media analysis was not run.")
       if (validation.mediaType === "image") {
-        dimensions = getImageDimensions(buffer, validation.detectedMime)
+        const isHeic = validation.detectedMime === "image/heic" || validation.detectedMime === "image/heif"
+        try {
+          displayBuffer = isHeic
+            ? await transformImage(buffer, { format: "image/webp", quality: 85 })
+            : Buffer.from(stripExifAndGps(buffer, validation.detectedMime))
+        } catch (sanitizationError) {
+          console.warn("Contribution image sanitization rejected:", sanitizationError)
+          return NextResponse.json(
+            { error: "We could not safely prepare this photograph. Please export it as a new JPEG and try again." },
+            { status: 400 }
+          )
+        }
+        const displayMime = isHeic ? "image/webp" : validation.detectedMime
+        dimensions = getImageDimensions(displayBuffer, displayMime)
         if (
           !dimensions ||
           dimensions.width < 1 ||
@@ -423,26 +441,20 @@ export async function POST(req: NextRequest) {
             { status: 400 }
           )
         }
-
-        try {
-          displayBuffer = Buffer.from(stripExifAndGps(buffer, validation.detectedMime))
-        } catch (sanitizationError) {
-          console.warn("Contribution image sanitization rejected:", sanitizationError)
-          return NextResponse.json(
-            { error: "We could not safely prepare this photograph. Please export it as a new JPEG and try again." },
-            { status: 400 }
-          )
-        }
-        safety = await screenImageWithGemini(displayBuffer, validation.detectedMime)
+        safety = await screenImageWithGemini(displayBuffer, displayMime)
       }
       const objectId = crypto.randomUUID()
       const extension = extensionForMime(validation.detectedMime)
       const stagingPrefix = `contribution-staging/${resolvedMemorialId}/${contributionIntent.nonce}`
       const originalKey = `${stagingPrefix}/original/${objectId}.${extension}`
-      const displayKey = `${stagingPrefix}/display/${objectId}.${extension}`
+      const displayExtension = validation.detectedMime === "image/heic" || validation.detectedMime === "image/heif"
+        ? "webp"
+        : extension
+      const displayKey = `${stagingPrefix}/display/${objectId}.${displayExtension}`
       const storageContentType = validation.detectedMime === "audio/m4a"
         ? "audio/mp4"
         : validation.detectedMime
+      const displayContentType = displayExtension === "webp" ? "image/webp" : storageContentType
 
       const quotaDb = getSupabaseAdminSafe()
       if (!quotaDb) {
@@ -451,7 +463,7 @@ export async function POST(req: NextRequest) {
       try {
         await reserveMemorialStorage(quotaDb, resolvedMemorialId, originalKey, buffer.length)
         await putR2Object(originalKey, buffer, storageContentType, "private, no-store")
-        await putR2Object(displayKey, displayBuffer, storageContentType, "private, no-store")
+        await putR2Object(displayKey, displayBuffer, displayContentType, "private, no-store")
       } catch (storageError) {
         await Promise.allSettled([
           deleteR2Object(originalKey),

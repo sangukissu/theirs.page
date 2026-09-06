@@ -150,6 +150,7 @@ export interface MediaItem {
   order_index: number
   album?: string | null
   is_pinned?: boolean
+  source_memory_id?: string | null
   created_at: string
 }
 

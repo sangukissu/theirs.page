@@ -3,6 +3,7 @@
 import { useState } from "react"
 import { Upload, Image as ImageIcon, CheckCircle2, AlertCircle } from "lucide-react"
 import { PortraitPlaceholder } from "@/components/memorial/portrait-placeholder"
+import { TEXT_LIMITS } from "@/lib/validation/text-limits"
 
 interface IdentityTabProps {
   memorialId: string
@@ -175,6 +176,7 @@ export function IdentityTab({
           <input
             type="text"
             required
+            maxLength={TEXT_LIMITS.personFullName}
             value={fullName}
             onChange={(e) => onChange("full_name", e.target.value)}
             placeholder="e.g. Robert Edward Carter"
@@ -188,6 +190,7 @@ export function IdentityTab({
           </label>
           <input
             type="text"
+            maxLength={TEXT_LIMITS.preferredName}
             value={preferredName}
             onChange={(e) => onChange("preferred_name", e.target.value)}
             placeholder="e.g. Bob, Nana"
@@ -230,6 +233,7 @@ export function IdentityTab({
           </label>
           <input
             type="text"
+            maxLength={TEXT_LIMITS.location}
             value={location}
             onChange={(e) => onChange("location", e.target.value)}
             placeholder="e.g. Devon, England"
@@ -248,6 +252,7 @@ export function IdentityTab({
         </div>
         <textarea
           rows={2}
+          maxLength={TEXT_LIMITS.headline}
           value={headline}
           onChange={(e) => onChange("headline", e.target.value)}
           placeholder="e.g. “He could fix almost anything with a brass gear and an hour of quiet.”"

@@ -3,6 +3,7 @@
 import { useState } from "react"
 import { Sparkles, AlertCircle } from "lucide-react"
 import { RichStoryEditor } from "../rich-story-editor"
+import { TEXT_LIMITS } from "@/lib/validation/text-limits"
 
 interface StoryTabProps {
   fullName: string
@@ -91,6 +92,7 @@ export function StoryTab({
         <RichStoryEditor
           value={biography}
           onChange={onChange}
+          maxPlainTextLength={TEXT_LIMITS.biography}
           placeholder={`Write ${firstName}’s story here...\n\ne.g. ${firstName} was born during the autumn of 1948, the younger of two brothers raised on the edge of the Devon moors. They spent fifty years repairing antique clocks on the high street, but their true joy was Sunday afternoon tea in the garden...`}
         />
       </div>
