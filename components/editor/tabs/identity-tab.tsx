@@ -38,22 +38,37 @@ export function IdentityTab({
     setUploadError(null)
 
     try {
-      const formData = new FormData()
-      formData.append("file", file)
-      formData.append("folder", "portraits")
-      formData.append("memorialId", memorialId)
-
-      const uploadRes = await fetch("/api/r2/upload", {
+      // 1. Request presigned upload URL from server
+      const presignedRes = await fetch("/api/r2/presigned-upload-url", {
         method: "POST",
-        body: formData,
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          filename: file.name,
+          contentType: file.type || "image/jpeg",
+          fileSize: file.size,
+          folder: "portraits",
+          memorialId,
+        }),
       })
 
-      const uploadData = await uploadRes.json()
-      if (!uploadRes.ok) {
-        throw new Error(uploadData.error || "Failed to upload photo")
+      const presignedData = await presignedRes.json()
+      if (!presignedRes.ok) {
+        throw new Error(presignedData.error || "Failed to prepare photo upload")
       }
 
-      onChange("portrait_photo_url", uploadData.publicUrl)
+      // 2. Direct browser -> Cloudflare R2 PUT
+      const uploadRes = await fetch(presignedData.uploadUrl, {
+        method: "PUT",
+        headers: {
+          "Content-Type": presignedData.contentType || file.type || "image/jpeg",
+        },
+        body: file,
+      })
+      if (!uploadRes.ok) {
+        throw new Error("Failed to upload photo directly to storage")
+      }
+
+      onChange("portrait_photo_url", presignedData.publicUrl)
     } catch (err: any) {
       console.error("Portrait upload error:", err)
       setUploadError(err.message || "Upload failed")

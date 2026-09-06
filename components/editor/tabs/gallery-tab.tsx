@@ -184,28 +184,42 @@ export function GalleryTab({
     // Single file upload worker
     const uploadSingle = async (item: UploadingFileItem) => {
       try {
-        // 1. Upload to Cloudflare R2
-        const formData = new FormData()
-        formData.append("file", item.file)
-        formData.append("folder", "gallery")
-        formData.append("memorialId", memorialId)
-
-        const uploadRes = await fetch("/api/r2/upload", {
+        // 1. Request presigned upload URL (authenticates, validates quota/MIME/size, generates secure key)
+        const presignedRes = await fetch("/api/r2/presigned-upload-url", {
           method: "POST",
-          body: formData,
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            filename: item.file.name,
+            contentType: item.file.type || "application/octet-stream",
+            fileSize: item.file.size,
+            folder: "gallery",
+            memorialId,
+          }),
         })
-        const uploadData = await uploadRes.json()
-        if (!uploadRes.ok) {
-          throw new Error(uploadData.error || `Failed to upload ${item.name}`)
+        const presignedData = await presignedRes.json()
+        if (!presignedRes.ok) {
+          throw new Error(presignedData.error || `Failed to prepare upload for ${item.name}`)
         }
 
-        // 2. Save record to Supabase
+        // 2. Direct browser -> Cloudflare R2 upload (bypasses Worker memory)
+        const uploadRes = await fetch(presignedData.uploadUrl, {
+          method: "PUT",
+          headers: {
+            "Content-Type": presignedData.contentType || item.file.type || "application/octet-stream",
+          },
+          body: item.file,
+        })
+        if (!uploadRes.ok) {
+          throw new Error(`Failed to upload ${item.name} directly to storage`)
+        }
+
+        // 3. Save record to Supabase
         const dbRes = await fetch(`/api/memorials/${memorialId}/media`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
-            url: uploadData.publicUrl,
-            media_type: uploadData.mediaType,
+            url: presignedData.key,
+            media_type: presignedData.mediaType,
             caption: null,
             approx_year: null,
             album:
@@ -220,10 +234,10 @@ export function GalleryTab({
           throw new Error(dbData.error || `Failed to save ${item.name}`)
         }
 
-        // 3. Immediately load into dashboard UI!
+        // 4. Immediately load into dashboard UI!
         onAddMedia({
           ...dbData.mediaItem,
-          url: uploadData.publicUrl,
+          url: presignedData.publicUrl,
         })
 
         // Clean up preview object URL

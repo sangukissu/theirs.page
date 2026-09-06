@@ -110,11 +110,26 @@ function mapMedia(row: MemorialRow, publicDelivery = false): GalleryItem {
   }
 }
 
+const MEMORIAL_PUBLIC_COLUMNS =
+  "id, slug, owner_id, full_name, preferred_name, birth_year, death_year, location, headline, biography, portrait_photo_url, status, privacy, is_paid, section_settings, contribution_settings, access_pin_hash"
+
+const MEDIA_COLUMNS =
+  "id, caption, media_type, approx_year, location, album, is_pinned, url, poster_url, uploaded_by, tagged_people, order_index, created_at"
+
+const STORY_COLUMNS =
+  "id, author_name, author_relationship, approx_year, created_at, location, story, photo_url, photo_urls"
+
+const TIMELINE_COLUMNS =
+  "id, year, title, description, location, photo_url, order_index, created_at"
+
+const TRIBUTE_COLUMNS =
+  "id, author_name, author_relationship, approx_year, location, story, tribute_type, created_at"
+
 export async function loadGalleryItem(context: MemorialViewContext, mediaId?: string): Promise<GalleryItem | null> {
   if (!mediaId || context.requiresPin) return null
   if (context.identity.isDemo) return DEMO_GALLERY.find((item) => item.id === mediaId) || null
   if (!context.db || !context.memorial?.id) return null
-  const result = await context.db.from("media_items").select("*").eq("memorial_id", context.memorial.id).eq("id", mediaId).maybeSingle()
+  const result = await context.db.from("media_items").select(MEDIA_COLUMNS).eq("memorial_id", context.memorial.id).eq("id", mediaId).maybeSingle()
   const publicDelivery = context.memorial?.status === "published" && context.memorial?.privacy !== "private"
   return result.data ? mapMedia(result.data, publicDelivery) : null
 }
@@ -164,30 +179,43 @@ function mapTimeline(row: MemorialRow, publicDelivery = false): TimelineMileston
 export const getMemorialViewContext = cache(async (slug: string): Promise<MemorialViewContext | null> => {
   if (RESERVED_MEMORIAL_SLUGS.has(slug.toLowerCase())) return null
   const isDemo = slug === "robert-carter"
-  const serverClient = await createClient()
-  const { data: { user } } = await serverClient.auth.getUser().catch(() => ({ data: { user: null } }))
-  let memorial: MemorialRow | null = null
-  let db: SupabaseClient | null = null
   const admin = getSupabaseAdminSafe()
+  let memorial: MemorialRow | null = null
+  let db: SupabaseClient | null = admin
 
   if (admin) {
-    const result = await admin.from("memorials").select("*").eq("slug", slug).maybeSingle()
+    const result = await admin.from("memorials").select(MEMORIAL_PUBLIC_COLUMNS).eq("slug", slug).maybeSingle()
     if (result.data) {
       memorial = result.data
-      db = admin
     }
   }
-  if (!memorial) {
-    const result = await serverClient.from("memorials").select("*").eq("slug", slug).maybeSingle()
+
+  let serverClient: SupabaseClient | null = null
+  if (!memorial && !admin) {
+    serverClient = await createClient()
+    const result = await serverClient.from("memorials").select(MEMORIAL_PUBLIC_COLUMNS).eq("slug", slug).maybeSingle()
     if (result.data) {
       memorial = result.data
       db = serverClient
     }
   }
+
   if (!memorial && !isDemo) return null
 
-  const isOwner = Boolean(user?.id && memorial?.owner_id === user.id)
-  if (memorial && memorial.status !== "published" && !isOwner) return null
+  // Hot path: Published public or unlisted memorials skip auth completely.
+  // Anonymous visitors never incur supabase.auth.getUser() overhead.
+  let isOwner = false
+  const isPublishedPublicOrUnlisted = memorial?.status === "published" && memorial?.privacy !== "private"
+
+  if (!isPublishedPublicOrUnlisted && memorial) {
+    // Only resolve auth when required:
+    // 1. Private memorial with PIN gate
+    // 2. Draft/archived memorial for owner preview
+    if (!serverClient) serverClient = await createClient()
+    const { data: { user } } = await serverClient.auth.getUser().catch(() => ({ data: { user: null } }))
+    isOwner = Boolean(user?.id && memorial.owner_id === user.id)
+    if (memorial.status !== "published" && !isOwner) return null
+  }
 
   const cookieStore = await cookies()
   const pinUnlocked = Boolean(
@@ -200,14 +228,14 @@ export const getMemorialViewContext = cache(async (slug: string): Promise<Memori
   )
   const requiresPin = Boolean(memorial?.privacy === "private" && !isOwner && !pinUnlocked)
   const sections = { ...DEFAULT_SECTIONS, ...(memorial?.section_settings || {}) }
-  let photoCount = DEMO_GALLERY.filter((item) => item.mediaType === "photo").length
+
   let caretakerName: string | null = isDemo ? "Anita Carter" : null
-  if (memorial && db) {
-    const [photoResult, profileResult] = await Promise.all([
-      db.from("media_items").select("id", { count: "exact", head: true }).eq("memorial_id", memorial.id).eq("media_type", "image"),
-      (admin || db).from("user_profiles").select("full_name").eq("user_id", memorial.owner_id).maybeSingle(),
-    ])
-    photoCount = photoResult.count || 0
+  if (memorial?.owner_id && db) {
+    const profileResult = await (admin || db)
+      .from("user_profiles")
+      .select("full_name")
+      .eq("user_id", memorial.owner_id)
+      .maybeSingle()
     caretakerName = profileResult.data?.full_name?.trim() || null
   }
 
@@ -239,7 +267,6 @@ export const getMemorialViewContext = cache(async (slug: string): Promise<Memori
       privacy: memorial?.privacy,
       sectionSettings: sections,
       contributionSettings: memorial?.contribution_settings || null,
-      photoCount,
     },
   }
 })
@@ -284,6 +311,7 @@ export interface BrowseOptions {
   album?: string
   decade?: number
   pageSize?: number
+  includeFacets?: boolean
 }
 
 export async function loadBrowsePage<T>(context: MemorialViewContext, collection: BrowseCollection, options: BrowseOptions = {}): Promise<PagedCollection<T>> {
@@ -295,7 +323,10 @@ export async function loadBrowsePage<T>(context: MemorialViewContext, collection
       const filter = options.filter || "all"
       const albums = Array.from(new Set(DEMO_GALLERY.map((item) => item.album).filter(Boolean))) as string[]
       const filtered = DEMO_GALLERY.filter((item) => (filter === "all" || item.mediaType === filter) && (!options.album || options.album === "all" || item.album === options.album))
-      return { ...demoPage(filtered, cursor, pageSize), facets: { all: DEMO_GALLERY.length, photo: DEMO_GALLERY.filter((item) => item.mediaType === "photo").length, audio: DEMO_GALLERY.filter((item) => item.mediaType === "audio").length, video: DEMO_GALLERY.filter((item) => item.mediaType === "video").length, albums } } as PagedCollection<T>
+      const facets = options.includeFacets
+        ? { all: DEMO_GALLERY.length, photo: DEMO_GALLERY.filter((item) => item.mediaType === "photo").length, audio: DEMO_GALLERY.filter((item) => item.mediaType === "audio").length, video: DEMO_GALLERY.filter((item) => item.mediaType === "video").length, albums }
+        : undefined
+      return { ...demoPage(filtered, cursor, pageSize), ...(facets ? { facets } : {}) } as PagedCollection<T>
     }
     if (collection === "memories") return demoPage(DEMO_STORIES, cursor, pageSize) as PagedCollection<T>
     if (collection === "tributes") return demoPage(DEMO_TRIBUTES, cursor, pageSize) as PagedCollection<T>
@@ -317,7 +348,7 @@ export async function loadBrowsePage<T>(context: MemorialViewContext, collection
       if (options.album && options.album !== "all") next = next.eq("album", options.album)
       return next
     }
-    let query = applyFilters(db.from("media_items").select("*", { count: "exact" }))
+    let query = applyFilters(db.from("media_items").select(MEDIA_COLUMNS, { count: "exact" }))
       .order("is_pinned", { ascending: false })
       .order("order_index", { ascending: true })
       .order("created_at", { ascending: true })
@@ -328,7 +359,7 @@ export async function loadBrowsePage<T>(context: MemorialViewContext, collection
     const total = result.count || 0
     const nextOffset = offset + items.length
     let facets: GalleryFacets | undefined
-    if (offset === 0) {
+    if (options.includeFacets && offset === 0) {
       const countType = (mediaType?: string) => {
         let countQuery = db.from("media_items").select("id", { count: "exact", head: true }).eq("memorial_id", memorialId).lte("created_at", cursor.snapshot)
         if (mediaType) countQuery = countQuery.eq("media_type", mediaType)
@@ -346,12 +377,12 @@ export async function loadBrowsePage<T>(context: MemorialViewContext, collection
         albums: Array.from(new Set((albumResult.data || []).map((row: any) => row.album?.trim()).filter(Boolean))) as string[],
       }
     }
-    return { items, total, hasMore: nextOffset < total, nextCursor: nextOffset < total ? encodeCursor({ ...cursor, offset: nextOffset }) : null, facets } as PagedCollection<T>
+    return { items, total, hasMore: nextOffset < total, nextCursor: nextOffset < total ? encodeCursor({ ...cursor, offset: nextOffset }) : null, ...(facets ? { facets } : {}) } as PagedCollection<T>
   }
 
   if (collection === "memories") {
     const offset = cursor.offset || 0
-    let query = db.from("memories").select("*", { count: "exact" })
+    let query = db.from("memories").select(STORY_COLUMNS, { count: "exact" })
       .eq("memorial_id", memorialId).eq("status", "approved").eq("contribution_type", "story")
       .lte("created_at", cursor.snapshot).order("created_at", { ascending: false }).order("id", { ascending: false })
       .range(offset, offset + pageSize - 1)
@@ -365,7 +396,7 @@ export async function loadBrowsePage<T>(context: MemorialViewContext, collection
 
   if (collection === "timeline") {
     const offset = cursor.offset || 0
-    let query = db.from("timeline_events").select("*", { count: "exact" }).eq("memorial_id", memorialId).lte("created_at", cursor.snapshot)
+    let query = db.from("timeline_events").select(TIMELINE_COLUMNS, { count: "exact" }).eq("memorial_id", memorialId).lte("created_at", cursor.snapshot)
     if (options.decade) query = query.gte("year", options.decade).lt("year", options.decade + 10)
     const result = await query.order("year", { ascending: true }).order("order_index", { ascending: true }).order("id", { ascending: true }).range(offset, offset + pageSize - 1)
     const items = (result.data || []).map((row: MemorialRow) => mapTimeline(row, publicDelivery))
@@ -375,7 +406,7 @@ export async function loadBrowsePage<T>(context: MemorialViewContext, collection
   }
 
   const offset = cursor.offset || 0
-  let memoryQuery = db.from("memories").select("*", { count: "exact" })
+  let memoryQuery = db.from("memories").select(TRIBUTE_COLUMNS, { count: "exact" })
     .eq("memorial_id", memorialId).eq("status", "approved").eq("contribution_type", "tribute")
     .lte("created_at", cursor.snapshot).order("created_at", { ascending: false }).order("id", { ascending: false })
     .range(offset, offset + pageSize - 1)
@@ -396,11 +427,14 @@ export async function loadMemorialHome(context: MemorialViewContext): Promise<Me
   const sections = context.identity.sectionSettings
   const empty = <T,>(): PagedCollection<T> => ({ items: [], total: 0, hasMore: false, nextCursor: null })
   const [media, memories, timeline, tributes] = await Promise.all([
-    sections.gallery === false ? empty<GalleryItem>() : loadBrowsePage<GalleryItem>(context, "gallery", { pageSize: 6 }),
+    sections.gallery === false ? empty<GalleryItem>() : loadBrowsePage<GalleryItem>(context, "gallery", { pageSize: 6, includeFacets: false }),
     sections.stories === false ? empty<StoryItem>() : loadBrowsePage<StoryItem>(context, "memories", { pageSize: 2 }),
     sections.timeline === false ? empty<TimelineMilestone>() : loadBrowsePage<TimelineMilestone>(context, "timeline", { pageSize: context.identity.isDemo ? 3 : 5 }),
     sections.tributes === false ? empty<MemoryItem>() : loadBrowsePage<MemoryItem>(context, "tributes", { pageSize: 2 }),
   ])
+  if (context.identity.photoCount === undefined) {
+    context.identity.photoCount = media.total
+  }
   return { media, memories, timeline, tributes }
 }
 

@@ -27,7 +27,7 @@ export interface MemorialIdentity {
   privacy?: string
   sectionSettings: SectionSettings
   contributionSettings?: ContributionSettings | null
-  photoCount: number
+  photoCount?: number
 }
 
 export interface GalleryFacets {

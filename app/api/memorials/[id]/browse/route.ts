@@ -18,6 +18,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
   const filter: GalleryFilter = ["all", "photo", "audio", "video"].includes(rawFilter) ? rawFilter as GalleryFilter : "all"
   const rawDecade = Number(request.nextUrl.searchParams.get("decade"))
   const decade = Number.isInteger(rawDecade) && rawDecade >= 1000 && rawDecade <= 3000 ? rawDecade : undefined
-  const page = await loadBrowsePage(context, collection, { cursor: request.nextUrl.searchParams.get("cursor"), filter, album: request.nextUrl.searchParams.get("album")?.slice(0, 100) || undefined, decade })
+  const includeFacets = request.nextUrl.searchParams.get("includeFacets") === "true"
+  const page = await loadBrowsePage(context, collection, { cursor: request.nextUrl.searchParams.get("cursor"), filter, album: request.nextUrl.searchParams.get("album")?.slice(0, 100) || undefined, decade, includeFacets })
   return NextResponse.json(page, { headers: { "Cache-Control": context.identity.privacy === "public" && !context.identity.isOwner ? "no-cache" : "private, no-store, max-age=0", "X-Robots-Tag": "noindex, nofollow" } })
 }

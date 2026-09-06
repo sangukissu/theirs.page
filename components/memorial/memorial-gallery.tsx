@@ -323,6 +323,7 @@ export function MemorialGallery({
       const params = new URLSearchParams({ collection: "gallery", type: nextFilter })
       if (nextAlbum !== "all") params.set("album", nextAlbum)
       if (cursor) params.set("cursor", cursor)
+      else params.set("includeFacets", "true")
       const response = await fetch(`/api/memorials/${browseSlug}/browse?${params.toString()}`, { cache: "no-store" })
       if (!response.ok) throw new Error("We couldn't load the gallery right now.")
       const page = await response.json() as PagedCollection<GalleryItem>

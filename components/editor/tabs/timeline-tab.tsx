@@ -80,18 +80,38 @@ export function TimelineTab({
 
     setIsUploadingPhoto(true)
     try {
-      const formData = new FormData()
-      formData.append("file", file)
-      formData.append("folder", "timeline")
-      formData.append("memorialId", memorialId)
-
-      const res = await fetch("/api/r2/upload", {
+      // 1. Request presigned upload URL from server
+      const presignedRes = await fetch("/api/r2/presigned-upload-url", {
         method: "POST",
-        body: formData,
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          filename: file.name,
+          contentType: file.type || "image/jpeg",
+          fileSize: file.size,
+          folder: "timeline",
+          memorialId,
+        }),
       })
-      const data = await res.json()
-      if (res.ok && data.publicUrl) {
-        setPhotoUrl(data.publicUrl)
+
+      const presignedData = await presignedRes.json()
+      if (!presignedRes.ok) {
+        throw new Error(presignedData.error || "Failed to prepare photo upload")
+      }
+
+      // 2. Direct browser -> Cloudflare R2 PUT
+      const uploadRes = await fetch(presignedData.uploadUrl, {
+        method: "PUT",
+        headers: {
+          "Content-Type": presignedData.contentType || file.type || "image/jpeg",
+        },
+        body: file,
+      })
+      if (!uploadRes.ok) {
+        throw new Error("Failed to upload photo directly to storage")
+      }
+
+      if (presignedData.publicUrl) {
+        setPhotoUrl(presignedData.publicUrl)
       }
     } catch (err) {
       console.error("Timeline photo upload failed:", err)

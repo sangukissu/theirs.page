@@ -19,7 +19,7 @@ export default async function GalleryPage({ params, searchParams }: { params: Pr
   const filter: GalleryFilter = ["photo", "audio", "video"].includes(query.type || "") ? query.type as GalleryFilter : "all"
   const album = query.album?.slice(0, 100) || "all"
   const [page, selectedItem] = await Promise.all([
-    loadBrowsePage<GalleryItem>(context, "gallery", { filter, album }),
+    loadBrowsePage<GalleryItem>(context, "gallery", { filter, album, includeFacets: true }),
     loadGalleryItem(context, query.media),
   ])
   return (

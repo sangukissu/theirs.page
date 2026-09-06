@@ -50,6 +50,35 @@ export async function getR2ObjectStream(key: string, range?: string | null) {
   };
 }
 
+export async function getR2ObjectWebStream(key: string) {
+  const client = getR2Client();
+  const command = new GetObjectCommand({
+    Bucket: getR2BucketName(),
+    Key: key,
+  });
+  const result = await client.send(command);
+  if (!result.Body) return null;
+
+  const body = result.Body as any;
+  let stream: ReadableStream<Uint8Array>;
+  if (typeof body.transformToWebStream === "function") {
+    stream = body.transformToWebStream();
+  } else if (body instanceof ReadableStream) {
+    stream = body as ReadableStream<Uint8Array>;
+  } else if (typeof (ReadableStream as any).from === "function") {
+    stream = (ReadableStream as any).from(body);
+  } else {
+    stream = new Response(body).body as ReadableStream<Uint8Array>;
+  }
+
+  return {
+    stream,
+    contentType: result.ContentType || "application/octet-stream",
+    contentLength: result.ContentLength,
+    lastModified: result.LastModified,
+  };
+}
+
 export async function getR2ObjectBuffer(key: string) {
   const client = getR2Client()
   const result = await client.send(

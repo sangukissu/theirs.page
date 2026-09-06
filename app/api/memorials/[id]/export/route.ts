@@ -1,40 +1,62 @@
 import { NextRequest, NextResponse } from "next/server"
-import JSZip from "jszip"
+import { downloadZip } from "client-zip"
 import { createClient } from "@/utils/supabase/server"
 import { getSupabaseAdminSafe } from "@/utils/supabase/admin"
 import { assertMemorialAdmin } from "@/lib/memorial-auth"
 import { canAccessFeature } from "@/lib/paywall"
-import { getR2ObjectBuffer } from "@/lib/r2"
+import { extractManagedR2Key, getR2ObjectWebStream } from "@/lib/r2"
 
 interface RouteContext {
   params: Promise<{ id: string }>
 }
 
-function extractR2Key(url: string): string | null {
-  if (!url) return null
-  const match = url.match(/(memorials\/[^\s?#]+)/)
-  return match ? match[1] : null
+function getMediaExtension(url: string, defaultExt: string): string {
+  try {
+    const cleanUrl = url.split("?")[0]
+    const ext = cleanUrl.split(".").pop()?.toLowerCase() || ""
+    if (["jpg", "jpeg", "png", "webp", "gif", "mp3", "wav", "m4a", "ogg", "mp4", "webm", "mov"].includes(ext)) {
+      return ext === "jpeg" ? "jpg" : ext
+    }
+  } catch {
+    // fallback to default
+  }
+  return defaultExt
 }
 
-async function fetchMediaBuffer(url: string): Promise<Buffer | null> {
+async function fetchMediaStream(url: string): Promise<{
+  stream: ReadableStream<Uint8Array>
+  contentLength?: number
+  lastModified?: Date
+} | null> {
   try {
-    const r2Key = extractR2Key(url)
+    const r2Key = extractManagedR2Key(url)
     if (r2Key) {
-      const r2Obj = await getR2ObjectBuffer(r2Key)
-      if (r2Obj?.body) return r2Obj.body
+      const r2Obj = await getR2ObjectWebStream(r2Key)
+      if (r2Obj) {
+        return {
+          stream: r2Obj.stream,
+          contentLength: r2Obj.contentLength,
+          lastModified: r2Obj.lastModified,
+        }
+      }
     }
 
     if (url.startsWith("http://") || url.startsWith("https://")) {
-      const res = await fetch(url, { signal: AbortSignal.timeout(10000) })
-      if (res.ok) {
-        const ab = await res.arrayBuffer()
-        return Buffer.from(ab)
+      const res = await fetch(url, { signal: AbortSignal.timeout(15000) })
+      if (res.ok && res.body) {
+        const cl = Number(res.headers.get("content-length"))
+        const lm = res.headers.get("last-modified")
+        return {
+          stream: res.body as ReadableStream<Uint8Array>,
+          contentLength: Number.isSafeInteger(cl) && cl > 0 ? cl : undefined,
+          lastModified: lm ? new Date(lm) : undefined,
+        }
       }
     }
 
     return null
   } catch (err) {
-    console.warn(`Could not fetch media binary for export from "${url}":`, err)
+    console.warn(`Could not fetch media stream for export from "${url}":`, err)
     return null
   }
 }
@@ -192,72 +214,74 @@ Thank you for trusting Theirs to help preserve ${memorial.full_name}'s memory.
 ================================================================================
 `
 
-    // 3. Assemble JSZip archive
-    const zip = new JSZip()
-
-    // Add manifest and README
-    zip.file("archive-manifest.json", JSON.stringify(archiveManifest, null, 2))
-    zip.file("README.txt", readmeText)
-
-    // Folders
-    const photosFolder = zip.folder("photos")
-    const audioFolder = zip.folder("audio")
-    const videoFolder = zip.folder("video")
-
-    // Download and bundle all media items
     const mediaItems = mediaRes.data || []
-    for (let i = 0; i < mediaItems.length; i++) {
-      const item = mediaItems[i]
-      if (!item.url) continue
 
-      const buffer = await fetchMediaBuffer(item.url)
-      if (!buffer) continue
+    // 3. Web Streams sequential generator (STORE/uncompressed for fast streaming & low memory)
+    async function* generateArchiveEntries() {
+      // Add manifest and README
+      yield {
+        name: "archive-manifest.json",
+        input: JSON.stringify(archiveManifest, null, 2),
+        lastModified: new Date(),
+      }
 
-      const cleanCaption = (item.caption || "media")
-        .replace(/[^a-zA-Z0-9_-]/g, "_")
-        .substring(0, 30)
-      const urlExt = item.url.split("?")[0].split(".").pop()?.toLowerCase() || ""
-      const isExtValid = ["jpg", "jpeg", "png", "webp", "gif", "mp3", "wav", "m4a", "mp4", "mov"].includes(urlExt)
+      yield {
+        name: "README.txt",
+        input: readmeText,
+        lastModified: new Date(),
+      }
 
-      if (item.media_type === "image" && photosFolder) {
-        const ext = isExtValid ? urlExt : "jpg"
+      // Portrait photo if configured
+      if (memorial.portrait_photo_url) {
+        const portraitMedia = await fetchMediaStream(memorial.portrait_photo_url)
+        if (portraitMedia) {
+          const ext = getMediaExtension(memorial.portrait_photo_url, "jpg")
+          yield {
+            name: `photos/000_portrait_photo.${ext}`,
+            input: portraitMedia.stream,
+            size: portraitMedia.contentLength,
+            lastModified: portraitMedia.lastModified || new Date(),
+          }
+        }
+      }
+
+      // Sequentially stream media files directly from R2 without accumulating in RAM
+      for (let i = 0; i < mediaItems.length; i++) {
+        const item = mediaItems[i]
+        if (!item.url) continue
+
+        const media = await fetchMediaStream(item.url)
+        if (!media) continue
+
+        const cleanCaption = (item.caption || "media")
+          .replace(/[^a-zA-Z0-9_-]/g, "_")
+          .substring(0, 30)
+        const defaultExt = item.media_type === "video" ? "mp4" : item.media_type === "audio" ? "mp3" : "jpg"
+        const ext = getMediaExtension(item.url, defaultExt)
         const filename = `${String(i + 1).padStart(3, "0")}_${cleanCaption}.${ext}`
-        photosFolder.file(filename, buffer)
-      } else if (item.media_type === "audio" && audioFolder) {
-        const ext = isExtValid ? urlExt : "mp3"
-        const filename = `${String(i + 1).padStart(3, "0")}_${cleanCaption}.${ext}`
-        audioFolder.file(filename, buffer)
-      } else if (item.media_type === "video" && videoFolder) {
-        const ext = isExtValid ? urlExt : "mp4"
-        const filename = `${String(i + 1).padStart(3, "0")}_${cleanCaption}.${ext}`
-        videoFolder.file(filename, buffer)
+
+        let folder = "photos"
+        if (item.media_type === "audio") folder = "audio"
+        else if (item.media_type === "video") folder = "video"
+
+        yield {
+          name: `${folder}/${filename}`,
+          input: media.stream,
+          size: media.contentLength,
+          lastModified: media.lastModified || new Date(),
+        }
       }
     }
-
-    // Also download portrait if available
-    if (memorial.portrait_photo_url && photosFolder) {
-      const portraitBuffer = await fetchMediaBuffer(memorial.portrait_photo_url)
-      if (portraitBuffer) {
-        photosFolder.file("000_portrait_photo.jpg", portraitBuffer)
-      }
-    }
-
-    // 4. Generate the ZIP file binary
-    const zipBuffer = await zip.generateAsync({
-      type: "nodebuffer",
-      compression: "DEFLATE",
-      compressionOptions: { level: 6 },
-    })
 
     const zipFilename = `${memorial.slug || "memorial"}-family-archive-${dateStamp}.zip`
+    const zipStreamResponse = downloadZip(generateArchiveEntries())
 
-    return new Response(zipBuffer as any, {
+    return new Response(zipStreamResponse.body, {
       status: 200,
       headers: {
         "Content-Type": "application/zip",
         "Content-Disposition": `attachment; filename="${zipFilename}"`,
-        "Content-Length": String(zipBuffer.length),
-        "Cache-Control": "no-store",
+        "Cache-Control": "private, no-store",
       },
     })
   } catch (err: any) {
