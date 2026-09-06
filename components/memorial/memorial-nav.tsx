@@ -51,7 +51,17 @@ export function MemorialNav({
 
   const handleShare = async () => {
     const url = typeof window !== "undefined" ? window.location.href : `https://theirs.page/${slug}`
-    if (navigator.clipboard) {
+    const shareMessage = `Remembering ${firstName}. We've gathered stories, photographs, and memories in their honor. Please visit to remember them with us or share a memory: ${url}`
+
+    if (typeof navigator !== "undefined" && navigator.share) {
+      await navigator
+        .share({
+          title: `${fullName} — Theirs`,
+          text: shareMessage,
+          url,
+        })
+        .catch(() => undefined)
+    } else if (navigator.clipboard) {
       await navigator.clipboard.writeText(url)
       setCopied(true)
       setTimeout(() => setCopied(false), 2000)

@@ -6,7 +6,10 @@ import type { TimelineMilestone } from "@/components/memorial/life-timeline"
 
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
   const { slug } = await params
-  return { alternates: { canonical: `/${slug}/timeline` } }
+  return {
+    title: "Life Timeline & Chapters",
+    alternates: { canonical: `https://theirs.page/${slug}/timeline` },
+  }
 }
 
 export default async function TimelinePage({ params }: { params: Promise<{ slug: string }> }) {

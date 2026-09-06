@@ -347,47 +347,73 @@ export function GalleryTab({
 
 
         {/* Quota & Feature Indicator Bar */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 rounded-2xl bg-white p-4 sm:p-6 border border-black/[0.05]">
-          <div className="flex items-center gap-2 flex-wrap">
-            <span className="text-xs font-medium text-[#181925]">Formats:</span>
-            <span className="inline-flex items-center gap-1 text-[11px] px-2.5 py-1 rounded-full bg-neutral-100 text-[#444] border border-black/[0.05]">
-              <ImageIcon className="size-3 text-[#666]" /> Photos
-            </span>
-            <span
-              className={`inline-flex items-center gap-1 text-[11px] px-2.5 py-1 rounded-full border ${isPaid
-                ? "bg-neutral-100 text-[#444] border-black/[0.05]"
-                : "bg-amber-50/70 text-amber-800 border-amber-200"
-                }`}
-            >
-              <Volume2 className="size-3 text-primary" /> Audio Notes{" "}
-              {!isPaid && <Lock className="size-2.5 text-amber-700" />}
-            </span>
-            <span
-              className={`inline-flex items-center gap-1 text-[11px] px-2.5 py-1 rounded-full border ${isPaid
-                ? "bg-neutral-100 text-[#444] border-black/[0.04]"
-                : "bg-amber-50/70 text-amber-800 border-amber-200"
-                }`}
-            >
-              <Video className="size-3 text-primary" /> Video Clips{" "}
-              {!isPaid && <Lock className="size-2.5 text-amber-700" />}
-            </span>
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 sm:gap-4 rounded-2xl bg-white p-3.5 sm:p-4.5 border border-black/[0.06] shadow-2xs">
+          {/* Top row on mobile: Header label + Quota badge */}
+          <div className="flex items-center justify-between sm:justify-start gap-2">
+            <span className="text-xs font-medium text-[#181925] shrink-0">Accepted Media</span>
+
+            {/* Mobile Quota Badge */}
+            <div className="sm:hidden">
+              {isPaid ? (
+                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 text-[10px] font-medium border border-emerald-200">
+                  <Sparkles className="size-2.5" /> Pro Plan · Unlimited
+                </span>
+              ) : (
+                <span
+                  className={`px-2 py-0.5 rounded-full text-[10px] font-mono font-medium border ${isPhotoQuotaReached
+                    ? "bg-rose-50 text-rose-700 border-rose-200"
+                    : "bg-neutral-100 text-[#555] border-black/[0.06]"
+                    }`}
+                >
+                  {photoCount} / 5 Photos Used
+                </span>
+              )}
+            </div>
           </div>
 
-          <div className="flex items-center gap-2">
-            {isPaid ? (
-              <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-emerald-50 text-emerald-700 text-xs font-medium border border-emerald-200">
-                <Sparkles className="size-3" /> Pro Plan · Unlimited
+          {/* Formats Pills Row */}
+          <div className="flex items-center justify-between sm:justify-end gap-2 flex-wrap sm:flex-nowrap pt-1 sm:pt-0 border-t border-black/[0.04] sm:border-t-0">
+            <div className="flex items-center gap-1.5 flex-wrap">
+              <span className="inline-flex items-center gap-1 text-[11px] px-2.5 py-0.5 sm:py-1 rounded-full bg-neutral-100/90 text-[#444] border border-black/[0.05] font-medium">
+                <ImageIcon className="size-3 text-[#666]" /> Photos
               </span>
-            ) : (
               <span
-                className={`px-2.5 py-1 rounded-full text-xs font-mono font-medium border ${isPhotoQuotaReached
-                  ? "bg-rose-50 text-rose-700 border-rose-200"
-                  : "bg-neutral-100 text-[#555] border-black/[0.06]"
+                className={`inline-flex items-center gap-1 text-[11px] px-2.5 py-0.5 sm:py-1 rounded-full border font-medium ${isPaid
+                  ? "bg-neutral-100/90 text-[#444] border-black/[0.05]"
+                  : "bg-amber-50/70 text-amber-900 border-amber-200/90"
                   }`}
               >
-                {photoCount} / 5 Free Photos Used
+                <Volume2 className="size-3 text-primary" /> Audio Notes{" "}
+                {!isPaid && <Lock className="size-2.5 text-amber-700" />}
               </span>
-            )}
+              <span
+                className={`inline-flex items-center gap-1 text-[11px] px-2.5 py-0.5 sm:py-1 rounded-full border font-medium ${isPaid
+                  ? "bg-neutral-100/90 text-[#444] border-black/[0.04]"
+                  : "bg-amber-50/70 text-amber-900 border-amber-200/90"
+                  }`}
+              >
+                <Video className="size-3 text-primary" /> Video Clips{" "}
+                {!isPaid && <Lock className="size-2.5 text-amber-700" />}
+              </span>
+            </div>
+
+            {/* Desktop Quota Badge */}
+            <div className="hidden sm:block shrink-0">
+              {isPaid ? (
+                <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-emerald-50 text-emerald-700 text-xs font-medium border border-emerald-200">
+                  <Sparkles className="size-3" /> Pro Plan · Unlimited
+                </span>
+              ) : (
+                <span
+                  className={`px-2.5 py-1 rounded-full text-xs font-mono font-medium border ${isPhotoQuotaReached
+                    ? "bg-rose-50 text-rose-700 border-rose-200"
+                    : "bg-neutral-100 text-[#555] border-black/[0.06]"
+                    }`}
+                >
+                  {photoCount} / 5 Free Photos Used
+                </span>
+              )}
+            </div>
           </div>
         </div>
 

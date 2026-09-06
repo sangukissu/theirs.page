@@ -6,7 +6,10 @@ import type { MemoryItem } from "@/components/memorial/memories-stream"
 
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
   const { slug } = await params
-  return { alternates: { canonical: `/${slug}/tributes` } }
+  return {
+    title: "Tributes & Condolences",
+    alternates: { canonical: `https://theirs.page/${slug}/tributes` },
+  }
 }
 
 export default async function TributesPage({ params }: { params: Promise<{ slug: string }> }) {

@@ -543,10 +543,10 @@ export function MemorialEditorClient({
       )}
 
       {/* 2. Responsive Editor Body (Sidebar + Content Canvas) */}
-      <div className="flex-1 flex flex-col md:flex-row max-w-5xl w-full mx-auto px-4 sm:px-6 py-6 sm:py-10 gap-8 lg:gap-12 items-start justify-center">
+      <div className="flex-1 flex flex-col md:flex-row max-w-5xl w-full mx-auto px-3.5 sm:px-6 pt-1.5 pb-6 sm:py-10 gap-4 sm:gap-8 lg:gap-12 items-start justify-center">
 
         {/* Navigation Tabs (Sticky horizontal on Mobile, Sticky Vertical Sidebar on Desktop) */}
-        <aside className="w-full md:w-56 shrink-0 flex flex-col gap-1 sticky top-16 md:top-24 z-30 bg-[#fafafb]/95 md:bg-transparent backdrop-blur-xs md:backdrop-blur-none py-2 md:py-0 self-start">
+        <aside className="w-full md:w-56 shrink-0 flex flex-col gap-1 sticky top-16 md:top-24 z-30 bg-[#fafafb]/95 md:bg-transparent backdrop-blur-xs md:backdrop-blur-none pt-0.5 pb-1 md:py-0 self-start">
           <div className="flex md:flex-col overflow-x-auto no-scrollbar gap-1 p-1 rounded-2xl bg-white md:bg-transparent border md:border-none border-black/[0.06]">
             {tabs.map((tab) => {
               const Icon = tab.icon

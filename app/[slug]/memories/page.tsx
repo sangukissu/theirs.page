@@ -6,7 +6,10 @@ import type { StoryItem } from "@/components/memorial/life-stories"
 
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
   const { slug } = await params
-  return { alternates: { canonical: `/${slug}/memories` } }
+  return {
+    title: "Stories & Remembrances",
+    alternates: { canonical: `https://theirs.page/${slug}/memories` },
+  }
 }
 
 export default async function MemoriesPage({ params }: { params: Promise<{ slug: string }> }) {

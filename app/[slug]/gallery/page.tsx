@@ -7,7 +7,10 @@ import type { GalleryFilter } from "@/types/memorial-view"
 
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
   const { slug } = await params
-  return { alternates: { canonical: `/${slug}/gallery` } }
+  return {
+    title: "Photographs & Media Gallery",
+    alternates: { canonical: `https://theirs.page/${slug}/gallery` },
+  }
 }
 
 export default async function GalleryPage({ params, searchParams }: { params: Promise<{ slug: string }>; searchParams: Promise<{ type?: string; album?: string; media?: string }> }) {
