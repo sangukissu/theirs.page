@@ -31,7 +31,6 @@ interface MemorialSummary {
   id: string
   slug: string
   full_name: string
-  preferred_name?: string | null
   birth_year?: number | null
   death_year?: number | null
   headline?: string | null
@@ -483,9 +482,6 @@ export function TheirsDashboardClient({
                         <h3 className="text-base sm:text-lg font-heading font-medium text-[#181925] group-hover:text-primary transition-colors">
                           {m.full_name}
                         </h3>
-                        {m.preferred_name && (
-                          <span className="text-xs text-[#888]">“{m.preferred_name}”</span>
-                        )}
                         <span
                           className={`px-2 py-0.5 rounded-full text-[10px] font-mono uppercase font-semibold ${m.status === "published"
                             ? "bg-emerald-50 text-emerald-700 border border-emerald-200"
@@ -494,11 +490,7 @@ export function TheirsDashboardClient({
                         >
                           {m.status}
                         </span>
-                        {m.is_paid ? (
-                          <span className="px-2 py-0.5 rounded-full text-[10px] font-mono uppercase font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
-                            Complete
-                          </span>
-                        ) : (
+                        {!m.is_paid && (
                           <span className="px-2 py-0.5 rounded-full text-[10px] font-mono uppercase font-semibold bg-neutral-100 text-[#666] border border-black/[0.08]">
                             Free Tier
                           </span>
@@ -507,8 +499,6 @@ export function TheirsDashboardClient({
 
                       <div className="flex items-center gap-2 text-xs text-[#71717a] font-mono">
                         <span>{yearSpan}</span>
-                        <span>·</span>
-                        <span className="hover:underline text-primary">theirs.page/{m.slug}</span>
                       </div>
                     </div>
                   </div>

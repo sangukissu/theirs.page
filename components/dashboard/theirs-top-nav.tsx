@@ -80,7 +80,7 @@ export function TheirsTopNav({ userEmail }: TheirsTopNavProps) {
           <Link
             href="/dashboard/restore"
             prefetch={true}
-            className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full font-medium transition-colors ${isRestoreActive
+            className={`hidden md:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full font-medium transition-colors ${isRestoreActive
               ? "bg-black/[0.05] text-[#181925]"
               : "text-[#71717a] hover:text-[#181925] hover:bg-black/[0.03]"
               }`}

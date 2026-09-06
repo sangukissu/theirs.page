@@ -3,6 +3,7 @@
 import { useState } from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
+import Image from "next/image"
 import { CheckCircle2, AlertCircle, ArrowRight, Heart, Shield, Loader2, LogOut } from "lucide-react"
 
 interface InvitationAcceptClientProps {
@@ -63,7 +64,7 @@ export function InvitationAcceptClient({
   if (accepted) {
     return (
       <div className="min-h-screen bg-[#fafafb] flex items-center justify-center p-4">
-        <div className="max-w-md w-full bg-white border border-black/[0.08] rounded-3xl p-8 shadow-xs flex flex-col items-center text-center gap-5">
+        <div className="max-w-md w-full bg-white border border-black/[0.08] rounded-3xl p-4 sm:p-6 shadow-xs flex flex-col items-center text-center gap-5">
           <div className="size-14 rounded-full bg-emerald-50 text-emerald-600 flex items-center justify-center border border-emerald-200">
             <CheckCircle2 className="size-7" />
           </div>
@@ -158,8 +159,8 @@ export function InvitationAcceptClient({
               <img
                 src={
                   memorial.portrait_photo_url.startsWith("http://") ||
-                  memorial.portrait_photo_url.startsWith("https://") ||
-                  memorial.portrait_photo_url.startsWith("/")
+                    memorial.portrait_photo_url.startsWith("https://") ||
+                    memorial.portrait_photo_url.startsWith("/")
                     ? memorial.portrait_photo_url
                     : `/api/media?key=${encodeURIComponent(memorial.portrait_photo_url)}`
                 }
@@ -178,7 +179,9 @@ export function InvitationAcceptClient({
               Family Caretaker Invitation
             </span>
             <h1 className="text-xl sm:text-2xl font-serif font-medium text-[#181925]">
-              {memorial.full_name}
+              <span className="text-[11px] font-mono uppercase tracking-wider font-semibold">
+                For
+              </span>{memorial.full_name}
             </h1>
             <p className="text-xs text-[#71717a] leading-relaxed max-w-sm">
               You have been invited as a {role === "co_admin" ? "co-admin" : "collaborator"} to help care for and contribute to {memorial.full_name}&apos;s family archive.
@@ -233,8 +236,8 @@ export function InvitationAcceptClient({
             <img
               src={
                 memorial.portrait_photo_url.startsWith("http://") ||
-                memorial.portrait_photo_url.startsWith("https://") ||
-                memorial.portrait_photo_url.startsWith("/")
+                  memorial.portrait_photo_url.startsWith("https://") ||
+                  memorial.portrait_photo_url.startsWith("/")
                   ? memorial.portrait_photo_url
                   : `/api/media?key=${encodeURIComponent(memorial.portrait_photo_url)}`
               }
@@ -253,7 +256,9 @@ export function InvitationAcceptClient({
             Family Caretaker Invitation
           </span>
           <h1 className="text-xl sm:text-2xl font-serif font-medium text-[#181925]">
-            {memorial.full_name}
+            <span className="text-[11px] font-mono uppercase tracking-wider font-semibold">
+              For Memorial of
+            </span>{" "}{memorial.full_name}
           </h1>
           <p className="text-xs text-[#71717a] leading-relaxed max-w-sm">
             You have been invited as a {role === "co_admin" ? "co-admin" : "collaborator"} to help preserve memories, upload photos, and care for this memorial.
@@ -272,6 +277,12 @@ export function InvitationAcceptClient({
           <span className="text-[11px] text-[#888]">
             Invited address: <strong className="font-mono text-[#555]">{invitedEmail}</strong>
           </span>
+          <Link href="/" className="flex items-center group justify-center mt-2">
+            <Image src="/theirs-icon.png" alt="Theirs" width={12} height={12} />
+            <span className="font-semibold tracking-tight text-[#181925] text-xs ml-1 mt-0.5">
+              Theirs<span className="text-primary">.page</span>
+            </span>
+          </Link>
         </div>
       </div>
     </div>
