@@ -559,7 +559,7 @@ function LoginFormWithSearchParams({ nextPath: propNextPath }: { nextPath?: stri
         {/* Bottom Editorial Statement */}
         <div className="relative z-10 flex items-center justify-between pt-4 border-t border-black/[0.06] text-xs text-[#666]">
           <p className="font-medium text-[#181925] max-w-xs leading-relaxed">
-            “It should feel like visiting someone’s life, not visiting their obituary.”
+            “A place on the internet dedicated to a human life.”
           </p>
 
           <span className="font-mono text-[11px] text-[#888]">

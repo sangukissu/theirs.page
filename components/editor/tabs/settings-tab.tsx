@@ -759,14 +759,16 @@ export function SettingsTab({
                 key: "voice" as const,
                 title: "Voice Notes",
                 desc: "Visitors can upload a recording for a caretaker to listen to and approve.",
+                isPro: true,
               },
               {
                 key: "videos" as const,
                 title: "Video Clips",
                 desc: "Visitors can upload a video for a caretaker to watch and approve.",
+                isPro: true,
               },
             ].map((opt) => {
-              const unavailable = (opt.key === "voice" || opt.key === "videos") && !isPaid
+              const unavailable = ("isPro" in opt && opt.isPro) && !isPaid
               const isOptInMedia = opt.key === "voice" || opt.key === "videos"
               const active = !unavailable && (
                 isOptInMedia
@@ -779,7 +781,14 @@ export function SettingsTab({
                   className="flex items-center justify-between p-3.5 sm:px-4 hover:bg-white transition-colors"
                 >
                   <div className="flex flex-col min-w-0 pr-4">
-                    <span className="text-xs font-medium text-[#181925]">{opt.title}</span>
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs font-medium text-[#181925]">{opt.title}</span>
+                      {"isPro" in opt && opt.isPro && (
+                        <span className="text-[10px] font-mono uppercase font-semibold text-emerald-700 px-1.5 py-0.5 rounded-full bg-emerald-50 border border-emerald-200">
+                          Pro
+                        </span>
+                      )}
+                    </div>
                     <span className="text-[11px] text-[#71717a]">{opt.desc}</span>
                   </div>
 
@@ -790,9 +799,9 @@ export function SettingsTab({
                     onClick={() => !unavailable && handleToggleContributionSetting(opt.key, !active)}
                     disabled={unavailable}
                     className={`relative inline-flex h-5 w-9 shrink-0 rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
-                      active ? "bg-emerald-600 cursor-pointer" : "bg-neutral-300"
-                    }`}
-                    title={unavailable ? "Not available yet" : undefined}
+                      active ? "bg-emerald-600" : "bg-neutral-300"
+                    } ${unavailable ? "opacity-60 cursor-not-allowed" : "cursor-pointer"}`}
+                    title={unavailable ? "Voice notes & video clips require the Pro Plan" : undefined}
                   >
                     <span
                       aria-hidden="true"
