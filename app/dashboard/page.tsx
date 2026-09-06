@@ -3,6 +3,7 @@ import { cookies } from "next/headers"
 import { createClient } from "@/utils/supabase/server"
 import { supabaseAdmin } from "@/utils/supabase/admin"
 import { getDashboardIdentity } from "@/lib/auth/dashboard-identity"
+import { resolveMediaUrl } from "@/lib/r2"
 import { TheirsDashboardClient } from "@/components/dashboard/theirs-dashboard-client"
 
 interface DashboardPageProps {
@@ -50,7 +51,10 @@ export default async function DashboardPage(props: DashboardPageProps) {
     ])
 
     if (!memorialResult.error && memorialResult.data) {
-      memorials = memorialResult.data
+      memorials = memorialResult.data.map((m: any) => ({
+        ...m,
+        portrait_photo_url: resolveMediaUrl(m.portrait_photo_url),
+      }))
     }
     caretakerName = profileResult.data?.full_name?.trim() || ""
   } catch {
@@ -74,7 +78,10 @@ export default async function DashboardPage(props: DashboardPageProps) {
     ])
 
     if (memorialResult.data) {
-      memorials = memorialResult.data
+      memorials = memorialResult.data.map((m: any) => ({
+        ...m,
+        portrait_photo_url: resolveMediaUrl(m.portrait_photo_url),
+      }))
     }
     caretakerName = profileResult.data?.full_name?.trim() || ""
   }

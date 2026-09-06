@@ -107,7 +107,13 @@ export function MemorialPinGate({ fullName, portraitUrl, slug }: MemorialPinGate
         <div className="size-20 rounded-full bg-neutral-100 border border-black/[0.08] overflow-hidden flex items-center justify-center text-2xl font-serif font-medium text-[#181925] shadow-xs">
           {portraitUrl ? (
             <img
-              src={portraitUrl}
+              src={
+                portraitUrl.startsWith("http://") ||
+                portraitUrl.startsWith("https://") ||
+                portraitUrl.startsWith("/")
+                  ? portraitUrl
+                  : `/api/media?key=${encodeURIComponent(portraitUrl)}`
+              }
               alt={fullName}
               className="size-full object-cover"
             />

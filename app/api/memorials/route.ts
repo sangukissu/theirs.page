@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { createClient } from "@/utils/supabase/server"
 import { getSupabaseAdminSafe } from "@/utils/supabase/admin"
+import { resolveMediaUrl } from "@/lib/r2"
 import {
   normalizeMemorialSlug,
   RESERVED_MEMORIAL_SLUGS,
@@ -54,7 +55,12 @@ export async function GET() {
       return NextResponse.json({ error: "Failed to load memorials." }, { status: 500 })
     }
 
-    return NextResponse.json({ memorials })
+    const resolvedMemorials = (memorials || []).map((m) => ({
+      ...m,
+      portrait_photo_url: resolveMediaUrl(m.portrait_photo_url),
+    }))
+
+    return NextResponse.json({ memorials: resolvedMemorials })
   } catch (err: any) {
     console.error("Memorials GET error:", err)
     return NextResponse.json({ error: "Internal server error" }, { status: 500 })

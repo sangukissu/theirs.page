@@ -466,7 +466,15 @@ export function TheirsDashboardClient({
                   <div className="flex items-center gap-4">
                     <div className="size-14 rounded-2xl overflow-hidden bg-neutral-100 border border-black/[0.08] shrink-0">
                       <img
-                        src={m.portrait_photo_url || "/memorial-family-portrait-grandfather.jpg"}
+                        src={
+                          m.portrait_photo_url
+                            ? m.portrait_photo_url.startsWith("http://") ||
+                              m.portrait_photo_url.startsWith("https://") ||
+                              m.portrait_photo_url.startsWith("/")
+                              ? m.portrait_photo_url
+                              : `/api/media?key=${encodeURIComponent(m.portrait_photo_url)}`
+                            : "/memorial-family-portrait-grandfather.jpg"
+                        }
                         alt={m.full_name}
                         className="size-full object-cover"
                       />

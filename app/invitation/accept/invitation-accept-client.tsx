@@ -156,7 +156,13 @@ export function InvitationAcceptClient({
           {memorial.portrait_photo_url ? (
             <div className="size-16 rounded-2xl overflow-hidden border border-black/[0.08]">
               <img
-                src={memorial.portrait_photo_url}
+                src={
+                  memorial.portrait_photo_url.startsWith("http://") ||
+                  memorial.portrait_photo_url.startsWith("https://") ||
+                  memorial.portrait_photo_url.startsWith("/")
+                    ? memorial.portrait_photo_url
+                    : `/api/media?key=${encodeURIComponent(memorial.portrait_photo_url)}`
+                }
                 alt={memorial.full_name}
                 className="size-full object-cover"
               />
@@ -225,7 +231,13 @@ export function InvitationAcceptClient({
         {memorial.portrait_photo_url ? (
           <div className="size-16 rounded-2xl overflow-hidden border border-black/[0.08]">
             <img
-              src={memorial.portrait_photo_url}
+              src={
+                memorial.portrait_photo_url.startsWith("http://") ||
+                memorial.portrait_photo_url.startsWith("https://") ||
+                memorial.portrait_photo_url.startsWith("/")
+                  ? memorial.portrait_photo_url
+                  : `/api/media?key=${encodeURIComponent(memorial.portrait_photo_url)}`
+              }
               alt={memorial.full_name}
               className="size-full object-cover"
             />

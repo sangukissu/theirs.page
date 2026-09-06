@@ -3,6 +3,7 @@ import { AlertCircle } from "lucide-react"
 import { createClient } from "@/utils/supabase/server"
 import { getSupabaseAdminSafe } from "@/utils/supabase/admin"
 import { verifyInvitationToken } from "@/lib/invitations"
+import { resolveMediaUrl } from "@/lib/r2"
 import { InvitationAcceptClient } from "./invitation-accept-client"
 
 interface PageProps {
@@ -19,15 +20,15 @@ export default async function InvitationAcceptPage({ searchParams }: PageProps) 
           <div className="size-12 rounded-full bg-amber-50 text-amber-600 flex items-center justify-center">
             <AlertCircle className="size-6" />
           </div>
-          <h1 className="text-xl font-serif font-medium text-[#181925]">Missing Invitation Link</h1>
-          <p className="text-xs text-[#71717a] leading-relaxed">
-            This page requires a valid caretaker invitation token. Please check the link you received from the family.
+          <h1 className="text-xl font-serif font-medium text-[#181925]">Invalid Invitation</h1>
+          <p className="text-xs text-[#71717a]">
+            This invitation link is missing a valid security token.
           </p>
           <Link
             href="/"
-            className="mt-2 px-5 py-2.5 rounded-full bg-[#181925] text-white text-xs font-medium hover:bg-[#252736] transition-colors"
+            className="px-4 py-2 rounded-full bg-[#181925] text-white text-xs font-medium hover:bg-black transition-colors"
           >
-            Return to Theirs
+            Return Home
           </Link>
         </div>
       </div>
@@ -36,7 +37,6 @@ export default async function InvitationAcceptPage({ searchParams }: PageProps) 
 
   // 1. Verify cryptographic token signature
   const verification = verifyInvitationToken(token)
-
   if (!verification.valid || !verification.payload) {
     return (
       <div className="min-h-screen bg-[#fafafb] flex items-center justify-center p-4">
@@ -62,6 +62,7 @@ export default async function InvitationAcceptPage({ searchParams }: PageProps) 
   }
 
   const payload = verification.payload
+
   const supabase = await createClient()
   const {
     data: { user },
@@ -102,7 +103,10 @@ export default async function InvitationAcceptPage({ searchParams }: PageProps) 
   return (
     <InvitationAcceptClient
       token={token}
-      memorial={memorial}
+      memorial={{
+        ...memorial,
+        portrait_photo_url: resolveMediaUrl(memorial.portrait_photo_url),
+      }}
       invitedEmail={payload.email}
       role={payload.role}
       userEmail={user?.email || null}

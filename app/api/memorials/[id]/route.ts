@@ -8,6 +8,7 @@ import {
   deleteR2Object,
   deleteR2MemorialFolder,
   extractManagedR2Key,
+  resolveMediaUrl,
 } from "@/lib/r2"
 import {
   normalizeMemorialSlug,
@@ -298,7 +299,13 @@ export async function PATCH(req: NextRequest, context: RouteContext) {
       })
     }
 
-    return NextResponse.json({ success: true, memorial: updated })
+    return NextResponse.json({
+      success: true,
+      memorial: {
+        ...updated,
+        portrait_photo_url: resolveMediaUrl(updated.portrait_photo_url),
+      },
+    })
   } catch (err: any) {
     console.error("Memorial PATCH error:", err)
     return NextResponse.json({ error: "Internal server error" }, { status: 500 })
