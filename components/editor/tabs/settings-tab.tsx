@@ -40,6 +40,7 @@ interface CollaboratorItem {
 
 interface SettingsTabProps {
   memorialId: string
+  memorialName?: string
   slug: string
   privacy: "public" | "unlisted" | "private"
   pin?: string
@@ -55,6 +56,7 @@ interface SettingsTabProps {
 
 export function SettingsTab({
   memorialId,
+  memorialName,
   slug,
   privacy,
   pin = "",
@@ -69,6 +71,8 @@ export function SettingsTab({
 }: SettingsTabProps) {
   const [isDeleting, setIsDeleting] = useState(false)
   const [confirmText, setConfirmText] = useState("")
+  const [showDeleteConfirmModal, setShowDeleteConfirmModal] = useState(false)
+  const [deleteError, setDeleteError] = useState<string | null>(null)
 
   // Checkout State
   const [checkingOut, setCheckingOut] = useState(false)
@@ -308,20 +312,33 @@ export function SettingsTab({
     }
   }
 
-  // 6. Delete Memorial
-  const handleDelete = async () => {
+  // 6. Delete Memorial: Open confirmation dialog first
+  const handleOpenDeleteModal = () => {
     if (confirmText !== "DELETE") return
+    setDeleteError(null)
+    setShowDeleteConfirmModal(true)
+  }
 
+  const handleConfirmDeleteMemorial = async () => {
     setIsDeleting(true)
+    setDeleteError(null)
     try {
       const res = await fetch(`/api/memorials/${memorialId}`, {
         method: "DELETE",
       })
-      if (res.ok) {
+
+      // If ok or 404 (already deleted in a previous call), treat as successfully deleted
+      if (res.ok || res.status === 404) {
+        setShowDeleteConfirmModal(false)
         onDeleteMemorial()
+        return
       }
-    } catch (err) {
+
+      const data = await res.json().catch(() => ({}))
+      throw new Error(data.error || "Failed to delete memorial. Please try again.")
+    } catch (err: any) {
       console.error("Failed to delete memorial:", err)
+      setDeleteError(err.message || "Failed to delete memorial. Please try again.")
     } finally {
       setIsDeleting(false)
     }
@@ -1121,25 +1138,43 @@ export function SettingsTab({
           <label className="text-[11px] text-[#666]">
             Type <strong className="font-mono text-rose-700">DELETE</strong> to confirm:
           </label>
-          <div className="flex gap-2">
-            <input
-              type="text"
-              value={confirmText}
-              onChange={(e) => setConfirmText(e.target.value)}
-              placeholder="DELETE"
-              className="w-36 px-3 py-1.5 rounded-xl bg-white border border-rose-200 text-xs font-mono outline-none"
-            />
-            <button
-              type="button"
-              disabled={confirmText !== "DELETE" || isDeleting}
-              onClick={handleDelete}
-              className="px-4 py-1.5 rounded-xl bg-rose-600 hover:bg-rose-700 disabled:opacity-40 disabled:cursor-not-allowed text-white text-xs font-medium transition-colors cursor-pointer"
-            >
-              {isDeleting ? "Deleting..." : "Delete Permanently"}
-            </button>
+          <div className="flex flex-col gap-2">
+            <div className="flex gap-2">
+              <input
+                type="text"
+                value={confirmText}
+                onChange={(e) => setConfirmText(e.target.value)}
+                placeholder="DELETE"
+                className="w-36 px-3 py-1.5 rounded-xl bg-white border border-rose-200 text-xs font-mono outline-none"
+              />
+              <button
+                type="button"
+                disabled={confirmText !== "DELETE" || isDeleting}
+                onClick={handleOpenDeleteModal}
+                className="px-4 py-1.5 rounded-xl bg-rose-600 hover:bg-rose-700 disabled:opacity-40 disabled:cursor-not-allowed text-white text-xs font-medium transition-colors cursor-pointer"
+              >
+                Delete Permanently
+              </button>
+            </div>
+            {deleteError && (
+              <span className="text-xs text-rose-600 font-medium">{deleteError}</span>
+            )}
           </div>
         </div>
       </div>
+
+      <ConfirmDeleteModal
+        isOpen={showDeleteConfirmModal}
+        title={memorialName ? `Permanently delete ${memorialName}’s memorial?` : "Permanently delete this memorial?"}
+        description="This action is permanent and cannot be undone. All stories, photos, voice notes, guestbook tributes, and chapters will be permanently erased."
+        itemPreview={memorialName ? `${memorialName} (theirs.page/${slug})` : `theirs.page/${slug}`}
+        error={deleteError}
+        confirmLabel="Yes, delete permanently"
+        cancelLabel="Keep memorial"
+        isDeleting={isDeleting}
+        onConfirm={handleConfirmDeleteMemorial}
+        onClose={() => !isDeleting && setShowDeleteConfirmModal(false)}
+      />
 
       <ConfirmDeleteModal
         isOpen={!!caretakerToDelete}

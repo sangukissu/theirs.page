@@ -408,7 +408,11 @@ export async function DELETE(req: NextRequest, context: RouteContext) {
       .maybeSingle()
 
     // 1. Storage Cleanup: Delete all physical R2 media files for this memorial
-    await deleteR2MemorialFolder(id)
+    try {
+      await deleteR2MemorialFolder(id)
+    } catch (storageErr) {
+      console.error("Failed to delete R2 memorial folder:", storageErr)
+    }
 
     // 2. Delete memorial row from database (cascades to child tables)
     const { error } = await db
@@ -421,12 +425,17 @@ export async function DELETE(req: NextRequest, context: RouteContext) {
       return NextResponse.json({ error: "Failed to delete memorial." }, { status: 500 })
     }
 
-    await sendMemorialDeletedEmail({
-      email: user.email,
-      caretakerName: profile?.full_name,
-      memorialId: authCheck.memorial.id,
-      memorialName: authCheck.memorial.full_name,
-    })
+    // 3. Send email confirmation (non-blocking so it never fails the deletion)
+    try {
+      await sendMemorialDeletedEmail({
+        email: user.email,
+        caretakerName: profile?.full_name,
+        memorialId: authCheck.memorial.id,
+        memorialName: authCheck.memorial.full_name || authCheck.memorial.slug || "Memorial",
+      })
+    } catch (emailErr) {
+      console.error("Failed to send memorial deleted email:", emailErr)
+    }
 
     return NextResponse.json({ success: true })
   } catch (err: any) {

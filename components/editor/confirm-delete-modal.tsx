@@ -1,4 +1,4 @@
-﻿"use client"
+"use client"
 
 import { useEffect, useState } from "react"
 import { createPortal } from "react-dom"
@@ -9,6 +9,7 @@ interface ConfirmDeleteModalProps {
   title: string
   description: string
   itemPreview?: string | null
+  error?: string | null
   confirmLabel?: string
   cancelLabel?: string
   isDeleting?: boolean
@@ -21,6 +22,7 @@ export function ConfirmDeleteModal({
   title,
   description,
   itemPreview,
+  error,
   confirmLabel = "Delete permanently",
   cancelLabel = "Cancel",
   isDeleting = false,
@@ -94,6 +96,12 @@ export function ConfirmDeleteModal({
           <div className="px-3.5 py-2.5 rounded-xl bg-[#fafafb] border border-black/[0.06] text-xs text-[#555] font-medium truncate flex items-center gap-2">
             <span className="size-1.5 rounded-full bg-rose-500 shrink-0" />
             <span className="truncate">{itemPreview}</span>
+          </div>
+        )}
+
+        {error && (
+          <div className="px-3.5 py-2.5 rounded-xl bg-rose-50 border border-rose-200 text-xs text-rose-700 font-medium leading-relaxed">
+            {error}
           </div>
         )}
 

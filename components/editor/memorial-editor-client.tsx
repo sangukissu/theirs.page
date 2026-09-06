@@ -678,6 +678,7 @@ export function MemorialEditorClient({
           {activeTab === "settings" && (
             <SettingsTab
               memorialId={initialMemorial.id}
+              memorialName={form.full_name || initialMemorial.full_name || "Memorial"}
               slug={form.slug}
               privacy={form.privacy}
               pin={form.pin}
@@ -688,7 +689,9 @@ export function MemorialEditorClient({
               contributionSettings={form.contribution_settings}
               isPaid={Boolean(initialMemorial.is_paid)}
               onChange={handleFieldChange}
-              onDeleteMemorial={() => router.push("/dashboard")}
+              onDeleteMemorial={() => {
+                window.location.href = "/dashboard"
+              }}
             />
           )}
 

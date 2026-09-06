@@ -37,7 +37,7 @@ export async function verifyMemorialOwner(
     const isUuid = UUID_REGEX.test(memorialId)
     let query = db
       .from("memorials")
-      .select("id, owner_id, slug, status, privacy, is_paid")
+      .select("id, owner_id, slug, status, privacy, is_paid, full_name")
     query = isUuid ? query.eq("id", memorialId) : query.eq("slug", memorialId)
     const { data: memorial, error } = await query.maybeSingle()
 
@@ -106,7 +106,7 @@ export async function verifyMemorialAdmin(
     const isUuid = UUID_REGEX.test(memorialId)
     let query = db
       .from("memorials")
-      .select("id, owner_id, slug, status, privacy, is_paid")
+      .select("id, owner_id, slug, status, privacy, is_paid, full_name")
     query = isUuid ? query.eq("id", memorialId) : query.eq("slug", memorialId)
     const { data: memorial, error: memorialError } = await query.maybeSingle()
 

@@ -8,8 +8,9 @@ export const THEIRS_NOTIFICATION_SENDER = "Theirs <notifications@mail.theirs.pag
 export const THEIRS_INVITATION_SENDER = "Theirs <invites@mail.theirs.page>"
 export const THEIRS_SUPPORT_ADDRESS = "support@theirs.page"
 
-export function escapeEmailHtml(value: string): string {
-  return value.replace(/[&<>'"]/g, (character) => ({
+export function escapeEmailHtml(value?: string | null): string {
+  if (!value) return ""
+  return String(value).replace(/[&<>'"]/g, (character) => ({
     "&": "&amp;",
     "<": "&lt;",
     ">": "&gt;",
