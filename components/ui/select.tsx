@@ -37,7 +37,7 @@ function SelectTrigger({
       data-slot="select-trigger"
       data-size={size}
       className={cn(
-        "flex w-full items-center justify-between gap-2 rounded-xl border border-black/[0.08] bg-[#fafafb] px-4 py-2.5 text-sm text-[#181925] shadow-2xs transition-colors outline-none focus:border-primary/60 focus-visible:border-primary/60 focus-visible:ring-0 disabled:cursor-not-allowed disabled:opacity-50 data-[placeholder]:text-[#aaa] cursor-pointer",
+        "flex w-full items-center justify-between gap-2 rounded-xl border border-black/[0.08] bg-[#fafafb] px-4 py-2.5 text-sm text-[#181925] transition-colors outline-none focus:border-primary/60 focus-visible:border-primary/60 focus-visible:ring-0 disabled:cursor-not-allowed disabled:opacity-50 data-[placeholder]:text-[#aaa] cursor-pointer",
         className
       )}
       {...props}
@@ -62,9 +62,9 @@ function SelectContent({
       <SelectPrimitive.Content
         data-slot="select-content"
         className={cn(
-          "bg-white/95 backdrop-blur-xl text-[#181925] rounded-2xl border border-black/[0.08] p-1.5 shadow-[0_12px_32px_-8px_rgba(0,0,0,0.12),0_4px_12px_-2px_rgba(0,0,0,0.06)] relative z-50 max-h-80 min-w-[8rem] overflow-x-hidden overflow-y-auto data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95",
+          "bg-white text-[#181925] rounded-xl border border-black/[0.08] p-1 shadow-sm relative z-50 max-h-80 min-w-[8rem] overflow-x-hidden overflow-y-auto data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95",
           position === "popper" &&
-            "data-[side=bottom]:translate-y-1.5 data-[side=left]:-translate-x-1 data-[side=right]:translate-x-1 data-[side=top]:-translate-y-1.5",
+            "data-[side=bottom]:translate-y-1 data-[side=left]:-translate-x-1 data-[side=right]:translate-x-1 data-[side=top]:-translate-y-1",
           className
         )}
         position={position}
@@ -74,7 +74,7 @@ function SelectContent({
         <SelectScrollUpButton />
         <SelectPrimitive.Viewport
           className={cn(
-            "p-1",
+            "p-0.5",
             position === "popper" &&
               "w-full min-w-[var(--radix-select-trigger-width)]"
           )}

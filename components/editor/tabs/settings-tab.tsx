@@ -491,11 +491,10 @@ export function SettingsTab({
                   }
                   onChange("privacy", mode.id)
                 }}
-                className={`p-3.5 rounded-xl border transition-all cursor-pointer flex flex-col gap-1.5 select-none ${
-                  isSelected
-                    ? "border-primary bg-primary/5 text-primary"
-                    : "border-black/[0.08] bg-[#fafafb] text-[#555] hover:border-black/[0.15]"
-                }`}
+                className={`p-3.5 rounded-xl border transition-all cursor-pointer flex flex-col gap-1.5 select-none ${isSelected
+                  ? "border-primary bg-primary/5 text-primary"
+                  : "border-black/[0.08] bg-[#fafafb] text-[#555] hover:border-black/[0.15]"
+                  }`}
               >
                 <div className="flex items-center justify-between gap-1.5 font-medium text-xs">
                   <div className="flex items-center gap-1.5">
@@ -625,11 +624,10 @@ export function SettingsTab({
               >
                 <div className="flex items-center gap-3 min-w-0 pr-4">
                   <div
-                    className={`size-8 rounded-lg flex items-center justify-center shrink-0 border ${
-                      sec.active
-                        ? "bg-primary/10 text-primary border-primary/20"
-                        : "bg-neutral-200/60 text-[#888] border-black/[0.05]"
-                    }`}
+                    className={`size-8 rounded-lg flex items-center justify-center shrink-0 border ${sec.active
+                      ? "bg-primary/10 text-primary border-primary/20"
+                      : "bg-neutral-200/60 text-[#888] border-black/[0.05]"
+                      }`}
                   >
                     <Icon className="size-4" />
                   </div>
@@ -645,9 +643,8 @@ export function SettingsTab({
 
                 <div className="flex items-center gap-2.5 select-none shrink-0">
                   <span
-                    className={`text-xs font-medium ${
-                      sec.active ? "text-emerald-700" : "text-[#71717a]"
-                    }`}
+                    className={`text-xs font-medium ${sec.active ? "text-emerald-700" : "text-[#71717a]"
+                      }`}
                   >
                     {sec.active ? "Active" : "Hidden"}
                   </span>
@@ -666,18 +663,16 @@ export function SettingsTab({
                         [sec.key]: !current[sec.key],
                       })
                     }}
-                    className={`relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
-                      sec.active ? "bg-emerald-600" : "bg-neutral-300"
-                    }`}
+                    className={`relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${sec.active ? "bg-emerald-600" : "bg-neutral-300"
+                      }`}
                     role="switch"
                     aria-checked={sec.active}
                     title={sec.active ? `Hide ${sec.title} on memorial` : `Show ${sec.title} on memorial`}
                   >
                     <span
                       aria-hidden="true"
-                      className={`pointer-events-none inline-block size-4 transform rounded-full bg-white shadow-xs ring-0 transition duration-200 ease-in-out ${
-                        sec.active ? "translate-x-4" : "translate-x-0"
-                      }`}
+                      className={`pointer-events-none inline-block size-4 transform rounded-full bg-white shadow-xs ring-0 transition duration-200 ease-in-out ${sec.active ? "translate-x-4" : "translate-x-0"
+                        }`}
                     />
                   </button>
                 </div>
@@ -702,11 +697,10 @@ export function SettingsTab({
 
           <div className="flex items-center gap-2 select-none">
             <span
-              className={`text-xs ${
-                currentContributionSettings.accept_contributions !== false
-                  ? "text-[#71717a]"
-                  : "text-rose-700 font-medium"
-              }`}
+              className={`text-xs ${currentContributionSettings.accept_contributions !== false
+                ? "text-[#71717a]"
+                : "text-rose-700 font-medium"
+                }`}
             >
               {currentContributionSettings.accept_contributions !== false ? "Open" : "Closed"}
             </span>
@@ -720,19 +714,17 @@ export function SettingsTab({
                   currentContributionSettings.accept_contributions === false
                 )
               }
-              className={`relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
-                currentContributionSettings.accept_contributions !== false
-                  ? "bg-emerald-600"
-                  : "bg-neutral-300"
-              }`}
+              className={`relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${currentContributionSettings.accept_contributions !== false
+                ? "bg-emerald-600"
+                : "bg-neutral-300"
+                }`}
             >
               <span
                 aria-hidden="true"
-                className={`pointer-events-none inline-block size-4 transform rounded-full bg-white shadow-xs ring-0 transition duration-200 ease-in-out ${
-                  currentContributionSettings.accept_contributions !== false
-                    ? "translate-x-4"
-                    : "translate-x-0"
-                }`}
+                className={`pointer-events-none inline-block size-4 transform rounded-full bg-white shadow-xs ring-0 transition duration-200 ease-in-out ${currentContributionSettings.accept_contributions !== false
+                  ? "translate-x-4"
+                  : "translate-x-0"
+                  }`}
               />
             </button>
           </div>
@@ -799,16 +791,14 @@ export function SettingsTab({
                     aria-checked={active}
                     onClick={() => !unavailable && handleToggleContributionSetting(opt.key, !active)}
                     disabled={unavailable}
-                    className={`relative inline-flex h-5 w-9 shrink-0 rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
-                      active ? "bg-emerald-600" : "bg-neutral-300"
-                    } ${unavailable ? "opacity-60 cursor-not-allowed" : "cursor-pointer"}`}
+                    className={`relative inline-flex h-5 w-9 shrink-0 rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${active ? "bg-emerald-600" : "bg-neutral-300"
+                      } ${unavailable ? "opacity-60 cursor-not-allowed" : "cursor-pointer"}`}
                     title={unavailable ? "Voice notes & video clips require the Pro Plan" : undefined}
                   >
                     <span
                       aria-hidden="true"
-                      className={`pointer-events-none inline-block size-4 transform rounded-full bg-white shadow-xs ring-0 transition duration-200 ease-in-out ${
-                        active ? "translate-x-4" : "translate-x-0"
-                      }`}
+                      className={`pointer-events-none inline-block size-4 transform rounded-full bg-white shadow-xs ring-0 transition duration-200 ease-in-out ${active ? "translate-x-4" : "translate-x-0"
+                        }`}
                     />
                   </button>
                 </div>
@@ -837,15 +827,7 @@ export function SettingsTab({
           )}
         </div>
 
-        {!isPaid && (
-          <UpgradeBanner
-            compact
-            memorialId={memorialId}
-            featureTitle="Unlimited Family Caretakers"
-            description="Invite children, siblings, and cousins to curate this memorial together without account friction."
-            onUpgrade={handleUpgradeComplete}
-          />
-        )}
+
 
         {/* Invite Form */}
         <form onSubmit={handleAddCollaborator} className={`flex flex-col sm:flex-row gap-2 ${!isPaid ? "opacity-75" : ""}`}>
@@ -872,11 +854,10 @@ export function SettingsTab({
           <button
             type="submit"
             disabled={!isPaid || collabAdding || !collabEmail.trim()}
-            className={`inline-flex items-center justify-center gap-1.5 px-4 py-2 rounded-xl text-xs font-medium transition-colors ${
-              !isPaid
-                ? "bg-neutral-100 text-neutral-500 border border-neutral-200 cursor-not-allowed"
-                : "bg-[#181925] hover:bg-[#252736] disabled:opacity-50 text-white cursor-pointer"
-            }`}
+            className={`inline-flex items-center justify-center gap-1.5 px-4 py-2 rounded-xl text-xs font-medium transition-colors ${!isPaid
+              ? "bg-neutral-100 text-neutral-500 border border-neutral-200 cursor-not-allowed"
+              : "bg-[#181925] hover:bg-[#252736] disabled:opacity-50 text-white cursor-pointer"
+              }`}
           >
             {!isPaid ? (
               <>
@@ -968,16 +949,14 @@ export function SettingsTab({
                       aria-checked={Boolean(c.is_trusted)}
                       onClick={() => handleToggleTrust(c.id, Boolean(c.is_trusted))}
                       disabled={!c.invitation_accepted}
-                      className={`relative inline-flex h-4.5 w-8 shrink-0 rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none disabled:cursor-not-allowed disabled:opacity-50 ${
-                        c.is_trusted ? "bg-emerald-600" : "bg-neutral-300"
-                      }`}
+                      className={`relative inline-flex h-4.5 w-8 shrink-0 rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none disabled:cursor-not-allowed disabled:opacity-50 ${c.is_trusted ? "bg-emerald-600" : "bg-neutral-300"
+                        }`}
                       title={!c.invitation_accepted ? "Available after this person accepts the invitation" : c.is_trusted ? "Trusted contributor (safe posts auto-publish)" : "Approval required"}
                     >
                       <span
                         aria-hidden="true"
-                        className={`pointer-events-none inline-block size-3.5 transform rounded-full bg-white shadow-xs ring-0 transition duration-200 ease-in-out ${
-                          c.is_trusted ? "translate-x-3.5" : "translate-x-0"
-                        }`}
+                        className={`pointer-events-none inline-block size-3.5 transform rounded-full bg-white shadow-xs ring-0 transition duration-200 ease-in-out ${c.is_trusted ? "translate-x-3.5" : "translate-x-0"
+                          }`}
                       />
                     </button>
                   </div>
@@ -1012,15 +991,7 @@ export function SettingsTab({
           )}
         </div>
 
-        {!isPaid && (
-          <UpgradeBanner
-            compact
-            memorialId={memorialId}
-            featureTitle="Successor Stewardship & Transfer"
-            description="Ensure the memorial lives on across generations by designating a successor caretaker and enabling ownership transfers."
-            onUpgrade={handleUpgradeComplete}
-          />
-        )}
+
 
         <div className={`grid grid-cols-1 sm:grid-cols-2 gap-3 ${!isPaid ? "opacity-75" : ""}`}>
           <input
@@ -1067,11 +1038,10 @@ export function SettingsTab({
               type="button"
               disabled={!isPaid || transferring || !transferTargetEmail.trim()}
               onClick={handleTransferOwnership}
-              className={`px-4 py-2 rounded-xl text-xs font-medium transition-all ${
-                !isPaid
-                  ? "bg-neutral-100 text-neutral-500 border border-neutral-200 cursor-not-allowed"
-                  : "bg-primary text-white hover:bg-primary/95 disabled:opacity-50 cursor-pointer"
-              }`}
+              className={`px-4 py-2 rounded-xl text-xs font-medium transition-all ${!isPaid
+                ? "bg-neutral-100 text-neutral-500 border border-neutral-200 cursor-not-allowed"
+                : "bg-primary text-white hover:bg-primary/95 disabled:opacity-50 cursor-pointer"
+                }`}
             >
               {!isPaid ? (
                 <>
@@ -1114,15 +1084,7 @@ export function SettingsTab({
           )}
         </div>
 
-        {!isPaid && (
-          <UpgradeBanner
-            compact
-            memorialId={memorialId}
-            featureTitle="Full Data Export Archive"
-            description="Download all original media, voice memos, and stories in a complete zip archive. Guaranteed preservation without lock-in."
-            onUpgrade={handleUpgradeComplete}
-          />
-        )}
+
 
         {isPaid ? (
           <a

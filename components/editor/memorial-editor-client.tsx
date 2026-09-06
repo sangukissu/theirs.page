@@ -468,7 +468,7 @@ export function MemorialEditorClient({
           <span className="text-black/[0.15]">/</span>
 
           <div className="flex items-center gap-2 min-w-0">
-            <h1 className="text-sm font-serif font-medium text-[#181925] truncate">
+            <h1 className="text-sm font-serif font-medium text-[#181925] truncate max-w-[140px] sm:max-w-[240px] md:max-w-[320px]">
               {form.full_name || "Untitled Memorial"}
             </h1>
 
@@ -510,8 +510,8 @@ export function MemorialEditorClient({
               </>
             ) : saveStatus === "saved" ? (
               <>
-                <Check className="size-3.5 text-white" />
-                <span className="hidden sm:inline">Saved</span>
+                <Check className="size-3.5 text-emerald-600" strokeWidth={2.5} />
+                <span className="hidden sm:inline text-emerald-700 font-medium">Saved</span>
               </>
             ) : (
               <>

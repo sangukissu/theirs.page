@@ -1,10 +1,9 @@
 import type { Metadata } from "next"
-import { Navbar } from '@/components/landing/Navbar';
-import { Footer } from '@/components/landing/Footer';
+import { TheirsNav } from '@/components/theirs/nav';
+import { TheirsFooter } from '@/components/theirs/footer';
 import BlogCard from "@/components/blog-card"
-import Link from "next/link"
 import { OfflineBanner } from "@/components/network-status"
-import { CTA } from '@/components/landing/CTA';
+import { CtaBanner } from '@/components/theirs/cta-banner';
 
 import { Button } from "@/components/ui/button"
 import { getAllPosts, formatDate, calculateReadingTime, extractExcerpt, type WordPressPost } from "@/lib/wordpress"
@@ -68,7 +67,7 @@ async function BlogContent() {
 function BlogPageContent({ blogPosts }: { blogPosts: any[] }) {
   return (
     <div className="min-h-screen bg-brand-bg">
-      <Navbar />
+      <TheirsNav />
 
       <main className="pt-32 pb-20">
         <div className="max-w-[1320px] mx-auto px-4 sm:px-8">
@@ -128,10 +127,10 @@ function BlogPageContent({ blogPosts }: { blogPosts: any[] }) {
           )}
         </div>
 
-        <CTA />
+        <CtaBanner />
       </main>
 
-      <Footer />
+      <TheirsFooter />
     </div>
   )
 }
@@ -140,7 +139,7 @@ export default function BlogPage() {
   return (
     <Suspense fallback={
       <div className="min-h-screen bg-white">
-        <Navbar />
+        <TheirsNav />
         <main className="pt-24 pb-16">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="text-center mb-16">
@@ -158,7 +157,7 @@ export default function BlogPage() {
             </div>
           </div>
         </main>
-        <Footer />
+        <TheirsFooter />
       </div>
     }>
       <BlogContent />

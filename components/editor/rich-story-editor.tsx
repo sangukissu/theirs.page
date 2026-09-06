@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState, useCallback } from "react"
 import {
+  Pilcrow,
   Heading2,
   Heading3,
   Bold,
@@ -264,32 +265,190 @@ export function RichStoryEditor({
     checkActiveFormats()
   }
 
-  const toggleHeading = (tag: "h2" | "h3") => {
+  // Helper: place cursor inside an element
+  const setCursorInElement = (el: HTMLElement, atStart = false) => {
+    const selection = window.getSelection()
+    if (!selection) return
+    const range = document.createRange()
+    range.selectNodeContents(el)
+    range.collapse(atStart)
+    selection.removeAllRanges()
+    selection.addRange(range)
+  }
+
+  // Helper: check if cursor is at the end of an element
+  const isSelectionAtEndOfElement = (range: Range, el: HTMLElement): boolean => {
+    const testRange = document.createRange()
+    testRange.selectNodeContents(el)
+    testRange.setStart(range.endContainer, range.endOffset)
+    return testRange.toString().trim() === ""
+  }
+
+  // Helper: find enclosing block element inside editor
+  const findEnclosingBlock = (startNode: Node | null): HTMLElement | null => {
+    let node: Node | null = startNode
+    while (node && node !== editorRef.current) {
+      if (node.nodeType === Node.ELEMENT_NODE) {
+        const tag = (node as HTMLElement).tagName.toLowerCase()
+        if (["h1", "h2", "h3", "h4", "h5", "h6", "p", "blockquote"].includes(tag)) {
+          return node as HTMLElement
+        }
+      }
+      node = node.parentNode
+    }
+    return null
+  }
+
+  const formatBlockTo = (targetTag: "p" | "h2" | "h3" | "blockquote") => {
     if (!editorRef.current) return
     editorRef.current.focus()
 
-    // If already active, toggle back to paragraph
-    const isActive = tag === "h2" ? activeFormats.h2 : activeFormats.h3
-    if (isActive) {
-      document.execCommand("formatBlock", false, "<p>")
-    } else {
-      document.execCommand("formatBlock", false, `<${tag}>`)
+    const selection = window.getSelection()
+    if (!selection || selection.rangeCount === 0) return
+    const range = selection.getRangeAt(0)
+
+    const blockEl = findEnclosingBlock(range.startContainer)
+
+    if (blockEl && blockEl !== editorRef.current) {
+      const currentTag = blockEl.tagName.toLowerCase()
+      // If already the target tag (and target is not p), toggle back to p
+      const finalTag = currentTag === targetTag && targetTag !== "p" ? "p" : targetTag
+
+      if (currentTag === finalTag) return
+
+      const newEl = document.createElement(finalTag)
+      while (blockEl.firstChild) {
+        newEl.appendChild(blockEl.firstChild)
+      }
+      if (!newEl.innerHTML.trim()) {
+        newEl.innerHTML = "<br>"
+      }
+      blockEl.replaceWith(newEl)
+      setCursorInElement(newEl)
+      handleInput()
+      checkActiveFormats()
+      return
+    }
+
+    // Fallback if not inside a known block element
+    try {
+      document.execCommand("formatBlock", false, `<${targetTag}>`)
+    } catch {
+      document.execCommand("formatBlock", false, targetTag)
     }
     handleInput()
     checkActiveFormats()
   }
 
-  const toggleQuote = () => {
-    if (!editorRef.current) return
-    editorRef.current.focus()
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
+    if (e.key === "Enter" && !e.shiftKey) {
+      const selection = window.getSelection()
+      if (!selection || selection.rangeCount === 0) return
+      const range = selection.getRangeAt(0)
 
-    if (activeFormats.quote) {
-      document.execCommand("formatBlock", false, "<p>")
-    } else {
-      document.execCommand("formatBlock", false, "<blockquote>")
+      const blockEl = findEnclosingBlock(range.startContainer)
+      if (blockEl) {
+        const tag = blockEl.tagName.toLowerCase()
+
+        // 1. Handling Headings (h2, h3): pressing Enter creates a standard <p> paragraph
+        if (tag === "h2" || tag === "h3") {
+          e.preventDefault()
+
+          const textContent = blockEl.textContent || ""
+          // Case A: Empty heading -> convert to paragraph
+          if (!textContent.trim()) {
+            const p = document.createElement("p")
+            p.innerHTML = "<br>"
+            blockEl.replaceWith(p)
+            setCursorInElement(p, true)
+            handleInput()
+            checkActiveFormats()
+            return
+          }
+
+          // Case B: Cursor at the end of the heading -> create new <p><br></p> after heading
+          if (isSelectionAtEndOfElement(range, blockEl)) {
+            const p = document.createElement("p")
+            p.innerHTML = "<br>"
+            blockEl.after(p)
+            setCursorInElement(p, true)
+            handleInput()
+            checkActiveFormats()
+            return
+          }
+
+          // Case C: Cursor at the very start of the heading
+          const startRange = document.createRange()
+          startRange.selectNodeContents(blockEl)
+          startRange.setEnd(range.startContainer, range.startOffset)
+          if (startRange.toString().trim() === "") {
+            const p = document.createElement("p")
+            p.innerHTML = "<br>"
+            blockEl.before(p)
+            handleInput()
+            checkActiveFormats()
+            return
+          }
+
+          // Case D: Cursor in the middle of heading -> split heading into heading + <p>
+          const afterRange = range.cloneRange()
+          afterRange.selectNodeContents(blockEl)
+          afterRange.setStart(range.endContainer, range.endOffset)
+          const extracted = afterRange.extractContents()
+
+          const p = document.createElement("p")
+          if (extracted.childNodes.length === 0 || !extracted.textContent?.trim()) {
+            p.innerHTML = "<br>"
+          } else {
+            p.appendChild(extracted)
+          }
+
+          blockEl.after(p)
+          setCursorInElement(p, true)
+          handleInput()
+          checkActiveFormats()
+          return
+        }
+
+        // 2. Handling Blockquotes: exiting on Enter if line/quote is empty
+        if (tag === "blockquote") {
+          const textContent = blockEl.textContent || ""
+          if (!textContent.trim()) {
+            e.preventDefault()
+            const p = document.createElement("p")
+            p.innerHTML = "<br>"
+            blockEl.replaceWith(p)
+            setCursorInElement(p, true)
+            handleInput()
+            checkActiveFormats()
+            return
+          }
+        }
+      }
     }
-    handleInput()
-    checkActiveFormats()
+
+    if (e.key === "Backspace") {
+      const selection = window.getSelection()
+      if (!selection || selection.rangeCount === 0) return
+      const range = selection.getRangeAt(0)
+      const blockEl = findEnclosingBlock(range.startContainer)
+      if (blockEl) {
+        const tag = blockEl.tagName.toLowerCase()
+        if (tag === "h2" || tag === "h3" || tag === "blockquote") {
+          const text = blockEl.textContent || ""
+          if (!text.trim()) {
+            e.preventDefault()
+            const p = document.createElement("p")
+            p.innerHTML = "<br>"
+            blockEl.replaceWith(p)
+            setCursorInElement(p, true)
+            handleInput()
+            checkActiveFormats()
+            return
+          }
+        }
+      }
+    }
   }
 
   const handleOpenLinkModal = () => {
@@ -380,12 +539,30 @@ export function RichStoryEditor({
     <div className="flex flex-col rounded-3xl bg-white border border-black/[0.08] shadow-xs overflow-hidden transition-colors focus-within:border-primary/50 focus-within:ring-2 focus-within:ring-primary/10">
       {/* 1. DISTRACTION-FREE EDITORIAL TOOLBAR */}
       <div className="flex items-center flex-wrap gap-1 px-3 py-2 bg-[#fafafb] border-b border-black/[0.06] select-none">
+        {/* Paragraph / Body Button */}
+        <button
+          type="button"
+          onMouseDown={(e) => {
+            e.preventDefault()
+            formatBlockTo("p")
+          }}
+          className={`inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-medium transition-colors cursor-pointer ${
+            !activeFormats.h2 && !activeFormats.h3 && !activeFormats.quote
+              ? "bg-primary text-white shadow-xs"
+              : "text-[#555] hover:text-[#181925] hover:bg-black/[0.05]"
+          }`}
+          title="Normal Paragraph Text"
+        >
+          <Pilcrow className="size-3.5" />
+          <span className="text-[11px]">Body</span>
+        </button>
+
         {/* Headings */}
         <button
           type="button"
           onMouseDown={(e) => {
             e.preventDefault()
-            toggleHeading("h2")
+            formatBlockTo("h2")
           }}
           className={`inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-medium transition-colors cursor-pointer ${
             activeFormats.h2
@@ -402,7 +579,7 @@ export function RichStoryEditor({
           type="button"
           onMouseDown={(e) => {
             e.preventDefault()
-            toggleHeading("h3")
+            formatBlockTo("h3")
           }}
           className={`inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-medium transition-colors cursor-pointer ${
             activeFormats.h3
@@ -457,7 +634,7 @@ export function RichStoryEditor({
           type="button"
           onMouseDown={(e) => {
             e.preventDefault()
-            toggleQuote()
+            formatBlockTo("blockquote")
           }}
           className={`size-7 rounded-lg flex items-center justify-center transition-colors cursor-pointer ${
             activeFormats.quote
@@ -546,6 +723,7 @@ export function RichStoryEditor({
         <div
           ref={editorRef}
           contentEditable
+          onKeyDown={handleKeyDown}
           onInput={handleInput}
           onPaste={handlePaste}
           onKeyUp={checkActiveFormats}

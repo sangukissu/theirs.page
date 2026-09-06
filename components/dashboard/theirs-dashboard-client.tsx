@@ -25,6 +25,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
+import { TEXT_LIMITS } from "@/lib/validation/text-limits"
 
 interface MemorialSummary {
   id: string
@@ -76,12 +77,13 @@ export function TheirsDashboardClient({
   const searchParams = useSearchParams()
 
   const [memorials, setMemorials] = useState<MemorialSummary[]>(initialMemorials)
-  const [profileName, setProfileName] = useState(initialCaretakerName.trim())
-  const [creatorNameInput, setCreatorNameInput] = useState(initialCaretakerName.trim())
+  const [profileName, setProfileName] = useState(initialCaretakerName.trim().slice(0, 60))
+  const [creatorNameInput, setCreatorNameInput] = useState(initialCaretakerName.trim().slice(0, 60))
   const [isCreating, setIsCreating] = useState(initialMemorials.length === 0 || Boolean(initialName.trim()))
-  const [fullNameInput, setFullNameInput] = useState(initialName)
+  const [fullNameInput, setFullNameInput] = useState(initialName.slice(0, 80))
   const [relationship, setRelationship] = useState("")
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [isRedirecting, setIsRedirecting] = useState(false)
   const [copiedId, setCopiedId] = useState<string | null>(null)
   const [errorMsg, setErrorMsg] = useState<string | null>(null)
   const [checkingOutId, setCheckingOutId] = useState<string | null>(null)
@@ -113,6 +115,7 @@ export function TheirsDashboardClient({
 
   // Auto-fill on initial load if pending memorial exists
   useEffect(() => {
+    if (isSubmitting || isRedirecting) return
     let nameToUse = initialName
 
     if (!nameToUse) {
@@ -140,20 +143,20 @@ export function TheirsDashboardClient({
     }
 
     if (nameToUse) {
-      setFullNameInput(nameToUse)
+      setFullNameInput(nameToUse.slice(0, TEXT_LIMITS.personFullName))
       setIsCreating(true)
     }
   }, [initialName, searchParams])
 
   const handleCreate = async (e?: React.FormEvent, skipRelationship = false) => {
     if (e) e.preventDefault()
-    const targetName = fullNameInput.trim()
+    const targetName = fullNameInput.trim().slice(0, TEXT_LIMITS.personFullName)
     if (!targetName) {
       setErrorMsg("Please provide the name of the person you are remembering.")
       return
     }
 
-    const effectiveCreatorName = (profileName || creatorNameInput).trim()
+    const effectiveCreatorName = (profileName || creatorNameInput).trim().slice(0, 60)
     if (!profileName && effectiveCreatorName.length < 2) {
       setErrorMsg("Please enter your name so family and friends know who is caring for this memorial.")
       return
@@ -179,9 +182,7 @@ export function TheirsDashboardClient({
         throw new Error(data.error || "Failed to create memorial")
       }
 
-      if (!profileName && effectiveCreatorName) {
-        setProfileName(effectiveCreatorName)
-      }
+      setIsRedirecting(true)
 
       // Clean up pending memorial storage & cookies
       try {
@@ -191,10 +192,11 @@ export function TheirsDashboardClient({
       } catch { }
 
       // Route immediately into the low-friction Memorial Editor
-      router.push(`/dashboard/memorials/${data.memorial.id}/editor`)
+      router.replace(`/dashboard/memorials/${data.memorial.id}/editor`)
     } catch (err: any) {
       setErrorMsg(err.message)
       setIsSubmitting(false)
+      setIsRedirecting(false)
     }
   }
 
@@ -242,13 +244,19 @@ export function TheirsDashboardClient({
             </div>
           )}
 
-          <div className="p-6 sm:p-9 rounded-3xl bg-white border border-black/[0.08] shadow-[0_1px_3px_rgba(0,0,0,0.04),0_12px_24px_-8px_rgba(0,0,0,0.06)] flex flex-col gap-6 w-full">
-            <div className="flex flex-col gap-1.5 border-b border-black/[0.06] pb-4">
+          <div className="rounded-2xl bg-white p-6 sm:p-7 border border-black/[0.04]">
+            <div className="flex flex-col gap-1.5 pb-4">
               <span className="text-[11px] font-mono font-medium text-primary uppercase tracking-wider">
                 New Memorial
               </span>
               <h2 className="text-2xl sm:text-3xl font-heading font-medium tracking-tight text-[#181925]">
-                {firstName ? `Your connection to ${firstName}` : "Who would you like to remember?"}
+                {firstName ? (
+                  <>
+                    Your connection to <span className="text-primary">{firstName}</span>
+                  </>
+                ) : (
+                  "Who would you like to remember?"
+                )}
               </h2>
               <p className="text-xs sm:text-sm text-[#71717a] leading-relaxed">
                 {firstName
@@ -275,10 +283,12 @@ export function TheirsDashboardClient({
                     type="text"
                     required
                     autoFocus
+                    maxLength={80}
+                    disabled={isSubmitting || isRedirecting}
                     value={fullNameInput}
-                    onChange={(e) => setFullNameInput(e.target.value)}
+                    onChange={(e) => setFullNameInput(e.target.value.slice(0, 80))}
                     placeholder="e.g. Robert Edward Carter"
-                    className="px-4 py-2.5 rounded-xl bg-[#fafafb] border border-black/[0.08] text-sm text-[#181925] placeholder:text-[#aaa] outline-none focus:border-primary/60 transition-colors"
+                    className="px-4 py-2.5 rounded-xl bg-[#fafafb] border border-black/[0.08] text-sm text-[#181925] placeholder:text-[#aaa] outline-none focus:border-primary/60 transition-colors disabled:opacity-60"
                   />
                 </div>
               )}
@@ -295,10 +305,12 @@ export function TheirsDashboardClient({
                     required
                     autoComplete="name"
                     autoFocus={Boolean(initialName)}
+                    maxLength={60}
+                    disabled={isSubmitting || isRedirecting}
                     value={creatorNameInput}
-                    onChange={(e) => setCreatorNameInput(e.target.value)}
+                    onChange={(e) => setCreatorNameInput(e.target.value.slice(0, 60))}
                     placeholder="e.g. Anita Carter"
-                    className="px-4 py-2.5 rounded-xl bg-[#fafafb] border border-black/[0.08] text-sm text-[#181925] placeholder:text-[#aaa] outline-none focus:border-primary/60 transition-colors"
+                    className="px-4 py-2.5 rounded-xl bg-[#fafafb] border border-black/[0.08] text-sm text-[#181925] placeholder:text-[#aaa] outline-none focus:border-primary/60 transition-colors disabled:opacity-60"
                   />
                   <span className="text-[11px] text-[#888]">
                     Family and friends will see this as the creator of the memorial.
@@ -309,9 +321,16 @@ export function TheirsDashboardClient({
               {/* Relationship dropdown (Custom Radix UI Select) */}
               <div className="flex flex-col gap-1.5">
                 <label htmlFor="creator-relationship" className="text-xs font-medium text-[#181925]">
-                  {firstName ? `You are ${firstName}’s…` : "You are their…"}
+                  {firstName ? (
+                    <>
+                      You are <span className="text-primary">{firstName}</span>’s…
+                    </>
+                  ) : (
+                    "You are their…"
+                  )}
                 </label>
                 <Select
+                  disabled={isSubmitting || isRedirecting}
                   value={relationship || undefined}
                   onValueChange={(val) => setRelationship(val === "clear" ? "" : val)}
                 >
@@ -341,13 +360,13 @@ export function TheirsDashboardClient({
               <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-2">
                 <button
                   type="submit"
-                  disabled={isSubmitting || !fullNameInput.trim() || (!profileName && creatorNameInput.trim().length < 2)}
+                  disabled={isSubmitting || isRedirecting || !fullNameInput.trim() || (!profileName && creatorNameInput.trim().length < 2)}
                   className="w-full sm:w-auto inline-flex items-center justify-center gap-1.5 whitespace-nowrap !rounded-full font-medium transition-all cursor-pointer border border-[color-mix(in_srgb,var(--primary)_80%,#3a3480)] bg-[color-mix(in_srgb,var(--primary)_90%,#3a3480)] text-primary-foreground shadow-[inset_0_1px_0_rgba(255,255,255,0.22),inset_0_-1px_0_rgba(58,52,128,0.30)] transform-gpu hover:bg-primary hover:border-[color-mix(in_srgb,var(--primary)_70%,#3a3480)] active:translate-y-px active:scale-[0.98] h-10 px-6 text-xs sm:text-sm select-none disabled:opacity-50 disabled:pointer-events-none"
                 >
-                  {isSubmitting ? (
+                  {isSubmitting || isRedirecting ? (
                     <>
                       <Loader2 className="size-3.5 animate-spin" />
-                      <span>Creating memorial...</span>
+                      <span>{isRedirecting ? "Opening memorial..." : "Creating memorial..."}</span>
                     </>
                   ) : (
                     <>
@@ -360,17 +379,18 @@ export function TheirsDashboardClient({
                 <div className="flex items-center gap-3">
                   <button
                     type="button"
-                    disabled={isSubmitting}
+                    disabled={isSubmitting || isRedirecting}
                     onClick={() => handleCreate(undefined, true)}
-                    className="text-xs text-[#71717a] hover:text-[#181925] underline underline-offset-2 transition-colors cursor-pointer py-1"
+                    className="text-xs text-[#71717a] hover:text-[#181925] underline underline-offset-2 transition-colors cursor-pointer py-1 disabled:opacity-50"
                   >
                     Skip for now
                   </button>
                   {memorials.length > 0 && (
                     <button
                       type="button"
+                      disabled={isSubmitting || isRedirecting}
                       onClick={handleCancelCreate}
-                      className="text-xs text-[#71717a] hover:text-[#181925] transition-colors cursor-pointer py-1"
+                      className="text-xs text-[#71717a] hover:text-[#181925] transition-colors cursor-pointer py-1 disabled:opacity-50"
                     >
                       Cancel
                     </button>
@@ -445,8 +465,8 @@ export function TheirsDashboardClient({
                         <img
                           src={
                             m.portrait_photo_url.startsWith("http://") ||
-                            m.portrait_photo_url.startsWith("https://") ||
-                            m.portrait_photo_url.startsWith("/")
+                              m.portrait_photo_url.startsWith("https://") ||
+                              m.portrait_photo_url.startsWith("/")
                               ? m.portrait_photo_url
                               : `/api/media?key=${encodeURIComponent(m.portrait_photo_url)}`
                           }

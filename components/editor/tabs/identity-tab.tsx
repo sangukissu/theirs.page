@@ -3,7 +3,7 @@
 import { useState } from "react"
 import { Upload, AlertCircle } from "lucide-react"
 import { PortraitPlaceholder } from "@/components/memorial/portrait-placeholder"
-import { TEXT_LIMITS } from "@/lib/validation/text-limits"
+import { TEXT_LIMITS, formatMemorialLocation } from "@/lib/validation/text-limits"
 import {
   Select,
   SelectContent,
@@ -143,8 +143,8 @@ export function IdentityTab({
               src={
                 localPreviewUrl ||
                 (portraitUrl.startsWith("http://") ||
-                portraitUrl.startsWith("https://") ||
-                portraitUrl.startsWith("/")
+                  portraitUrl.startsWith("https://") ||
+                  portraitUrl.startsWith("/")
                   ? portraitUrl
                   : `/api/media?key=${encodeURIComponent(portraitUrl)}`)
               }
@@ -206,29 +206,53 @@ export function IdentityTab({
       {/* 2. Full Name & Nickname */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         <div className="sm:col-span-2 flex flex-col gap-1.5">
-          <label className="text-xs font-medium text-[#181925]">
-            Full Name *
-          </label>
+          <div className="flex items-baseline justify-between">
+            <label htmlFor="identity-fullname" className="text-xs font-medium text-[#181925]">
+              Full Name *
+            </label>
+            <span className={`text-[11px] font-mono ${(fullName || "").length >= TEXT_LIMITS.personFullName ? "text-amber-600 font-semibold" : "text-[#888]"}`}>
+              {(fullName || "").length}/{TEXT_LIMITS.personFullName}
+            </span>
+          </div>
           <input
+            id="identity-fullname"
             type="text"
             required
             maxLength={TEXT_LIMITS.personFullName}
-            value={fullName}
-            onChange={(e) => onChange("full_name", e.target.value)}
+            value={fullName || ""}
+            onChange={(e) => {
+              onChange("full_name", e.target.value.slice(0, TEXT_LIMITS.personFullName))
+            }}
+            onPaste={(e) => {
+              e.preventDefault()
+              const pasted = e.clipboardData.getData("text")
+              const clamped = pasted.slice(0, TEXT_LIMITS.personFullName)
+              onChange("full_name", clamped)
+            }}
             placeholder="e.g. Robert Edward Carter"
             className="px-3.5 py-2 rounded-xl bg-white border border-black/[0.08] text-xs sm:text-sm text-[#181925] outline-none focus:border-primary/60 transition-colors"
           />
         </div>
 
         <div className="flex flex-col gap-1.5">
-          <label className="text-xs font-medium text-[#181925]">
-            What people called them
-          </label>
+          <div className="flex items-baseline justify-between">
+            <label htmlFor="identity-nickname" className="text-xs font-medium text-[#181925]">
+              What people called them
+            </label>
+            <span className="text-[11px] font-mono text-[#888]">
+              {(preferredName || "").length}/{TEXT_LIMITS.preferredName}
+            </span>
+          </div>
           <input
+            id="identity-nickname"
             type="text"
             maxLength={TEXT_LIMITS.preferredName}
-            value={preferredName}
-            onChange={(e) => onChange("preferred_name", e.target.value)}
+            value={preferredName || ""}
+            onChange={(e) => {
+              let val = e.target.value.slice(0, TEXT_LIMITS.preferredName)
+              e.target.value = val
+              onChange("preferred_name", val)
+            }}
             placeholder="e.g. Bob, Nana"
             className="px-3.5 py-2 rounded-xl bg-white border border-black/[0.08] text-xs sm:text-sm text-[#181925] outline-none focus:border-primary/60 transition-colors"
           />
@@ -378,19 +402,96 @@ export function IdentityTab({
         </div>
 
         {/* Where they called home */}
-        <div className="flex flex-col gap-1.5">
-          <label className="text-xs font-medium text-[#181925]">
-            Where they called home
-          </label>
-          <input
-            type="text"
-            maxLength={TEXT_LIMITS.location}
-            value={location}
-            onChange={(e) => onChange("location", e.target.value)}
-            placeholder="e.g. Devon, England"
-            className="px-3.5 py-2 rounded-xl bg-white border border-black/[0.08] text-xs sm:text-sm text-[#181925] outline-none focus:border-primary/60 transition-colors"
-          />
-        </div>
+        {(() => {
+          const locWords = (location || "").trim().split(/\s+/).filter(Boolean)
+          const isAtLimit = locWords.length >= TEXT_LIMITS.locationMaxWords
+          const previewLocation = formatMemorialLocation(location)
+
+          return (
+            <div className="flex flex-col gap-1.5">
+              <div className="flex items-baseline justify-between">
+                <label htmlFor="identity-location" className="text-xs font-medium text-[#181925]">
+                  Where they called home
+                </label>
+                <span className={`text-[11px] font-mono ${isAtLimit ? "text-amber-600 font-medium" : "text-[#888]"}`}>
+                  {locWords.length}/{TEXT_LIMITS.locationMaxWords} words
+                </span>
+              </div>
+              <input
+                id="identity-location"
+                type="text"
+                maxLength={TEXT_LIMITS.location}
+                value={location || ""}
+                onKeyDown={(e) => {
+                  if (
+                    e.key === "Backspace" ||
+                    e.key === "Delete" ||
+                    e.key === "ArrowLeft" ||
+                    e.key === "ArrowRight" ||
+                    e.key === "Tab" ||
+                    e.key === "Escape" ||
+                    e.key === "Enter" ||
+                    e.ctrlKey ||
+                    e.metaKey ||
+                    e.altKey
+                  ) {
+                    return
+                  }
+
+                  const input = e.currentTarget
+                  const currentVal = input.value || ""
+                  const selStart = input.selectionStart ?? currentVal.length
+                  const selEnd = input.selectionEnd ?? currentVal.length
+
+                  if (selStart !== selEnd) return
+
+                  const words = currentVal.trim().split(/\s+/).filter(Boolean)
+
+                  // Block Space if already at 5 words
+                  if (e.key === " " && words.length >= TEXT_LIMITS.locationMaxWords) {
+                    e.preventDefault()
+                    return
+                  }
+
+                  // Block typing letters for 6th word if preceded by space
+                  if (
+                    words.length >= TEXT_LIMITS.locationMaxWords &&
+                    /\s$/.test(currentVal) &&
+                    selStart >= currentVal.length &&
+                    e.key.length === 1
+                  ) {
+                    e.preventDefault()
+                    return
+                  }
+                }}
+                onChange={(e) => {
+                  let val = e.target.value
+                  if (val.length > TEXT_LIMITS.location) {
+                    val = val.slice(0, TEXT_LIMITS.location)
+                  }
+                  const words = val.trim().split(/\s+/).filter(Boolean)
+                  if (words.length > TEXT_LIMITS.locationMaxWords) {
+                    val = words.slice(0, TEXT_LIMITS.locationMaxWords).join(" ").slice(0, TEXT_LIMITS.location)
+                  }
+                  e.target.value = val
+                  onChange("location", val)
+                }}
+                onPaste={(e) => {
+                  e.preventDefault()
+                  const pasted = e.clipboardData.getData("text")
+                  const words = pasted.trim().split(/\s+/).filter(Boolean)
+                  const clamped = words.slice(0, TEXT_LIMITS.locationMaxWords).join(" ").slice(0, TEXT_LIMITS.location)
+                  e.currentTarget.value = clamped
+                  onChange("location", clamped)
+                }}
+                placeholder="e.g. Devon, England or Devon Jinga, Delhi"
+                className="px-3.5 py-2 rounded-xl bg-white border border-black/[0.08] text-xs sm:text-sm text-[#181925] outline-none focus:border-primary/60 transition-colors"
+              />
+
+
+            </div>
+          )
+        })()}
       </div>
 
       {/* 4. Defining Quote / Line that feels like them */}

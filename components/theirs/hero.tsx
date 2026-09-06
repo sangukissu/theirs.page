@@ -3,6 +3,7 @@
 import { useState } from "react"
 import { useRouter } from "next/navigation"
 import { normalizeMemorialSlug } from "@/lib/memorial-slug"
+import { TEXT_LIMITS } from "@/lib/validation/text-limits"
 import { LifePanorama } from "./life-panorama"
 
 export function TheirsHero() {
@@ -59,7 +60,8 @@ export function TheirsHero() {
               <input
                 type="text"
                 value={name}
-                onChange={(e) => setName(e.target.value)}
+                maxLength={TEXT_LIMITS.personFullName}
+                onChange={(e) => setName(e.target.value.slice(0, TEXT_LIMITS.personFullName))}
                 onFocus={() => router.prefetch("/login")}
                 placeholder="Robert Carter"
                 className="w-full bg-transparent font-medium text-[#181925] outline-none placeholder:text-[#aaa] text-sm"

@@ -1,6 +1,6 @@
 import type { Metadata } from "next"
-import { Navbar } from '@/components/landing/Navbar';
-import { Footer } from '@/components/landing/Footer';
+import { TheirsNav } from '@/components/theirs/nav';
+import { TheirsFooter } from '@/components/theirs/footer';
 import BlogContentRenderer from "@/components/blog-content-renderer"
 import ShareButton from "@/components/share-button"
 import { Calendar, Clock, ArrowLeft, User, ChevronDown } from "lucide-react"
@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button"
 import { getPostBySlug, getAllPostSlugs, formatDate, calculateReadingTime, type WordPressPost } from "@/lib/wordpress"
 import { notFound } from "next/navigation"
 import Image from "next/image"
-import { CTA } from '@/components/landing/CTA';
+import { CtaBanner } from '@/components/theirs/cta-banner';
 export const revalidate = 3600
 type TocItem = { id: string; text: string; level: number }
 
@@ -191,7 +191,7 @@ function BlogPostContent({ post }: { post: WordPressPost }) {
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(blogPostJsonLd) }}
       />
-      <Navbar />
+      <TheirsNav />
       <main className="py-6">
 
         <div className="max-w-[1320px] mx-auto px-2 sm:px-8">
@@ -330,9 +330,9 @@ function BlogPostContent({ post }: { post: WordPressPost }) {
 
         </div>
 
-        <CTA />
+        <CtaBanner />
       </main>
-      <Footer />
+      <TheirsFooter />
     </div>
   )
 }

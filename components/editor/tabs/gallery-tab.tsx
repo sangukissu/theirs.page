@@ -345,430 +345,417 @@ export function GalleryTab({
 
       <div className="flex flex-col gap-8">
 
-      {/* Complete Plan Upgrade Banner */}
-      {!isPaid && (
-        <UpgradeBanner
-          compact
-          memorialId={memorialId}
-          featureTitle="Photos, Voicemails & Videos"
-          description="Free memorials include up to 5 photos. The Complete plan includes high-resolution photos, original audio and video, with 10 GB of original media storage per memorial."
-          onUpgrade={onUpgrade}
-        />
-      )}
 
-      {/* Quota & Feature Indicator Bar */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 rounded-2xl bg-white border border-black/[0.06] shadow-2xs">
-        <div className="flex items-center gap-2 flex-wrap">
-          <span className="text-xs font-medium text-[#181925]">Formats:</span>
-          <span className="inline-flex items-center gap-1 text-[11px] px-2.5 py-1 rounded-full bg-neutral-100 text-[#444] border border-black/[0.04]">
-            <ImageIcon className="size-3 text-[#666]" /> Photos
-          </span>
-          <span
-            className={`inline-flex items-center gap-1 text-[11px] px-2.5 py-1 rounded-full border ${isPaid
-              ? "bg-neutral-100 text-[#444] border-black/[0.04]"
-              : "bg-amber-50/70 text-amber-800 border-amber-200"
-              }`}
-          >
-            <Volume2 className="size-3 text-primary" /> Audio Notes{" "}
-            {!isPaid && <Lock className="size-2.5 text-amber-700" />}
-          </span>
-          <span
-            className={`inline-flex items-center gap-1 text-[11px] px-2.5 py-1 rounded-full border ${isPaid
-              ? "bg-neutral-100 text-[#444] border-black/[0.04]"
-              : "bg-amber-50/70 text-amber-800 border-amber-200"
-              }`}
-          >
-            <Video className="size-3 text-primary" /> Video Clips{" "}
-            {!isPaid && <Lock className="size-2.5 text-amber-700" />}
-          </span>
-        </div>
-
-        <div className="flex items-center gap-2">
-          {isPaid ? (
-            <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-emerald-50 text-emerald-700 text-xs font-medium border border-emerald-200">
-              <Sparkles className="size-3" /> Complete · Unlimited
+        {/* Quota & Feature Indicator Bar */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 rounded-2xl bg-white p-4 sm:p-6 border border-black/[0.05]">
+          <div className="flex items-center gap-2 flex-wrap">
+            <span className="text-xs font-medium text-[#181925]">Formats:</span>
+            <span className="inline-flex items-center gap-1 text-[11px] px-2.5 py-1 rounded-full bg-neutral-100 text-[#444] border border-black/[0.05]">
+              <ImageIcon className="size-3 text-[#666]" /> Photos
             </span>
-          ) : (
             <span
-              className={`px-2.5 py-1 rounded-full text-xs font-mono font-medium border ${isPhotoQuotaReached
-                ? "bg-rose-50 text-rose-700 border-rose-200"
-                : "bg-neutral-100 text-[#555] border-black/[0.06]"
+              className={`inline-flex items-center gap-1 text-[11px] px-2.5 py-1 rounded-full border ${isPaid
+                ? "bg-neutral-100 text-[#444] border-black/[0.05]"
+                : "bg-amber-50/70 text-amber-800 border-amber-200"
                 }`}
             >
-              {photoCount} / 5 Free Photos Used
+              <Volume2 className="size-3 text-primary" /> Audio Notes{" "}
+              {!isPaid && <Lock className="size-2.5 text-amber-700" />}
             </span>
-          )}
-        </div>
-      </div>
-
-      {uploadError && (
-        <div className="p-3.5 rounded-xl bg-rose-50 border border-rose-200 text-xs text-rose-700 flex items-center justify-between gap-2">
-          <div className="flex items-center gap-2">
-            <AlertCircle className="size-4 shrink-0" />
-            <span>{uploadError}</span>
+            <span
+              className={`inline-flex items-center gap-1 text-[11px] px-2.5 py-1 rounded-full border ${isPaid
+                ? "bg-neutral-100 text-[#444] border-black/[0.04]"
+                : "bg-amber-50/70 text-amber-800 border-amber-200"
+                }`}
+            >
+              <Video className="size-3 text-primary" /> Video Clips{" "}
+              {!isPaid && <Lock className="size-2.5 text-amber-700" />}
+            </span>
           </div>
-          {!isPaid && (
-            <button
-              type="button"
-              onClick={onUpgrade}
-              className="text-xs font-semibold text-rose-800 underline hover:no-underline cursor-pointer shrink-0"
-            >
-              Upgrade to Pro
-            </button>
-          )}
-        </div>
-      )}
 
-      {/* Low-Friction Bulk Upload Area */}
-      <label
-        className={`p-8 sm:p-10 rounded-3xl border-2 border-dashed transition-all flex flex-col items-center justify-center gap-3 cursor-pointer text-center group ${isPhotoQuotaReached
-          ? "border-amber-300 bg-amber-50/20 hover:bg-amber-50/40"
-          : "border-black/[0.12] hover:border-primary/50 bg-white hover:bg-neutral-50/50"
-          }`}
-      >
-        <div className="size-12 rounded-full bg-primary/10 text-primary flex items-center justify-center group-hover:scale-105 transition-transform">
-          {isPhotoQuotaReached ? <Lock className="size-6 text-amber-700" /> : <Upload className="size-6" />}
-        </div>
-
-        <div className="flex flex-col gap-1">
-          <span className="text-xs sm:text-sm font-medium text-[#181925]">
-            {isUploading
-              ? uploadProgress || "Uploading files..."
-              : isPhotoQuotaReached
-                ? "Free 5-photo limit reached · Drop more files after upgrading"
-                : "Drop photographs, voice notes, or home videos here"}
-          </span>
-          <span className="text-[11px] text-[#888]">
-            Select multiple files at once (JPG, PNG, MP4, MP3, M4A, OGG) · Original quality preserved
-          </span>
-        </div>
-
-        <input
-          type="file"
-          multiple
-          accept="image/*,video/*,audio/*"
-          disabled={isUploading}
-          onChange={handleFileUpload}
-          className="hidden"
-        />
-      </label>
-
-      {/* Uploaded Media Grid & Album Filter Bar */}
-      <div className="flex flex-col gap-3">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 px-1 text-xs text-[#71717a]">
-          <span>
-            {mediaItems.length} media item{mediaItems.length === 1 ? "" : "s"} preserved
-            {uploadingItems.length > 0 && ` · ${uploadingItems.length} uploading...`}
-          </span>
-
-          {selectedAlbumFilter !== "all" && (
-            <button
-              type="button"
-              onClick={() => setSelectedAlbumFilter("all")}
-              className="text-primary hover:underline text-xs font-medium cursor-pointer self-start sm:self-auto"
-            >
-              Show all ({mediaItems.length}) · filtered by &ldquo;{selectedAlbumFilter === "__no_album__" ? "Untagged" : selectedAlbumFilter}&rdquo;
-            </button>
-          )}
-        </div>
-
-        {/* Album Filter Chips in Editor */}
-        {existingAlbums.length > 0 && (
-          <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar py-1 select-none">
-            <span className="text-xs font-medium text-[#181925] shrink-0 mr-1 flex items-center gap-1">
-              <Folder className="size-3.5 text-primary" />
-              <span>Albums:</span>
-            </span>
-
-            <button
-              type="button"
-              onClick={() => setSelectedAlbumFilter("all")}
-              className={`text-xs px-3 py-1 rounded-full font-medium transition-all cursor-pointer shrink-0 ${
-                selectedAlbumFilter === "all"
-                  ? "bg-primary text-primary-foreground shadow-2xs"
-                  : "bg-[#f4f4f6] text-[#666] hover:text-[#181925]"
-              }`}
-            >
-              All ({mediaItems.length})
-            </button>
-
-            {existingAlbums.map((alb) => {
-              const count = mediaItems.filter((m) => m.album?.trim() === alb).length
-              return (
-                <button
-                  key={alb}
-                  type="button"
-                  onClick={() => setSelectedAlbumFilter(alb)}
-                  className={`text-xs px-3 py-1 rounded-full font-medium transition-all cursor-pointer shrink-0 flex items-center gap-1.5 ${
-                    selectedAlbumFilter === alb
-                      ? "bg-primary text-primary-foreground shadow-2xs"
-                      : "bg-[#f4f4f6] text-[#666] hover:text-[#181925]"
+          <div className="flex items-center gap-2">
+            {isPaid ? (
+              <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-emerald-50 text-emerald-700 text-xs font-medium border border-emerald-200">
+                <Sparkles className="size-3" /> Pro Plan · Unlimited
+              </span>
+            ) : (
+              <span
+                className={`px-2.5 py-1 rounded-full text-xs font-mono font-medium border ${isPhotoQuotaReached
+                  ? "bg-rose-50 text-rose-700 border-rose-200"
+                  : "bg-neutral-100 text-[#555] border-black/[0.06]"
                   }`}
-                >
-                  <Folder className="size-3 shrink-0" />
-                  <span>{alb}</span>
-                  <span className="text-[10px] opacity-75 font-mono">({count})</span>
-                </button>
-              )
-            })}
+              >
+                {photoCount} / 5 Free Photos Used
+              </span>
+            )}
+          </div>
+        </div>
 
-            {mediaItems.some((m) => !m.album?.trim()) && (
+        {uploadError && (
+          <div className="p-3.5 rounded-xl bg-rose-50 border border-rose-200 text-xs text-rose-700 flex items-center justify-between gap-2">
+            <div className="flex items-center gap-2">
+              <AlertCircle className="size-4 shrink-0" />
+              <span>{uploadError}</span>
+            </div>
+            {!isPaid && (
               <button
                 type="button"
-                onClick={() => setSelectedAlbumFilter("__no_album__")}
-                className={`text-xs px-3 py-1 rounded-full font-medium transition-all cursor-pointer shrink-0 ${
-                  selectedAlbumFilter === "__no_album__"
-                    ? "bg-neutral-800 text-white shadow-2xs"
-                    : "bg-[#f4f4f6] text-[#888] hover:text-[#181925]"
-                }`}
+                onClick={onUpgrade}
+                className="text-xs font-semibold text-rose-800 underline hover:no-underline cursor-pointer shrink-0"
               >
-                Untagged ({mediaItems.filter((m) => !m.album?.trim()).length})
+                Upgrade to Pro
               </button>
             )}
           </div>
         )}
 
-        {displayedMediaItems.length === 0 && uploadingItems.length === 0 ? (
-          <div className="p-8 rounded-2xl bg-white border border-black/[0.05] text-center text-xs text-[#888]">
-            {selectedAlbumFilter !== "all"
-              ? `No media in "${selectedAlbumFilter === "__no_album__" ? "Untagged" : selectedAlbumFilter}". Drop files above to add to this album.`
-              : "No media uploaded yet. Drag and drop photos, voice memos, or vintage home videos above."}
+        {/* Low-Friction Bulk Upload Area */}
+        <label
+          className={`p-8 sm:p-10 rounded-3xl border-2 border-dashed transition-all flex flex-col items-center justify-center gap-3 cursor-pointer text-center group ${isPhotoQuotaReached
+            ? "border-amber-300 bg-amber-50/20 hover:bg-amber-50/40"
+            : "border-black/[0.12] hover:border-primary/50 bg-white hover:bg-neutral-50/50"
+            }`}
+        >
+          <div className="size-12 rounded-full bg-primary/10 text-primary flex items-center justify-center group-hover:scale-105 transition-transform">
+            {isPhotoQuotaReached ? <Lock className="size-6 text-amber-700" /> : <Upload className="size-6" />}
           </div>
-        ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            {/* Optimistic Uploading Cards (Live thumbnail + Preserving status) */}
-            {uploadingItems.map((item) => (
-              <div
-                key={item.id}
-                className="p-3 rounded-2xl bg-white border border-primary/30 flex flex-col gap-2.5 shadow-2xs relative overflow-hidden"
+
+          <div className="flex flex-col gap-1">
+            <span className="text-xs sm:text-sm font-medium text-[#181925]">
+              {isUploading
+                ? uploadProgress || "Uploading files..."
+                : isPhotoQuotaReached
+                  ? "Free 5-photo limit reached · Drop more files after upgrading"
+                  : "Drop photographs, voice notes, or home videos here"}
+            </span>
+            <span className="text-[11px] text-[#888]">
+              Select multiple files at once (JPG, PNG, MP4, MP3, M4A, OGG) · Original quality preserved
+            </span>
+          </div>
+
+          <input
+            type="file"
+            multiple
+            accept="image/*,video/*,audio/*"
+            disabled={isUploading}
+            onChange={handleFileUpload}
+            className="hidden"
+          />
+        </label>
+
+        {/* Uploaded Media Grid & Album Filter Bar */}
+        <div className="flex flex-col gap-3">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 px-1 text-xs text-[#71717a]">
+            <span>
+              {mediaItems.length} media item{mediaItems.length === 1 ? "" : "s"} preserved
+              {uploadingItems.length > 0 && ` · ${uploadingItems.length} uploading...`}
+            </span>
+
+            {selectedAlbumFilter !== "all" && (
+              <button
+                type="button"
+                onClick={() => setSelectedAlbumFilter("all")}
+                className="text-primary hover:underline text-xs font-medium cursor-pointer self-start sm:self-auto"
               >
-                <div className="aspect-4/3 rounded-xl overflow-hidden bg-neutral-100 relative">
-                  {item.mediaType === "video" ? (
-                    <div className="size-full bg-neutral-900 flex items-center justify-center text-white">
-                      <Film className="size-8 opacity-80" />
-                    </div>
-                  ) : item.mediaType === "audio" ? (
-                    <div className="size-full bg-primary/10 flex items-center justify-center text-primary">
-                      <Volume2 className="size-8" />
-                    </div>
-                  ) : (
-                    <img
-                      src={item.previewUrl}
-                      alt={item.name}
-                      className="size-full object-cover"
-                    />
-                  )}
+                Show all ({mediaItems.length}) · filtered by &ldquo;{selectedAlbumFilter === "__no_album__" ? "Untagged" : selectedAlbumFilter}&rdquo;
+              </button>
+            )}
+          </div>
 
-                  {/* Frosted Status Overlay */}
-                  <div
-                    className={`absolute inset-0 flex flex-col items-center justify-center gap-1.5 p-3 text-center ${item.status === "error"
-                      ? "bg-rose-950/85 text-white"
-                      : "bg-black/50 backdrop-blur-[2px] text-white"
-                      }`}
-                  >
-                    {item.status === "error" ? (
-                      <>
-                        <AlertCircle className="size-5 text-rose-300" />
-                        <span className="text-[11px] font-medium text-rose-200 line-clamp-2">
-                          {item.error || "Upload failed"}
-                        </span>
-                        <button
-                          type="button"
-                          onClick={() => {
-                            try {
-                              URL.revokeObjectURL(item.previewUrl)
-                            } catch { }
-                            setUploadingItems((prev) => prev.filter((i) => i.id !== item.id))
-                          }}
-                          className="mt-1 px-2.5 py-0.5 rounded-full bg-white/20 hover:bg-white/30 text-[10px] text-white transition-colors cursor-pointer"
-                        >
-                          Dismiss
-                        </button>
-                      </>
-                    ) : (
-                      <>
-                        <Loader2 className="size-5 animate-spin text-white" />
-                        <span className="text-xs font-medium tracking-tight">Preserving...</span>
-                        <span className="text-[10px] text-white/70 truncate max-w-full px-2 font-mono">
-                          {item.name}
-                        </span>
-                      </>
-                    )}
-                  </div>
-                </div>
+          {/* Album Filter Chips in Editor */}
+          {existingAlbums.length > 0 && (
+            <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar py-1 select-none">
+              <span className="text-xs font-medium text-[#181925] shrink-0 mr-1 flex items-center gap-1">
+                <Folder className="size-3.5 text-primary" />
+                <span>Albums:</span>
+              </span>
 
-                {/* Subtle Skeleton placeholders for metadata fields */}
-                <div className="flex flex-col gap-2 opacity-40 pointer-events-none">
-                  <div className="h-7 rounded-lg bg-neutral-100 animate-pulse" />
-                  <div className="h-7 rounded-lg bg-neutral-100 animate-pulse" />
-                  <div className="flex items-center gap-2">
-                    <div className="flex-1 h-7 rounded-lg bg-neutral-100 animate-pulse" />
-                    <div className="w-24 h-7 rounded-lg bg-neutral-100 animate-pulse" />
-                  </div>
-                </div>
-              </div>
-            ))}
-
-            {/* Permanent Media Items */}
-            {displayedMediaItems.map((item, index) => (
-              <div
-                key={item.id}
-                className={`p-3 rounded-2xl bg-white border flex flex-col gap-2.5 shadow-2xs group relative transition-all ${item.is_pinned ? "border-[#8b5a45]/40 bg-[#faf8f5]/40" : "border-black/[0.07]"
+              <button
+                type="button"
+                onClick={() => setSelectedAlbumFilter("all")}
+                className={`text-xs px-3 py-1 rounded-full font-medium transition-all cursor-pointer shrink-0 ${selectedAlbumFilter === "all"
+                  ? "bg-primary text-primary-foreground shadow-2xs"
+                  : "bg-[#f4f4f6] text-[#666] hover:text-[#181925]"
                   }`}
               >
-                <div className="aspect-4/3 rounded-xl overflow-hidden bg-neutral-100 relative">
-                  {item.media_type === "video" ? (
-                    <div className="size-full bg-neutral-900 flex items-center justify-center text-white">
-                      <Film className="size-8 opacity-80" />
-                      <span className="absolute bottom-2 right-2 text-[10px] font-mono bg-black/70 px-1.5 py-0.5 rounded text-white">
-                        Video
-                      </span>
-                    </div>
-                  ) : item.media_type === "audio" ? (
-                    <div className="size-full bg-primary/10 flex items-center justify-center text-primary">
-                      <Volume2 className="size-8" />
-                      <span className="absolute bottom-2 right-2 text-[10px] font-mono bg-primary/20 px-1.5 py-0.5 rounded text-primary">
-                        Audio
-                      </span>
-                    </div>
-                  ) : (
-                    <img
-                      src={item.url}
-                      alt={item.caption || "Gallery item"}
-                      className="size-full object-cover"
-                    />
-                  )}
+                All ({mediaItems.length})
+              </button>
 
-                  {/* Pin to Top Button (Top Left) */}
+              {existingAlbums.map((alb) => {
+                const count = mediaItems.filter((m) => m.album?.trim() === alb).length
+                return (
                   <button
+                    key={alb}
                     type="button"
-                    onClick={() => onUpdateMedia(item.id, "is_pinned", !item.is_pinned)}
-                    className={`absolute top-2 left-2 size-7 rounded-full flex items-center justify-center transition-all cursor-pointer shadow-xs ${item.is_pinned
-                      ? "bg-[#8b5a45] text-white opacity-100"
-                      : "bg-black/60 hover:bg-black/80 text-white opacity-0 group-hover:opacity-100"
+                    onClick={() => setSelectedAlbumFilter(alb)}
+                    className={`text-xs px-3 py-1 rounded-full font-medium transition-all cursor-pointer shrink-0 flex items-center gap-1.5 ${selectedAlbumFilter === alb
+                      ? "bg-primary text-primary-foreground shadow-2xs"
+                      : "bg-[#f4f4f6] text-[#666] hover:text-[#181925]"
                       }`}
-                    title={item.is_pinned ? "Unpin from top" : "Pin to top as featured"}
                   >
-                    <Pin className={`size-3.5 ${item.is_pinned ? "fill-white" : ""}`} />
+                    <Folder className="size-3 shrink-0" />
+                    <span>{alb}</span>
+                    <span className="text-[10px] opacity-75 font-mono">({count})</span>
                   </button>
+                )
+              })}
 
-                  {item.is_pinned && (
-                    <span className="absolute top-2 left-10 text-[9px] font-mono uppercase tracking-wider bg-[#8b5a45] text-white px-2 py-0.5 rounded-full shadow-xs">
-                      Pinned
-                    </span>
-                  )}
+              {mediaItems.some((m) => !m.album?.trim()) && (
+                <button
+                  type="button"
+                  onClick={() => setSelectedAlbumFilter("__no_album__")}
+                  className={`text-xs px-3 py-1 rounded-full font-medium transition-all cursor-pointer shrink-0 ${selectedAlbumFilter === "__no_album__"
+                    ? "bg-neutral-800 text-white shadow-2xs"
+                    : "bg-[#f4f4f6] text-[#888] hover:text-[#181925]"
+                    }`}
+                >
+                  Untagged ({mediaItems.filter((m) => !m.album?.trim()).length})
+                </button>
+              )}
+            </div>
+          )}
 
-                  {/* Delete Button (Top Right) */}
-                  <button
-                    type="button"
-                    onClick={() => setItemToDelete(item)}
-                    className="absolute top-2 right-2 size-7 rounded-full bg-black/60 hover:bg-rose-600 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all cursor-pointer shadow-sm"
-                    title="Remove from gallery"
-                  >
-                    <Trash2 className="size-3.5" />
-                  </button>
+          {displayedMediaItems.length === 0 && uploadingItems.length === 0 ? (
+            <div className="p-8 rounded-2xl bg-white border border-black/[0.05] text-center text-xs text-[#888]">
+              {selectedAlbumFilter !== "all"
+                ? `No media in "${selectedAlbumFilter === "__no_album__" ? "Untagged" : selectedAlbumFilter}". Drop files above to add to this album.`
+                : "No media uploaded yet. Drag and drop photos, voice memos, or vintage home videos above."}
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              {/* Optimistic Uploading Cards (Live thumbnail + Preserving status) */}
+              {uploadingItems.map((item) => (
+                <div
+                  key={item.id}
+                  className="p-3 rounded-2xl bg-white border border-primary/30 flex flex-col gap-2.5 shadow-2xs relative overflow-hidden"
+                >
+                  <div className="aspect-4/3 rounded-xl overflow-hidden bg-neutral-100 relative">
+                    {item.mediaType === "video" ? (
+                      <div className="size-full bg-neutral-900 flex items-center justify-center text-white">
+                        <Film className="size-8 opacity-80" />
+                      </div>
+                    ) : item.mediaType === "audio" ? (
+                      <div className="size-full bg-primary/10 flex items-center justify-center text-primary">
+                        <Volume2 className="size-8" />
+                      </div>
+                    ) : (
+                      <img
+                        src={item.previewUrl}
+                        alt={item.name}
+                        className="size-full object-cover"
+                      />
+                    )}
 
-                  {/* Move Earlier / Move Later Controls (Bottom Left inside overlay) */}
-                  <div className="absolute bottom-2 left-2 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                    <button
-                      type="button"
-                      disabled={index === 0}
-                      onClick={() => {
-                        if (index > 0 && onReorderMedia) {
-                          const next = [...mediaItems]
-                          const temp = next[index]
-                          next[index] = next[index - 1]
-                          next[index - 1] = temp
-                          onReorderMedia(next)
-                        }
-                      }}
-                      className="size-6 rounded-md bg-black/70 hover:bg-black/90 disabled:opacity-30 disabled:pointer-events-none flex items-center justify-center text-white cursor-pointer"
-                      title="Move earlier"
+                    {/* Frosted Status Overlay */}
+                    <div
+                      className={`absolute inset-0 flex flex-col items-center justify-center gap-1.5 p-3 text-center ${item.status === "error"
+                        ? "bg-rose-950/85 text-white"
+                        : "bg-black/50 backdrop-blur-[2px] text-white"
+                        }`}
                     >
-                      <ArrowUp className="size-3" />
-                    </button>
-                    <button
-                      type="button"
-                      disabled={index === mediaItems.length - 1}
-                      onClick={() => {
-                        if (index < mediaItems.length - 1 && onReorderMedia) {
-                          const next = [...mediaItems]
-                          const temp = next[index]
-                          next[index] = next[index + 1]
-                          next[index + 1] = temp
-                          onReorderMedia(next)
-                        }
-                      }}
-                      className="size-6 rounded-md bg-black/70 hover:bg-black/90 disabled:opacity-30 disabled:pointer-events-none flex items-center justify-center text-white cursor-pointer"
-                      title="Move later"
-                    >
-                      <ArrowDown className="size-3" />
-                    </button>
+                      {item.status === "error" ? (
+                        <>
+                          <AlertCircle className="size-5 text-rose-300" />
+                          <span className="text-[11px] font-medium text-rose-200 line-clamp-2">
+                            {item.error || "Upload failed"}
+                          </span>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              try {
+                                URL.revokeObjectURL(item.previewUrl)
+                              } catch { }
+                              setUploadingItems((prev) => prev.filter((i) => i.id !== item.id))
+                            }}
+                            className="mt-1 px-2.5 py-0.5 rounded-full bg-white/20 hover:bg-white/30 text-[10px] text-white transition-colors cursor-pointer"
+                          >
+                            Dismiss
+                          </button>
+                        </>
+                      ) : (
+                        <>
+                          <Loader2 className="size-5 animate-spin text-white" />
+                          <span className="text-xs font-medium tracking-tight">Preserving...</span>
+                          <span className="text-[10px] text-white/70 truncate max-w-full px-2 font-mono">
+                            {item.name}
+                          </span>
+                        </>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Subtle Skeleton placeholders for metadata fields */}
+                  <div className="flex flex-col gap-2 opacity-40 pointer-events-none">
+                    <div className="h-7 rounded-lg bg-neutral-100 animate-pulse" />
+                    <div className="h-7 rounded-lg bg-neutral-100 animate-pulse" />
+                    <div className="flex items-center gap-2">
+                      <div className="flex-1 h-7 rounded-lg bg-neutral-100 animate-pulse" />
+                      <div className="w-24 h-7 rounded-lg bg-neutral-100 animate-pulse" />
+                    </div>
                   </div>
                 </div>
+              ))}
 
-                {/* Inline Metadata Form */}
-                <div className="flex flex-col gap-2">
-                  {/* Row 1: Caption */}
-                  <input
-                    type="text"
-                    maxLength={TEXT_LIMITS.photoCaption}
-                    defaultValue={item.caption || ""}
-                    onBlur={(e) => onUpdateMedia(item.id, "caption", e.target.value)}
-                    placeholder="Add caption (optional)"
-                    className="w-full px-3 py-1.5 rounded-lg bg-[#fafafb] border border-black/[0.06] text-xs text-[#181925] placeholder:text-[#aaa] outline-none focus:border-primary/50"
-                  />
+              {/* Permanent Media Items */}
+              {displayedMediaItems.map((item, index) => (
+                <div
+                  key={item.id}
+                  className={`p-3 rounded-2xl bg-white border flex flex-col gap-2.5 shadow-2xs group relative transition-all ${item.is_pinned ? "border-[#8b5a45]/40 bg-[#faf8f5]/40" : "border-black/[0.07]"
+                    }`}
+                >
+                  <div className="aspect-4/3 rounded-xl overflow-hidden bg-neutral-100 relative">
+                    {item.media_type === "video" ? (
+                      <div className="size-full bg-neutral-900 flex items-center justify-center text-white">
+                        <Film className="size-8 opacity-80" />
+                        <span className="absolute bottom-2 right-2 text-[10px] font-mono bg-black/70 px-1.5 py-0.5 rounded text-white">
+                          Video
+                        </span>
+                      </div>
+                    ) : item.media_type === "audio" ? (
+                      <div className="size-full bg-primary/10 flex items-center justify-center text-primary">
+                        <Volume2 className="size-8" />
+                        <span className="absolute bottom-2 right-2 text-[10px] font-mono bg-primary/20 px-1.5 py-0.5 rounded text-primary">
+                          Audio
+                        </span>
+                      </div>
+                    ) : (
+                      <img
+                        src={item.url}
+                        alt={item.caption || "Gallery item"}
+                        className="size-full object-cover"
+                      />
+                    )}
 
-                  {/* Row 2: Album (With Folder Icon + Datalist Suggestions) */}
-                  <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#fafafb] border border-black/[0.06] focus-within:border-primary/50 transition-colors">
-                    <Folder className="size-3.5 text-primary/70 shrink-0" />
+                    {/* Pin to Top Button (Top Left) */}
+                    <button
+                      type="button"
+                      onClick={() => onUpdateMedia(item.id, "is_pinned", !item.is_pinned)}
+                      className={`absolute top-2 left-2 size-7 rounded-full flex items-center justify-center transition-all cursor-pointer shadow-xs ${item.is_pinned
+                        ? "bg-[#8b5a45] text-white opacity-100"
+                        : "bg-black/60 hover:bg-black/80 text-white opacity-0 group-hover:opacity-100"
+                        }`}
+                      title={item.is_pinned ? "Unpin from top" : "Pin to top as featured"}
+                    >
+                      <Pin className={`size-3.5 ${item.is_pinned ? "fill-white" : ""}`} />
+                    </button>
+
+                    {item.is_pinned && (
+                      <span className="absolute top-2 left-10 text-[9px] font-mono uppercase tracking-wider bg-[#8b5a45] text-white px-2 py-0.5 rounded-full shadow-xs">
+                        Pinned
+                      </span>
+                    )}
+
+                    {/* Delete Button (Top Right) */}
+                    <button
+                      type="button"
+                      onClick={() => setItemToDelete(item)}
+                      className="absolute top-2 right-2 size-7 rounded-full bg-black/60 hover:bg-rose-600 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all cursor-pointer shadow-sm"
+                      title="Remove from gallery"
+                    >
+                      <Trash2 className="size-3.5" />
+                    </button>
+
+                    {/* Move Earlier / Move Later Controls (Bottom Left inside overlay) */}
+                    <div className="absolute bottom-2 left-2 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <button
+                        type="button"
+                        disabled={index === 0}
+                        onClick={() => {
+                          if (index > 0 && onReorderMedia) {
+                            const next = [...mediaItems]
+                            const temp = next[index]
+                            next[index] = next[index - 1]
+                            next[index - 1] = temp
+                            onReorderMedia(next)
+                          }
+                        }}
+                        className="size-6 rounded-md bg-black/70 hover:bg-black/90 disabled:opacity-30 disabled:pointer-events-none flex items-center justify-center text-white cursor-pointer"
+                        title="Move earlier"
+                      >
+                        <ArrowUp className="size-3" />
+                      </button>
+                      <button
+                        type="button"
+                        disabled={index === mediaItems.length - 1}
+                        onClick={() => {
+                          if (index < mediaItems.length - 1 && onReorderMedia) {
+                            const next = [...mediaItems]
+                            const temp = next[index]
+                            next[index] = next[index + 1]
+                            next[index + 1] = temp
+                            onReorderMedia(next)
+                          }
+                        }}
+                        className="size-6 rounded-md bg-black/70 hover:bg-black/90 disabled:opacity-30 disabled:pointer-events-none flex items-center justify-center text-white cursor-pointer"
+                        title="Move later"
+                      >
+                        <ArrowDown className="size-3" />
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Inline Metadata Form */}
+                  <div className="flex flex-col gap-2">
+                    {/* Row 1: Caption */}
                     <input
                       type="text"
-                      maxLength={TEXT_LIMITS.albumName}
-                      list={`album-list-${item.id}`}
-                      defaultValue={item.album || ""}
-                      onBlur={(e) => onUpdateMedia(item.id, "album", e.target.value)}
-                      placeholder="Album (e.g. Family, Travels, Leh)"
-                      className="w-full min-w-0 bg-transparent text-xs text-[#181925] placeholder:text-[#aaa] outline-none"
+                      maxLength={TEXT_LIMITS.photoCaption}
+                      defaultValue={item.caption || ""}
+                      onBlur={(e) => onUpdateMedia(item.id, "caption", e.target.value)}
+                      placeholder="Add caption (optional)"
+                      className="w-full px-3 py-1.5 rounded-lg bg-[#fafafb] border border-black/[0.06] text-xs text-[#181925] placeholder:text-[#aaa] outline-none focus:border-primary/50"
                     />
-                    <datalist id={`album-list-${item.id}`}>
-                      {existingAlbums.map((alb) => (
-                        <option key={alb} value={alb} />
-                      ))}
-                    </datalist>
-                  </div>
 
-                  {/* Row 3: Location and Year */}
-                  <div className="flex items-center gap-2">
-                    <div className="flex-1 min-w-0 flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#fafafb] border border-black/[0.06] focus-within:border-primary/50 transition-colors">
-                      <MapPin className="size-3 text-[#888] shrink-0" />
+                    {/* Row 2: Album (With Folder Icon + Datalist Suggestions) */}
+                    <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#fafafb] border border-black/[0.06] focus-within:border-primary/50 transition-colors">
+                      <Folder className="size-3.5 text-primary/70 shrink-0" />
                       <input
                         type="text"
-                        maxLength={TEXT_LIMITS.location}
-                        defaultValue={item.location || ""}
-                        onBlur={(e) => onUpdateMedia(item.id, "location", e.target.value)}
-                        placeholder="Location"
+                        maxLength={TEXT_LIMITS.albumName}
+                        list={`album-list-${item.id}`}
+                        defaultValue={item.album || ""}
+                        onBlur={(e) => onUpdateMedia(item.id, "album", e.target.value)}
+                        placeholder="Album (e.g. Family, Travels, Leh)"
                         className="w-full min-w-0 bg-transparent text-xs text-[#181925] placeholder:text-[#aaa] outline-none"
                       />
+                      <datalist id={`album-list-${item.id}`}>
+                        {existingAlbums.map((alb) => (
+                          <option key={alb} value={alb} />
+                        ))}
+                      </datalist>
                     </div>
 
-                    <div className="w-24 shrink-0 flex items-center gap-1 px-2 py-1.5 rounded-lg bg-[#fafafb] border border-black/[0.06] focus-within:border-primary/50 transition-colors">
-                      <Calendar className="size-3 text-[#888] shrink-0" />
-                      <input
-                        type="number"
-                        defaultValue={item.approx_year || ""}
-                        onBlur={(e) => onUpdateMedia(item.id, "approx_year", e.target.value ? Number(e.target.value) : null)}
-                        placeholder="Year"
-                        className="w-full min-w-0 bg-transparent text-xs text-[#181925] font-mono text-center placeholder:text-[#aaa] outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
-                      />
+                    {/* Row 3: Location and Year */}
+                    <div className="flex items-center gap-2">
+                      <div className="flex-1 min-w-0 flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#fafafb] border border-black/[0.06] focus-within:border-primary/50 transition-colors">
+                        <MapPin className="size-3 text-[#888] shrink-0" />
+                        <input
+                          type="text"
+                          maxLength={TEXT_LIMITS.location}
+                          defaultValue={item.location || ""}
+                          onBlur={(e) => onUpdateMedia(item.id, "location", e.target.value)}
+                          placeholder="Location"
+                          className="w-full min-w-0 bg-transparent text-xs text-[#181925] placeholder:text-[#aaa] outline-none"
+                        />
+                      </div>
+
+                      <div className="w-24 shrink-0 flex items-center gap-1 px-2 py-1.5 rounded-lg bg-[#fafafb] border border-black/[0.06] focus-within:border-primary/50 transition-colors">
+                        <Calendar className="size-3 text-[#888] shrink-0" />
+                        <input
+                          type="number"
+                          defaultValue={item.approx_year || ""}
+                          onBlur={(e) => onUpdateMedia(item.id, "approx_year", e.target.value ? Number(e.target.value) : null)}
+                          placeholder="Year"
+                          className="w-full min-w-0 bg-transparent text-xs text-[#181925] font-mono text-center placeholder:text-[#aaa] outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                        />
+                      </div>
                     </div>
                   </div>
                 </div>
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
+              ))}
+            </div>
+          )}
+        </div>
       </div>
 
       <ConfirmDeleteModal

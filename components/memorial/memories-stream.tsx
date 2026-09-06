@@ -566,8 +566,9 @@ export function MemoriesStream({
                   ref={formNameInputRef}
                   type="text"
                   required
+                  maxLength={60}
                   value={authorName}
-                  onChange={(e) => setAuthorName(e.target.value)}
+                  onChange={(e) => setAuthorName(e.target.value.slice(0, 60))}
                   placeholder="e.g. David Miller"
                   className="w-full px-3.5 py-2.5 rounded-xl bg-white border border-black/[0.08] text-sm text-[#181925] placeholder:text-[#aaa] outline-none focus:border-primary/50 transition-colors"
                 />
@@ -579,8 +580,9 @@ export function MemoriesStream({
                 </label>
                 <input
                   type="text"
+                  maxLength={60}
                   value={relationship}
-                  onChange={(e) => setRelationship(e.target.value)}
+                  onChange={(e) => setRelationship(e.target.value.slice(0, 60))}
                   placeholder="e.g. Daughter, Lifelong friend, Colleague"
                   className="w-full px-3.5 py-2.5 rounded-xl bg-white border border-black/[0.08] text-sm text-[#181925] placeholder:text-[#aaa] outline-none focus:border-primary/50 transition-colors"
                 />

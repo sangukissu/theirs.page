@@ -1,8 +1,8 @@
 "use client"
 
 import { useEffect } from "react"
-import { Navbar } from '@/components/landing/Navbar';
-import { Footer } from '@/components/landing/Footer';
+import { TheirsNav } from '@/components/theirs/nav';
+import { TheirsFooter } from '@/components/theirs/footer';
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { AlertTriangle, RefreshCw, ArrowLeft } from "lucide-react"
@@ -21,7 +21,7 @@ export default function BlogPostError({
 
   return (
     <div className="min-h-screen bg-white flex flex-col">
-      <Navbar />
+      <TheirsNav />
       <main className="flex-1 flex items-center justify-center pt-24 pb-16">
         <div className="max-w-md mx-auto text-center px-4">
           <div className="mb-8">
@@ -60,7 +60,7 @@ export default function BlogPostError({
           )}
         </div>
       </main>
-      <Footer />
+      <TheirsFooter />
     </div>
   )
 }

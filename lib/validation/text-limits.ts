@@ -1,9 +1,10 @@
 export const TEXT_LIMITS = {
-  personFullName: 120,
-  preferredName: 60,
+  personFullName: 40,
+  preferredName: 30,
   contributorName: 100,
   relationship: 80,
-  location: 120,
+  location: 60,
+  locationMaxWords: 5,
   headline: 240,
   tribute: 3_000,
   memory: 30_000,
@@ -28,4 +29,43 @@ export function utf8ByteLength(value: string): number {
 
 export function isWithinTextLimit(value: unknown, max: number): boolean {
   return typeof value !== "string" || value.trim().length <= max
+}
+
+/**
+ * Formats a location string for concise display on the memorial header capsule.
+ * Displays up to `maxWords` (default 2), counting alphanumeric words and excluding
+ * punctuation like commas from the word count.
+ *
+ * Examples:
+ *   "Devon, Delhi" -> "Devon, Delhi" (2 words)
+ *   "Devon Jinga, Delhi" -> "Devon Jinga" (stops after 2 words, strips trailing comma)
+ *   "St. Ives, Cornwall, England" -> "St. Ives"
+ *   "Kyoto, Japan" -> "Kyoto, Japan"
+ */
+export function formatMemorialLocation(raw: string | null | undefined, maxWords = 2): string {
+  if (!raw || typeof raw !== "string") return ""
+  const trimmed = raw.trim()
+  if (!trimmed) return ""
+
+  // Ensure consistent spacing after commas so "Devon,Delhi" splits cleanly
+  const normalized = trimmed.replace(/,/g, ", ")
+  const tokens = normalized.split(/\s+/).filter(Boolean)
+  const resultTokens: string[] = []
+  let wordsCounted = 0
+
+  for (const token of tokens) {
+    const isWord = /[a-zA-Z0-9\p{L}]/u.test(token)
+    if (isWord) {
+      if (wordsCounted >= maxWords) {
+        break
+      }
+      wordsCounted++
+    }
+    resultTokens.push(token)
+  }
+
+  return resultTokens
+    .join(" ")
+    .replace(/[,;.\s\-–—]+$/, "")
+    .replace(/\s+,/g, ",")
 }

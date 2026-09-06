@@ -65,16 +65,7 @@ export function StoryTab({
             Their Life Story
           </h2>
 
-          <button
-            type="button"
-            onClick={handleAiPolish}
-            disabled={isPolishing}
-            className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-primary/10 hover:bg-primary/20 text-primary text-xs font-medium transition-colors cursor-pointer select-none disabled:opacity-50"
-            title="Clean up grammar and structure while preserving your authentic voice"
-          >
-            <Sparkles className="size-3" />
-            <span>{isPolishing ? "Polishing..." : "Polish with AI"}</span>
-          </button>
+
         </div>
         <p className="text-xs sm:text-sm text-[#71717a]">
           Write about {firstName} in your own words. Use headings for life chapters, bold for emphasis, and pull quotes for their favorite sayings.

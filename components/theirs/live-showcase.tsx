@@ -74,7 +74,8 @@ export function LiveShowcase() {
               <input
                 type="text"
                 value={name}
-                onChange={(e) => setName(e.target.value)}
+                maxLength={80}
+                onChange={(e) => setName(e.target.value.slice(0, 80))}
                 onFocus={() => router.prefetch("/login")}
                 placeholder="Enter their name..."
                 className="w-full bg-transparent font-medium text-[#181925] outline-none placeholder:text-[#aaa] text-sm"

@@ -1,4 +1,7 @@
-const urlPolicy = require('./config/url-policy.json')
+let urlPolicy = { retiredKeywordPaths: {}, retiredBlogPaths: {} }
+try {
+  urlPolicy = require('./config/url-policy.json')
+} catch {}
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {

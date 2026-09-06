@@ -3,6 +3,7 @@
 import { Plus, Quote } from "lucide-react"
 import { ContributionType } from "./contribute-modal"
 import { PortraitPlaceholder } from "./portrait-placeholder"
+import { formatMemorialLocation } from "@/lib/validation/text-limits"
 
 interface MemorialHeroProps {
   fullName: string
@@ -66,7 +67,7 @@ export function MemorialHero({
         </div>
 
         {/* Lifespan & Location Monospace Capsule */}
-        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#f7f7f8] border border-black/[0.06] text-xs font-mono text-[#666] mt-1 select-none">
+        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#f7f7f8] border border-black/[0.06] text-xs font-mono text-[#666] mt-1 select-none max-w-full">
           <span>{yearsSpan}</span>
           {age && (
             <>
@@ -74,12 +75,16 @@ export function MemorialHero({
               <span>{age} years</span>
             </>
           )}
-          {location && (
-            <>
-              <span className="text-black/[0.2]">·</span>
-              <span>{location}</span>
-            </>
-          )}
+          {(() => {
+            const displayLocation = formatMemorialLocation(location)
+            if (!displayLocation) return null
+            return (
+              <>
+                <span className="text-black/[0.2]">·</span>
+                <span>{displayLocation}</span>
+              </>
+            )
+          })()}
         </div>
 
         {/* The Personality Epitaph (Life Dominates, Death Only Explains Why) */}

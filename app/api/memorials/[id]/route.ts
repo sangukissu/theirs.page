@@ -102,6 +102,15 @@ export async function PATCH(req: NextRequest, context: RouteContext) {
       successor_email: TEXT_LIMITS.email,
     })
     if (textError) return NextResponse.json({ error: textError }, { status: 400 })
+    if (typeof body.location === "string" && body.location.trim()) {
+      const locationWords = body.location.trim().split(/\s+/).filter(Boolean)
+      if (locationWords.length > TEXT_LIMITS.locationMaxWords) {
+        return NextResponse.json(
+          { error: `Location must be ${TEXT_LIMITS.locationMaxWords} words or fewer (e.g. City, Country or State).` },
+          { status: 400 }
+        )
+      }
+    }
     if (typeof body.successor_email === "string" && body.successor_email.trim() && !isValidEmail(body.successor_email.trim())) {
       return NextResponse.json({ error: "Please enter a valid successor email address." }, { status: 400 })
     }
