@@ -125,11 +125,17 @@ function LoginFormWithSearchParams({ nextPath: propNextPath }: { nextPath?: stri
   const [captchaBypassAllowed, setCaptchaBypassAllowed] = useState(false)
   const pendingSubmitRef = useRef(false)
   const formRef = useRef<HTMLFormElement>(null)
+  const captchaInputRef = useRef<HTMLInputElement>(null)
+  const turnstileTokenRef = useRef<string>("")
   const turnstileRef = useRef<TurnstileInstance>(null)
   const [lastUsed, setLastUsed] = useState<"google" | "magic" | null>(null)
   const siteKey = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY || ""
 
   const resetTurnstile = () => {
+    turnstileTokenRef.current = ""
+    if (captchaInputRef.current) {
+      captchaInputRef.current.value = ""
+    }
     setCaptchaToken(undefined)
     turnstileRef.current?.reset()
   }
@@ -311,7 +317,12 @@ function LoginFormWithSearchParams({ nextPath: propNextPath }: { nextPath?: stri
               ref={formRef}
               action={formAction}
               onSubmit={(e) => {
-                const currentToken = captchaToken || turnstileRef.current?.getResponse()
+                const currentToken =
+                  turnstileTokenRef.current ||
+                  captchaToken ||
+                  captchaInputRef.current?.value ||
+                  turnstileRef.current?.getResponse()
+
                 if (siteKey && !currentToken && !captchaBypassAllowed) {
                   e.preventDefault()
                   setUrlError(null)
@@ -325,11 +336,12 @@ function LoginFormWithSearchParams({ nextPath: propNextPath }: { nextPath?: stri
                   return
                 }
 
-                if (currentToken && !captchaToken) {
-                  setCaptchaToken(currentToken)
-                  const tokenInput = formRef.current?.querySelector<HTMLInputElement>('input[name="captchaToken"]')
-                  if (tokenInput) {
-                    tokenInput.value = currentToken
+                if (currentToken) {
+                  if (captchaInputRef.current) {
+                    captchaInputRef.current.value = currentToken
+                  }
+                  if (!captchaToken) {
+                    setCaptchaToken(currentToken)
                   }
                 }
 
@@ -369,14 +381,14 @@ function LoginFormWithSearchParams({ nextPath: propNextPath }: { nextPath?: stri
                       refreshExpired: "auto",
                     }}
                     onSuccess={(token) => {
+                      turnstileTokenRef.current = token
                       setCaptchaToken(token)
+                      if (captchaInputRef.current) {
+                        captchaInputRef.current.value = token
+                      }
                       if (pendingSubmitRef.current && formRef.current) {
                         pendingSubmitRef.current = false
                         setIsVerifyingCaptcha(false)
-                        const tokenInput = formRef.current.querySelector<HTMLInputElement>('input[name="captchaToken"]')
-                        if (tokenInput) {
-                          tokenInput.value = token
-                        }
                         formRef.current.requestSubmit()
                       }
                     }}
@@ -386,6 +398,10 @@ function LoginFormWithSearchParams({ nextPath: propNextPath }: { nextPath?: stri
                       pendingSubmitRef.current = false
                     }}
                     onError={() => {
+                      turnstileTokenRef.current = ""
+                      if (captchaInputRef.current) {
+                        captchaInputRef.current.value = ""
+                      }
                       setCaptchaToken(undefined)
                       setIsVerifyingCaptcha(false)
                       pendingSubmitRef.current = false
@@ -394,7 +410,12 @@ function LoginFormWithSearchParams({ nextPath: propNextPath }: { nextPath?: stri
                   />
                 </div>
               )}
-              <input type="hidden" name="captchaToken" value={captchaToken ?? ""} />
+              <input
+                ref={captchaInputRef}
+                type="hidden"
+                name="captchaToken"
+                defaultValue=""
+              />
 
               <div className="relative pt-1">
                 <MagicLinkSubmit isVerifying={isVerifyingCaptcha} />

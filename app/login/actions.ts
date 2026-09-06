@@ -40,10 +40,10 @@ export async function signInWithMagicLink(
 
     if (error) {
       if (error.message?.toLowerCase().includes('captcha')) {
-        console.warn('Supabase Auth rejected OTP due to captcha configuration/token:', error.message)
+        console.warn('Supabase Auth rejected OTP due to captcha verification:', error.message)
         return {
           error:
-            'Security verification was not recognized by the authentication service. If you enabled Captcha in Supabase Dashboard, ensure the Cloudflare Turnstile secret key is configured, or complete the verification and try again.',
+            'Security check verification failed. Please refresh the page and try again.',
         }
       }
       return { error: error.message }
