@@ -15,6 +15,7 @@ import {
 import { ContributionType } from "./contribute-modal"
 import { QuillFeatherEmblem } from "./tribute-emblems"
 import { useOptimisticReceipts } from "@/lib/memorial/optimistic-receipts"
+import { MemoryComposer } from "./memory-composer"
 
 export interface StoryItem {
   id: string
@@ -30,45 +31,8 @@ export interface StoryItem {
   photoCaption?: string
   createdAt?: string
   isOptimistic?: boolean
+  contentFormat?: "html" | "text"
 }
-
-export const DEFAULT_STORIES: StoryItem[] = [
-  {
-    id: "story-1",
-    authorName: "Anita Carter",
-    authorRelationship: "Daughter",
-    dateOrYear: "1994",
-    chronologicalYear: 1994,
-    location: "London, UK",
-    story:
-      "Dad couldn’t walk past a broken appliance without trying to repair it. Once he spent half of Christmas Day fixing Mrs. Higgins’ washing machine while everyone was waiting for dinner. He wouldn’t leave until it spun without rattling, then ate cold turkey with greasy hands and a giant grin.",
-    photoUrl: "/historical-wedding-photo.webp",
-    photoCaption: "Christmas morning in the kitchen, 1994",
-    createdAt: new Date(Date.now() - 1000 * 60 * 60 * 48).toISOString(),
-  },
-  {
-    id: "story-2",
-    authorName: "Sarah Jenkins",
-    authorRelationship: "Senior Apprentice",
-    dateOrYear: "1998",
-    chronologicalYear: 1998,
-    location: "Carter Workshop",
-    story:
-      "Thirty years at the bench and I never once heard him raise his voice. Whenever an apprentice broke a delicate clock spring, Bob would just pour a fresh cup of tea, smile, and say: ‘Well, now you know exactly how much pressure it takes to break one. That’s called learning.’",
-    createdAt: new Date(Date.now() - 1000 * 60 * 60 * 120).toISOString(),
-  },
-  {
-    id: "story-3",
-    authorName: "Rahul Carter",
-    authorRelationship: "Grandson",
-    dateOrYear: "2012",
-    chronologicalYear: 2012,
-    location: "Back Porch, Devon",
-    story:
-      "He spent three months carving a miniature wooden chess set for my tenth birthday. Every piece was carved from spare oak offcuts from the grandfather clocks. I still keep the King in my desk drawer at university.",
-    createdAt: new Date(Date.now() - 1000 * 60 * 60 * 180).toISOString(),
-  },
-]
 
 interface LifeStoriesProps {
   stories?: StoryItem[]
@@ -77,26 +41,24 @@ interface LifeStoriesProps {
   slug?: string
   isDemo?: boolean
   onOpenContribute: (type?: ContributionType) => void
+  showComposer?: boolean
 }
 
 export function LifeStories({
   stories,
-  fullName = "Robert Carter",
+  fullName = "",
   memorialId,
   slug,
   isDemo = false,
   onOpenContribute,
+  showComposer = false,
 }: LifeStoriesProps) {
   const [expandedIds, setExpandedIds] = useState<Record<string, boolean>>({})
   const [activeMenuId, setActiveMenuId] = useState<string | null>(null)
   const [copiedId, setCopiedId] = useState<string | null>(null)
   const [lightboxPhoto, setLightboxPhoto] = useState<{ url: string; caption?: string } | null>(null)
 
-  const activeStories = isDemo
-    ? stories && stories.length > 0
-      ? stories
-      : DEFAULT_STORIES
-    : stories || []
+  const activeStories = stories || []
 
   const firstName = fullName.split(" ")[0] || fullName
 
@@ -111,7 +73,7 @@ export function LifeStories({
       dateOrYear: r.approx_year ? String(r.approx_year) : "Just now",
       chronologicalYear: typeof r.approx_year === "number" ? r.approx_year : (r.approx_year ? parseInt(String(r.approx_year), 10) || undefined : undefined),
       location: r.location || undefined,
-      story: r.story,
+      story: r.story.replace(/<[^>]*>/g, " ").replace(/\s+/g, " ").trim(),
       photoUrl: r.photo_url || (r.photo_urls && r.photo_urls[0]) || undefined,
       photoUrls: r.photo_urls && r.photo_urls.length ? r.photo_urls : undefined,
       createdAt: r.created_at,
@@ -163,11 +125,11 @@ export function LifeStories({
 
         <button
           type="button"
-          onClick={() => onOpenContribute("memory")}
+          onClick={() => showComposer ? document.getElementById("share-memory")?.scrollIntoView({ behavior: "smooth" }) : onOpenContribute("memory")}
           className="inline-flex items-center gap-1.5 px-5 py-2.5 rounded-full bg-primary hover:bg-primary/90 text-primary-foreground text-xs font-medium transition-all cursor-pointer shadow-xs active:scale-95 shrink-0 self-start sm:self-auto"
         >
           <Plus className="size-3.5" />
-          <span>Share a Story</span>
+          <span>Share a memory</span>
         </button>
       </div>
 
@@ -182,11 +144,11 @@ export function LifeStories({
           </p>
           <button
             type="button"
-            onClick={() => onOpenContribute("memory")}
+            onClick={() => showComposer ? document.getElementById("share-memory")?.scrollIntoView({ behavior: "smooth" }) : onOpenContribute("memory")}
             className="inline-flex items-center gap-1.5 px-5 py-2.5 rounded-full bg-primary text-primary-foreground text-xs font-medium hover:bg-primary/90 transition-all cursor-pointer shadow-xs active:scale-95 mt-1"
           >
             <Plus className="size-3.5" />
-            <span>Share a Story</span>
+            <span>Share a memory</span>
           </button>
         </div>
       ) : (
@@ -287,11 +249,13 @@ export function LifeStories({
 
                 {/* The Written Story Body */}
                 <div className="text-[15px] sm:text-base leading-relaxed sm:leading-7 text-[#2c2d30] font-normal pt-1">
-                  <p className="whitespace-pre-line">
-                    {shouldTruncate && !isExpanded
-                      ? `${item.story.slice(0, 260)}...`
-                      : item.story}
-                  </p>
+                  {item.contentFormat === "html" && (!shouldTruncate || isExpanded) ? (
+                    <div className="memory-rich-text" dangerouslySetInnerHTML={{ __html: item.story }} />
+                  ) : (
+                    <p className="whitespace-pre-line">
+                      {shouldTruncate && !isExpanded ? `${item.story.replace(/<[^>]*>/g, "").slice(0, 260)}...` : item.story}
+                    </p>
+                  )}
                   {shouldTruncate && (
                     <button
                       type="button"
@@ -360,6 +324,19 @@ export function LifeStories({
           })}
         </div>
       )}
+
+      {showComposer && <MemoryComposer memorialId={memorialId} slug={slug || memorialId || ""} fullName={fullName} />}
+
+      <style jsx global>{`
+        .memory-rich-text > * + * { margin-top: 0.85rem; }
+        .memory-rich-text h2 { font-family: var(--font-serif, Georgia, serif); font-size: 1.3rem; font-weight: 600; color: #181925; }
+        .memory-rich-text h3 { font-family: var(--font-serif, Georgia, serif); font-size: 1.12rem; font-weight: 600; color: #181925; }
+        .memory-rich-text blockquote { border-left: 3px solid var(--primary); padding: 0.65rem 1rem; color: #4b4b52; font-style: italic; }
+        .memory-rich-text ul { list-style: disc; padding-left: 1.4rem; }
+        .memory-rich-text ol { list-style: decimal; padding-left: 1.4rem; }
+        .memory-rich-text a { color: var(--primary); text-decoration: underline; text-underline-offset: 3px; }
+        .memory-rich-text hr { border: 0; border-top: 1px solid rgba(0,0,0,.09); margin: 1.25rem 0; }
+      `}</style>
 
       {/* Lightbox Modal */}
       {lightboxPhoto && (

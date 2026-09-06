@@ -18,6 +18,7 @@ import {
   Shield,
   Loader2,
 } from "lucide-react"
+import { PortraitPlaceholder } from "@/components/memorial/portrait-placeholder"
 
 interface MemorialSummary {
   id: string
@@ -465,19 +466,21 @@ export function TheirsDashboardClient({
                   {/* Left: Avatar & Identity */}
                   <div className="flex items-center gap-4">
                     <div className="size-14 rounded-2xl overflow-hidden bg-neutral-100 border border-black/[0.08] shrink-0">
-                      <img
-                        src={
-                          m.portrait_photo_url
-                            ? m.portrait_photo_url.startsWith("http://") ||
-                              m.portrait_photo_url.startsWith("https://") ||
-                              m.portrait_photo_url.startsWith("/")
+                      {m.portrait_photo_url ? (
+                        <img
+                          src={
+                            m.portrait_photo_url.startsWith("http://") ||
+                            m.portrait_photo_url.startsWith("https://") ||
+                            m.portrait_photo_url.startsWith("/")
                               ? m.portrait_photo_url
                               : `/api/media?key=${encodeURIComponent(m.portrait_photo_url)}`
-                            : "/memorial-family-portrait-grandfather.jpg"
-                        }
-                        alt={m.full_name}
-                        className="size-full object-cover"
-                      />
+                          }
+                          alt={m.full_name}
+                          className="size-full object-cover"
+                        />
+                      ) : (
+                        <PortraitPlaceholder fullName={m.full_name} />
+                      )}
                     </div>
 
                     <div className="flex flex-col gap-1">

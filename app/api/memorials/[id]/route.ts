@@ -17,6 +17,7 @@ import {
 } from "@/lib/memorial-slug"
 import { hashPin } from "@/lib/security/pin"
 import { sendMemorialDeletedEmail, sendMemorialPublishedEmail } from "@/lib/email/lifecycle-emails"
+import { finalizeMemorialStorage, releaseMemorialStorage } from "@/lib/storage-quota"
 
 interface RouteContext {
   params: Promise<{ id: string }>
@@ -267,8 +268,23 @@ export async function PATCH(req: NextRequest, context: RouteContext) {
       if (newlyPromotedPortraitKey) {
         await deleteR2Object(newlyPromotedPortraitKey).catch(() => {})
       }
+      if (stagedPortraitToDelete) {
+        await releaseMemorialStorage(db, id, stagedPortraitToDelete).catch(() => {})
+      }
       console.error("Memorial update error:", updateError)
       return NextResponse.json({ error: "Failed to update memorial" }, { status: 500 })
+    }
+
+    if (stagedPortraitToDelete && newlyPromotedPortraitKey) {
+      try {
+        await finalizeMemorialStorage(db, id, stagedPortraitToDelete, newlyPromotedPortraitKey)
+      } catch (quotaError) {
+        await db.from("memorials").update({ portrait_photo_url: oldPortraitKey }).eq("id", id)
+        await deleteR2Object(newlyPromotedPortraitKey).catch(() => {})
+        await releaseMemorialStorage(db, id, stagedPortraitToDelete).catch(() => {})
+        console.error("Portrait storage finalization error:", quotaError)
+        return NextResponse.json({ error: "Failed to finalize portrait storage." }, { status: 500 })
+      }
     }
 
     // DB update succeeded: Clean up staging file and old portrait file
@@ -282,6 +298,7 @@ export async function PATCH(req: NextRequest, context: RouteContext) {
       oldPortraitKey.startsWith(`memorials/${authCheck.memorial.id}/`)
     ) {
       await deleteR2Object(oldPortraitKey).catch(() => {})
+      await releaseMemorialStorage(db, id, oldPortraitKey).catch(() => {})
     }
 
     if (authCheck.memorial.status !== "published" && updated.status === "published") {

@@ -3,7 +3,6 @@
 interface MemorialStoryProps {
   fullName: string
   biography?: string | null
-  isDemo?: boolean
 }
 
 function formatBiographyHtml(input?: string | null): string {
@@ -47,7 +46,7 @@ function formatBiographyHtml(input?: string | null): string {
     .replace(/href="javascript:[^"]*"/gi, 'href="#"')
 }
 
-export function MemorialStory({ fullName, biography, isDemo = false }: MemorialStoryProps) {
+export function MemorialStory({ fullName, biography }: MemorialStoryProps) {
   const firstName = fullName.split(" ")[0] || fullName
   const formattedBiography = formatBiographyHtml(biography)
 
@@ -69,30 +68,6 @@ export function MemorialStory({ fullName, biography, isDemo = false }: MemorialS
               dangerouslySetInnerHTML={{ __html: formattedBiography }}
               className="flex flex-col"
             />
-          ) : isDemo ? (
-            <div className="flex flex-col gap-5">
-              <p>
-                Robert was born in Exeter during the autumn of 1948, the younger of two brothers raised on the edge of the Devon moors. From his earliest years, he showed an almost mechanical curiosity about the inner workings of things. While other boys were playing football in the lane, Robert could reliably be found on his knees behind his father’s shed, methodically dismantling an old bicycle hub or winding the spring of a broken mantel clock.
-              </p>
-
-              <p>
-                In 1968, he took an apprenticeship in horology in London’s Clerkenwell district. He spent five years learning how to carve balance wheels by hand under master watchmakers who measured patience in tenths of a millimeter. It was during this period, on an uncharacteristically sunny afternoon in Portobello Market, that he met Meena. They married in 1974 at St. Jude’s Church and settled in a small stone cottage near Dartmoor, where they would spend the next fifty years.
-              </p>
-
-              {/* Editorial Pull Quote */}
-              <div className="my-3 p-6 rounded-2xl bg-[#f7f7f8] border-l-2 border-primary border-y border-r border-black/[0.04]">
-                <p className="text-base sm:text-lg font-normal italic text-[#181925] leading-relaxed m-0">
-                  “If you give someone an unhurried hour and a proper pot of tea, there isn’t a single disagreement in this world you can’t unravel.”
-                </p>
-                <span className="block mt-2 text-xs font-mono text-[#888] not-italic">
-                  — Robert’s favourite saying in the workshop
-                </span>
-              </div>
-
-              <p>
-                In 1983, he opened Carter Clocks & Woodworking on the high street. For over three decades, his workshop became the unofficial town square for anyone who needed a hinge repaired, a pendulum calibrated, or simply twenty minutes of quiet conversation without judgment. He retired in 2018 to tend his rose garden and teach his granddaughter Anita how to identify every native songbird of Devon.
-              </p>
-            </div>
           ) : (
             <div className="p-8 rounded-3xl bg-[#fafafb] border border-black/[0.06] text-center text-sm text-[#71717a]">
               A life story has not been written yet. Stories and memories contributed by family will appear here.

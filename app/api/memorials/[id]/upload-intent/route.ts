@@ -12,12 +12,24 @@ import {
 } from "@/lib/upload-intent"
 import { getMemorialPinCookieName, verifyPinAccessToken } from "@/lib/security/pin"
 import type { ContributionSettings } from "@/types/theirs"
+import { getR2PresignedUploadUrl } from "@/lib/r2"
+import { isStorageQuotaError, releaseMemorialStorage, reserveMemorialStorage } from "@/lib/storage-quota"
 
 interface RouteContext {
   params: Promise<{ id: string }>
 }
 
 const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+
+function extensionForMime(mime: string): string {
+  if (mime === "audio/mpeg") return "mp3"
+  if (mime === "audio/wav") return "wav"
+  if (mime === "audio/ogg") return "ogg"
+  if (mime === "audio/m4a") return "m4a"
+  if (mime === "video/webm") return "webm"
+  if (mime === "video/quicktime") return "mov"
+  return "mp4"
+}
 
 function getClientIp(req: NextRequest): string {
   return (
@@ -80,7 +92,7 @@ export async function POST(req: NextRequest, context: RouteContext) {
 
     if (!Number.isSafeInteger(file_size) || file_size < 1 || file_size > mediaRule.maxBytes) {
       return NextResponse.json(
-        { error: `${mediaRule.label[0].toUpperCase()}${mediaRule.label.slice(1)} files must be under ${Math.floor(mediaRule.maxBytes / 1024 / 1024)}MB.` },
+        { error: `${mediaRule.label[0].toUpperCase()}${mediaRule.label.slice(1)} files must be ${Math.floor(mediaRule.maxBytes / 1024 / 1024)}MB or smaller.` },
         { status: 400 }
       )
     }
@@ -185,13 +197,41 @@ export async function POST(req: NextRequest, context: RouteContext) {
     }
 
     // 6. Generate Short-Lived HMAC Upload Intent Token (10 minutes)
+    const nonce = crypto.randomBytes(16).toString("hex")
+    const usesDirectR2 = contributionType === "voice" || contributionType === "video"
+    const directUploadKey = usesDirectR2
+      ? `contribution-staging/${memorial.id}/${nonce}/original/${crypto.randomUUID()}.${extensionForMime(normalizedMime)}`
+      : undefined
+    let directUploadUrl: string | undefined
+
+    if (directUploadKey) {
+      if (!adminClient) {
+        return NextResponse.json({ error: "Media uploads are temporarily unavailable." }, { status: 503 })
+      }
+      try {
+        await reserveMemorialStorage(adminClient, memorial.id, directUploadKey, file_size)
+        directUploadUrl = await getR2PresignedUploadUrl(directUploadKey, normalizedMime, 600, file_size)
+      } catch (error) {
+        await releaseMemorialStorage(adminClient, memorial.id, directUploadKey).catch(() => {})
+        if (isStorageQuotaError(error)) {
+          return NextResponse.json({ error: "This memorial has reached its 10 GB original-media limit." }, { status: 413 })
+        }
+        throw error
+      }
+    }
+
     const uploadIntentToken = signUploadIntent({
       memorialId: memorial.id,
       allowedMime: mediaRule.allowedMime,
       maxBytes: mediaRule.maxBytes,
       contributionType,
       clientBinding: getUploadClientBinding(clientIp),
-      nonce: crypto.randomBytes(16).toString("hex"),
+      nonce,
+      ...(directUploadKey ? {
+        directUploadKey,
+        fileSize: file_size,
+        contentType: normalizedMime,
+      } : {}),
     })
 
     return NextResponse.json({
@@ -199,6 +239,13 @@ export async function POST(req: NextRequest, context: RouteContext) {
       uploadIntentToken,
       memorialId: memorial.id,
       expiresIn: 600,
+      ...(directUploadUrl ? {
+        directUpload: {
+          uploadUrl: directUploadUrl,
+          key: directUploadKey,
+          contentType: normalizedMime,
+        },
+      } : {}),
     })
   } catch (err: any) {
     console.error("Upload intent error:", err)

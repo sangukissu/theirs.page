@@ -31,7 +31,8 @@ begin
     raise exception 'Memorial % not found', NEW.memorial_id;
   end if;
 
-  -- Paid memorials have unmetered gallery photos and complete multimedia
+  -- Paid memorials have no item-count cap here. Migration 16 separately
+  -- enforces the 10 GiB original-upload entitlement per memorial.
   if coalesce(v_is_paid, false) = true then
     return NEW;
   end if;

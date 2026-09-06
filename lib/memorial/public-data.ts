@@ -21,6 +21,7 @@ import type {
 } from "@/types/memorial-view"
 import type { SectionSettings } from "@/types/theirs"
 import { getMemorialPinCookieName, verifyPinAccessToken } from "@/lib/security/pin"
+import { sanitizeContributionHtml } from "@/lib/safety/contribution-html"
 
 const DEFAULT_SECTIONS: Required<SectionSettings> = {
   story: true,
@@ -64,6 +65,13 @@ const DEMO_STORIES: StoryItem[] = [
   { id: "story-2", authorName: "Sarah Jenkins", authorRelationship: "Senior Apprentice", dateOrYear: "1998", chronologicalYear: 1998, location: "Carter Workshop", story: "Thirty years at the bench and I never once heard him raise his voice. Whenever an apprentice broke a delicate clock spring, Bob would pour a fresh cup of tea and call it learning.", createdAt: "2024-04-07T10:00:00.000Z" },
   { id: "story-3", authorName: "Rahul Carter", authorRelationship: "Grandson", dateOrYear: "2012", chronologicalYear: 2012, location: "Back Porch, Devon", story: "He spent three months carving a miniature wooden chess set for my tenth birthday. I still keep the King in my desk drawer at university.", createdAt: "2024-04-06T10:00:00.000Z" },
 ]
+
+const DEMO_BIOGRAPHY = `
+  <p>Robert was born in Exeter during the autumn of 1948, the younger of two brothers raised on the edge of the Devon moors. From his earliest years, he showed an almost mechanical curiosity about the inner workings of things.</p>
+  <p>In 1968, he took an apprenticeship in horology in London’s Clerkenwell district. It was during this period that he met Meena. They married in 1974 and settled in a small stone cottage near Dartmoor, where they would spend the next fifty years.</p>
+  <blockquote>“If you give someone an unhurried hour and a proper pot of tea, there isn’t a single disagreement in this world you can’t unravel.”</blockquote>
+  <p>In 1983, he opened Carter Clocks &amp; Woodworking on the high street. He retired in 2018 to tend his rose garden and teach his granddaughter Anita how to identify every native songbird of Devon.</p>
+`
 
 const DEMO_TRIBUTES: MemoryItem[] = [
   { id: "m1", authorName: "Meena Carter", authorRelationship: "Wife of 50 years", dateOrYear: "Yesterday", location: "Devon Cottage", story: "A blossom in memory of my dearest Bob. For fifty years you brought warmth, laughter, and calm into our home.", tributeType: "flower", createdAt: "2024-04-08T12:00:00.000Z" },
@@ -145,7 +153,8 @@ function mapStory(row: MemorialRow, publicDelivery = false): StoryItem {
     dateOrYear: row.approx_year ? String(row.approx_year) : displayDate(row.created_at),
     chronologicalYear: row.approx_year || undefined,
     location: row.location || undefined,
-    story: row.story,
+    story: sanitizeContributionHtml(row.story || ""),
+    contentFormat: "html",
     photoUrl: photoUrls[0],
     photoUrls: photoUrls.length ? photoUrls : undefined,
     createdAt: row.created_at,
@@ -253,12 +262,18 @@ export const getMemorialViewContext = cache(async (slug: string): Promise<Memori
       deathYear: memorial?.death_year || (isDemo ? 2024 : null),
       location: memorial?.location || (isDemo ? "Devon, England" : null),
       epitaph: memorial?.headline || (isDemo ? "Watchmaker, master woodworker, and an unhurried listener. Built grandfather clocks by day, fixed bicycles for neighborhood children by evening." : null),
-      biography: memorial?.biography || null,
+      biography: memorial?.biography
+        ? sanitizeContributionHtml(memorial.biography)
+        : isDemo
+          ? DEMO_BIOGRAPHY
+          : null,
       portraitUrl: memorial?.portrait_photo_url
         ? resolveMediaUrl(memorial.portrait_photo_url, {
             publicDelivery: memorial.status === "published" && memorial.privacy !== "private",
           })
-        : "/memorial-family-portrait-grandfather.jpg",
+        : isDemo
+          ? "/memorial-family-portrait-grandfather.jpg"
+          : null,
       isDemo,
       isPaid: isDemo || Boolean(memorial?.is_paid),
       isOwner,

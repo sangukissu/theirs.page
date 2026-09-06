@@ -6,6 +6,7 @@ import { getR2PresignedUploadUrl } from "@/lib/r2"
 import { assertMemorialAdmin } from "@/lib/memorial-auth"
 import { assertMediaQuota } from "@/lib/paywall"
 import { checkDurableRateLimit } from "@/lib/turnstile"
+import { isStorageQuotaError, releaseMemorialStorage, reserveMemorialStorage } from "@/lib/storage-quota"
 
 const TRANSIENT_ALLOWED_CONTENT_TYPES = [
   "image/jpeg",
@@ -20,6 +21,8 @@ const MEMORIAL_ALLOWED_IMAGE_TYPES = new Set([
   "image/png",
   "image/webp",
   "image/gif",
+  "image/heic",
+  "image/heif",
 ])
 
 const MEMORIAL_ALLOWED_AUDIO_TYPES = new Set([
@@ -46,7 +49,9 @@ const MEMORIAL_ALLOWED_VIDEO_TYPES = new Set([
 
 const MAX_TRANSIENT_UPLOAD_BYTES = 15 * 1024 * 1024
 const MAX_MEMORIAL_PORTRAIT_BYTES = 15 * 1024 * 1024
-const MAX_MEMORIAL_MEDIA_BYTES = 50 * 1024 * 1024
+const MAX_MEMORIAL_IMAGE_BYTES = 15 * 1024 * 1024
+const MAX_MEMORIAL_AUDIO_BYTES = 50 * 1024 * 1024
+const MAX_MEMORIAL_VIDEO_BYTES = 100 * 1024 * 1024
 
 function extensionForContentType(contentType: string): string {
   if (contentType === "image/png") return "png"
@@ -157,7 +162,7 @@ export async function POST(req: NextRequest) {
 
       if (safeFolder === "portraits" || safeFolder === "timeline") {
         if (!MEMORIAL_ALLOWED_IMAGE_TYPES.has(contentType)) {
-          return NextResponse.json({ error: "Only standard image files (JPEG, PNG, WebP) are supported for portraits and timeline events." }, { status: 400 })
+          return NextResponse.json({ error: "Only supported image files (JPEG, PNG, WebP, GIF, HEIC, or HEIF) are accepted here." }, { status: 400 })
         }
         if (fileSize < 1 || fileSize > MAX_MEMORIAL_PORTRAIT_BYTES) {
           return NextResponse.json({ error: "Image file must be under 15MB." }, { status: 400 })
@@ -172,8 +177,13 @@ export async function POST(req: NextRequest) {
         if (!isAllowedMedia) {
           return NextResponse.json({ error: "Unsupported media format. Please upload standard photos, audio notes, or videos." }, { status: 400 })
         }
-        if (fileSize < 1 || fileSize > MAX_MEMORIAL_MEDIA_BYTES) {
-          return NextResponse.json({ error: "File size exceeds the 50MB limit." }, { status: 400 })
+        const maxBytes = mediaType === "video"
+          ? MAX_MEMORIAL_VIDEO_BYTES
+          : mediaType === "audio"
+            ? MAX_MEMORIAL_AUDIO_BYTES
+            : MAX_MEMORIAL_IMAGE_BYTES
+        if (fileSize < 1 || fileSize > maxBytes) {
+          return NextResponse.json({ error: `File size exceeds the ${maxBytes / 1024 / 1024}MB limit for this media type.` }, { status: 400 })
         }
 
         // Quota & tier enforcement via paywall rules
@@ -208,8 +218,21 @@ export async function POST(req: NextRequest) {
       // Upload directly into private dashboard-staging/ prefix.
       // Promoted into permanent memorials/ storage only upon successful DB record creation.
       const stagingKey = `dashboard-staging/${authCheck.memorial.id}/${randomId}/${cleanFilename}`
-
-      const uploadUrl = await getR2PresignedUploadUrl(stagingKey, contentType, 600, fileSize)
+      const quotaDb = getSupabaseAdminSafe()
+      if (!quotaDb) {
+        return NextResponse.json({ error: "Media uploads are temporarily unavailable." }, { status: 503 })
+      }
+      let uploadUrl: string
+      try {
+        await reserveMemorialStorage(quotaDb, authCheck.memorial.id, stagingKey, fileSize)
+        uploadUrl = await getR2PresignedUploadUrl(stagingKey, contentType, 600, fileSize)
+      } catch (error) {
+        await releaseMemorialStorage(quotaDb, authCheck.memorial.id, stagingKey).catch(() => {})
+        if (isStorageQuotaError(error)) {
+          return NextResponse.json({ error: "This memorial has reached its 10 GB original-media limit." }, { status: 413 })
+        }
+        throw error
+      }
 
       return NextResponse.json({
         success: true,

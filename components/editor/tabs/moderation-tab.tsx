@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useEffect, useRef, useState } from "react"
 import {
   Archive,
   Check,
@@ -18,6 +18,7 @@ import {
   Camera,
   Heart,
   BookOpen,
+  Loader2,
 } from "lucide-react"
 import { ConfirmDeleteModal } from "../confirm-delete-modal"
 import { ContributionMediaPreview } from "../contribution-media-preview"
@@ -73,6 +74,23 @@ function primaryMediaMime(memory: EditorMemory): string | undefined {
   return typeof media[0].mime === "string" ? media[0].mime : undefined
 }
 
+function ContributionTypeBadge({ memory }: { memory: EditorMemory }) {
+  const isMemory = memory.contribution_type === "story"
+  return (
+    <span className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-semibold ${isMemory ? "bg-indigo-50 text-indigo-700" : "bg-rose-50 text-rose-700"}`}>
+      {isMemory ? <BookOpen className="size-3" /> : <Heart className="size-3" />}
+      {isMemory ? "Memory" : "Tribute"}
+    </span>
+  )
+}
+
+function ContributionBody({ memory, className = "" }: { memory: EditorMemory; className?: string }) {
+  if (memory.contribution_type === "story") {
+    return <div className={`memory-rich-text ${className}`} dangerouslySetInnerHTML={{ __html: memory.story }} />
+  }
+  return <p className={`${className} whitespace-pre-line`}>“{memory.story}”</p>
+}
+
 export function ModerationTab({
   memorialId,
   initialSubTab = "memories",
@@ -85,6 +103,14 @@ export function ModerationTab({
 }: ModerationTabProps) {
   const [subTab, setSubTab] = useState<"memories" | "messages">(initialSubTab)
   const [activeBucket, setActiveBucket] = useState<"pending" | "published" | "blocked">("pending")
+  const [typeFilter, setTypeFilter] = useState<"all" | "tribute" | "memory">("all")
+  const [displayedMemories, setDisplayedMemories] = useState<EditorMemory[]>(memories)
+  const [counts, setCounts] = useState({ pending: memories.length, published: 0, blocked: 0, all: memories.length })
+  const [nextCursor, setNextCursor] = useState<string | null>(null)
+  const [hasMore, setHasMore] = useState(false)
+  const [isLoadingPage, setIsLoadingPage] = useState(false)
+  const [pageError, setPageError] = useState<string | null>(null)
+  const pageRequestRef = useRef(0)
   const [isBlockedExpanded, setIsBlockedExpanded] = useState(false)
   const [revealedBlockedIds, setRevealedBlockedIds] = useState<Record<string, boolean>>({})
 
@@ -95,6 +121,39 @@ export function ModerationTab({
     preview: string
   } | null>(null)
   const [isDeleting, setIsDeleting] = useState(false)
+
+  const loadModerationPage = async (append: boolean) => {
+    if ((append && isLoadingPage) || (append && !nextCursor)) return
+    const requestId = ++pageRequestRef.current
+    setIsLoadingPage(true)
+    setPageError(null)
+    try {
+      const params = new URLSearchParams({ bucket: activeBucket, type: typeFilter })
+      if (append && nextCursor) params.set("cursor", nextCursor)
+      const response = await fetch(`/api/memorials/${memorialId}/moderation?${params.toString()}`, { cache: "no-store" })
+      const data = await response.json().catch(() => ({}))
+      if (!response.ok) throw new Error(data.error || "Unable to load contributions.")
+      if (requestId !== pageRequestRef.current) return
+      const incoming = (data.items || []) as EditorMemory[]
+      setDisplayedMemories((current) => append
+        ? [...current, ...incoming.filter((item) => !current.some((existing) => existing.id === item.id))]
+        : incoming)
+      setCounts(data.counts || { pending: 0, published: 0, blocked: 0, all: 0 })
+      setNextCursor(data.nextCursor || null)
+      setHasMore(Boolean(data.hasMore))
+    } catch (reason) {
+      if (requestId !== pageRequestRef.current) return
+      setPageError(reason instanceof Error ? reason.message : "Unable to load contributions.")
+    } finally {
+      if (requestId === pageRequestRef.current) setIsLoadingPage(false)
+    }
+  }
+
+  useEffect(() => {
+    void loadModerationPage(false)
+    // Filters define a fresh cursor snapshot; pagination itself does not retrigger this effect.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeBucket, typeFilter, memorialId])
 
   const handleModerate = async (
     target: "memory",
@@ -116,6 +175,8 @@ export function ModerationTab({
             ? "pending_approval"
             : "rejected"
         onUpdateMemoryStatus(targetId, nextStatus)
+        setDisplayedMemories((current) => current.filter((item) => item.id !== targetId))
+        void loadModerationPage(false)
       }
     } catch (err) {
       console.error("Moderation action failed:", err)
@@ -140,6 +201,8 @@ export function ModerationTab({
         if (deleteTarget.type === "memory") onDeleteMemory(deleteTarget.id)
         else onDeleteCaretakerMessage(deleteTarget.id)
         setDeleteTarget(null)
+        setDisplayedMemories((current) => current.filter((item) => item.id !== deleteTarget.id))
+        void loadModerationPage(false)
       } else {
         const data = await res.json().catch(() => ({}))
         console.error("Failed to delete contribution:", data.error)
@@ -169,11 +232,11 @@ export function ModerationTab({
   }
 
   // Separate memories into the 3 discrete queues
-  const pendingMemories = memories.filter(
+  const pendingMemories = displayedMemories.filter(
     (m) => m.status === "pending_approval" && m.safety_decision !== "blocked"
   )
-  const publishedMemories = memories.filter((m) => m.status === "approved")
-  const blockedMemories = memories.filter(
+  const publishedMemories = displayedMemories.filter((m) => m.status === "approved")
+  const blockedMemories = displayedMemories.filter(
     (m) => m.status === "blocked" || m.safety_decision === "blocked"
   )
 
@@ -202,10 +265,10 @@ export function ModerationTab({
                 : "bg-[#f4f4f6] text-[#666] hover:text-[#181925]"
             }`}
           >
-            <span>Contributions ({memories.length})</span>
-            {pendingMemories.length > 0 && (
+            <span>Contributions ({counts.all})</span>
+            {counts.pending > 0 && (
               <span className="size-4 rounded-full bg-amber-400 text-black text-[10px] font-bold flex items-center justify-center">
-                {pendingMemories.length}
+                {counts.pending}
               </span>
             )}
           </button>
@@ -245,9 +308,9 @@ export function ModerationTab({
               }`}
             >
               <span>Waiting for approval</span>
-              {pendingMemories.length > 0 && (
+              {counts.pending > 0 && (
                 <span className="px-1.5 py-0.2 rounded-full bg-amber-100 text-amber-900 text-[10px] font-bold">
-                  {pendingMemories.length}
+                  {counts.pending}
                 </span>
               )}
             </button>
@@ -262,10 +325,10 @@ export function ModerationTab({
               }`}
             >
               <span>Published</span>
-              <span className="text-[11px] text-[#aaa]">({publishedMemories.length})</span>
+              <span className="text-[11px] text-[#aaa]">({counts.published})</span>
             </button>
 
-            {blockedMemories.length > 0 && (
+            {counts.blocked > 0 && (
               <button
                 type="button"
                 onClick={() => setActiveBucket("blocked")}
@@ -278,11 +341,30 @@ export function ModerationTab({
                 <ShieldAlert className="size-3" />
                 <span>Blocked</span>
                 <span className="px-1.5 py-0.2 rounded-full bg-rose-200/70 text-rose-950 text-[10px] font-bold">
-                  {blockedMemories.length}
+                  {counts.blocked}
                 </span>
               </button>
             )}
           </div>
+
+          <div className="flex items-center gap-2" aria-label="Contribution type filter">
+            {([
+              ["all", "All"],
+              ["tribute", "Tributes"],
+              ["memory", "Memories"],
+            ] as const).map(([value, label]) => (
+              <button
+                key={value}
+                type="button"
+                onClick={() => setTypeFilter(value)}
+                className={`rounded-full px-3 py-1.5 text-xs font-medium transition-colors ${typeFilter === value ? "bg-primary text-primary-foreground" : "bg-neutral-100 text-[#666] hover:text-[#181925]"}`}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
+
+          {pageError && <p role="alert" className="text-sm text-rose-700">{pageError}</p>}
 
           {/* QUEUE 1: WAITING FOR APPROVAL */}
           {activeBucket === "pending" && (
@@ -313,6 +395,7 @@ export function ModerationTab({
                       <div className="flex items-start justify-between gap-3">
                         <div className="flex flex-col gap-0.5">
                           <div className="flex items-center gap-2 flex-wrap">
+                            <ContributionTypeBadge memory={mem} />
                             <span className="text-xs sm:text-sm font-semibold text-[#181925]">
                               {mem.author_name}
                             </span>
@@ -356,9 +439,7 @@ export function ModerationTab({
                       )}
 
                       {/* Content narrative */}
-                      <p className="text-xs sm:text-sm text-[#333] leading-relaxed whitespace-pre-line">
-                        “{mem.story}”
-                      </p>
+                      <ContributionBody memory={mem} className="text-xs sm:text-sm text-[#333] leading-relaxed" />
 
                       {/* Private attachment preview for caretaker review */}
                       {mem.photo_url && (
@@ -430,6 +511,7 @@ export function ModerationTab({
                   >
                     <div className="flex items-baseline justify-between gap-2">
                       <div className="flex items-center gap-2 flex-wrap">
+                        <ContributionTypeBadge memory={mem} />
                         <span className="text-xs font-semibold text-[#181925]">{mem.author_name}</span>
                         {mem.author_relationship && (
                           <span className="text-[11px] text-[#71717a]">({mem.author_relationship})</span>
@@ -447,7 +529,7 @@ export function ModerationTab({
                       </span>
                     </div>
 
-                    <p className="text-xs text-[#444] leading-relaxed whitespace-pre-line">“{mem.story}”</p>
+                    <ContributionBody memory={mem} className="text-xs text-[#444] leading-relaxed" />
 
                     {mem.photo_url && (
                       <ContributionMediaPreview
@@ -491,14 +573,14 @@ export function ModerationTab({
           )}
 
           {/* QUEUE 3: BLOCKED BY SAFETY CHECKS */}
-          {(activeBucket === "blocked" || blockedMemories.length > 0) && (
+          {activeBucket === "blocked" && (
             <div className="flex flex-col gap-3 pt-2">
               <div className="p-4 rounded-2xl bg-rose-50 border border-rose-200 text-rose-950 flex flex-col gap-2">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
                     <ShieldAlert className="size-4 text-rose-600" />
                     <span className="text-xs font-semibold">
-                      Blocked by safety checks ({blockedMemories.length})
+                      Blocked by safety checks ({counts.blocked})
                     </span>
                   </div>
                   <button
@@ -528,6 +610,7 @@ export function ModerationTab({
                       >
                         <div className="flex items-start justify-between gap-2">
                           <div className="flex flex-col gap-0.5">
+                            <ContributionTypeBadge memory={mem} />
                             <span className="text-xs font-semibold text-[#181925]">
                               {mem.author_name}
                             </span>
@@ -583,7 +666,7 @@ export function ModerationTab({
                           <p
                             className="text-xs text-[#444]"
                           >
-                            {isRevealed ? mem.story : "Content is hidden to protect the family."}
+                            {isRevealed ? mem.story.replace(/<[^>]*>/g, " ").replace(/\s+/g, " ").trim() : "Content is hidden to protect the family."}
                           </p>
 
                           {isRevealed && mem.photo_url && (
@@ -630,6 +713,16 @@ export function ModerationTab({
                 </div>
               )}
             </div>
+          )}
+
+          {isLoadingPage && displayedMemories.length === 0 && (
+            <div className="flex justify-center py-8 text-[#777]"><Loader2 className="size-5 animate-spin" /></div>
+          )}
+          {hasMore && (
+            <button type="button" onClick={() => void loadModerationPage(true)} disabled={isLoadingPage} className="mx-auto inline-flex min-h-10 items-center gap-2 rounded-full bg-[#181925] px-4 text-xs font-semibold text-white disabled:opacity-50">
+              {isLoadingPage && <Loader2 className="size-3.5 animate-spin" />}
+              {isLoadingPage ? "Loading…" : "Show 20 more"}
+            </button>
           )}
         </div>
       )}

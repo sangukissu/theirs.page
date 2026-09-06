@@ -140,7 +140,7 @@ export function GalleryTab({
       const remainingSlots = Math.max(0, 5 - currentCount)
       if (remainingSlots === 0) {
         setUploadError(
-          "Free memorials are limited to 5 photos. Upgrade to Pro Plan for unlimited photos and media."
+          "Free memorials are limited to 5 photos. The Complete plan includes up to 10 GB of original media."
         )
         if (e.target) e.target.value = ""
         return
@@ -149,7 +149,7 @@ export function GalleryTab({
       if (fileList.length > remainingSlots) {
         allowedFiles = fileList.slice(0, remainingSlots)
         setUploadError(
-          `Free plan limit: Uploading the first ${remainingSlots} photo${remainingSlots > 1 ? "s" : ""}. Upgrade to Pro for unlimited media.`
+          `Free plan limit: Uploading the first ${remainingSlots} photo${remainingSlots > 1 ? "s" : ""}. The Complete plan includes up to 10 GB of original media.`
         )
       }
     }
@@ -349,8 +349,8 @@ export function GalleryTab({
         <UpgradeBanner
           compact
           memorialId={memorialId}
-          featureTitle="Unlimited Photos, Voicemails & Videos"
-          description="Free memorials include up to 5 photos. Pro Plan unlocks unlimited high-resolution photos, original audio recordings, and video clips."
+          featureTitle="Photos, Voicemails & Videos"
+          description="Free memorials include up to 5 photos. The Complete plan includes high-resolution photos, original audio and video, with 10 GB of original media storage per memorial."
           onUpgrade={onUpgrade}
         />
       )}

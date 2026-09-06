@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server"
 import { deleteR2PrefixOlderThan } from "@/lib/r2"
 import { isAuthorizedCronRequest } from "@/lib/security/cron"
+import { getSupabaseAdminSafe } from "@/utils/supabase/admin"
 
 // Cron jobs must never be cached or statically rendered.
 export const dynamic = "force-dynamic"
@@ -48,6 +49,16 @@ export async function GET(request: Request) {
         }`
       )
     }
+  }
+
+  const admin = getSupabaseAdminSafe()
+  if (admin) {
+    const { error } = await admin
+      .from("memorial_storage_ledger")
+      .delete()
+      .eq("status", "reserved")
+      .lt("expires_at", new Date().toISOString())
+    if (error) totals.errors.push(`Storage reservation cleanup failed: ${error.message}`)
   }
 
   if (totals.errors.length > 0) {

@@ -2,6 +2,7 @@
 
 import { Plus, Quote } from "lucide-react"
 import { ContributionType } from "./contribute-modal"
+import { PortraitPlaceholder } from "./portrait-placeholder"
 
 interface MemorialHeroProps {
   fullName: string
@@ -18,11 +19,11 @@ interface MemorialHeroProps {
 export function MemorialHero({
   fullName,
   preferredName,
-  birthYear = 1948,
-  deathYear = 2024,
-  location = "Devon, England",
+  birthYear = null,
+  deathYear = null,
+  location = null,
   epitaph,
-  portraitUrl = "/memorial-family-portrait-grandfather.jpg",
+  portraitUrl = null,
   isDemo = false,
   onOpenContribute,
 }: MemorialHeroProps) {
@@ -35,13 +36,18 @@ export function MemorialHero({
       {/* Museum-Grade Archival Portrait Frame (Zero Shadows, Hairline Border) */}
       <div className="relative p-2 rounded-3xl bg-white border border-black/[0.08] mb-8 select-none">
         <div className="relative size-32 sm:size-40 rounded-2xl overflow-hidden bg-neutral-100 border border-black/[0.06]">
-          <img
-            src={portraitUrl || "/memorial-family-portrait-grandfather.jpg"}
-            alt={fullName}
-            className="size-full object-cover object-top"
-          />
-          {/* Subtle bottom vignette */}
-          <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent pointer-events-none" />
+          {portraitUrl ? (
+            <>
+              <img
+                src={portraitUrl}
+                alt={fullName}
+                className="size-full object-cover object-top"
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent pointer-events-none" />
+            </>
+          ) : (
+            <PortraitPlaceholder fullName={fullName} />
+          )}
  
         </div>
       </div>

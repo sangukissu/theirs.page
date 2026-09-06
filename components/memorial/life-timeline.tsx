@@ -11,70 +11,13 @@ export interface TimelineMilestone {
   photoUrl?: string
 }
 
-export const DEFAULT_MILESTONES: TimelineMilestone[] = [
-  {
-    year: 1948,
-    chapter: "Chapter I",
-    title: "Born in Exeter, Devon",
-    description: "Born in autumn at St. Leonard’s Hospital, the younger of two sons raised on the edge of the Devon moors.",
-    location: "Exeter, Devon",
-  },
-  {
-    year: 1968,
-    chapter: "Chapter II",
-    title: "Horological Apprenticeship in London",
-    description: "Moved to Clerkenwell to study under master watchmakers, learning to craft mechanical balance wheels and clock pendulums by hand.",
-    location: "Clerkenwell, London",
-    photoUrl: "/old-school-photo.webp",
-  },
-  {
-    year: 1974,
-    chapter: "Chapter III",
-    title: "Married Meena at St. Jude’s",
-    description: "Married Meena Sharma on a warm July afternoon. They bought a small stone cottage near Dartmoor and began their fifty-year life together.",
-    location: "St. Jude’s Church",
-    photoUrl: "/historical-wedding-photo.webp",
-  },
-  {
-    year: 1983,
-    chapter: "Chapter IV",
-    title: "Founded Carter Clocks & Woodworking",
-    description: "Opened his independent workshop on the high street. Over 35 years, repaired thousands of family heirloom clocks for three generations.",
-    location: "Devon High Street",
-  },
-  {
-    year: 2004,
-    chapter: "Chapter V",
-    title: "Welcomed Granddaughter Anita",
-    description: "Became a grandfather. Spent weekends teaching her how to identify wild Dartmoor ponies and repair wooden furniture.",
-    location: "Devon Cottage",
-    photoUrl: "/memorial-family-portrait-combined.jpg",
-  },
-  {
-    year: 2018,
-    chapter: "Chapter VI",
-    title: "Retirement & The Rose Garden",
-    description: "Handed over workshop keys to his senior apprentice and spent his days tending ninety varieties of heritage English roses.",
-    location: "Dartmoor Cottage",
-  },
-  {
-    year: 2024,
-    chapter: "Chapter VII",
-    title: "Laid to Rest on the Moors",
-    description: "Passed away peacefully at home with Meena and his children by his side. Buried on the hillside overlooking the Devon moors he walked every morning.",
-    location: "Dartmoor, Devon",
-  },
-]
-
 interface LifeTimelineProps {
   milestones?: TimelineMilestone[]
   isDemo?: boolean
 }
 
 export function LifeTimeline({ milestones, isDemo = false }: LifeTimelineProps) {
-  const activeMilestones = isDemo
-    ? (milestones && milestones.length > 0 ? milestones : DEFAULT_MILESTONES)
-    : (milestones || [])
+  const activeMilestones = milestones || []
 
   return (
     <section id="timeline" className="py-12 px-4 max-w-4xl mx-auto scroll-mt-24">

@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, useRef } from "react"
+import { useState, useEffect, useMemo, useRef } from "react"
 import { motion, AnimatePresence } from "framer-motion"
 import {
   X,
@@ -24,6 +24,7 @@ import {
 } from "./tribute-emblems"
 import { saveLocalReceipt } from "@/lib/memorial/optimistic-receipts"
 import type { ContributionSettings } from "@/types/theirs"
+import { useContributionDraft } from "@/hooks/use-contribution-draft"
 
 export type ContributionType = "tribute" | "memory" | "photo" | "voice" | "video" | "message"
 export type TributeRitual = "flower" | "candle" | "note"
@@ -69,6 +70,7 @@ export function ContributeModal({
   const [relationship, setRelationship] = useState("")
   const [content, setContent] = useState("")
   const [extraField, setExtraField] = useState("") // approx year
+  const [location, setLocation] = useState("")
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [isSubmitted, setIsSubmitted] = useState(false)
   const [submissionResult, setSubmissionResult] = useState<SubmissionResult | null>(null)
@@ -95,6 +97,30 @@ export function ContributeModal({
   const [uploadAuthorization, setUploadAuthorization] = useState<string | null>(null)
   const [isUploadingMedia, setIsUploadingMedia] = useState(false)
   const [mediaUploadError, setMediaUploadError] = useState<string | null>(null)
+  const restoredMemoryDraftRef = useRef(false)
+  const memoryDraftValue = useMemo(() => ({
+    name: authorName,
+    relationship,
+    content,
+    year: extraField,
+    location,
+  }), [authorName, relationship, content, extraField, location])
+  const { restoredDraft: restoredMemoryDraft, clearDraft: clearMemoryDraft } = useContributionDraft({
+    memorialId: memorialId || slug,
+    type: "memory",
+    value: memoryDraftValue,
+    enabled: isOpen && selectedType === "memory" && !isSubmitted,
+  })
+
+  useEffect(() => {
+    if (!restoredMemoryDraft || restoredMemoryDraftRef.current || selectedType !== "memory") return
+    restoredMemoryDraftRef.current = true
+    setAuthorName(restoredMemoryDraft.name || "")
+    setRelationship(restoredMemoryDraft.relationship || "")
+    setContent(restoredMemoryDraft.content || "")
+    setExtraField(restoredMemoryDraft.year || "")
+    setLocation(restoredMemoryDraft.location || "")
+  }, [restoredMemoryDraft, selectedType])
 
   const [lazyLimits, setLazyLimits] = useState<{
     photoCount: number
@@ -220,8 +246,13 @@ export function ContributeModal({
     }
   }, [isOpen, initialType, initialPhotoUrl, initialPhotoTitle, initialMediaId, isPaid, photoCount, isPhotosFull])
 
-  const getUploadAuthorization = async (file: File): Promise<string> => {
-    if (uploadAuthorization) return uploadAuthorization
+  const getUploadAuthorization = async (file: File): Promise<{
+    token: string
+    directUpload?: { uploadUrl: string; key: string; contentType: string }
+  }> => {
+    if (uploadAuthorization && selectedType !== "voice" && selectedType !== "video") {
+      return { token: uploadAuthorization }
+    }
     if (siteKey && !turnstileToken) {
       throw new Error("The security check is still loading. Please wait a moment and try again.")
     }
@@ -245,7 +276,10 @@ export function ContributeModal({
       if (!intentRes.ok) throw new Error(intentData.error || "Failed to authorize file upload")
 
       setUploadAuthorization(intentData.uploadIntentToken)
-      return intentData.uploadIntentToken as string
+      return {
+        token: intentData.uploadIntentToken as string,
+        directUpload: intentData.directUpload,
+      }
     } finally {
       resetTurnstile()
     }
@@ -253,11 +287,30 @@ export function ContributeModal({
 
   const uploadContributionFile = async (file: File) => {
     const authorization = await getUploadAuthorization(file)
+    if (authorization.directUpload) {
+      const directResponse = await fetch(authorization.directUpload.uploadUrl, {
+        method: "PUT",
+        headers: { "Content-Type": authorization.directUpload.contentType },
+        body: file,
+      })
+      if (!directResponse.ok) throw new Error("The direct media upload failed. Please try again.")
+      const completionResponse = await fetch("/api/r2/complete-contribution-upload", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          uploadIntentToken: authorization.token,
+          key: authorization.directUpload.key,
+        }),
+      })
+      const completionData = await completionResponse.json().catch(() => ({}))
+      if (!completionResponse.ok) throw new Error(completionData.error || "The uploaded media could not be verified.")
+      return completionData as { previewUrl: string; mediaRef: string }
+    }
     const formData = new FormData()
     formData.append("file", file)
     formData.append("folder", "contributions")
     formData.append("memorialId", memorialId || slug)
-    formData.append("uploadIntentToken", authorization)
+    formData.append("uploadIntentToken", authorization.token)
 
     const response = await fetch("/api/r2/upload", { method: "POST", body: formData })
     const data = await response.json()
@@ -270,6 +323,15 @@ export function ContributeModal({
 
   const handleFileSelect = async (file: File) => {
     if (!file) return
+    const maximumBytes = selectedType === "video"
+      ? 100 * 1024 * 1024
+      : selectedType === "voice"
+        ? 50 * 1024 * 1024
+        : 15 * 1024 * 1024
+    if (file.size < 1 || file.size > maximumBytes) {
+      setMediaUploadError(`This ${selectedType === "video" ? "video" : selectedType === "voice" ? "audio file" : "photograph"} must be ${maximumBytes / 1024 / 1024}MB or smaller.`)
+      return
+    }
     if (selectedType === "photo" && isPhotosFull) {
       setMediaUploadError("This memorial has reached its 5-photograph limit on the free plan.")
       return
@@ -370,6 +432,7 @@ export function ContributeModal({
           author_relationship: relationship.trim() || null,
           content: effectiveContent,
           approx_year: isNaN(approxYearNum as number) ? null : approxYearNum,
+          location: location.trim() || null,
           media_refs: mediaRefs,
           existing_media_id: selectedExistingMediaId,
           upload_authorization: uploadAuthorization,
@@ -412,6 +475,7 @@ export function ContributeModal({
       setSubmissionResult({
         status: data.status === "approved" ? "approved" : "pending_approval",
       })
+      if (selectedType === "memory") clearMemoryDraft()
       setIsSubmitted(true)
       onSubmitted?.()
     } catch (err: any) {
@@ -437,6 +501,7 @@ export function ContributeModal({
     setRelationship("")
     setContent("")
     setExtraField("")
+    setLocation("")
     setUploadedFileUrl(null)
     setUploadedMediaRef(null)
     setUploadedFileName(null)
@@ -587,6 +652,11 @@ export function ContributeModal({
                           key={opt.type}
                           type="button"
                           onClick={() => {
+                            if (opt.type === "memory") {
+                              onClose()
+                              window.location.assign(`/${slug}/memories#share-memory`)
+                              return
+                            }
                             setSelectedType(opt.type)
                             setUploadAuthorization(null)
                             setUploadedFileUrl(null)
@@ -734,6 +804,21 @@ export function ContributeModal({
                           className="w-full px-3 py-2 rounded-xl bg-[#f7f7f8] border border-black/[0.08] text-sm text-[#181925] placeholder:text-[#aaa] outline-none focus:border-primary/50 transition-colors"
                         />
                       </div>
+                      {selectedType === "memory" && (
+                        <div className="flex flex-col gap-1">
+                          <label className="text-[11px] font-mono text-[#71717a] uppercase tracking-wider">
+                            Location (optional)
+                          </label>
+                          <input
+                            type="text"
+                            value={location}
+                            onChange={(e) => setLocation(e.target.value)}
+                            maxLength={120}
+                            placeholder="e.g. Grandma’s kitchen"
+                            className="w-full px-3 py-2 rounded-xl bg-[#f7f7f8] border border-black/[0.08] text-sm text-[#181925] placeholder:text-[#aaa] outline-none focus:border-primary/50 transition-colors"
+                          />
+                        </div>
+                      )}
                     </div>
                   )}
 
@@ -833,8 +918,8 @@ export function ContributeModal({
                               {selectedType === "photo"
                                 ? "JPEG, PNG, or WebP · up to 15MB"
                                 : selectedType === "video"
-                                  ? "MP4, WebM, or MOV · up to 50MB"
-                                  : "MP3, WAV, OGG, or M4A · up to 25MB"}
+                                  ? "MP4, WebM, or MOV · up to 100MB"
+                                  : "MP3, WAV, OGG, or M4A · up to 50MB"}
                             </span>
                           </div>
                         </div>

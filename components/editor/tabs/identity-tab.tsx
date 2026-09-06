@@ -2,6 +2,7 @@
 
 import { useState } from "react"
 import { Upload, Image as ImageIcon, CheckCircle2, AlertCircle } from "lucide-react"
+import { PortraitPlaceholder } from "@/components/memorial/portrait-placeholder"
 
 interface IdentityTabProps {
   memorialId: string
@@ -42,24 +43,39 @@ export function IdentityTab({
     setLocalPreviewUrl(preview)
 
     try {
-      // Use same-origin /api/r2/upload: eliminates cross-origin CORS preflight failures,
-      // validates image magic bytes server-side, strips EXIF/GPS, and securely stores in R2.
-      const formData = new FormData()
-      formData.append("file", file)
-      formData.append("folder", "portraits")
-      formData.append("memorialId", memorialId)
-
-      const uploadRes = await fetch("/api/r2/upload", {
+      const presignedRes = await fetch("/api/r2/presigned-upload-url", {
         method: "POST",
-        body: formData,
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          filename: file.name,
+          contentType: file.type || "application/octet-stream",
+          fileSize: file.size,
+          folder: "portraits",
+          memorialId,
+        }),
       })
+      const presignedData = await presignedRes.json().catch(() => ({}))
+      if (!presignedRes.ok) throw new Error(presignedData.error || "Failed to prepare portrait upload")
 
-      const uploadData = await uploadRes.json()
-      if (!uploadRes.ok) {
-        throw new Error(uploadData.error || "Failed to upload portrait photo")
+      let uploadKey = presignedData.stagingKey || presignedData.key
+      try {
+        const directRes = await fetch(presignedData.uploadUrl, {
+          method: "PUT",
+          headers: { "Content-Type": presignedData.contentType || file.type },
+          body: file,
+        })
+        if (!directRes.ok) throw new Error(`Direct upload returned ${directRes.status}`)
+      } catch (directError) {
+        console.warn("Direct portrait upload failed; using the bounded server fallback:", directError)
+        const formData = new FormData()
+        formData.append("file", file)
+        formData.append("folder", "portraits")
+        formData.append("memorialId", memorialId)
+        const fallbackRes = await fetch("/api/r2/upload", { method: "POST", body: formData })
+        const fallbackData = await fallbackRes.json().catch(() => ({}))
+        if (!fallbackRes.ok) throw new Error(fallbackData.error || "Failed to upload portrait photo")
+        uploadKey = fallbackData.key
       }
-
-      const uploadKey = uploadData.key
       onChange("portrait_photo_url", uploadKey)
     } catch (err: any) {
       console.error("Portrait upload error:", err)
@@ -85,20 +101,22 @@ export function IdentityTab({
       {/* 1. Portrait Photo Upload */}
       <div className="flex flex-col sm:flex-row items-start sm:items-center gap-6 p-5 rounded-2xl bg-white border border-black/[0.07]">
         <div className="size-24 rounded-2xl overflow-hidden bg-neutral-100 border border-black/[0.08] relative shrink-0 shadow-xs">
-          <img
-            src={
-              localPreviewUrl ||
-              (portraitUrl
-                ? portraitUrl.startsWith("http://") ||
-                  portraitUrl.startsWith("https://") ||
-                  portraitUrl.startsWith("/")
+          {localPreviewUrl || portraitUrl ? (
+            <img
+              src={
+                localPreviewUrl ||
+                (portraitUrl.startsWith("http://") ||
+                portraitUrl.startsWith("https://") ||
+                portraitUrl.startsWith("/")
                   ? portraitUrl
-                  : `/api/media?key=${encodeURIComponent(portraitUrl)}`
-                : "/memorial-family-portrait-grandfather.jpg")
-            }
-            alt={fullName || "Portrait"}
-            className="size-full object-cover"
-          />
+                  : `/api/media?key=${encodeURIComponent(portraitUrl)}`)
+              }
+              alt={fullName || "Portrait"}
+              className="size-full object-cover"
+            />
+          ) : (
+            <PortraitPlaceholder fullName={fullName} prompt="Add a portrait" />
+          )}
           {isUploading && (
             <div className="absolute inset-0 bg-black/60 flex items-center justify-center text-white text-xs">
               Uploading...
@@ -118,7 +136,7 @@ export function IdentityTab({
               <span>{isUploading ? "Uploading photo..." : (portraitUrl ? "Change photo" : "Upload portrait")}</span>
               <input
                 type="file"
-                accept="image/*"
+                accept="image/jpeg,image/png,image/webp,image/heic,image/heif,.heic,.heif"
                 disabled={isUploading}
                 onChange={handlePortraitUpload}
                 className="hidden"

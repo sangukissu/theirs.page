@@ -25,7 +25,8 @@ BEGIN
     RAISE EXCEPTION 'Memorial % not found.', NEW.memorial_id USING ERRCODE = 'P0002';
   END IF;
 
-  -- 2. Complete plan has unlimited photos, audio, and video
+  -- 2. Complete plan item-count rules are unrestricted here. Migration 16
+  -- separately enforces the 10 GiB original-upload entitlement per memorial.
   IF v_is_paid IS TRUE THEN
     RETURN NEW;
   END IF;

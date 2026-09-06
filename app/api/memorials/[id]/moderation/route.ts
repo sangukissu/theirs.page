@@ -7,9 +7,127 @@ import {
   deleteR2Object,
   extractManagedR2Key,
 } from "@/lib/r2"
+import { finalizeMemorialStorage, releaseMemorialStorage } from "@/lib/storage-quota"
+import { sanitizeContributionHtml } from "@/lib/safety/contribution-html"
 
 interface RouteContext {
   params: Promise<{ id: string }>
+}
+
+const MODERATION_PAGE_SIZE = 20
+
+interface ModerationCursor {
+  snapshot: string
+  offset: number
+}
+
+function readModerationCursor(value: string | null): ModerationCursor {
+  if (!value) return { snapshot: new Date().toISOString(), offset: 0 }
+  try {
+    const parsed = JSON.parse(Buffer.from(value, "base64url").toString("utf8")) as ModerationCursor
+    if (
+      typeof parsed.snapshot !== "string" ||
+      !Number.isSafeInteger(parsed.offset) ||
+      parsed.offset < 0 ||
+      Number.isNaN(Date.parse(parsed.snapshot))
+    ) throw new Error("invalid cursor")
+    return parsed
+  } catch {
+    throw new Error("INVALID_CURSOR")
+  }
+}
+
+function writeModerationCursor(value: ModerationCursor): string {
+  return Buffer.from(JSON.stringify(value), "utf8").toString("base64url")
+}
+
+function applyModerationBucket(query: any, bucket: "pending" | "published" | "blocked") {
+  if (bucket === "published") return query.eq("status", "approved")
+  if (bucket === "blocked") return query.or("status.eq.blocked,safety_decision.eq.blocked")
+  return query.eq("status", "pending_approval").or("safety_decision.is.null,safety_decision.neq.blocked")
+}
+
+function applyContributionType(query: any, type: "all" | "tribute" | "memory") {
+  if (type === "tribute") return query.eq("contribution_type", "tribute")
+  if (type === "memory") return query.eq("contribution_type", "story")
+  return query
+}
+
+export async function GET(req: NextRequest, context: RouteContext) {
+  try {
+    const { id: memorialId } = await context.params
+    const supabase = await createClient()
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+    const { errorResponse } = await assertMemorialAdmin(memorialId, user.id)
+    if (errorResponse) return errorResponse
+
+    const db = getSupabaseAdminSafe()
+    if (!db) return NextResponse.json({ error: "Moderation is temporarily unavailable." }, { status: 503 })
+    const url = new URL(req.url)
+    const rawBucket = url.searchParams.get("bucket")
+    const rawType = url.searchParams.get("type")
+    const bucket = (["pending", "published", "blocked"] as const).includes(rawBucket as any)
+      ? rawBucket as "pending" | "published" | "blocked"
+      : "pending"
+    const type = (["all", "tribute", "memory"] as const).includes(rawType as any)
+      ? rawType as "all" | "tribute" | "memory"
+      : "all"
+    let cursor: ModerationCursor
+    try {
+      cursor = readModerationCursor(url.searchParams.get("cursor"))
+    } catch {
+      return NextResponse.json({ error: "Invalid pagination cursor." }, { status: 400 })
+    }
+
+    let itemsQuery = db.from("memories").select("*")
+      .eq("memorial_id", memorialId)
+      .lte("created_at", cursor.snapshot)
+      .order("created_at", { ascending: false })
+      .order("id", { ascending: false })
+      .range(cursor.offset, cursor.offset + MODERATION_PAGE_SIZE - 1)
+    itemsQuery = applyContributionType(applyModerationBucket(itemsQuery, bucket), type)
+
+    const countBucket = async (target: "pending" | "published" | "blocked", targetType: "all" | "tribute" | "memory") => {
+      let query = db.from("memories").select("id", { count: "exact", head: true }).eq("memorial_id", memorialId)
+      query = applyContributionType(applyModerationBucket(query, target), targetType)
+      const result = await query
+      return result.count || 0
+    }
+
+    const [itemsResult, pending, published, blocked, all] = await Promise.all([
+      itemsQuery,
+      countBucket("pending", type),
+      countBucket("published", type),
+      countBucket("blocked", type),
+      Promise.all([
+        countBucket("pending", "all"),
+        countBucket("published", "all"),
+        countBucket("blocked", "all"),
+      ]).then((values) => values.reduce((sum, value) => sum + value, 0)),
+    ])
+    if (itemsResult.error) throw itemsResult.error
+    const items = (itemsResult.data || []).map((item: any) => ({
+      ...item,
+      story: item.contribution_type === "story"
+        ? sanitizeContributionHtml(item.story || "")
+        : item.story,
+    }))
+    const totalForBucket = bucket === "pending" ? pending : bucket === "published" ? published : blocked
+    const nextOffset = cursor.offset + items.length
+
+    return NextResponse.json({
+      items,
+      counts: { pending, published, blocked, all },
+      hasMore: nextOffset < totalForBucket,
+      nextCursor: nextOffset < totalForBucket
+        ? writeModerationCursor({ ...cursor, offset: nextOffset })
+        : null,
+    })
+  } catch (error) {
+    console.error("Moderation pagination error:", error)
+    return NextResponse.json({ error: "Unable to load contributions." }, { status: 500 })
+  }
 }
 
 interface ContributionMediaRecord {
@@ -86,6 +204,7 @@ async function removeManagedContributionMedia(
     : []
   const keys = [...records.flatMap((item) => [item.original_key, item.display_key]), ...legacyQuarantineKeys]
   await Promise.allSettled(keys.map(deleteR2Object))
+  await Promise.allSettled(records.map((item) => releaseMemorialStorage(db, memorialId, item.original_key)))
   const publicKeys = records
     .map((item) => item.display_key)
     .filter((key) => key.startsWith(`memorials/${memorialId}/community/`))
@@ -368,6 +487,15 @@ export async function PATCH(req: NextRequest, context: RouteContext) {
         }
         await Promise.allSettled(newlyCreatedPermanentKeys.map(deleteR2Object))
         return NextResponse.json({ error: "Failed to approve contribution." }, { status: 500 })
+      }
+
+      try {
+        await Promise.all(records.map((record, index) =>
+          finalizeMemorialStorage(db, memorialId, record.original_key, updatedRecords[index].original_key)
+        ))
+      } catch (storageError) {
+        console.error("Contribution storage ledger update failed:", storageError)
+        return NextResponse.json({ error: "The contribution was published, but storage accounting needs to be retried." }, { status: 503 })
       }
 
       // 3. ONLY AFTER memory update succeeds: delete quarantine sources

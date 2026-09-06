@@ -4,6 +4,7 @@ import { getSupabaseAdminSafe } from "@/utils/supabase/admin"
 import { createClient } from "@/utils/supabase/server"
 import { verifyTurnstileToken, checkContributionRateLimit } from "@/lib/turnstile"
 import { combineSafetyResults, screenTextWithGemini } from "@/lib/safety/moderation"
+import { contributionPlainText, sanitizeContributionHtml } from "@/lib/safety/contribution-html"
 import {
   escapeEmailHtml,
   getTheirsAppUrl,
@@ -33,6 +34,7 @@ import type {
   ContributorRole,
   MemoryStatus,
 } from "@/types/theirs"
+import { finalizeMemorialStorage, releaseMemorialStorage } from "@/lib/storage-quota"
 
 interface RouteContext {
   params: Promise<{ id: string }>
@@ -134,7 +136,10 @@ export async function POST(req: NextRequest, context: RouteContext) {
       )
     }
     const input = parsed.data
-    const effectiveContent = defaultContent(input)
+    const rawContent = defaultContent(input)
+    const effectiveContent = input.type === "memory" || input.type === "story"
+      ? sanitizeContributionHtml(rawContent)
+      : rawContent
     if (!effectiveContent) {
       return NextResponse.json({ error: "Please write a memory or message to share." }, { status: 400 })
     }
@@ -300,7 +305,13 @@ export async function POST(req: NextRequest, context: RouteContext) {
       }
     }
 
-    const textForScreening = [input.author_name, input.author_relationship, effectiveContent]
+    const textForScreening = [
+      input.author_name,
+      input.author_relationship,
+      input.type === "memory" || input.type === "story"
+        ? contributionPlainText(effectiveContent)
+        : effectiveContent,
+    ]
       .filter(Boolean)
       .join("\n")
     const textSafety = await screenTextWithGemini(textForScreening)
@@ -342,6 +353,9 @@ export async function POST(req: NextRequest, context: RouteContext) {
       console.error("Contribution media finalization failed:", promotionError)
       await Promise.allSettled(
         [...finalDisplayKeys, ...finalOriginalKeys].map(deleteR2Object)
+      )
+      await Promise.allSettled(
+        verifiedMedia.map((item) => releaseMemorialStorage(admin, memorial.id, item.originalKey))
       )
       return NextResponse.json(
         { error: "The media file could not be attached. Please upload it again." },
@@ -413,10 +427,27 @@ export async function POST(req: NextRequest, context: RouteContext) {
       await Promise.allSettled(
         [...finalDisplayKeys, ...finalOriginalKeys].map(deleteR2Object)
       )
+      await Promise.allSettled(
+        verifiedMedia.map((item) => releaseMemorialStorage(admin, memorial.id, item.originalKey))
+      )
       return NextResponse.json(
         { error: "Unable to submit your memory right now. Please try again in a moment." },
         { status: 500 }
       )
+    }
+
+    try {
+      await Promise.all(verifiedMedia.map((item, index) =>
+        finalizeMemorialStorage(admin, memorial.id, item.originalKey, finalOriginalKeys[index])
+      ))
+    } catch (storageError) {
+      await admin.from("memories").delete().eq("id", insertedMemory.id)
+      await Promise.allSettled([...finalDisplayKeys, ...finalOriginalKeys].map(deleteR2Object))
+      await Promise.allSettled(
+        verifiedMedia.map((item) => releaseMemorialStorage(admin, memorial.id, item.originalKey))
+      )
+      console.error("Contribution storage finalization failed:", storageError)
+      return NextResponse.json({ error: "The media file could not be attached. Please upload it again." }, { status: 503 })
     }
 
     if (status === "approved" && finalDisplayKeys.length > 0) {

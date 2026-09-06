@@ -5,6 +5,7 @@ import { getSupabaseAdminSafe } from "@/utils/supabase/admin"
 import { assertMemorialAdmin } from "@/lib/memorial-auth"
 import { assertMediaQuota } from "@/lib/paywall"
 import { copyR2Object, deleteR2Object, extractManagedR2Key, resolveMediaUrl } from "@/lib/r2"
+import { finalizeMemorialStorage, releaseMemorialStorage } from "@/lib/storage-quota"
 
 interface RouteContext {
   params: Promise<{ id: string }>
@@ -74,6 +75,7 @@ export async function POST(req: NextRequest, context: RouteContext) {
     if (!quotaCheck.allowed) {
       if (isStaging) {
         await deleteR2Object(finalKey).catch(() => {})
+        await releaseMemorialStorage(db, memorialId, inputKey).catch(() => {})
       }
       return NextResponse.json(
         { error: quotaCheck.error },
@@ -101,6 +103,7 @@ export async function POST(req: NextRequest, context: RouteContext) {
       console.error("Media insert error:", error)
       if (isStaging) {
         await deleteR2Object(finalKey).catch(() => {})
+        await releaseMemorialStorage(db, memorialId, inputKey).catch(() => {})
       }
       if (error.message?.includes("5-photo limit") || error.code === "P0001") {
         return NextResponse.json(
@@ -109,6 +112,18 @@ export async function POST(req: NextRequest, context: RouteContext) {
         )
       }
       return NextResponse.json({ error: "Failed to save media item." }, { status: 500 })
+    }
+
+    if (isStaging) {
+      try {
+        await finalizeMemorialStorage(db, memorialId, inputKey, finalKey)
+      } catch (quotaError) {
+        await db.from("media_items").delete().eq("id", mediaItem.id)
+        await deleteR2Object(finalKey).catch(() => {})
+        await releaseMemorialStorage(db, memorialId, inputKey).catch(() => {})
+        console.error("Media storage finalization error:", quotaError)
+        return NextResponse.json({ error: "Failed to finalize media storage." }, { status: 500 })
+      }
     }
 
     // Insert succeeded: Remove the temporary staging object
@@ -234,6 +249,7 @@ export async function DELETE(req: NextRequest, context: RouteContext) {
       if (key) {
         try {
           await deleteR2Object(key)
+          await releaseMemorialStorage(db, memorialId, key).catch(() => {})
         } catch (cleanupErr) {
           console.warn(`Failed to delete R2 object ${key}:`, cleanupErr)
         }

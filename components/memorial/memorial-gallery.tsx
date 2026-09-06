@@ -51,142 +51,6 @@ export interface GalleryItem {
   isOptimistic?: boolean
 }
 
-export const DEFAULT_GALLERY_ITEMS: GalleryItem[] = [
-  // 1. PHOTO
-  {
-    id: "g1",
-    title: "At the Watchmaker’s Bench",
-    mediaType: "photo",
-    year: "1984",
-    location: "High Street Workshop, Devon",
-    album: "Workshop",
-    mediaUrl: "/memorial-family-portrait-grandfather.jpg",
-    aspectRatio: "portrait",
-    people: ["Robert Carter"],
-    story: "Calibrating a 19th-century mahogany bracket clock for the village church.",
-    addedBy: "Anita Carter",
-  },
-  // 2. VIDEO (Real playable clip)
-  {
-    id: "g4",
-    title: "Tea in the Rose Garden (Super 8)",
-    mediaType: "video",
-    year: "1989",
-    location: "Dartmoor Cottage",
-    album: "Family Films",
-    mediaUrl: "/videos/speaking.mp4",
-    posterUrl: "/memorial-family-portrait-combined.jpg",
-    aspectRatio: "landscape",
-    duration: "0:12",
-    people: ["Robert Carter", "Meena Carter", "Young Anita"],
-    story: "Digitized 8mm home film reel. Robert talking about his peace roses while Meena pours Assam tea from the enamel pot.",
-    addedBy: "Anita Carter",
-  },
-  // 3. AUDIO (Real playable audio)
-  {
-    id: "g3",
-    title: "Checking Tyre Pressure Voicemail",
-    mediaType: "audio",
-    year: "2014",
-    location: "Devon Cottage",
-    album: "Recordings",
-    mediaUrl: "/music/Beloved(chosic.com).mp3",
-    duration: "0:24",
-    audioTitle: "“Make sure you put enough air in those front tyres...”",
-    story: "Voicemail left on Anita’s phone on a rainy Friday before she drove back to London. You can hear his soft chuckle right at the end.",
-    addedBy: "Anita Carter",
-  },
-  // 4. PHOTO
-  {
-    id: "g2",
-    title: "Wedding at St. Jude’s",
-    mediaType: "photo",
-    year: "1974",
-    location: "St. Jude’s Church, Oxford",
-    album: "Family",
-    mediaUrl: "/historical-wedding-photo.webp",
-    aspectRatio: "landscape",
-    people: ["Robert Carter", "Meena Sharma"],
-    story: "July 20th, 1974. Meena wearing a hand-embroidered silk sari and Robert in his first tailored suit.",
-    addedBy: "Meena Carter",
-  },
-  // 5. VIDEO (Real playable clip)
-  {
-    id: "g8",
-    title: "Quiet Moment in the Workshop",
-    mediaType: "video",
-    year: "1995",
-    location: "High Street Workshop",
-    album: "Workshop",
-    mediaUrl: "/videos/gentle-smile.mp4",
-    posterUrl: "/vintage-family-portraits-colorized.webp",
-    aspectRatio: "portrait",
-    duration: "0:08",
-    people: ["Robert Carter"],
-    story: "Recorded on apprentice Sarah’s camcorder. Robert looking up from the jeweler’s lathe with a calm, reassuring smile.",
-    addedBy: "Sarah (Apprentice)",
-  },
-  // 6. PHOTO
-  {
-    id: "g5",
-    title: "Three Generations in the Rose Garden",
-    mediaType: "photo",
-    year: "1998",
-    location: "Devon Cottage",
-    album: "Family",
-    mediaUrl: "/memorial-family-portrait-combined.jpg",
-    aspectRatio: "square",
-    people: ["Robert Carter", "Anita Carter (baby)", "Meena Carter"],
-    story: "First summer with granddaughter Anita in the cottage garden. Robert built the wooden pram himself.",
-    addedBy: "Meena Carter",
-  },
-  // 7. AUDIO (Real playable audio)
-  {
-    id: "g7",
-    title: "Recounting the 1968 Morris Minor Trip",
-    mediaType: "audio",
-    year: "2019",
-    location: "Carter Workshop",
-    album: "Recordings",
-    mediaUrl: "/music/Awakening-Dew(chosic.com).mp3",
-    duration: "0:36",
-    audioTitle: "“We took the car across the moors in dense fog...”",
-    story: "Recorded by apprentice Sarah during tea break. Robert humming Beatles tunes and laughing about the slipping clutch.",
-    addedBy: "Sarah (Apprentice)",
-  },
-  // 8. VIDEO (Real playable clip)
-  {
-    id: "g10",
-    title: "Sunday Afternoon on Dartmoor",
-    mediaType: "video",
-    year: "2016",
-    location: "Dartmoor National Park",
-    album: "Family Films",
-    mediaUrl: "/videos/warm-gaze.mp4",
-    posterUrl: "/memorial-before.jpg",
-    aspectRatio: "landscape",
-    duration: "0:06",
-    people: ["Robert Carter"],
-    story: "Resting on a granite boulder overlooking the river Dart after a long walk through the heather.",
-    addedBy: "Anita Carter",
-  },
-  // 9. PHOTO
-  {
-    id: "g6",
-    title: "Exeter Grammar School Cricket XI",
-    mediaType: "photo",
-    year: "1960",
-    location: "Exeter, Devon",
-    album: "Early Years",
-    mediaUrl: "/old-school-photo.webp",
-    aspectRatio: "landscape",
-    people: ["Robert Carter", "Unknown boy on left"],
-    hasUnknownPerson: true,
-    story: "Robert sitting second from the right, front row. The boy holding the bat is unidentified.",
-    addedBy: "Anita Carter",
-  },
-]
-
 interface MemorialGalleryProps {
   fullName?: string
   items?: GalleryItem[]
@@ -208,7 +72,7 @@ interface MemorialGalleryProps {
 }
 
 export function MemorialGallery({
-  fullName = "Robert Carter",
+  fullName = "",
   items,
   isDemo = false,
   isPaid = false,
@@ -223,7 +87,7 @@ export function MemorialGallery({
 }: MemorialGalleryProps) {
   const router = useRouter()
   const pathname = usePathname()
-  const fallbackItems = isDemo ? (items && items.length > 0 ? items : DEFAULT_GALLERY_ITEMS) : (items || [])
+  const fallbackItems = items || []
   const [galleryItems, setGalleryItems] = useState<GalleryItem[]>(initialPage?.items || fallbackItems)
   const [filter, setFilter] = useState<GalleryFilter>(initialFilter)
   const [selectedAlbum, setSelectedAlbum] = useState<string>(initialAlbum)

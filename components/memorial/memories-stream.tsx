@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, useRef } from "react"
+import { useState, useEffect, useMemo, useRef } from "react"
 import {
   Plus,
   MapPin,
@@ -19,6 +19,7 @@ import { Turnstile, type TurnstileInstance } from "@marsidev/react-turnstile"
 import { TributeShareMenu } from "./tribute-share-menu"
 import { ContactCaretakerModal } from "./contact-caretaker-modal"
 import { useOptimisticReceipts, saveLocalReceipt } from "@/lib/memorial/optimistic-receipts"
+import { useContributionDraft } from "@/hooks/use-contribution-draft"
 
 export interface MemoryItem {
   id: string
@@ -38,53 +39,6 @@ export interface MemoryItem {
   isOptimistic?: boolean
 }
 
-export const DEFAULT_MEMORIES: MemoryItem[] = [
-  {
-    id: "trib-1",
-    authorName: "Meena Carter",
-    authorRelationship: "Wife of 50 years",
-    dateOrYear: "Yesterday",
-    location: "Devon Cottage",
-    story:
-      "A blossom in memory of my dearest Bob. For fifty years you brought warmth, laughter, and calm into our home.",
-    tributeType: "flower",
-    createdAt: new Date(Date.now() - 1000 * 60 * 60 * 20).toISOString(),
-  },
-  {
-    id: "trib-2",
-    authorName: "David Carter",
-    authorRelationship: "Older Brother",
-    dateOrYear: "2 days ago",
-    location: "Dartmoor, Devon",
-    story:
-      "Lighting a candle for my little brother Bob. Your gentle spirit and steady hands will never be forgotten.",
-    tributeType: "candle",
-    createdAt: new Date(Date.now() - 1000 * 60 * 60 * 48).toISOString(),
-  },
-  {
-    id: "trib-3",
-    authorName: "Thomas Bradley",
-    authorRelationship: "Lifelong Friend & Beekeeper",
-    dateOrYear: "3 days ago",
-    location: "Dartmoor Valleys",
-    story:
-      "Laying a wildflower for Bob. Rest peacefully, old friend, among the heather and the bees.",
-    tributeType: "flower",
-    createdAt: new Date(Date.now() - 1000 * 60 * 60 * 72).toISOString(),
-  },
-  {
-    id: "trib-4",
-    authorName: "Eleanor Vance",
-    authorRelationship: "Family Neighbor",
-    dateOrYear: "5 days ago",
-    location: "London, UK",
-    story:
-      "Holding the entire Carter family in our prayers. Robert’s kindness and warmth touched everyone who walked down our lane.",
-    tributeType: "note",
-    createdAt: new Date(Date.now() - 1000 * 60 * 60 * 120).toISOString(),
-  },
-]
-
 interface MemoriesStreamProps {
   memories?: MemoryItem[]
   fullName?: string
@@ -96,18 +50,13 @@ interface MemoriesStreamProps {
 
 export function MemoriesStream({
   memories,
-  fullName = "Robert Carter",
+  fullName = "",
   memorialId,
   slug,
   isDemo = false,
   onOpenContribute,
 }: MemoriesStreamProps) {
-  const [items, setItems] = useState<MemoryItem[]>(() => {
-    if (isDemo) {
-      return memories && memories.length > 0 ? memories : DEFAULT_MEMORIES
-    }
-    return memories || []
-  })
+  const [items, setItems] = useState<MemoryItem[]>(() => memories || [])
 
   useEffect(() => {
     if (memories) {
@@ -131,6 +80,31 @@ export function MemoriesStream({
   const [isSubmitted, setIsSubmitted] = useState(false)
   const [formError, setFormError] = useState<string | null>(null)
   const formNameInputRef = useRef<HTMLInputElement>(null)
+  const restoredDraftRef = useRef(false)
+
+  const tributeDraftValue = useMemo(() => ({
+    name: authorName,
+    relationship,
+    content,
+    ritual: tributeRitual,
+  }), [authorName, relationship, content, tributeRitual])
+  const { restoredDraft, clearDraft } = useContributionDraft({
+    memorialId: memorialId || slug || "",
+    type: "tribute",
+    value: tributeDraftValue,
+    enabled: !isSubmitted,
+  })
+
+  useEffect(() => {
+    if (!restoredDraft || restoredDraftRef.current) return
+    restoredDraftRef.current = true
+    setAuthorName(restoredDraft.name || "")
+    setRelationship(restoredDraft.relationship || "")
+    setContent(restoredDraft.content || "")
+    if (["flower", "candle", "note"].includes(restoredDraft.ritual)) {
+      setTributeRitual(restoredDraft.ritual as "flower" | "candle" | "note")
+    }
+  }, [restoredDraft])
 
   const resetTurnstile = () => {
     setTurnstileToken("")
@@ -258,6 +232,7 @@ export function MemoriesStream({
       }
 
       setItems((prev) => [newTribute, ...prev])
+      clearDraft()
       setIsSubmitted(true)
     } catch (err: any) {
       resetTurnstile()

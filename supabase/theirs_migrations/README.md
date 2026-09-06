@@ -48,6 +48,11 @@ Run these SQL scripts in numerical order in your new Supabase project's **SQL Ed
    - Makes new memorials draft and unlisted by default at the database layer.
    - Retires the broken public “life moment” contribution switch without deleting existing family content.
 
+7. **`16_memorial_storage_quota.sql`**
+   - Adds an atomic reservation ledger for original R2 uploads.
+   - Enforces the 10 GiB storage entitlement per memorial, including parallel uploads.
+   - Keeps abandoned reservations short-lived and service-role-only.
+
 ---
 
 ## Environment Variables Mapping

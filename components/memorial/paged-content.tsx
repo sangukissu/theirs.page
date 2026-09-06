@@ -70,7 +70,7 @@ function usePagedItems<T>(initial: PagedCollection<T>) {
 export function PagedMemories({ slug, fullName, memorialId, isDemo, initial }: { slug: string; fullName: string; memorialId?: string; isDemo: boolean; initial: PagedCollection<StoryItem> }) {
   const state = usePagedItems(initial)
   const { openContribute } = useMemorialActions()
-  return <><LifeStories stories={state.items} fullName={fullName} memorialId={memorialId} slug={slug} isDemo={isDemo} onOpenContribute={openContribute} />{state.hasMore && <LoadMore label="Show more memories" loading={state.loading} error={state.error} onClick={() => state.append((cursor) => getNextPage(slug, "memories", cursor))} />}{state.didLoadMore && !state.hasMore && <EndOfList>All memories are shown.</EndOfList>}</>
+  return <><LifeStories stories={state.items} fullName={fullName} memorialId={memorialId} slug={slug} isDemo={isDemo} onOpenContribute={openContribute} showComposer />{state.hasMore && <LoadMore label="Show more memories" loading={state.loading} error={state.error} onClick={() => state.append((cursor) => getNextPage(slug, "memories", cursor))} />}{state.didLoadMore && !state.hasMore && <EndOfList>All memories are shown.</EndOfList>}</>
 }
 
 export function PagedTributes({ slug, fullName, memorialId, isDemo, initial }: { slug: string; fullName: string; memorialId?: string; isDemo: boolean; initial: PagedCollection<MemoryItem> }) {

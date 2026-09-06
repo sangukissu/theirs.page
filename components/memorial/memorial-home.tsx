@@ -77,7 +77,7 @@ export function MemorialHome({ identity, data }: { identity: MemorialIdentity; d
         onOpenContribute={openContribute}
       />
 
-      <MemorialStory fullName={identity.fullName} biography={identity.biography} isDemo={identity.isDemo} />
+      <MemorialStory fullName={identity.fullName} biography={identity.biography} />
 
       {sections.tributes !== false && (
         <>

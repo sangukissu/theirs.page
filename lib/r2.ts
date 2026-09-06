@@ -1,4 +1,4 @@
-import { CopyObjectCommand, DeleteObjectCommand, S3Client, GetObjectCommand, PutObjectCommand } from "@aws-sdk/client-s3";
+import { CopyObjectCommand, DeleteObjectCommand, S3Client, GetObjectCommand, HeadObjectCommand, PutObjectCommand } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 
 function getR2BucketName() {
@@ -92,6 +92,26 @@ export async function getR2ObjectBuffer(key: string) {
     body: Buffer.from(bytes),
     contentType: result.ContentType || "application/octet-stream",
   }
+}
+
+export async function inspectR2Object(key: string) {
+  const client = getR2Client()
+  const result = await client.send(new HeadObjectCommand({ Bucket: getR2BucketName(), Key: key }))
+  return {
+    contentLength: Number(result.ContentLength || 0),
+    contentType: result.ContentType || "application/octet-stream",
+  }
+}
+
+export async function getR2ObjectPrefixBuffer(key: string, maxBytes = 4096) {
+  const client = getR2Client()
+  const result = await client.send(new GetObjectCommand({
+    Bucket: getR2BucketName(),
+    Key: key,
+    Range: `bytes=0-${Math.max(0, maxBytes - 1)}`,
+  }))
+  if (!result.Body) throw new Error("R2 object has no body")
+  return Buffer.from(await result.Body.transformToByteArray())
 }
 export async function getR2SignedUrl(key: string, expiresInSeconds = 900) {
   const client = getR2Client();

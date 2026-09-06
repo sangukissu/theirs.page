@@ -3,6 +3,7 @@ import { createClient } from "@/utils/supabase/server"
 import { getDashboardIdentity } from "@/lib/auth/dashboard-identity"
 import { MemorialEditorClient } from "@/components/editor/memorial-editor-client"
 import { resolveMediaUrl } from "@/lib/r2"
+import { sanitizeContributionHtml } from "@/lib/safety/contribution-html"
 
 interface PageProps {
   params: Promise<{ id: string }>
@@ -34,7 +35,13 @@ export default async function MemorialEditorPage({ params }: PageProps) {
   const [mediaRes, timelineRes, memoriesRes, caretakerMessagesRes] = await Promise.all([
     supabase.from("media_items").select("*").eq("memorial_id", id).order("order_index", { ascending: true }),
     supabase.from("timeline_events").select("*").eq("memorial_id", id).order("year", { ascending: true }),
-    supabase.from("memories").select("*").eq("memorial_id", id).order("created_at", { ascending: false }),
+    supabase.from("memories").select("*")
+      .eq("memorial_id", id)
+      .eq("status", "pending_approval")
+      .or("safety_decision.is.null,safety_decision.neq.blocked")
+      .order("created_at", { ascending: false })
+      .order("id", { ascending: false })
+      .range(0, 19),
     supabase.from("caretaker_messages").select("*").eq("memorial_id", id).order("created_at", { ascending: false }),
   ])
 
@@ -54,7 +61,12 @@ export default async function MemorialEditorPage({ params }: PageProps) {
         ...event,
         photo_url: resolveMediaUrl(event.photo_url),
       }))}
-      initialMemories={(memoriesRes.data as any[]) || []}
+      initialMemories={((memoriesRes.data as any[]) || []).map((item) => ({
+        ...item,
+        story: item.contribution_type === "story"
+          ? sanitizeContributionHtml(item.story || "")
+          : item.story,
+      }))}
       initialCaretakerMessages={(caretakerMessagesRes.data as any[]) || []}
     />
   )

@@ -33,6 +33,10 @@ export function MemorialShell({ identity, children }: { identity: MemorialIdenti
   const [photoTitle, setPhotoTitle] = useState<string | null>(null)
   const [mediaId, setMediaId] = useState<string | null>(null)
   const openContribute = (nextType?: ContributionType, nextPhotoUrl?: string, nextPhotoTitle?: string, nextMediaId?: string) => {
+    if (nextType === "memory" && !nextPhotoUrl && !nextMediaId) {
+      router.push(`/${identity.slug}/memories#share-memory`)
+      return
+    }
     setType(nextType || null); setPhotoUrl(nextPhotoUrl || null); setPhotoTitle(nextPhotoTitle || null); setMediaId(nextMediaId || null); setIsOpen(true)
   }
   const closeContribute = () => { setIsOpen(false); setPhotoUrl(null); setPhotoTitle(null); setMediaId(null) }

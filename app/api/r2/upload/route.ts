@@ -22,11 +22,12 @@ import {
 import { getMemorialPinCookieName, verifyPinAccessToken } from "@/lib/security/pin"
 import { checkDurableRateLimit } from "@/lib/turnstile"
 import type { ContributionSettings } from "@/types/theirs"
+import { isStorageQuotaError, releaseMemorialStorage, reserveMemorialStorage } from "@/lib/storage-quota"
 
 const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
 const MAX_IMAGE_EDGE = 12_000
 const MAX_IMAGE_PIXELS = 40_000_000
-const MAX_UPLOAD_REQUEST_BYTES = 55 * 1024 * 1024
+const MAX_UPLOAD_REQUEST_BYTES = 17 * 1024 * 1024
 
 function getClientIp(req: NextRequest): string {
   return (
@@ -99,9 +100,13 @@ function resolveContentType(filename: string, mime: string): string {
 
 export async function POST(req: NextRequest) {
   try {
-    const declaredLength = Number(req.headers.get("content-length") || 0)
+    const rawContentLength = req.headers.get("content-length")
+    const declaredLength = Number(rawContentLength)
+    if (!rawContentLength || !Number.isSafeInteger(declaredLength) || declaredLength < 1) {
+      return NextResponse.json({ error: "A valid upload size is required." }, { status: 411 })
+    }
     if (declaredLength > MAX_UPLOAD_REQUEST_BYTES) {
-      return NextResponse.json({ error: "Upload exceeds the 50MB limit." }, { status: 413 })
+      return NextResponse.json({ error: "This Worker upload path only accepts photographs up to 15MB. Audio and video must use direct storage upload." }, { status: 413 })
     }
 
     const supabase = await createClient()
@@ -152,11 +157,18 @@ export async function POST(req: NextRequest) {
         )
       }
 
+      if (contributionIntent.directUploadKey) {
+        return NextResponse.json(
+          { error: "Audio and video must use the direct storage upload path." },
+          { status: 400 }
+        )
+      }
+
       const mediaRule = getGuestMediaRule(contributionIntent.contributionType)
 
       if (file.size < 1 || file.size > mediaRule.maxBytes || file.size > contributionIntent.maxBytes) {
         return NextResponse.json(
-          { error: `${mediaRule.label[0].toUpperCase()}${mediaRule.label.slice(1)} files must be under ${Math.floor(mediaRule.maxBytes / 1024 / 1024)}MB.` },
+          { error: `${mediaRule.label[0].toUpperCase()}${mediaRule.label.slice(1)} files must be ${Math.floor(mediaRule.maxBytes / 1024 / 1024)}MB or smaller.` },
           { status: 400 }
         )
       }
@@ -345,10 +357,13 @@ export async function POST(req: NextRequest) {
           return NextResponse.json({ error: quotaCheck.error }, { status: quotaCheck.status || 403 })
         }
 
-        // Max 50MB for authenticated admin uploads
-        const MAX_ADMIN_SIZE = 50 * 1024 * 1024
-        if (file.size > MAX_ADMIN_SIZE) {
-          return NextResponse.json({ error: "File size exceeds 50MB limit." }, { status: 400 })
+        const maxAdminSize = mediaType === "video"
+          ? 100 * 1024 * 1024
+          : mediaType === "audio"
+            ? 50 * 1024 * 1024
+            : 15 * 1024 * 1024
+        if (file.size > maxAdminSize) {
+          return NextResponse.json({ error: `File size exceeds the ${maxAdminSize / 1024 / 1024}MB limit.` }, { status: 400 })
         }
       }
     }
@@ -429,7 +444,12 @@ export async function POST(req: NextRequest) {
         ? "audio/mp4"
         : validation.detectedMime
 
+      const quotaDb = getSupabaseAdminSafe()
+      if (!quotaDb) {
+        return NextResponse.json({ error: "Media uploads are temporarily unavailable." }, { status: 503 })
+      }
       try {
+        await reserveMemorialStorage(quotaDb, resolvedMemorialId, originalKey, buffer.length)
         await putR2Object(originalKey, buffer, storageContentType, "private, no-store")
         await putR2Object(displayKey, displayBuffer, storageContentType, "private, no-store")
       } catch (storageError) {
@@ -437,6 +457,10 @@ export async function POST(req: NextRequest) {
           deleteR2Object(originalKey),
           deleteR2Object(displayKey),
         ])
+        await releaseMemorialStorage(quotaDb, resolvedMemorialId, originalKey).catch(() => {})
+        if (isStorageQuotaError(storageError)) {
+          return NextResponse.json({ error: "This memorial has reached its 10 GB original-media limit." }, { status: 413 })
+        }
         throw storageError
       }
 
@@ -469,17 +493,24 @@ export async function POST(req: NextRequest) {
     const timestamp = Date.now()
     const randomId = crypto.randomUUID()
     const cleanFilename = file.name.replace(/[^a-zA-Z0-9.-]/g, "_").slice(-180)
-    const safeFolder = folder.replace(/[^a-zA-Z0-9_-]/g, "").toLowerCase()
 
-    let key: string
-    if (resolvedMemorialId) {
-      key = `memorials/${resolvedMemorialId}/${safeFolder}/${timestamp}_${randomId}_${cleanFilename}`
-    } else {
-      key = `uploads/${user?.id || "guest"}/${safeFolder}/${timestamp}_${randomId}_${cleanFilename}`
+    // 6. Upload to Cloudflare R2. This bounded fallback is still quota-accounted.
+    const adminQuotaDb = getSupabaseAdminSafe()
+    if (!adminQuotaDb || !resolvedMemorialId) {
+      return NextResponse.json({ error: "Media uploads are temporarily unavailable." }, { status: 503 })
     }
-
-    // 6. Upload to Cloudflare R2
-    await putR2Object(key, buffer, validation.detectedMime || contentType, "public, max-age=31536000, immutable")
+    const key = `dashboard-staging/${resolvedMemorialId}/${randomId}/${timestamp}_${cleanFilename}`
+    try {
+      await reserveMemorialStorage(adminQuotaDb, resolvedMemorialId, key, buffer.length)
+      await putR2Object(key, buffer, validation.detectedMime || contentType, "private, no-store")
+    } catch (storageError) {
+      await deleteR2Object(key).catch(() => {})
+      await releaseMemorialStorage(adminQuotaDb, resolvedMemorialId, key).catch(() => {})
+      if (isStorageQuotaError(storageError)) {
+        return NextResponse.json({ error: "This memorial has reached its 10 GB original-media limit." }, { status: 413 })
+      }
+      throw storageError
+    }
 
     return NextResponse.json({
       success: true,

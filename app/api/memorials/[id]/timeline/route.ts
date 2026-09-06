@@ -9,6 +9,7 @@ import {
   extractManagedR2Key,
   resolveMediaUrl,
 } from "@/lib/r2"
+import { finalizeMemorialStorage, releaseMemorialStorage } from "@/lib/storage-quota"
 
 interface RouteContext {
   params: Promise<{ id: string }>
@@ -86,9 +87,22 @@ export async function POST(req: NextRequest, context: RouteContext) {
     if (error) {
       if (stagingKeyToDelete && finalPhotoKey) {
         await deleteR2Object(finalPhotoKey).catch(() => {})
+        await releaseMemorialStorage(db, memorialId, stagingKeyToDelete).catch(() => {})
       }
       console.error("Timeline insert error:", error)
       return NextResponse.json({ error: "Failed to add timeline event." }, { status: 500 })
+    }
+
+    if (stagingKeyToDelete && finalPhotoKey) {
+      try {
+        await finalizeMemorialStorage(db, memorialId, stagingKeyToDelete, finalPhotoKey)
+      } catch (quotaError) {
+        await db.from("timeline_events").delete().eq("id", event.id)
+        await deleteR2Object(finalPhotoKey).catch(() => {})
+        await releaseMemorialStorage(db, memorialId, stagingKeyToDelete).catch(() => {})
+        console.error("Timeline storage finalization error:", quotaError)
+        return NextResponse.json({ error: "Failed to finalize timeline photograph." }, { status: 500 })
+      }
     }
 
     // Insert succeeded: Remove the temporary staging object
@@ -160,6 +174,7 @@ export async function DELETE(req: NextRequest, context: RouteContext) {
         await deleteR2Object(key).catch((cleanupErr) => {
           console.warn(`Failed to clean up timeline R2 photo ${key}:`, cleanupErr)
         })
+        await releaseMemorialStorage(db, memorialId, key).catch(() => {})
       }
     }
 

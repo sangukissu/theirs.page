@@ -4,7 +4,7 @@ import crypto from "crypto"
 import type { SafetyScreeningResult } from "@/lib/safety/moderation"
 import { getRequiredSecret } from "@/lib/security/secrets"
 
-const TOKEN_VERSION = 1
+const TOKEN_VERSION = 2
 const UPLOAD_INTENT_MAX_AGE_MS = 10 * 60 * 1000
 const MEDIA_REFERENCE_MAX_AGE_MS = 24 * 60 * 60 * 1000
 
@@ -16,18 +16,21 @@ function getSigningSecret(): string {
 }
 
 export interface UploadIntentPayload {
-  v: 1
+  v: 2
   memorialId: string
   allowedMime: string
   maxBytes: number
   contributionType: GuestContributionType
   clientBinding: string
   nonce: string
+  directUploadKey?: string
+  fileSize?: number
+  contentType?: string
   exp: number
 }
 
 export interface UploadedMediaReferencePayload {
-  v: 1
+  v: 2
   memorialId: string
   originalKey: string
   displayKey: string
@@ -67,8 +70,8 @@ export const ALLOWED_GUEST_MIME_TYPES = new Set([
 ])
 
 export const MAX_GUEST_IMAGE_BYTES = 15 * 1024 * 1024
-export const MAX_GUEST_AUDIO_BYTES = 25 * 1024 * 1024
-export const MAX_GUEST_VIDEO_BYTES = 50 * 1024 * 1024
+export const MAX_GUEST_AUDIO_BYTES = 50 * 1024 * 1024
+export const MAX_GUEST_VIDEO_BYTES = 100 * 1024 * 1024
 export const MAX_GUEST_UPLOAD_BYTES = MAX_GUEST_VIDEO_BYTES
 
 export interface GuestMediaRule {
@@ -194,6 +197,20 @@ export function verifyUploadIntent(token: string): UploadIntentPayload | null {
     payload.exp <= now ||
     payload.exp > now + UPLOAD_INTENT_MAX_AGE_MS + 60_000
   ) return null
+
+  if (contributionType === "voice" || contributionType === "video") {
+    const expectedPrefix = `contribution-staging/${payload.memorialId}/${payload.nonce}/original/`
+    if (
+      typeof payload.directUploadKey !== "string" ||
+      !payload.directUploadKey.startsWith(expectedPrefix) ||
+      payload.directUploadKey.includes("..") ||
+      typeof payload.fileSize !== "number" ||
+      payload.fileSize < 1 ||
+      payload.fileSize > rule.maxBytes ||
+      typeof payload.contentType !== "string" ||
+      !rule.allowedMimeTypes.has(payload.contentType)
+    ) return null
+  }
 
   return payload as unknown as UploadIntentPayload
 }
