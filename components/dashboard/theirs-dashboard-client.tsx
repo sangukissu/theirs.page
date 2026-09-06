@@ -7,6 +7,7 @@ import { normalizeMemorialSlug } from "@/lib/memorial-slug"
 import {
   Plus,
   ArrowRight,
+  ArrowLeft,
   ExternalLink,
   Sparkles,
   Image as ImageIcon,
@@ -14,9 +15,16 @@ import {
   Check,
   Shield,
   Loader2,
-  ChevronDown,
+  Heart,
 } from "lucide-react"
 import { PortraitPlaceholder } from "@/components/memorial/portrait-placeholder"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
 
 interface MemorialSummary {
   id: string
@@ -70,7 +78,7 @@ export function TheirsDashboardClient({
   const [memorials, setMemorials] = useState<MemorialSummary[]>(initialMemorials)
   const [profileName, setProfileName] = useState(initialCaretakerName.trim())
   const [creatorNameInput, setCreatorNameInput] = useState(initialCaretakerName.trim())
-  const [isCreating, setIsCreating] = useState(Boolean(initialName.trim()))
+  const [isCreating, setIsCreating] = useState(initialMemorials.length === 0 || Boolean(initialName.trim()))
   const [fullNameInput, setFullNameInput] = useState(initialName)
   const [relationship, setRelationship] = useState("")
   const [isSubmitting, setIsSubmitting] = useState(false)
@@ -78,6 +86,7 @@ export function TheirsDashboardClient({
   const [errorMsg, setErrorMsg] = useState<string | null>(null)
   const [checkingOutId, setCheckingOutId] = useState<string | null>(null)
 
+  const showCreateForm = isCreating || memorials.length === 0
   const firstName = fullNameInput.trim().split(" ")[0] || ""
 
   const handleUpgrade = async (memorialId: string) => {
@@ -190,6 +199,7 @@ export function TheirsDashboardClient({
   }
 
   const handleCancelCreate = () => {
+    if (memorials.length === 0) return
     setIsCreating(false)
     setFullNameInput("")
     setRelationship("")
@@ -216,41 +226,28 @@ export function TheirsDashboardClient({
 
   return (
     <div className="flex-1 w-full flex flex-col">
-
-      {/* Main Container */}
-      <main className="max-w-4xl w-full mx-auto px-4 sm:px-6 py-10 sm:py-14 flex-1 flex flex-col gap-10">
-
-        {/* Title Header */}
-        <div className="flex flex-col sm:flex-row sm:items-baseline justify-between gap-4">
-          <div className="flex flex-col gap-1">
-            <h1 className="text-2xl sm:text-3xl font-medium tracking-tight text-[#181925]">
-              Your Memorials
-            </h1>
-            <p className="text-xs sm:text-sm text-[#71717a]">
-              A quiet place for the people you never want to forget.
-            </p>
-          </div>
-
-          {memorials.length > 0 && !isCreating && (
-            <button
-              type="button"
-              onClick={() => setIsCreating(true)}
-              className="inline-flex items-center gap-1.5 whitespace-nowrap !rounded-full font-medium transition-all cursor-pointer border border-[color-mix(in_srgb,var(--primary)_80%,#3a3480)] bg-[color-mix(in_srgb,var(--primary)_90%,#3a3480)] text-primary-foreground shadow-[inset_0_1px_0_rgba(255,255,255,0.22),inset_0_-1px_0_rgba(58,52,128,0.30)] transform-gpu hover:bg-primary hover:border-[color-mix(in_srgb,var(--primary)_70%,#3a3480)] active:translate-y-px active:scale-[0.98] h-8.5 px-4 text-xs select-none self-start sm:self-auto"
-            >
-              <Plus className="size-3.5" />
-              <span>Create memorial</span>
-            </button>
+      {/* 1. CREATION / ONBOARDING VIEW */}
+      {showCreateForm ? (
+        <main className="max-w-xl w-full mx-auto px-4 sm:px-6 py-10 sm:py-16 flex-1 flex flex-col justify-center gap-6">
+          {memorials.length > 0 && (
+            <div className="flex items-center justify-between">
+              <button
+                type="button"
+                onClick={handleCancelCreate}
+                className="inline-flex items-center gap-1.5 text-xs font-medium text-[#71717a] hover:text-[#181925] transition-colors cursor-pointer py-1"
+              >
+                <ArrowLeft className="size-3.5" />
+                <span>Back to your memorials</span>
+              </button>
+            </div>
           )}
-        </div>
 
-        {/* 1. UNIFIED HUMAN-FIRST CREATION CARD */}
-        {(memorials.length === 0 || isCreating) && (
-          <div className="p-6 sm:p-9 rounded-3xl bg-white border border-black/[0.08] shadow-xs flex flex-col gap-6 max-w-xl mx-auto w-full">
+          <div className="p-6 sm:p-9 rounded-3xl bg-white border border-black/[0.08] shadow-[0_1px_3px_rgba(0,0,0,0.04),0_12px_24px_-8px_rgba(0,0,0,0.06)] flex flex-col gap-6 w-full">
             <div className="flex flex-col gap-1.5 border-b border-black/[0.06] pb-4">
               <span className="text-[11px] font-mono font-medium text-primary uppercase tracking-wider">
                 New Memorial
               </span>
-              <h2 className="font-serif text-2xl sm:text-3xl font-medium tracking-tight text-[#181925]">
+              <h2 className="text-2xl sm:text-3xl font-heading font-medium tracking-tight text-[#181925]">
                 {firstName ? `Your connection to ${firstName}` : "Who would you like to remember?"}
               </h2>
               <p className="text-xs sm:text-sm text-[#71717a] leading-relaxed">
@@ -309,29 +306,32 @@ export function TheirsDashboardClient({
                 </div>
               )}
 
-              {/* Relationship dropdown */}
+              {/* Relationship dropdown (Custom Radix UI Select) */}
               <div className="flex flex-col gap-1.5">
                 <label htmlFor="creator-relationship" className="text-xs font-medium text-[#181925]">
                   {firstName ? `You are ${firstName}’s…` : "You are their…"}
                 </label>
-                <div className="relative">
-                  <select
+                <Select
+                  value={relationship || undefined}
+                  onValueChange={(val) => setRelationship(val === "clear" ? "" : val)}
+                >
+                  <SelectTrigger
                     id="creator-relationship"
-                    value={relationship}
-                    onChange={(e) => setRelationship(e.target.value)}
-                    className="w-full px-4 py-2.5 rounded-xl bg-[#fafafb] border border-black/[0.08] text-sm text-[#181925] outline-none focus:border-primary/60 transition-colors appearance-none cursor-pointer pr-10"
+                    className="w-full h-11 px-4 rounded-xl bg-[#fafafb] border border-black/[0.08] text-sm text-[#181925] outline-none focus:border-primary/60 transition-colors"
                   >
-                    <option value="">Select relationship (optional)...</option>
+                    <SelectValue placeholder="Select relationship (optional)..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="clear" className="text-[#888]">
+                      Select relationship (optional)...
+                    </SelectItem>
                     {RELATIONSHIP_CHOICES.map((rel) => (
-                      <option key={rel} value={rel}>
+                      <SelectItem key={rel} value={rel}>
                         {rel}
-                      </option>
+                      </SelectItem>
                     ))}
-                  </select>
-                  <div className="absolute right-3.5 top-1/2 -translate-y-1/2 pointer-events-none text-[#888]">
-                    <ChevronDown className="size-4" />
-                  </div>
-                </div>
+                  </SelectContent>
+                </Select>
                 <span className="text-[11px] text-[#888]">
                   You can change or hide this later.
                 </span>
@@ -379,10 +379,31 @@ export function TheirsDashboardClient({
               </div>
             </form>
           </div>
-        )}
+        </main>
+      ) : (
+        /* 2. EXISTING MEMORIALS LIST */
+        <main className="max-w-3xl w-full mx-auto px-4 sm:px-6 py-10 sm:py-14 flex-1 flex flex-col gap-8">
+          {/* Title Header */}
+          <div className="flex flex-col sm:flex-row sm:items-baseline justify-between gap-4">
+            <div className="flex flex-col gap-1">
+              <h1 className="text-2xl sm:text-3xl font-heading font-medium tracking-tight text-[#181925]">
+                Your Memorials
+              </h1>
+              <p className="text-xs sm:text-sm text-[#71717a]">
+                A quiet place for the people you never want to forget.
+              </p>
+            </div>
 
-        {/* 2. EXISTING MEMORIALS LIST */}
-        {memorials.length > 0 && (
+            <button
+              type="button"
+              onClick={() => setIsCreating(true)}
+              className="inline-flex items-center gap-1.5 whitespace-nowrap !rounded-full font-medium transition-all cursor-pointer border border-[color-mix(in_srgb,var(--primary)_80%,#3a3480)] bg-[color-mix(in_srgb,var(--primary)_90%,#3a3480)] text-primary-foreground shadow-[inset_0_1px_0_rgba(255,255,255,0.22),inset_0_-1px_0_rgba(58,52,128,0.30)] transform-gpu hover:bg-primary hover:border-[color-mix(in_srgb,var(--primary)_70%,#3a3480)] active:translate-y-px active:scale-[0.98] h-8.5 px-4 text-xs select-none self-start sm:self-auto"
+            >
+              <Plus className="size-3.5" />
+              <span>Create memorial</span>
+            </button>
+          </div>
+
           <div className="flex flex-col gap-4">
             {/* Complete Highlights Banner if user has unpaid memorials */}
             {memorials.some((m) => !m.is_paid) && (
@@ -439,7 +460,7 @@ export function TheirsDashboardClient({
 
                     <div className="flex flex-col gap-1">
                       <div className="flex items-center gap-2 flex-wrap">
-                        <h3 className="text-base sm:text-lg font-serif font-medium text-[#181925] group-hover:text-primary transition-colors">
+                        <h3 className="text-base sm:text-lg font-heading font-medium text-[#181925] group-hover:text-primary transition-colors">
                           {m.full_name}
                         </h3>
                         {m.preferred_name && (
@@ -530,9 +551,8 @@ export function TheirsDashboardClient({
               )
             })}
           </div>
-        )}
-
-      </main>
+        </main>
+      )}
     </div>
   )
 }

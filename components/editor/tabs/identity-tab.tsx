@@ -4,6 +4,13 @@ import { useState } from "react"
 import { Upload, AlertCircle } from "lucide-react"
 import { PortraitPlaceholder } from "@/components/memorial/portrait-placeholder"
 import { TEXT_LIMITS } from "@/lib/validation/text-limits"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
 
 const RELATIONSHIP_CHOICES = [
   "Daughter",
@@ -255,18 +262,26 @@ export function IdentityTab({
           />
           {showExactBirth && (
             <div className="flex items-center gap-2 pt-1 animate-in fade-in">
-              <select
-                value={birthMonth || ""}
-                onChange={(e) => onChange("birth_month", e.target.value)}
-                className="w-1/2 px-2.5 py-1.5 rounded-lg bg-neutral-50 border border-black/[0.08] text-xs text-[#181925] outline-none focus:border-primary/60"
-              >
-                <option value="">Month</option>
-                {MONTH_NAMES.map((m, idx) => (
-                  <option key={idx + 1} value={String(idx + 1)}>
-                    {m}
-                  </option>
-                ))}
-              </select>
+              <div className="w-1/2">
+                <Select
+                  value={birthMonth || undefined}
+                  onValueChange={(val) => onChange("birth_month", val === "clear" ? "" : val)}
+                >
+                  <SelectTrigger className="w-full h-8.5 px-3 rounded-lg bg-neutral-50 border border-black/[0.08] text-xs text-[#181925] outline-none focus:border-primary/60">
+                    <SelectValue placeholder="Month" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="clear" className="text-[#888]">
+                      Month
+                    </SelectItem>
+                    {MONTH_NAMES.map((m, idx) => (
+                      <SelectItem key={idx + 1} value={String(idx + 1)}>
+                        {m}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
               <input
                 type="number"
                 min={1}
@@ -274,7 +289,7 @@ export function IdentityTab({
                 value={birthDay || ""}
                 onChange={(e) => onChange("birth_day", e.target.value)}
                 placeholder="Day"
-                className="w-1/2 px-2.5 py-1.5 rounded-lg bg-neutral-50 border border-black/[0.08] text-xs text-[#181925] font-mono outline-none focus:border-primary/60"
+                className="w-1/2 h-8.5 px-3 rounded-lg bg-neutral-50 border border-black/[0.08] text-xs text-[#181925] font-mono outline-none focus:border-primary/60"
               />
               <button
                 type="button"
@@ -283,7 +298,7 @@ export function IdentityTab({
                   onChange("birth_day", "")
                   setShowExactBirth(false)
                 }}
-                className="text-xs text-[#888] hover:text-rose-600 px-1 py-0.5 rounded cursor-pointer"
+                className="text-xs text-[#888] hover:text-rose-600 px-1 py-0.5 rounded cursor-pointer shrink-0"
                 title="Remove exact date"
               >
                 ×
@@ -317,18 +332,26 @@ export function IdentityTab({
           />
           {showExactDeath && (
             <div className="flex items-center gap-2 pt-1 animate-in fade-in">
-              <select
-                value={deathMonth || ""}
-                onChange={(e) => onChange("death_month", e.target.value)}
-                className="w-1/2 px-2.5 py-1.5 rounded-lg bg-neutral-50 border border-black/[0.08] text-xs text-[#181925] outline-none focus:border-primary/60"
-              >
-                <option value="">Month</option>
-                {MONTH_NAMES.map((m, idx) => (
-                  <option key={idx + 1} value={String(idx + 1)}>
-                    {m}
-                  </option>
-                ))}
-              </select>
+              <div className="w-1/2">
+                <Select
+                  value={deathMonth || undefined}
+                  onValueChange={(val) => onChange("death_month", val === "clear" ? "" : val)}
+                >
+                  <SelectTrigger className="w-full h-8.5 px-3 rounded-lg bg-neutral-50 border border-black/[0.08] text-xs text-[#181925] outline-none focus:border-primary/60">
+                    <SelectValue placeholder="Month" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="clear" className="text-[#888]">
+                      Month
+                    </SelectItem>
+                    {MONTH_NAMES.map((m, idx) => (
+                      <SelectItem key={idx + 1} value={String(idx + 1)}>
+                        {m}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
               <input
                 type="number"
                 min={1}
@@ -336,7 +359,7 @@ export function IdentityTab({
                 value={deathDay || ""}
                 onChange={(e) => onChange("death_day", e.target.value)}
                 placeholder="Day"
-                className="w-1/2 px-2.5 py-1.5 rounded-lg bg-neutral-50 border border-black/[0.08] text-xs text-[#181925] font-mono outline-none focus:border-primary/60"
+                className="w-1/2 h-8.5 px-3 rounded-lg bg-neutral-50 border border-black/[0.08] text-xs text-[#181925] font-mono outline-none focus:border-primary/60"
               />
               <button
                 type="button"
@@ -345,7 +368,7 @@ export function IdentityTab({
                   onChange("death_day", "")
                   setShowExactDeath(false)
                 }}
-                className="text-xs text-[#888] hover:text-rose-600 px-1 py-0.5 rounded cursor-pointer"
+                className="text-xs text-[#888] hover:text-rose-600 px-1 py-0.5 rounded cursor-pointer shrink-0"
                 title="Remove exact date"
               >
                 ×
@@ -396,16 +419,22 @@ export function IdentityTab({
         <label className="text-xs font-medium text-[#181925]">
           Your connection to {fullName.trim().split(/\s+/)[0] || "them"}
         </label>
-        <select
-          value={creatorRelationship || ""}
-          onChange={(e) => onChange("creator_relationship", e.target.value)}
-          className="px-3.5 py-2 rounded-xl bg-white border border-black/[0.08] text-xs sm:text-sm text-[#181925] outline-none focus:border-primary/60 transition-colors"
+        <Select
+          value={creatorRelationship || undefined}
+          onValueChange={(val) => onChange("creator_relationship", val === "clear" ? "" : val)}
         >
-          <option value="">Select relationship (optional)...</option>
-          {RELATIONSHIP_CHOICES.map((rel) => (
-            <option key={rel} value={rel}>{rel}</option>
-          ))}
-        </select>
+          <SelectTrigger className="w-full h-10 px-3.5 rounded-xl bg-white border border-black/[0.08] text-xs sm:text-sm text-[#181925] outline-none focus:border-primary/60 transition-colors">
+            <SelectValue placeholder="Select relationship (optional)..." />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="clear" className="text-[#888]">
+              Select relationship (optional)...
+            </SelectItem>
+            {RELATIONSHIP_CHOICES.map((rel) => (
+              <SelectItem key={rel} value={rel}>{rel}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
         <span className="text-[11px] text-[#888]">
           Used gently in the memorial footer (e.g. &ldquo;Created by Anita &middot; Robert’s granddaughter&rdquo;).
         </span>
