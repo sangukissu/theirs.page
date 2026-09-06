@@ -33,6 +33,14 @@ const REVIEW_REQUIRED_RESULT: SafetyScreeningResult = {
   reason: "Automated screening was unavailable; human review is required.",
 }
 
+export function requireHumanMediaReview(reason: string): SafetyScreeningResult {
+  return {
+    ...DEFAULT_SAFE_RESULT,
+    decision: "review",
+    reason: reason.trim().slice(0, 300) || "Caretaker review is required.",
+  }
+}
+
 const SAFETY_TIMEOUT_MS = 12_000
 
 function getSafetyModel(): string {

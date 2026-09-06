@@ -4,23 +4,18 @@ import { getSupabaseAdminSafe } from "@/utils/supabase/admin"
 import { assertMemorialOwner } from "@/lib/memorial-auth"
 import { canAccessFeature } from "@/lib/paywall"
 import { createInvitationToken } from "@/lib/invitations"
-import { resend } from "@/lib/resend"
+import {
+  escapeEmailHtml,
+  getTheirsAppUrl,
+  sendTheirsEmail,
+  THEIRS_INVITATION_SENDER,
+} from "@/lib/email/caretaker-notifications"
 
 interface RouteContext {
   params: Promise<{ id: string }>
 }
 
 const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
-
-function escapeHtml(value: string): string {
-  return value.replace(/[&<>'"]/g, (character) => ({
-    "&": "&amp;",
-    "<": "&lt;",
-    ">": "&gt;",
-    "'": "&#39;",
-    '"': "&quot;",
-  })[character] || character)
-}
 
 export async function GET(req: NextRequest, context: RouteContext) {
   try {
@@ -51,10 +46,7 @@ export async function GET(req: NextRequest, context: RouteContext) {
       return NextResponse.json({ error: "Failed to fetch caretakers." }, { status: 500 })
     }
 
-    const appUrl =
-      process.env.NEXT_PUBLIC_APP_URL ||
-      process.env.NEXT_PUBLIC_SITE_URL ||
-      "https://theirs.page"
+    const appUrl = getTheirsAppUrl()
 
     // Attach current inviteLink for any pending invites so creator can copy again
     const enrichedCollabs = (collabs || []).map((c) => {
@@ -115,13 +107,14 @@ export async function POST(req: NextRequest, context: RouteContext) {
 
     const cleanEmail = email.trim().toLowerCase()
     const assignedRole = role === "co_admin" ? "co_admin" : "contributor"
+    const isTrustedInvite = role === "trusted"
 
     const db = getSupabaseAdminSafe() || supabase
 
     // 1. Check existing collaborator record
     const { data: existing } = await db
       .from("collaborators")
-      .select("id, invitation_accepted, role")
+      .select("id, invitation_accepted, role, is_trusted")
       .eq("memorial_id", id)
       .eq("email", cleanEmail)
       .maybeSingle()
@@ -136,11 +129,20 @@ export async function POST(req: NextRequest, context: RouteContext) {
         )
       }
       // Update role if changed
-      if (existing.role !== assignedRole) {
-        await db
+      if (existing.role !== assignedRole || Boolean(existing.is_trusted) !== isTrustedInvite) {
+        const { error: updateError } = await db
           .from("collaborators")
-          .update({ role: assignedRole })
+          .update({ role: assignedRole, is_trusted: isTrustedInvite })
           .eq("id", existing.id)
+        if (updateError) {
+          console.error("Collaborator invitation update error:", updateError.code)
+          return NextResponse.json({ error: "Failed to update invitation." }, { status: 500 })
+        }
+        targetCollab = {
+          ...existing,
+          role: assignedRole,
+          is_trusted: isTrustedInvite,
+        }
       }
     } else {
       // Create new pending invitation
@@ -150,6 +152,7 @@ export async function POST(req: NextRequest, context: RouteContext) {
           memorial_id: id,
           email: cleanEmail,
           role: assignedRole,
+          is_trusted: isTrustedInvite,
           invitation_accepted: false,
         })
         .select()
@@ -167,10 +170,7 @@ export async function POST(req: NextRequest, context: RouteContext) {
     }
 
     // 2. Generate secure HMAC-signed invitation token and link
-    const appUrl =
-      process.env.NEXT_PUBLIC_APP_URL ||
-      process.env.NEXT_PUBLIC_SITE_URL ||
-      "https://theirs.page"
+    const appUrl = getTheirsAppUrl()
 
     const token = createInvitationToken({
       collaboratorId: targetCollab.id,
@@ -181,37 +181,42 @@ export async function POST(req: NextRequest, context: RouteContext) {
 
     const inviteLink = `${appUrl}/invitation/accept?token=${token}`
 
-    // 3. Send email notification via Resend if configured
-    if (process.env.RESEND_API_KEY && process.env.RESEND_API_KEY !== "re_placeholder_for_build") {
-      try {
-        await resend.emails.send({
-          from: "Theirs <invites@theirs.page>",
-          to: cleanEmail,
-          subject: `Invitation to care for ${String(authCheck.memorial.full_name).replace(/[\r\n]/g, " ")}'s memorial`,
-          html: `
+    const roleLabel = assignedRole === "co_admin"
+      ? "co-admin"
+      : isTrustedInvite
+        ? "trusted contributor"
+        : "contributor"
+    const roleExplanation = assignedRole === "co_admin"
+      ? "You can manage the memorial, review visitor submissions, write stories, and upload media."
+      : isTrustedInvite
+        ? "After you accept, your text and photograph contributions can publish without waiting for family approval when automated safety checks pass. Audio and video still require caretaker review."
+        : "You can contribute stories and media; a caretaker will approve them before publication."
+
+    await sendTheirsEmail({
+      from: THEIRS_INVITATION_SENDER,
+      to: cleanEmail,
+      eventKey: `collaborator-invite/${targetCollab.id}`,
+      subject: `Invitation to care for ${String(authCheck.memorial.full_name).replace(/[\r\n]/g, " ")}'s memorial`,
+      html: `
             <div style="font-family: serif; max-width: 520px; margin: 0 auto; padding: 40px 20px; color: #181925; line-height: 1.6;">
               <h2 style="font-size: 22px; font-weight: normal; margin-bottom: 16px;">Family Caretaker Invitation</h2>
               <p style="font-size: 15px; color: #444;">
-                You have been invited to help care for the memory and life story of <strong>${escapeHtml(String(authCheck.memorial.full_name))}</strong> on Theirs.
+                You have been invited to help care for the memory and life story of <strong>${escapeEmailHtml(String(authCheck.memorial.full_name))}</strong> on Theirs.
               </p>
               <p style="font-size: 14px; color: #666; margin: 24px 0;">
-                As a ${assignedRole === "co_admin" ? "co-admin" : "collaborator"}, you can approve contributed memories, write stories, and upload original photos.
+                As a ${roleLabel}, ${roleExplanation}
               </p>
               <div style="margin: 32px 0;">
-                <a href="${escapeHtml(inviteLink)}" style="background-color: #181925; color: #ffffff; padding: 12px 24px; border-radius: 24px; text-decoration: none; font-size: 13px; font-family: sans-serif; font-weight: 500; display: inline-block;">
+                <a href="${escapeEmailHtml(inviteLink)}" style="background-color: #181925; color: #ffffff; padding: 12px 24px; border-radius: 24px; text-decoration: none; font-size: 13px; font-family: sans-serif; font-weight: 500; display: inline-block;">
                   Accept Invitation
                 </a>
               </div>
               <p style="font-size: 12px; color: #888; margin-top: 32px; border-top: 1px solid #eaeaea; padding-top: 16px;">
-                Direct link: <a href="${escapeHtml(inviteLink)}" style="color: #444;">${escapeHtml(inviteLink)}</a>
+                Direct link: <a href="${escapeEmailHtml(inviteLink)}" style="color: #444;">${escapeEmailHtml(inviteLink)}</a>
               </p>
             </div>
           `,
-        })
-      } catch (emailErr) {
-        console.warn("Resend email delivery notice:", emailErr)
-      }
-    }
+    })
 
     return NextResponse.json({
       success: true,
@@ -219,6 +224,7 @@ export async function POST(req: NextRequest, context: RouteContext) {
         ...targetCollab,
         email: cleanEmail,
         role: assignedRole,
+        is_trusted: isTrustedInvite,
         invitation_accepted: false,
         inviteLink,
       },

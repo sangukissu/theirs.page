@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server"
 import { deleteR2PrefixOlderThan } from "@/lib/r2"
+import { isAuthorizedCronRequest } from "@/lib/security/cron"
 
 // Cron jobs must never be cached or statically rendered.
 export const dynamic = "force-dynamic"
@@ -19,30 +20,13 @@ const TEMP_PREFIXES = [
 const RETENTION_MS = 6 * 60 * 60 * 1000
 
 /**
- * Verify the request is authorized. Vercel Cron automatically sends the
- * configured CRON_SECRET as `Authorization: Bearer <CRON_SECRET>`. We also
- * accept the header via `x-vercel-cron-secret` for manual/ad-hoc invocation.
- */
-function isAuthorized(request: Request): boolean {
-  const secret = process.env.CRON_SECRET
-  if (!secret) {
-    // If no secret is configured, refuse to run rather than execute unguarded.
-    return false
-  }
-  const authHeader = request.headers.get("authorization") || ""
-  const bearer = authHeader.startsWith("Bearer ") ? authHeader.slice(7) : ""
-  const altHeader = request.headers.get("x-vercel-cron-secret") || ""
-  return bearer === secret || altHeader === secret
-}
-
-/**
  * Sweep stale temp staging objects from R2.
  *
  * Call this from the production scheduler with CRON_SECRET. The 6h retention
  * is enforced inside the handler, so a missed run never deletes objects early.
  */
 export async function GET(request: Request) {
-  if (!isAuthorized(request)) {
+  if (!isAuthorizedCronRequest(request)) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
   }
 

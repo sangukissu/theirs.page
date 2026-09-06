@@ -136,7 +136,7 @@ export function ContributeModal({
       title: "Share a voice note",
       desc: "A voicemail or spoken story worth keeping forever.",
       color: "text-primary bg-primary/5",
-      available: false,
+      available: !allContributionsDisabled && isPaid && contributionSettings?.voice === true,
     },
     {
       type: "video" as const,
@@ -144,7 +144,7 @@ export function ContributeModal({
       title: "Share a video clip",
       desc: "Home movies, celebrations, or recorded messages.",
       color: "text-primary bg-primary/5",
-      available: false,
+      available: !allContributionsDisabled && isPaid && contributionSettings?.videos === true,
     },
   ]
 
@@ -196,7 +196,10 @@ export function ContributeModal({
           turnstile_token: turnstileToken,
           mime_type: file.type || "application/octet-stream",
           file_size: file.size,
-          contribution_type: selectedType === "photo" ? "photo" : "memory",
+          contribution_type:
+            selectedType === "photo" || selectedType === "voice" || selectedType === "video"
+              ? selectedType
+              : "memory",
         }),
       })
       const intentData = await intentRes.json().catch(() => ({}))
@@ -221,7 +224,7 @@ export function ContributeModal({
     const data = await response.json()
     if (!response.ok) {
       if (response.status === 403) setUploadAuthorization(null)
-      throw new Error(data.error || "Failed to upload photograph")
+      throw new Error(data.error || "Failed to upload media")
     }
     return data as { previewUrl: string; mediaRef: string }
   }
@@ -532,7 +535,13 @@ export function ContributeModal({
                         <button
                           key={opt.type}
                           type="button"
-                          onClick={() => setSelectedType(opt.type)}
+                          onClick={() => {
+                            setSelectedType(opt.type)
+                            setUploadAuthorization(null)
+                            setUploadedFileUrl(null)
+                            setUploadedMediaRef(null)
+                            setUploadedFileName(null)
+                          }}
                           className="flex items-center gap-4 p-3.5 rounded-2xl border border-black/[0.06] bg-[#f9f9fa] hover:bg-neutral-100 hover:border-black/[0.12] transition-all text-left cursor-pointer group"
                         >
                           <div
@@ -687,7 +696,13 @@ export function ContributeModal({
                       <input
                         ref={fileInputRef}
                         type="file"
-                        accept={selectedType === "video" ? "video/*" : selectedType === "voice" ? "audio/*" : "image/*"}
+                        accept={
+                          selectedType === "video"
+                            ? "video/mp4,video/webm,video/quicktime,.mov"
+                            : selectedType === "voice"
+                              ? "audio/mpeg,audio/wav,audio/ogg,audio/mp4,audio/m4a,.mp3,.wav,.ogg,.m4a"
+                              : "image/jpeg,image/png,image/webp"
+                        }
                         className="hidden"
                         disabled={isUploadingMedia}
                         onChange={(e) => {
@@ -704,16 +719,14 @@ export function ContributeModal({
                               <img src={uploadedFileUrl} alt="Preview" className="size-full object-cover" />
                             </div>
                           ) : selectedType === "video" ? (
-                            <div className="size-16 rounded-xl overflow-hidden bg-black/90 shrink-0 border border-black/[0.08] relative flex items-center justify-center">
-                              <video src={uploadedFileUrl} className="size-full object-cover" muted />
-                              <div className="absolute inset-0 bg-black/30 flex items-center justify-center">
-                                <Film className="size-5 text-white" />
-                              </div>
-                            </div>
+                            <video
+                              src={uploadedFileUrl}
+                              controls
+                              preload="metadata"
+                              className="h-20 w-32 rounded-xl bg-black object-contain shrink-0 border border-black/[0.08]"
+                            />
                           ) : (
-                            <div className="size-12 rounded-xl bg-primary/10 flex items-center justify-center shrink-0 text-primary">
-                              <Mic className="size-6" />
-                            </div>
+                            <audio src={uploadedFileUrl} controls preload="metadata" className="h-10 max-w-52 shrink-0" />
                           )}
                           <div className="flex flex-col min-w-0 flex-1">
                             <span className="text-xs font-medium text-[#181925] truncate">
@@ -768,7 +781,11 @@ export function ContributeModal({
                                   : "Choose or drop an audio file"}
                             </span>
                             <span className="text-[10px] text-[#71717a]">
-                              Original high-resolution preserved untouched
+                              {selectedType === "photo"
+                                ? "JPEG, PNG, or WebP · up to 15MB"
+                                : selectedType === "video"
+                                  ? "MP4, WebM, or MOV · up to 50MB"
+                                  : "MP3, WAV, OGG, or M4A · up to 25MB"}
                             </span>
                           </div>
                         </div>

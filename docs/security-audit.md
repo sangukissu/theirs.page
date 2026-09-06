@@ -1,6 +1,6 @@
 # Security implementation audit
 
-Date: 2026-09-05
+Date: 2026-09-06
 
 ## Scope and verdict
 
@@ -34,15 +34,15 @@ routes were removed. Photo restoration is retained and hardened.
 | Photo byte/type/size/dimension validation | Incomplete | JPEG/PNG/WebP allowlist, actual magic/type check, limits and metadata-stripped display copy |
 | Private media before approval | Prefix in a potentially public bucket | Managed keys served through authorized `/api/media`; pending/original paths require authorization |
 | Image safety classification | Function existed but was not called | Called during contribution upload and cryptographically bound to the media reference |
-| Audio transcript moderation | Claimed but absent | Feature disabled in API, defaults, settings and contribution UI |
-| Video frame/transcript moderation | Claimed but absent | Feature disabled in API, defaults, settings and contribution UI |
+| Audio contribution review | Claimed transcript moderation was absent | Paid opt-in; validated private upload, then caretaker playback and approval. No transcription by product decision |
+| Video contribution review | Claimed frame/transcript moderation was absent | Paid opt-in; validated private upload, then caretaker playback and approval. No transcript/keyframe analysis by product decision |
 | Safe / review / blocked decisions | Inconsistent values and permissive defaults | Normalized states; unscreened DB default is `review` |
 | Trusted contributor auto-publish only after safety | Trust resolution was too loose | Requires authenticated, accepted invitation plus owner-controlled trust flag |
 | Co-admin and owner separation | RLS/API allowed excessive co-admin control | Co-admin can moderate; owner alone controls collaborators, privacy, PIN and ownership settings |
 | Blocked content isolated from normal moderation | Could still be approved/unpublished | Platform-blocked items can only be deliberately revealed or deleted |
 | Contribution type settings enforced | Client/server gaps | Enforced both in UI and server API |
 | Private memorial PIN | Forgeable literal cookie; PIN hash leaked to client | Versioned signed cookie bound to memorial, expiry and PIN hash; hash never sent to browser |
-| Pending notification | Unsafe interpolation and bot noise | Escaped caretaker email only for pending safe/review items; blocked submissions send no email |
+| Pending notification | Unsafe interpolation and bot noise | Escaped, idempotent email to owner and accepted co-admins for pending items; weekly blocked digest omits harmful content |
 | Promotion/unpublish storage lifecycle | DB could say approved after failed copy; unpublish left media public | Storage transition completes before DB state; failures surface; unpublish moves media private |
 | Photo restoration webhook | Unsigned callback accepted attacker-controlled results | FAL Ed25519/JWKS signature, timestamp, body hash, request binding and result-host allowlist |
 
@@ -106,8 +106,14 @@ antivirus product or full sandboxed image decoder is running.
   once published/rejected.
 - Existing memorial photographs can be attached without forcing a redundant
   upload.
-- Voice/video choices are honestly unavailable instead of presenting a flow the
-  backend cannot safely moderate.
+- Voice/video contributions are explicit paid opt-ins. They use narrow format,
+  byte-signature and size validation, stay private, and always wait for a
+  caretaker to play and approve them. No transcription, keyframe sampling or
+  duration analysis is performed by product decision.
+- Trusted contributor is a first-class invitation option. It takes effect only
+  after the invitee accepts; audio/video still require caretaker review.
+- Pending contributions and private visitor messages notify the owner and
+  accepted co-admins from the verified `mail.theirs.page` sender domain.
 
 ## Phase 4 — retained restoration and legacy surface removal
 
@@ -123,17 +129,10 @@ antivirus product or full sandboxed image decoder is running.
 
 ## Intentionally deferred, not falsely advertised
 
-These are not launch blockers for the current UI because the affected options
-are disabled:
+These are deliberately outside the current implementation:
 
-- Voice-note contribution: needs validated container/duration, private upload,
-  transcription and transcript moderation.
-- Video contribution: needs validated container/duration, transcript plus
-  bounded keyframe sampling and combined moderation.
 - “Edit before publishing”: `security.md` described this as optional and warned
   against rewriting a contributor's voice. It is not implemented.
-- Weekly blocked-submission digest: blocked submissions are visible in the
-  protected dashboard, but scheduled digest email is not implemented.
 - A dedicated antivirus/sandboxed re-encode service: current photo handling uses
   a narrow raster allowlist, structural parsing, limits, metadata stripping,
   private storage and `nosniff`. Add a sandboxed decode/re-encode stage only if
@@ -166,10 +165,11 @@ Do not call the work production-complete until all of these are done:
    `TURNSTILE_SECRET_KEY`, `TURNSTILE_EXPECTED_HOSTNAMES`, `CRON_SECRET`, and
    the existing Supabase/R2/Gemini/FAL/payment secrets. Use distinct random
    values of at least 32 bytes for each HMAC secret.
-5. **Schedule staging cleanup.** Configure the Cloudflare production scheduler
-   (or another trusted scheduler) to call `/api/cron/cleanup-temp` with
-   `Authorization: Bearer <CRON_SECRET>`. The route fails closed when the secret
-   is missing.
+5. **Verify scheduled jobs after deployment.** Wrangler now installs an hourly
+   staging-cleanup trigger and a Monday 03:30 UTC blocked-digest trigger through
+   `custom-worker.ts`. Confirm `CRON_SECRET` exists as an encrypted Worker secret
+   and verify both jobs in Cloudflare after the first deployment. Both routes
+   fail closed when the secret is missing.
 6. **Run live smoke tests.** Test public, unlisted and private memorials in two
    independent browsers; anonymous, invited, trusted, co-admin and owner roles;
    safe/review/blocked text; valid and malformed images; approval, unpublish,

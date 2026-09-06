@@ -87,7 +87,7 @@ export function SettingsTab({
   const [collaborators, setCollaborators] = useState<CollaboratorItem[]>([])
   const [loadingCollabs, setLoadingCollabs] = useState(false)
   const [collabEmail, setCollabEmail] = useState("")
-  const [collabRole, setCollabRole] = useState<"co_admin" | "contributor">("co_admin")
+  const [collabRole, setCollabRole] = useState<"co_admin" | "trusted" | "contributor">("co_admin")
   const [collabAdding, setCollabAdding] = useState(false)
   const [collabError, setCollabError] = useState<string | null>(null)
   const [copiedCollabId, setCopiedCollabId] = useState<string | null>(null)
@@ -210,6 +210,7 @@ export function SettingsTab({
   // 3. Toggle Contributor Trust (Bypasses human approval, automated safety still screens)
   const handleToggleTrust = async (collaboratorId: string, currentTrust: boolean) => {
     const nextTrust = !currentTrust
+    setCollabError(null)
     // Optimistic UI update
     setCollaborators((prev) =>
       prev.map((c) => (c.id === collaboratorId ? { ...c, is_trusted: nextTrust } : c))
@@ -225,11 +226,14 @@ export function SettingsTab({
         setCollaborators((prev) =>
           prev.map((c) => (c.id === collaboratorId ? { ...c, is_trusted: currentTrust } : c))
         )
+        const data = await res.json().catch(() => ({}))
+        setCollabError(data.error || "Could not update contributor trust.")
       }
     } catch {
       setCollaborators((prev) =>
         prev.map((c) => (c.id === collaboratorId ? { ...c, is_trusted: currentTrust } : c))
       )
+      setCollabError("Network error. Please try again.")
     }
   }
 
@@ -828,14 +832,12 @@ export function SettingsTab({
               {
                 key: "voice" as const,
                 title: "Voice Notes",
-                desc: "Coming after transcript safety review is ready.",
-                unavailable: true,
+                desc: "Visitors can upload a recording for a caretaker to listen to and approve.",
               },
               {
                 key: "videos" as const,
                 title: "Video Clips",
-                desc: "Coming after audio and frame safety review is ready.",
-                unavailable: true,
+                desc: "Visitors can upload a video for a caretaker to watch and approve.",
               },
               {
                 key: "moments" as const,
@@ -843,8 +845,13 @@ export function SettingsTab({
                 desc: "Timeline additions and significant milestone suggestions.",
               },
             ].map((opt) => {
-              const unavailable = "unavailable" in opt
-              const active = !unavailable && currentContributionSettings[opt.key] !== false
+              const unavailable = (opt.key === "voice" || opt.key === "videos") && !isPaid
+              const isOptInMedia = opt.key === "voice" || opt.key === "videos"
+              const active = !unavailable && (
+                isOptInMedia
+                  ? currentContributionSettings[opt.key] === true
+                  : currentContributionSettings[opt.key] !== false
+              )
               return (
                 <div
                   key={opt.key}
@@ -880,16 +887,16 @@ export function SettingsTab({
         )}
       </div>
 
-      {/* 5. Multiple Family Caretakers & Collaborators (Complete Plan Feature) */}
+      {/* 5. Caretakers and trusted contributors */}
       <div className="flex flex-col gap-4 p-5 rounded-2xl bg-white border border-black/[0.07]">
         <div className="flex items-center justify-between">
           <div className="flex flex-col gap-0.5">
             <label className="text-xs font-medium text-[#181925] flex items-center gap-1.5">
               <Users className="size-3.5 text-primary" />
-              <span>Family Caretakers & Collaborators</span>
+              <span>Caretakers & Trusted Contributors</span>
             </label>
             <p className="text-[11px] text-[#71717a]">
-              Invite family members as co-admins to help approve memories, write stories, and upload photos.
+              Co-admins help manage the memorial. Trusted contributors can publish safe text and photographs without waiting for approval.
             </p>
           </div>
           {!isPaid && (
@@ -926,8 +933,9 @@ export function SettingsTab({
             onChange={(e) => setCollabRole(e.target.value as any)}
             className="px-3 py-2 rounded-xl bg-[#fafafb] border border-black/[0.08] text-xs text-[#181925] outline-none cursor-pointer disabled:bg-neutral-100 disabled:text-neutral-500 disabled:cursor-not-allowed"
           >
-            <option value="co_admin">Co-admin (Can moderate)</option>
-            <option value="contributor">Contributor</option>
+            <option value="co_admin">Co-admin — can manage & moderate</option>
+            <option value="trusted">Trusted contributor — safe posts publish</option>
+            <option value="contributor">Contributor — approval required</option>
           </select>
           <button
             type="submit"
@@ -974,7 +982,7 @@ export function SettingsTab({
                   <div className="flex items-center gap-2">
                     <span className="font-medium text-[#181925]">{c.email}</span>
                     <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-primary/10 text-primary uppercase font-semibold">
-                      {c.role === "co_admin" ? "Co-admin" : "Contributor"}
+                      {c.role === "co_admin" ? "Co-admin" : c.is_trusted ? "Trusted contributor" : "Contributor"}
                     </span>
                     {c.invitation_accepted === false && (
                       <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-amber-50 text-amber-700 border border-amber-200">
@@ -1018,7 +1026,7 @@ export function SettingsTab({
                         Trust {c.email.split("@")[0]}&apos;s contributions
                       </span>
                       <span className="text-[10px] text-[#71717a] leading-tight">
-                        Contributions appear without waiting for your approval. Theirs will still run automated safety checks.
+                        Safe text and photograph contributions publish without waiting. Voice and video always require caretaker review.
                       </span>
                     </div>
 
@@ -1027,10 +1035,11 @@ export function SettingsTab({
                       role="switch"
                       aria-checked={Boolean(c.is_trusted)}
                       onClick={() => handleToggleTrust(c.id, Boolean(c.is_trusted))}
-                      className={`relative inline-flex h-4.5 w-8 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
+                      disabled={!c.invitation_accepted}
+                      className={`relative inline-flex h-4.5 w-8 shrink-0 rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none disabled:cursor-not-allowed disabled:opacity-50 ${
                         c.is_trusted ? "bg-emerald-600" : "bg-neutral-300"
                       }`}
-                      title={c.is_trusted ? "Trusted contributor (auto-publishes)" : "Approval required"}
+                      title={!c.invitation_accepted ? "Available after this person accepts the invitation" : c.is_trusted ? "Trusted contributor (safe posts auto-publish)" : "Approval required"}
                     >
                       <span
                         aria-hidden="true"

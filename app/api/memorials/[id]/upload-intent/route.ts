@@ -5,9 +5,10 @@ import crypto from "crypto"
 import { verifyTurnstileToken, checkDurableRateLimit } from "@/lib/turnstile"
 import {
   signUploadIntent,
-  ALLOWED_GUEST_MIME_TYPES,
-  MAX_GUEST_UPLOAD_BYTES,
   getUploadClientBinding,
+  getGuestMediaRule,
+  normalizeGuestMime,
+  type GuestContributionType,
 } from "@/lib/upload-intent"
 import { getMemorialPinCookieName, verifyPinAccessToken } from "@/lib/security/pin"
 import type { ContributionSettings } from "@/types/theirs"
@@ -34,7 +35,7 @@ export async function POST(req: NextRequest, context: RouteContext) {
     const mime_type = body.mime_type || body.fileType || body.type
     const file_size = Number(body.file_size ?? body.fileSize ?? body.size)
     const turnstile_token = body.turnstile_token || body.turnstileToken
-    const contributionType = body.contribution_type
+    const contributionType = body.contribution_type as GuestContributionType
 
     const clientIp = getClientIp(req)
 
@@ -59,23 +60,27 @@ export async function POST(req: NextRequest, context: RouteContext) {
     }
 
     // 3. MIME Type & File Size Validation
-    const normalizedMime = typeof mime_type === "string" ? mime_type.toLowerCase().trim() : ""
-    if (contributionType !== "photo" && contributionType !== "memory") {
-      return NextResponse.json({ error: "Invalid photograph contribution type." }, { status: 400 })
+    const normalizedMime = typeof mime_type === "string" ? normalizeGuestMime(mime_type) : ""
+    if (!["photo", "memory", "voice", "video"].includes(contributionType)) {
+      return NextResponse.json({ error: "Invalid media contribution type." }, { status: 400 })
     }
-    if (!ALLOWED_GUEST_MIME_TYPES.has(normalizedMime)) {
+    const mediaRule = getGuestMediaRule(contributionType)
+    if (!mediaRule.allowedMimeTypes.has(normalizedMime)) {
       return NextResponse.json(
         {
-          error:
-            "Please choose a JPEG, PNG, or WebP photograph.",
+          error: contributionType === "voice"
+            ? "Please choose an MP3, WAV, OGG, or M4A recording."
+            : contributionType === "video"
+              ? "Please choose an MP4, WebM, or MOV video."
+              : "Please choose a JPEG, PNG, or WebP photograph.",
         },
         { status: 400 }
       )
     }
 
-    if (!Number.isSafeInteger(file_size) || file_size < 1 || file_size > MAX_GUEST_UPLOAD_BYTES) {
+    if (!Number.isSafeInteger(file_size) || file_size < 1 || file_size > mediaRule.maxBytes) {
       return NextResponse.json(
-        { error: "Guest contribution files must be under 15MB." },
+        { error: `${mediaRule.label[0].toUpperCase()}${mediaRule.label.slice(1)} files must be under ${Math.floor(mediaRule.maxBytes / 1024 / 1024)}MB.` },
         { status: 400 }
       )
     }
@@ -104,17 +109,23 @@ export async function POST(req: NextRequest, context: RouteContext) {
     const contributionSettings = (memorial.contribution_settings || {}) as ContributionSettings
     if (
       contributionSettings.accept_contributions === false ||
-      contributionSettings.photos === false ||
-      (contributionType === "memory" && contributionSettings.memories === false)
+      contributionSettings[mediaRule.setting] === false ||
+      (contributionType === "memory" && contributionSettings.photos === false)
     ) {
       return NextResponse.json(
-        { error: "The family is not currently accepting photograph contributions." },
+        { error: `The family is not currently accepting ${mediaRule.label} contributions.` },
         { status: 403 }
       )
     }
 
     // 5. Enforce Tier Restrictions for Guest Contributions
     const isPaid = Boolean(memorial.is_paid)
+    if (!isPaid && (contributionType === "voice" || contributionType === "video")) {
+      return NextResponse.json(
+        { error: "Voice notes and video clips require the Pro Plan." },
+        { status: 403 }
+      )
+    }
     if (!isPaid) {
       // Check 5-photo limit on free tier
       if (normalizedMime.startsWith("image/")) {
@@ -176,8 +187,8 @@ export async function POST(req: NextRequest, context: RouteContext) {
     // 6. Generate Short-Lived HMAC Upload Intent Token (10 minutes)
     const uploadIntentToken = signUploadIntent({
       memorialId: memorial.id,
-      allowedMime: "image/*",
-      maxBytes: MAX_GUEST_UPLOAD_BYTES,
+      allowedMime: mediaRule.allowedMime,
+      maxBytes: mediaRule.maxBytes,
       contributionType,
       clientBinding: getUploadClientBinding(clientIp),
       nonce: crypto.randomBytes(16).toString("hex"),

@@ -3,8 +3,12 @@ import { NextRequest, NextResponse } from "next/server"
 import { getSupabaseAdminSafe } from "@/utils/supabase/admin"
 import { createClient } from "@/utils/supabase/server"
 import { verifyTurnstileToken, checkContributionRateLimit } from "@/lib/turnstile"
-import { resend } from "@/lib/resend"
 import { combineSafetyResults, screenTextWithGemini } from "@/lib/safety/moderation"
+import {
+  escapeEmailHtml,
+  getTheirsAppUrl,
+  notifyCaretakers,
+} from "@/lib/email/caretaker-notifications"
 import {
   contributionInputSchema,
   parseApproxYear,
@@ -45,16 +49,6 @@ function getClientIp(req: NextRequest): string {
   )
 }
 
-function escapeHtml(value: string): string {
-  return value.replace(/[&<>'"]/g, (character) => ({
-    "&": "&amp;",
-    "<": "&lt;",
-    ">": "&gt;",
-    "'": "&#39;",
-    '"': "&quot;",
-  })[character] || character)
-}
-
 async function readContributionBody(req: NextRequest): Promise<unknown> {
   const declaredLength = Number(req.headers.get("content-length") || 0)
   if (declaredLength > MAX_BODY_BYTES) throw new Error("BODY_TOO_LARGE")
@@ -81,6 +75,8 @@ function settingForType(
 function defaultContent(input: ContributionInput): string {
   if (input.content) return input.content
   if (input.type === "photo") return `Photograph shared by ${input.author_name}`
+  if (input.type === "voice") return `Voice recording shared by ${input.author_name}`
+  if (input.type === "video") return `Video clip shared by ${input.author_name}`
   if (input.type === "tribute" || input.type === "message") {
     return input.tribute_type === "flower"
       ? `A flower was laid in remembrance by ${input.author_name}.`
@@ -93,7 +89,7 @@ function defaultContent(input: ContributionInput): string {
 
 function destinationForMedia(memorialId: string, displayKey: string): string {
   const filename = displayKey.split("/").pop()
-  if (!filename || !/^[a-f0-9-]+\.(?:jpg|png|webp)$/i.test(filename)) {
+  if (!filename || !/^[a-f0-9-]+\.(?:jpg|png|webp|mp3|wav|ogg|m4a|mp4|webm|mov)$/i.test(filename)) {
     throw new Error("Invalid quarantined media key")
   }
   return `memorials/${memorialId}/community/${filename}`
@@ -101,7 +97,7 @@ function destinationForMedia(memorialId: string, displayKey: string): string {
 
 function destinationForOriginal(memorialId: string, originalKey: string): string {
   const filename = originalKey.split("/").pop()
-  if (!filename || !/^[a-f0-9-]+\.(?:jpg|png|webp)$/i.test(filename)) {
+  if (!filename || !/^[a-f0-9-]+\.(?:jpg|png|webp|mp3|wav|ogg|m4a|mp4|webm|mov)$/i.test(filename)) {
     throw new Error("Invalid original media key")
   }
   return `originals/${memorialId}/community/${filename}`
@@ -109,7 +105,7 @@ function destinationForOriginal(memorialId: string, originalKey: string): string
 
 function filenameFromStagedKey(key: string): string {
   const filename = key.split("/").pop()
-  if (!filename || !/^[a-f0-9-]+\.(?:jpg|png|webp)$/i.test(filename)) {
+  if (!filename || !/^[a-f0-9-]+\.(?:jpg|png|webp|mp3|wav|ogg|m4a|mp4|webm|mov)$/i.test(filename)) {
     throw new Error("Invalid staged media key")
   }
   return filename
@@ -138,23 +134,22 @@ export async function POST(req: NextRequest, context: RouteContext) {
       )
     }
     const input = parsed.data
-    if (input.type === "voice" || input.type === "video") {
-      return NextResponse.json(
-        { error: "Voice and video contributions are not available until their safety review pipeline is enabled." },
-        { status: 501 }
-      )
-    }
-
     const effectiveContent = defaultContent(input)
     if (!effectiveContent) {
       return NextResponse.json({ error: "Please write a memory or message to share." }, { status: 400 })
     }
+    const requiresUploadedMedia = input.type === "voice" || input.type === "video"
     if (
-      input.type === "photo" &&
-      input.media_refs.length === 0 &&
-      !input.existing_media_id
+      (input.type === "photo" && input.media_refs.length === 0 && !input.existing_media_id) ||
+      (requiresUploadedMedia && input.media_refs.length === 0)
     ) {
-      return NextResponse.json({ error: "Please choose a photograph to share." }, { status: 400 })
+      return NextResponse.json({ error: "Please choose a media file to share." }, { status: 400 })
+    }
+    if (input.existing_media_id && input.type !== "photo" && input.type !== "memory") {
+      return NextResponse.json({ error: "Existing gallery media can only be attached to photo stories." }, { status: 400 })
+    }
+    if (requiresUploadedMedia && input.media_refs.length !== 1) {
+      return NextResponse.json({ error: "Please attach one recording per contribution." }, { status: 400 })
     }
 
     const approxYear = parseApproxYear(input.approx_year)
@@ -238,7 +233,11 @@ export async function POST(req: NextRequest, context: RouteContext) {
     if (
       uploadAuthorization &&
       (
-        uploadAuthorization.contributionType !== (input.type === "photo" ? "photo" : "memory") ||
+        uploadAuthorization.contributionType !== (
+          input.type === "photo" || input.type === "voice" || input.type === "video"
+            ? input.type
+            : "memory"
+        ) ||
         uploadAuthorization.clientBinding !== getUploadClientBinding(clientIp) ||
         input.media_refs.length === 0
       )
@@ -251,7 +250,7 @@ export async function POST(req: NextRequest, context: RouteContext) {
       media.some((item) => !item || item.memorialId !== memorial.id) ||
       (media.length > 0 && !uploadAuthorization)
     ) {
-      return NextResponse.json({ error: "One or more photograph references are invalid or expired." }, { status: 403 })
+      return NextResponse.json({ error: "One or more media references are invalid or expired." }, { status: 403 })
     }
     const verifiedMedia = media as UploadedMediaReferencePayload[]
     if (
@@ -261,10 +260,10 @@ export async function POST(req: NextRequest, context: RouteContext) {
         item.contributionType !== uploadAuthorization.contributionType
       )
     ) {
-      return NextResponse.json({ error: "A photograph does not belong to this upload session." }, { status: 403 })
+      return NextResponse.json({ error: "A media file does not belong to this upload session." }, { status: 403 })
     }
     if (new Set(verifiedMedia.map((item) => item.displayKey)).size !== verifiedMedia.length) {
-      return NextResponse.json({ error: "The same photograph was attached more than once." }, { status: 400 })
+      return NextResponse.json({ error: "The same media file was attached more than once." }, { status: 400 })
     }
 
     if (!uploadAuthorization) {
@@ -345,7 +344,7 @@ export async function POST(req: NextRequest, context: RouteContext) {
         [...finalDisplayKeys, ...finalOriginalKeys].map(deleteR2Object)
       )
       return NextResponse.json(
-        { error: "The photograph could not be safely attached. Please upload it again." },
+        { error: "The media file could not be attached. Please upload it again." },
         { status: 503 }
       )
     }
@@ -393,6 +392,7 @@ export async function POST(req: NextRequest, context: RouteContext) {
         safety_details: {
           ...safety,
           screening_version: 2,
+          submission_type: input.type,
           media: verifiedMedia.map((item, index) => ({
             original_key: finalOriginalKeys[index],
             display_key: finalDisplayKeys[index],
@@ -420,9 +420,9 @@ export async function POST(req: NextRequest, context: RouteContext) {
     }
 
     if (status === "approved" && finalDisplayKeys.length > 0) {
-      const rows = finalDisplayKeys.map((key) => ({
+      const rows = finalDisplayKeys.map((key, index) => ({
         memorial_id: memorial.id,
-        media_type: "image",
+        media_type: verifiedMedia[index]?.mediaType || "image",
         url: key,
         caption: `Shared by ${input.author_name}`,
         approx_year: approxYear,
@@ -432,27 +432,17 @@ export async function POST(req: NextRequest, context: RouteContext) {
       if (galleryError) console.error("Approved contribution gallery sync failed:", galleryError)
     }
 
-    if (status === "pending_approval" && memorial.owner_id && process.env.RESEND_API_KEY) {
-      try {
-        const { data: ownerProfile } = await admin
-          .from("user_profiles")
-          .select("email")
-          .eq("user_id", memorial.owner_id)
-          .maybeSingle()
-        if (ownerProfile?.email) {
-          const appUrl = process.env.NEXT_PUBLIC_APP_URL || "https://theirs.page"
-          const editorUrl = `${appUrl}/dashboard/memorials/${memorial.id}/editor?tab=contributions`
-          const statusLabel = safety.decision === "review" ? "Review recommended" : "Waiting for your approval"
-          await resend.emails.send({
-            from: "Theirs <notifications@theirs.page>",
-            to: ownerProfile.email,
-            subject: `${input.author_name} shared a remembrance of ${memorial.full_name}`,
-            html: `<div style="font-family:Georgia,serif;max-width:520px;margin:0 auto;padding:40px 20px;color:#181925;line-height:1.6"><h2 style="font-size:20px;font-weight:normal">A new remembrance has arrived</h2><p><strong>${escapeHtml(input.author_name)}</strong> shared something about <strong>${escapeHtml(memorial.full_name)}</strong>.</p><div style="background:#f7f7f8;border-left:3px solid #305dde;padding:16px 20px;margin:20px 0;border-radius:8px;color:#333">${escapeHtml(effectiveContent.slice(0, 300))}</div><p style="font:12px sans-serif;color:#777">${escapeHtml(statusLabel)}</p><a href="${escapeHtml(editorUrl)}" style="background:#181925;color:#fff;padding:11px 22px;border-radius:22px;text-decoration:none;font:500 13px sans-serif;display:inline-block">Review contribution</a></div>`,
-          })
-        }
-      } catch (notificationError) {
-        console.warn("Caretaker contribution notification error:", notificationError)
-      }
+    if (status === "pending_approval") {
+      const editorUrl = `${getTheirsAppUrl()}/dashboard/memorials/${memorial.id}/editor?tab=moderation`
+      const statusLabel = safety.decision === "review" ? "Review recommended" : "Waiting for your approval"
+      await notifyCaretakers({
+        db: admin,
+        memorialId: memorial.id,
+        ownerId: memorial.owner_id,
+        eventKey: `contribution/${insertedMemory.id}`,
+        subject: `${input.author_name} shared a remembrance of ${memorial.full_name}`,
+        html: `<div style="font-family:Georgia,serif;max-width:520px;margin:0 auto;padding:40px 20px;color:#181925;line-height:1.6"><h2 style="font-size:20px;font-weight:normal">A new remembrance has arrived</h2><p><strong>${escapeEmailHtml(input.author_name)}</strong> shared something about <strong>${escapeEmailHtml(memorial.full_name)}</strong>.</p><div style="background:#f7f7f8;border-left:3px solid #305dde;padding:16px 20px;margin:20px 0;border-radius:8px;color:#333">${escapeEmailHtml(effectiveContent.slice(0, 300))}</div><p style="font:12px sans-serif;color:#777">${escapeEmailHtml(statusLabel)}</p><a href="${escapeEmailHtml(editorUrl)}" style="background:#181925;color:#fff;padding:11px 22px;border-radius:22px;text-decoration:none;font:500 13px sans-serif;display:inline-block">Review contribution</a></div>`,
+      })
     }
 
     const optimisticUrls = await Promise.all(
@@ -486,7 +476,7 @@ export async function POST(req: NextRequest, context: RouteContext) {
         photo_url: optimisticUrls[0] || null,
         photo_urls: optimisticUrls,
         tribute_type: insertedMemory.tribute_type,
-        contribution_type: insertedMemory.contribution_type,
+        contribution_type: input.type === "message" ? "tribute" : input.type,
         status: status === "approved" ? "approved" : "pending_approval",
         created_at: insertedMemory.created_at,
       },

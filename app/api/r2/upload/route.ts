@@ -8,12 +8,13 @@ import {
   verifyUploadIntent,
   signUploadedMediaReference,
   type UploadIntentPayload,
-  ALLOWED_GUEST_MIME_TYPES,
-  MAX_GUEST_UPLOAD_BYTES,
   getUploadClientBinding,
+  getGuestMediaRule,
+  normalizeGuestMime,
 } from "@/lib/upload-intent"
 import {
   getImageDimensions,
+  requireHumanMediaReview,
   screenImageWithGemini,
   stripExifAndGps,
   validateMagicBytes,
@@ -39,6 +40,13 @@ function getClientIp(req: NextRequest): string {
 function extensionForMime(mime: string): string {
   if (mime === "image/png") return "png"
   if (mime === "image/webp") return "webp"
+  if (mime === "audio/mpeg") return "mp3"
+  if (mime === "audio/wav") return "wav"
+  if (mime === "audio/ogg") return "ogg"
+  if (mime === "audio/m4a") return "m4a"
+  if (mime === "video/mp4") return "mp4"
+  if (mime === "video/webm") return "webm"
+  if (mime === "video/quicktime") return "mov"
   return "jpg"
 }
 
@@ -111,14 +119,16 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "No file provided" }, { status: 400 })
     }
 
+    const isContribution = Boolean(uploadIntentToken) || folder === "contributions"
     const mediaType = detectMediaType(file.name, file.type)
-    const contentType = resolveContentType(file.name, file.type)
+    const resolvedContentType = resolveContentType(file.name, file.type)
+    const contentType = isContribution
+      ? normalizeGuestMime(resolvedContentType)
+      : resolvedContentType
     let resolvedMemorialId: string | null = null
     let contributionIntent: UploadIntentPayload | null = null
 
     // 1. Contribution Upload (Guest or Logged-in Contributor with signed intent) vs. Admin Dashboard Upload
-    const isContribution = Boolean(uploadIntentToken) || folder === "contributions"
-
     if (isContribution) {
       if (!uploadIntentToken) {
         return NextResponse.json(
@@ -142,18 +152,18 @@ export async function POST(req: NextRequest) {
         )
       }
 
-      // Guest / contributor file must be within 15MB
-      if (file.size < 1 || file.size > MAX_GUEST_UPLOAD_BYTES || file.size > contributionIntent.maxBytes) {
+      const mediaRule = getGuestMediaRule(contributionIntent.contributionType)
+
+      if (file.size < 1 || file.size > mediaRule.maxBytes || file.size > contributionIntent.maxBytes) {
         return NextResponse.json(
-          { error: "Contribution files must be under 15MB." },
+          { error: `${mediaRule.label[0].toUpperCase()}${mediaRule.label.slice(1)} files must be under ${Math.floor(mediaRule.maxBytes / 1024 / 1024)}MB.` },
           { status: 400 }
         )
       }
 
-      // Contributions currently permit only the signed photograph allowlist.
-      if (!ALLOWED_GUEST_MIME_TYPES.has(contentType) || contributionIntent.allowedMime !== "image/*") {
+      if (!mediaRule.allowedMimeTypes.has(contentType) || contributionIntent.allowedMime !== mediaRule.allowedMime) {
         return NextResponse.json(
-          { error: "The selected file does not match the authorized photograph type." },
+          { error: `The selected file does not match the authorized ${mediaRule.label} type.` },
           { status: 400 }
         )
       }
@@ -186,10 +196,11 @@ export async function POST(req: NextRequest) {
       const contributionSettings = (memorial.contribution_settings || {}) as ContributionSettings
       if (
         contributionSettings.accept_contributions === false ||
-        contributionSettings.photos === false
+        contributionSettings[mediaRule.setting] === false ||
+        (contributionIntent.contributionType === "memory" && contributionSettings.photos === false)
       ) {
         return NextResponse.json(
-          { error: "The family is not currently accepting photograph contributions." },
+          { error: `The family is not currently accepting ${mediaRule.label} contributions.` },
           { status: 403 }
         )
       }
@@ -214,7 +225,7 @@ export async function POST(req: NextRequest) {
       )
       if (!sessionRateLimit.allowed) {
         return NextResponse.json(
-          { error: "This contribution already has the maximum of three photographs." },
+          { error: "This contribution already has the maximum number of attachments." },
           { status: 429 }
         )
       }
@@ -250,14 +261,13 @@ export async function POST(req: NextRequest) {
 
       // Tier check for contributions
       const isPaid = Boolean(memorial.is_paid)
+      if (!isPaid && (mediaType === "audio" || mediaType === "video")) {
+        return NextResponse.json(
+          { error: "Voice notes and video clips require the Pro Plan." },
+          { status: 403 }
+        )
+      }
       if (!isPaid) {
-        if (mediaType === "audio" || mediaType === "video") {
-          return NextResponse.json(
-            { error: "Voice notes and video clips require Pro Plan." },
-            { status: 403 }
-          )
-        }
-
         const { count, error: countErr } = await admin
           .from("media_items")
           .select("id", { count: "exact", head: true })
@@ -268,13 +278,6 @@ export async function POST(req: NextRequest) {
           return NextResponse.json(
             { error: "This memorial has reached its photograph limit on the free tier." },
             { status: 403 }
-          )
-        }
-      } else {
-        if (mediaType === "video") {
-          return NextResponse.json(
-            { error: "Video uploads are reserved for memorial caretakers in the dashboard." },
-            { status: 400 }
           )
         }
       }
@@ -350,55 +353,65 @@ export async function POST(req: NextRequest) {
     }
 
     if (isContribution) {
+      const mediaRule = contributionIntent
+        ? getGuestMediaRule(contributionIntent.contributionType)
+        : null
       if (
         !contributionIntent ||
         !resolvedMemorialId ||
-        validation.mediaType !== "image" ||
+        !mediaRule ||
+        validation.mediaType !== mediaRule.mediaType ||
         validation.detectedMime !== contentType ||
-        !ALLOWED_GUEST_MIME_TYPES.has(validation.detectedMime)
+        !mediaRule.allowedMimeTypes.has(validation.detectedMime)
       ) {
         return NextResponse.json(
-          { error: "The uploaded bytes do not match the authorized photograph type." },
+          { error: "The uploaded bytes do not match the authorized media type." },
           { status: 400 }
         )
       }
 
-      const dimensions = getImageDimensions(buffer, validation.detectedMime)
-      if (
-        !dimensions ||
-        dimensions.width < 1 ||
-        dimensions.height < 1 ||
-        dimensions.width > MAX_IMAGE_EDGE ||
-        dimensions.height > MAX_IMAGE_EDGE ||
-        dimensions.width * dimensions.height > MAX_IMAGE_PIXELS
-      ) {
-        return NextResponse.json(
-          { error: "This photograph is damaged or has unusually large dimensions." },
-          { status: 400 }
-        )
-      }
+      let dimensions: { width: number; height: number } | null = null
+      let displayBuffer = buffer
+      let safety = requireHumanMediaReview("Audio or video is held for caretaker approval; automated media analysis was not run.")
+      if (validation.mediaType === "image") {
+        dimensions = getImageDimensions(buffer, validation.detectedMime)
+        if (
+          !dimensions ||
+          dimensions.width < 1 ||
+          dimensions.height < 1 ||
+          dimensions.width > MAX_IMAGE_EDGE ||
+          dimensions.height > MAX_IMAGE_EDGE ||
+          dimensions.width * dimensions.height > MAX_IMAGE_PIXELS
+        ) {
+          return NextResponse.json(
+            { error: "This photograph is damaged or has unusually large dimensions." },
+            { status: 400 }
+          )
+        }
 
-      let displayBuffer: Buffer
-      try {
-        displayBuffer = Buffer.from(stripExifAndGps(buffer, validation.detectedMime))
-      } catch (sanitizationError) {
-        console.warn("Contribution image sanitization rejected:", sanitizationError)
-        return NextResponse.json(
-          { error: "We could not safely prepare this photograph. Please export it as a new JPEG and try again." },
-          { status: 400 }
-        )
+        try {
+          displayBuffer = Buffer.from(stripExifAndGps(buffer, validation.detectedMime))
+        } catch (sanitizationError) {
+          console.warn("Contribution image sanitization rejected:", sanitizationError)
+          return NextResponse.json(
+            { error: "We could not safely prepare this photograph. Please export it as a new JPEG and try again." },
+            { status: 400 }
+          )
+        }
+        safety = await screenImageWithGemini(displayBuffer, validation.detectedMime)
       }
-
-      const safety = await screenImageWithGemini(displayBuffer, validation.detectedMime)
       const objectId = crypto.randomUUID()
       const extension = extensionForMime(validation.detectedMime)
       const stagingPrefix = `contribution-staging/${resolvedMemorialId}/${contributionIntent.nonce}`
       const originalKey = `${stagingPrefix}/original/${objectId}.${extension}`
       const displayKey = `${stagingPrefix}/display/${objectId}.${extension}`
+      const storageContentType = validation.detectedMime === "audio/m4a"
+        ? "audio/mp4"
+        : validation.detectedMime
 
       try {
-        await putR2Object(originalKey, buffer, validation.detectedMime, "private, no-store")
-        await putR2Object(displayKey, displayBuffer, validation.detectedMime, "private, no-store")
+        await putR2Object(originalKey, buffer, storageContentType, "private, no-store")
+        await putR2Object(displayKey, displayBuffer, storageContentType, "private, no-store")
       } catch (storageError) {
         await Promise.allSettled([
           deleteR2Object(originalKey),
@@ -412,7 +425,7 @@ export async function POST(req: NextRequest) {
         originalKey,
         displayKey,
         detectedMime: validation.detectedMime,
-        mediaType: "image",
+        mediaType: validation.mediaType,
         contributionType: contributionIntent.contributionType,
         intentNonce: contributionIntent.nonce,
         safety,
@@ -423,12 +436,11 @@ export async function POST(req: NextRequest) {
         success: true,
         mediaRef: mediaReference,
         previewUrl,
-        mediaType: "image",
+        mediaType: validation.mediaType,
         filename: file.name.slice(0, 200),
         contentType: validation.detectedMime,
         size: buffer.length,
-        width: dimensions.width,
-        height: dimensions.height,
+        ...(dimensions ? { width: dimensions.width, height: dimensions.height } : {}),
         isQuarantined: true,
       })
     }

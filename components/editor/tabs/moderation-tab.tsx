@@ -20,6 +20,7 @@ import {
   BookOpen,
 } from "lucide-react"
 import { ConfirmDeleteModal } from "../confirm-delete-modal"
+import { ContributionMediaPreview } from "../contribution-media-preview"
 import type { SectionSettings } from "@/types/theirs"
 
 export interface EditorMemory {
@@ -64,6 +65,12 @@ interface ModerationTabProps {
 function mediaPreviewUrl(value: string): string {
   if (/^(?:https?:|blob:|data:|\/)/.test(value)) return value
   return `/api/media?key=${encodeURIComponent(value)}`
+}
+
+function primaryMediaMime(memory: EditorMemory): string | undefined {
+  const media = memory.safety_details?.media
+  if (!Array.isArray(media) || !media[0] || typeof media[0] !== "object") return undefined
+  return typeof media[0].mime === "string" ? media[0].mime : undefined
 }
 
 export function ModerationTab({
@@ -353,13 +360,12 @@ export function ModerationTab({
                         “{mem.story}”
                       </p>
 
-                      {/* Attached Photo Preview */}
+                      {/* Private attachment preview for caretaker review */}
                       {mem.photo_url && (
                         <div className="pt-1">
-                          <img
+                          <ContributionMediaPreview
                             src={mediaPreviewUrl(mem.photo_url)}
-                            alt="Contributed photo"
-                            className="h-28 w-auto rounded-xl object-cover border border-black/[0.08]"
+                            mime={primaryMediaMime(mem)}
                           />
                         </div>
                       )}
@@ -444,10 +450,10 @@ export function ModerationTab({
                     <p className="text-xs text-[#444] leading-relaxed whitespace-pre-line">“{mem.story}”</p>
 
                     {mem.photo_url && (
-                      <img
+                      <ContributionMediaPreview
                         src={mediaPreviewUrl(mem.photo_url)}
-                        alt="Photo"
-                        className="h-24 w-auto rounded-xl object-cover border border-black/[0.08]"
+                        mime={primaryMediaMime(mem)}
+                        compact
                       />
                     )}
 
@@ -582,10 +588,10 @@ export function ModerationTab({
 
                           {isRevealed && mem.photo_url && (
                             <div className="mt-2">
-                              <img
+                              <ContributionMediaPreview
                                 src={mediaPreviewUrl(mem.photo_url)}
-                                alt="Quarantined attachment"
-                                className="h-24 w-auto rounded-lg object-cover"
+                                mime={primaryMediaMime(mem)}
+                                compact
                               />
                             </div>
                           )}

@@ -47,10 +47,16 @@ function mediaRecords(details: unknown, memorialId: string): ContributionMediaRe
 
 function filenameFromKey(key: string): string {
   const filename = key.split("/").pop() || ""
-  if (!/^[a-f0-9-]+\.(?:jpg|png|webp)$/i.test(filename)) {
+  if (!/^[a-f0-9-]+\.(?:jpg|png|webp|mp3|wav|ogg|m4a|mp4|webm|mov)$/i.test(filename)) {
     throw new Error("Invalid contribution media key")
   }
   return filename
+}
+
+function mediaTypeForMime(mime?: string): "image" | "audio" | "video" {
+  if (mime?.startsWith("audio/")) return "audio"
+  if (mime?.startsWith("video/")) return "video"
+  return "image"
 }
 
 function replaceMediaUrls(
@@ -204,7 +210,7 @@ export async function PATCH(req: NextRequest, context: RouteContext) {
         return NextResponse.json(
           {
             error:
-              "This photograph predates verified image screening. Delete this submission and ask the contributor to upload it again.",
+              "This attachment predates verified upload screening. Delete this submission and ask the contributor to upload it again.",
           },
           { status: 409 }
         )
@@ -238,7 +244,7 @@ export async function PATCH(req: NextRequest, context: RouteContext) {
       } catch (error) {
         console.error("Contribution media copy failed:", error)
         return NextResponse.json(
-          { error: "The contribution is safe, but its photographs could not be published. Please try again." },
+          { error: "The contribution was approved, but its media could not be published. Please try again." },
           { status: 503 }
         )
       }
@@ -271,7 +277,7 @@ export async function PATCH(req: NextRequest, context: RouteContext) {
         if (!existing) {
           await db.from("media_items").insert({
             memorial_id: memorialId,
-            media_type: "image",
+            media_type: mediaTypeForMime(record.mime),
             url: record.display_key,
             caption: `Shared by ${memory.author_name}`,
             approx_year: memory.approx_year || null,
