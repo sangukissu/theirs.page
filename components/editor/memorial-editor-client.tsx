@@ -30,6 +30,7 @@ import { ModerationTab, EditorMemory, EditorCaretakerMessage } from "./tabs/mode
 import { SettingsTab } from "./tabs/settings-tab"
 import { PublishMemorialDialog } from "./publish-memorial-dialog"
 import { SectionSettings, ContributionSettings } from "@/types/theirs"
+import { toast } from "sonner"
 
 export type EditorSectionTab =
   | "identity"
@@ -91,7 +92,44 @@ export function MemorialEditorClient({
   const [activeTab, setActiveTab] = useState<EditorSectionTab>(requestedTab === "moderation" ? "moderation" : "identity")
   const [publishDialogOpen, setPublishDialogOpen] = useState(false)
 
-  const isPaid = Boolean(initialMemorial.is_paid)
+  const [isPaid, setIsPaid] = useState<boolean>(Boolean(initialMemorial.is_paid))
+
+  // Instant return-URL payment verification fallback
+  useEffect(() => {
+    const paymentStatus = searchParams.get("payment")
+    const paymentId = searchParams.get("payment_id") || searchParams.get("paymentId")
+
+    if (paymentStatus === "success") {
+      fetch("/api/checkout/verify", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          memorialId: initialMemorial.id,
+          paymentId: paymentId || undefined,
+        }),
+      })
+        .then((res) => res.json())
+        .then((data) => {
+          if (data.is_paid) {
+            setIsPaid(true)
+            toast.success("Payment confirmed! Your memorial is upgraded to Theirs Complete.", {
+              description: "All premium archive features and private controls are permanently active.",
+            })
+          }
+        })
+        .catch((err) => {
+          console.warn("Payment verification check error:", err)
+        })
+        .finally(() => {
+          const url = new URL(window.location.href)
+          url.searchParams.delete("payment")
+          url.searchParams.delete("payment_id")
+          url.searchParams.delete("paymentId")
+          url.searchParams.delete("status")
+          window.history.replaceState({}, "", url.pathname + (url.search ? url.search : ""))
+        })
+    }
+  }, [searchParams, initialMemorial.id])
 
   // Storage key for resilient local-first backup
   const DRAFT_KEY = `theirs_editor_draft_${initialMemorial.id}`
@@ -567,7 +605,7 @@ export function MemorialEditorClient({
                   </div>
 
                   <div className="flex items-center gap-1.5">
-                    {tab.isCompleteOnly && !initialMemorial.is_paid && (
+                    {tab.isCompleteOnly && !isPaid && (
                       <span
                         className={`text-[9px] font-mono uppercase font-semibold px-1.5 py-0.2 rounded-full ${isActive ? "bg-white/20 text-white" : "bg-emerald-50 text-emerald-700 border border-emerald-200"
                           }`}
@@ -625,7 +663,7 @@ export function MemorialEditorClient({
               memorialId={initialMemorial.id}
               fullName={form.full_name}
               mediaItems={mediaItems}
-              isPaid={Boolean(initialMemorial.is_paid)}
+              isPaid={isPaid}
               onUpgrade={handleUpgradeComplete}
               onAddMedia={(item) =>
                 setMediaItems((prev) => [item, ...prev.filter((m) => m.id !== item.id)])
@@ -643,7 +681,7 @@ export function MemorialEditorClient({
               memorialId={initialMemorial.id}
               fullName={form.full_name}
               events={timelineEvents}
-              isPaid={Boolean(initialMemorial.is_paid)}
+              isPaid={isPaid}
               onUpgrade={handleUpgradeComplete}
               onAddEvent={(evt) =>
                 setTimelineEvents((prev) => [...prev.filter((e) => e.id !== evt.id), evt])
@@ -687,7 +725,7 @@ export function MemorialEditorClient({
               successorEmail={form.successor_email}
               sectionSettings={form.section_settings}
               contributionSettings={form.contribution_settings}
-              isPaid={Boolean(initialMemorial.is_paid)}
+              isPaid={isPaid}
               onChange={handleFieldChange}
               onDeleteMemorial={() => {
                 window.location.href = "/dashboard"

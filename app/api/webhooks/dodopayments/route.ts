@@ -4,8 +4,13 @@ import { headers } from "next/headers"
 import crypto from "crypto"
 import { getDodoCompleteProductId } from "@/lib/payments"
 
-function getWebhookSecret() {
-  return process.env.DODO_WEBHOOK_SECRET || process.env.DODO_PAYMENTS_WEBHOOK_KEY || ""
+function getWebhookSecret(): string {
+  return (
+    process.env.DODO_WEBHOOK_SECRET ||
+    process.env.DODO_PAYMENTS_WEBHOOK_KEY ||
+    process.env.DODO_PAYMENTS_WEBHOOK_SECRET ||
+    ""
+  )
 }
 
 export async function POST(request: NextRequest) {
@@ -13,41 +18,57 @@ export async function POST(request: NextRequest) {
     const body = await request.text()
     const headersList = await headers()
 
-    // Get webhook headers as per Standard Webhooks spec
+    // 1. Extract webhook headers as per Standard Webhooks specification
     const webhookId = headersList.get("webhook-id")
     const webhookSignature = headersList.get("webhook-signature")
     const webhookTimestamp = headersList.get("webhook-timestamp")
 
     if (!webhookId || !webhookSignature || !webhookTimestamp) {
+      console.warn("Dodo webhook received with missing headers:", {
+        webhookId,
+        hasSignature: Boolean(webhookSignature),
+        webhookTimestamp,
+      })
       return NextResponse.json({ error: "Missing webhook headers" }, { status: 400 })
     }
 
-    // Verify webhook signature using Standard Webhooks approach
-    const isValid = verifyWebhookSignature(webhookId, webhookTimestamp, body, webhookSignature, getWebhookSecret())
+    // 2. Validate webhook signature
+    const secret = getWebhookSecret()
+    if (!secret) {
+      console.error(
+        "Dodo webhook secret is not configured (checked DODO_WEBHOOK_SECRET, DODO_PAYMENTS_WEBHOOK_KEY, DODO_PAYMENTS_WEBHOOK_SECRET)"
+      )
+      return NextResponse.json({ error: "Webhook secret not configured on server" }, { status: 500 })
+    }
 
+    const isValid = verifyWebhookSignature(webhookId, webhookTimestamp, body, webhookSignature, secret)
     if (!isValid) {
+      console.warn("Dodo webhook signature verification failed for webhookId:", webhookId)
       return NextResponse.json({ error: "Invalid signature" }, { status: 401 })
     }
 
-    // Idempotency: skip if this webhook-id was already processed
-    const { data: existingEvent, error: existingEventError } = await supabase
+    // 3. Idempotency: skip if this webhook-id was already processed
+    const { data: existingEvent } = await supabase
       .from("webhook_events")
       .select("id")
       .eq("event_id", webhookId)
-      .single()
+      .maybeSingle()
 
-    if (!existingEventError && existingEvent) {
+    if (existingEvent) {
+      console.log("Dodo webhook already processed (idempotent skip):", webhookId)
       return NextResponse.json({ received: true, duplicate: true })
     }
 
-    // Parse the webhook payload
+    // 4. Parse the webhook payload
     const webhookData = JSON.parse(body)
 
-    // Normalize event type (support both dot and underscore styles)
+    // Normalize event type (support both dot and underscore styles: payment.succeeded -> payment_succeeded)
     const rawType = webhookData?.type || webhookData?.event || webhookData?.event_type
     const eventType = typeof rawType === "string" ? rawType.replace(/\./g, "_") : ""
 
-    // Route by normalized event type
+    console.log(`Dodo webhook received: type=${rawType} (normalized=${eventType}), id=${webhookId}`)
+
+    // 5. Route by normalized event type
     if (eventType === "payment_succeeded") {
       await handlePaymentSucceeded(webhookData, webhookId)
     } else if (eventType === "payment_failed") {
@@ -55,12 +76,19 @@ export async function POST(request: NextRequest) {
     } else if (eventType === "payment_cancelled") {
       await handlePaymentCancelled(webhookData, webhookId)
     } else {
-      // Unhandled webhook type - no action needed
+      console.log("Unhandled Dodo webhook type:", rawType)
     }
 
     return NextResponse.json({ received: true })
-  } catch (error) {
-    return NextResponse.json({ error: "Webhook processing failed" }, { status: 500 })
+  } catch (error: any) {
+    console.error("Dodo webhook processing error:", error)
+    return NextResponse.json(
+      {
+        error: "Webhook processing failed",
+        message: error?.message || "Internal server error",
+      },
+      { status: 500 }
+    )
   }
 }
 
@@ -69,7 +97,7 @@ function verifyWebhookSignature(
   webhookTimestamp: string,
   payload: string,
   webhookSignature: string,
-  secret: string,
+  secret: string
 ): boolean {
   try {
     // Remove whsec_ prefix if present
@@ -87,15 +115,10 @@ function verifyWebhookSignature(
     // Parse received signatures (can be multiple: "v1,sig1 v1,sig2")
     const receivedSignatures = webhookSignature.split(" ")
 
-    // Check each signature
     for (const versionedSignature of receivedSignatures) {
       const [version, signature] = versionedSignature.split(",")
+      if (version !== "v1") continue
 
-      if (version !== "v1") {
-        continue
-      }
-
-      // Use timing-safe comparison
       if (signature && timingSafeEqual(signature, expectedSignature)) {
         return true
       }
@@ -103,339 +126,161 @@ function verifyWebhookSignature(
 
     return false
   } catch (error) {
+    console.error("Webhook signature calculation error:", error)
     return false
   }
 }
 
 function timingSafeEqual(a: string, b: string): boolean {
-  if (a.length !== b.length) {
-    return false
-  }
-
+  if (a.length !== b.length) return false
   const bufferA = Buffer.from(a, "utf8")
   const bufferB = Buffer.from(b, "utf8")
-
   return crypto.timingSafeEqual(bufferA, bufferB)
 }
 
 async function handlePaymentSucceeded(webhookData: any, webhookId: string) {
-  try {
-    const paymentData = webhookData.data
-    const paymentId = paymentData.id || paymentData.payment_id
+  const paymentData = webhookData.data || {}
+  const paymentId = paymentData.payment_id || paymentData.id || webhookData.payment_id || webhookId
 
-    // 1. Check for Pro Plan ($179 one-time memorial activation)
-    const isTheirsComplete =
-      paymentData.metadata?.type === "theirs_complete" ||
-      Boolean(paymentData.metadata?.memorial_id)
+  const metadata = paymentData.metadata || webhookData.metadata || {}
+  const memorialId = metadata.memorial_id || metadata.memorialId
+  const userId = metadata.user_id || metadata.userId || null
+  const customerEmail =
+    paymentData.customer?.email ||
+    paymentData.customer_email ||
+    metadata.customer_email ||
+    null
+  const paymentMethod =
+    paymentData.payment_method_type ||
+    paymentData.payment_method ||
+    null
 
-    if (isTheirsComplete) {
-      const memorialId = paymentData.metadata?.memorial_id
-      const userId = paymentData.metadata?.user_id || null
-      const customerEmail =
-        paymentData.customer?.email ||
-        paymentData.customer_email ||
-        paymentData.metadata?.customer_email ||
-        null
-      const paymentMethod =
-        paymentData.payment_method_type ||
-        paymentData.payment_method ||
-        null
-      const amount = paymentData.total_amount
-        ? Number(paymentData.total_amount) / 100
-        : 179.0
-      const currency = (paymentData.currency || "USD").toUpperCase()
+  // Calculate amount and normalize currency (supports USD, INR, EUR, GBP, CAD, etc.)
+  const rawAmount = paymentData.total_amount ?? paymentData.amount
+  const amount = rawAmount ? Number(rawAmount) / 100 : 179.0
+  const currency = (paymentData.currency || "USD").toUpperCase()
 
-      if (!memorialId) {
-        throw new Error("Missing memorial_id in payment metadata")
-      }
+  console.log("Processing payment.succeeded:", {
+    paymentId,
+    memorialId,
+    userId,
+    amount,
+    currency,
+    customerEmail,
+  })
 
-      // Security check: Validate currency
-      if (currency !== "USD") {
-        console.error(`Invalid payment currency for Pro Plan: ${currency}`)
-        throw new Error(`Invalid currency received: ${currency}`)
-      }
-
-      // Validate configured product ID if present
-      const configuredProductId = getDodoCompleteProductId()
-      if (configuredProductId) {
-        const receivedProductId = paymentData.product_id || paymentData.product_cart?.[0]?.product_id
-        if (receivedProductId && receivedProductId !== configuredProductId) {
-          console.warn(`Product ID mismatch: expected ${configuredProductId}, got ${receivedProductId}`)
-        }
-      }
-
-      // Atomic Postgres transaction: idempotency check -> payment record -> memorial activation -> webhook logging
-      const { data: rpcResult, error: rpcError } = await supabase.rpc(
-        "complete_memorial_purchase",
-        {
-          p_event_id: webhookId,
-          p_payment_id: paymentId,
-          p_memorial_id: memorialId,
-          p_user_id: userId,
-          p_amount: amount,
-          p_currency: currency,
-          p_customer_email: customerEmail,
-          p_payment_method: paymentMethod,
-          p_metadata: paymentData.metadata || {},
-        }
-      )
-
-      if (rpcError) {
-        console.error("complete_memorial_purchase RPC error:", rpcError)
-        throw new Error(`Failed to activate memorial: ${rpcError.message}`)
-      }
-
-      console.log("Pro Plan activated successfully via atomic RPC:", rpcResult)
-      return
+  // Validate configured product ID if present for logging/monitoring
+  const configuredProductId = getDodoCompleteProductId()
+  if (configuredProductId) {
+    const receivedProductId = paymentData.product_id || paymentData.product_cart?.[0]?.product_id
+    if (receivedProductId && receivedProductId !== configuredProductId) {
+      console.warn(`Product ID mismatch: configured=${configuredProductId}, received=${receivedProductId}`)
     }
+  }
 
-    // 2. Fallback: Legacy BringBack credit system
-    // Find the payment in our database using the DodoPayments payment ID
-    let payment: any
-    const { data: existingPayment, error: paymentError } = await supabase
-      .from("payments")
-      .select("*")
-      .eq("dodo_payment_id", paymentId)
-      .single()
+  // 1. Primary path: Theirs Complete memorial activation
+  if (memorialId) {
+    // Check if memorial exists
+    const { data: memorial, error: memorialError } = await supabase
+      .from("memorials")
+      .select("id, is_paid")
+      .eq("id", memorialId)
+      .maybeSingle()
 
-    if (paymentError || !existingPayment) {
-      // Get the amount_cents from metadata
-      const amountCents = paymentData.metadata?.amount_cents ? Number.parseInt(paymentData.metadata.amount_cents) : 0
-      const credits = paymentData.metadata?.credits ? Number.parseInt(paymentData.metadata.credits) : 0
-      const userId = paymentData.metadata?.user_id
-      const planIdRaw = paymentData.metadata?.plan_id
-      const planId = typeof planIdRaw === "string" && planIdRaw.trim() ? planIdRaw.trim() : null
-
-      if (amountCents === 0 || isNaN(amountCents)) {
-        return
-      }
-
-      if (credits === 0 || isNaN(credits)) {
-        return
-      }
-
-      if (!userId) {
-        return
-      }
-
-      // Create payment record from webhook data
-      const { data: newPayment, error: createError } = await supabase
-        .from("payments")
-        .insert({
-          user_id: userId,
-          dodo_payment_id: paymentId,
-          amount_cents: amountCents,
-          credits_purchased: credits,
-          status: "completed",
-          payment_plan_id: planId,
-        })
-        .select()
-        .single()
-
-      if (createError) {
-        return
-      }
-
-      payment = newPayment
-    } else {
-      // Update existing payment
-      payment = existingPayment
-      await supabase.from("payments").update({ status: "completed" }).eq("id", payment.id)
-    }
-
-    // Use credits_purchased from the payment record instead of hardcoded 5
-    const creditsToAdd = payment.credits_purchased
-
-    if (!creditsToAdd || creditsToAdd <= 0) {
-      return
-    }
-
-    // Get current user profile
-    const { data: profile, error: profileError } = await supabase
-      .from("user_profiles")
-      .select("credits, email")
-      .eq("user_id", payment.user_id)
-      .single()
-
-    if (profileError) {
-      // Get user email from auth.users table
-      const { data: authUser, error: authError } = await supabase.auth.admin.getUserById(payment.user_id)
-
-      if (authError) {
-        return
-      }
-
-      const userEmail = authUser.user?.email || ""
-      const userName = authUser.user?.user_metadata?.name || authUser.user?.email || "User"
-
-      // Validate email before creating profile
-      if (!userEmail || userEmail.trim() === "") {
-        return
-      }
-
-      // Create new user profile if it doesn't exist
-      const { error: createError } = await supabase.from("user_profiles").insert({
-        user_id: payment.user_id,
-        credits: creditsToAdd,
-        email: userEmail.trim(),
-        name: userName,
+    if (memorialError || !memorial) {
+      console.warn(`Memorial ${memorialId} not found for payment ${paymentId}`)
+      await supabase.from("webhook_events").insert({
+        event_id: webhookId,
+        event_type: "payment_succeeded_orphaned",
+        payment_id: paymentId,
+        processed: true,
+        payload: { error: "Memorial not found", metadata, paymentData },
       })
-
-      if (createError) {
-        return
-      }
-    } else {
-      // Update existing user credits
-      const newCredits = (profile.credits || 0) + creditsToAdd
-
-      const { error: creditsError } = await supabase
-        .from("user_profiles")
-        .update({
-          credits: newCredits,
-        })
-        .eq("user_id", payment.user_id)
-
-      if (creditsError) {
-        return
-      }
+      return
     }
 
-    // Process referral rewards if this is the user's first purchase
-    await processReferralReward(payment.user_id, payment.amount_cents)
-
-    // Log the webhook event for tracking using the proper webhook_events table
-    await logWebhookEvent(
-      webhookId,
-      (typeof webhookData.type === "string" ? webhookData.type.replace(/\./g, "_") : "payment_succeeded"),
-      payment.id,
-      webhookData.business_id
+    // Atomic Postgres transaction: idempotency check -> payment record -> memorial activation -> webhook logging
+    const { data: rpcResult, error: rpcError } = await supabase.rpc(
+      "complete_memorial_purchase",
+      {
+        p_event_id: webhookId,
+        p_payment_id: paymentId,
+        p_memorial_id: memorialId,
+        p_user_id: userId,
+        p_amount: amount,
+        p_currency: currency,
+        p_customer_email: customerEmail,
+        p_payment_method: paymentMethod,
+        p_metadata: metadata,
+      }
     )
 
-  } catch (error) {
-    console.error("Payment succeeded processing error:", error)
-    throw error
+    if (rpcError) {
+      console.error("complete_memorial_purchase RPC error:", rpcError)
+      throw new Error(`Failed to activate memorial: ${rpcError.message}`)
+    }
+
+    console.log("Memorial successfully activated via complete_memorial_purchase:", rpcResult)
+    return
   }
+
+  // 2. Secondary path: Sample/Test event from Dodo Dashboard (or generic payment without memorial_id)
+  console.log("payment.succeeded received without memorial_id (likely Dodo dashboard test event):", paymentId)
+  await supabase.from("webhook_events").insert({
+    event_id: webhookId,
+    event_type: "payment_succeeded_sample",
+    payment_id: paymentId,
+    processed: true,
+    payload: { note: "Received without memorial_id", data: paymentData },
+  })
 }
 
 async function handlePaymentFailed(webhookData: any, webhookId: string) {
   try {
-    const paymentData = webhookData.data
-    const paymentId = paymentData.id || paymentData.payment_id
+    const paymentData = webhookData.data || {}
+    const paymentId = paymentData.payment_id || paymentData.id
 
-    // Find the payment in our database
-    const { data: payment, error: paymentError } = await supabase
+    if (!paymentId) return
+
+    // Update payment status to failed if record exists
+    await supabase
       .from("payments")
-      .select("id")
-      .eq("dodo_payment_id", paymentId)
-      .single()
+      .update({ status: "failed" })
+      .eq("payment_id", paymentId)
 
-    if (paymentError || !payment) {
-      return
-    }
-
-    // Update payment status to failed
-    const { error: updateError } = await supabase
-      .from("payments")
-      .update({
-        status: "failed",
-      })
-      .eq("dodo_payment_id", paymentId)
-
-    if (updateError) {
-      return
-    }
-
-    // Log the webhook event for tracking
-    await logWebhookEvent(
-      webhookId,
-      (typeof webhookData.type === "string" ? webhookData.type.replace(/\./g, "_") : "payment_failed"),
-      payment.id,
-      webhookData.business_id
-    )
-
-  } catch (error) {
-    // Payment failed handling error
+    await supabase.from("webhook_events").insert({
+      event_id: webhookId,
+      event_type: "payment_failed",
+      payment_id: paymentId,
+      processed: true,
+      payload: paymentData,
+    })
+  } catch (err) {
+    console.error("handlePaymentFailed error:", err)
   }
 }
 
 async function handlePaymentCancelled(webhookData: any, webhookId: string) {
   try {
-    const paymentData = webhookData.data
-    const paymentId = paymentData.id || paymentData.payment_id
+    const paymentData = webhookData.data || {}
+    const paymentId = paymentData.payment_id || paymentData.id
 
-    // Find the payment in our database
-    const { data: payment, error: paymentError } = await supabase
+    if (!paymentId) return
+
+    // Update payment status to cancelled if record exists
+    await supabase
       .from("payments")
-      .select("id")
-      .eq("dodo_payment_id", paymentId)
-      .single()
+      .update({ status: "cancelled" })
+      .eq("payment_id", paymentId)
 
-    if (paymentError || !payment) {
-      return
-    }
-
-    // Update payment status to cancelled
-    const { error: updateError } = await supabase
-      .from("payments")
-      .update({
-        status: "cancelled",
-      })
-      .eq("dodo_payment_id", paymentId)
-
-    if (updateError) {
-      return
-    }
-
-    // Log the webhook event for tracking
-    await logWebhookEvent(
-      webhookId,
-      (typeof webhookData.type === "string" ? webhookData.type.replace(/\./g, "_") : "payment_cancelled"),
-      payment.id,
-      webhookData.business_id
-    )
-
-  } catch (error) {
-    // Payment cancelled handling error
-  }
-}
-
-// Helper function to process referral rewards
-async function processReferralReward(userId: string, amountCents: number) {
-  try {
-    // Call the database function to process referral reward
-    const { data, error } = await supabase.rpc('process_referral_reward', {
-      p_user_id: userId,
-      p_purchase_amount_cents: amountCents
-    })
-
-    if (error) {
-      console.error('Error processing referral reward:', error)
-      return false
-    }
-
-    return data || false
-  } catch (error) {
-    console.error('Error in processReferralReward:', error)
-    return false
-  }
-}
-
-// Helper function to log webhook events consistently
-async function logWebhookEvent(eventId: string, eventType: string, paymentId: string, businessId?: string) {
-  try {
-    const { error: logError } = await supabase.from("webhook_events").insert({
-      event_id: eventId,
-      event_type: eventType,
+    await supabase.from("webhook_events").insert({
+      event_id: webhookId,
+      event_type: "payment_cancelled",
       payment_id: paymentId,
       processed: true,
+      payload: paymentData,
     })
-
-    if (logError) {
-      return false
-    }
-
-    return true
-  } catch (error) {
-    return false
+  } catch (err) {
+    console.error("handlePaymentCancelled error:", err)
   }
 }
