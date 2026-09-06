@@ -2,6 +2,7 @@
 
 import { useState, useRef, useEffect, useCallback, useMemo } from "react"
 import { usePathname, useRouter } from "next/navigation"
+import Link from "next/link"
 import {
   Maximize2,
   X,
@@ -48,6 +49,7 @@ export interface GalleryItem {
   story?: string
   audioTitle?: string
   addedBy?: string
+  sourceMemoryId?: string
   isOptimistic?: boolean
 }
 
@@ -1142,9 +1144,20 @@ export function MemorialGallery({
                     Added by <strong className="font-medium text-white/85">{selectedItem.addedBy}</strong>
                   </span>
                 )}
+                {selectedItem.sourceMemoryId && activeSlug && (
+                  <>
+                    <span>·</span>
+                    <Link
+                      href={`/${activeSlug}/memories#story-${selectedItem.sourceMemoryId}`}
+                      className="inline-flex items-center gap-1 text-white/80 hover:text-white underline underline-offset-2 transition-colors"
+                    >
+                      From {selectedItem.addedBy ? `${selectedItem.addedBy}’s memory` : "memory"} &rarr;
+                    </Link>
+                  </>
+                )}
                 {selectedItem.year && (
                   <>
-                    {selectedItem.addedBy && <span>·</span>}
+                    {(selectedItem.addedBy || selectedItem.sourceMemoryId) && <span>·</span>}
                     <span className="font-mono">{selectedItem.year}</span>
                   </>
                 )}

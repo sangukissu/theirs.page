@@ -53,6 +53,15 @@ Run these SQL scripts in numerical order in your new Supabase project's **SQL Ed
    - Enforces the 10 GiB storage entitlement per memorial, including parallel uploads.
    - Keeps abandoned reservations short-lived and service-role-only.
 
+8. **`17_text_limits.sql`**
+   - Implements durable database-level `CHECK` constraints on character lengths and HTML byte ceilings across `memorials`, `memories`, `timeline_events`, `media_items`, `collaborators`, and `user_profiles`.
+   - Closes alternate-write and regression loopholes for user-submitted content.
+
+9. **`18_media_source_memory.sql`**
+   - Adds `source_memory_id uuid references memories(id) on delete cascade` to `media_items`.
+   - Links gallery projections of story photos to the originating memory without duplicating R2 storage.
+   - Creates a partial index on `media_items(source_memory_id)`.
+
 ---
 
 ## Environment Variables Mapping

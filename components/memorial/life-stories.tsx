@@ -161,7 +161,8 @@ export function LifeStories({
             return (
               <article
                 key={item.id}
-                className="p-6 sm:p-8 rounded-3xl bg-[#f7f7f8] border border-black/[0.06] flex flex-col gap-4 transition-all hover:border-black/[0.12] relative group shadow-none"
+                id={`story-${item.id}`}
+                className="p-6 sm:p-8 rounded-3xl bg-[#f7f7f8] border border-black/[0.06] flex flex-col gap-4 transition-all hover:border-black/[0.12] relative group shadow-none scroll-mt-28"
               >
                 {/* Author & Context Header */}
                 <div className="flex items-start justify-between gap-3">

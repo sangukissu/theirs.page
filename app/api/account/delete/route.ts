@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server"
 import { createClient } from "@/utils/supabase/server"
 import { supabaseAdmin } from "@/utils/supabase/admin"
 import { enqueueMemoryBookJob } from "@/lib/memory-book/server"
+import { deleteR2MemorialFolder } from "@/lib/r2"
 
 export const maxDuration = 60
 
@@ -162,8 +163,28 @@ export async function POST(request: NextRequest) {
     { table: "referral_codes" },
     { table: "user_feedback" },
     { table: "user_feedback_tracking" },
+    { table: "collaborators" },
+    { table: "reports", column: "reporter_id" },
+    { table: "memorials", column: "owner_id" },
     { table: "user_profiles" },
   ]
+
+  // Step 2a: Clean up R2 media folders for all user-owned memorials before deleting DB records
+  try {
+    const { data: userMemorials } = await supabaseAdmin
+      .from("memorials")
+      .select("id")
+      .eq("owner_id", user.id)
+
+    if (userMemorials && userMemorials.length > 0) {
+      await Promise.allSettled(
+        userMemorials.map((m) => deleteR2MemorialFolder(m.id))
+      )
+      rowsDeleted.memorials_r2_cleaned = userMemorials.length
+    }
+  } catch (err) {
+    errors.push(`deleteR2MemorialFolder threw: ${err instanceof Error ? err.message : String(err)}`)
+  }
 
   for (const target of deletionTargets) {
     const { deleted, error } = await deleteRows(target.table, user.id, target.column)

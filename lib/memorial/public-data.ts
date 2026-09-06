@@ -103,6 +103,12 @@ function displayDate(value?: string | null) {
 }
 
 function mapMedia(row: MemorialRow, publicDelivery = false): GalleryItem {
+  const isCommunity = row.album === "Community Memories" || Boolean(row.source_memory_id)
+  let addedBy: string | undefined = undefined
+  if (isCommunity && typeof row.caption === "string" && row.caption.startsWith("Shared by ")) {
+    addedBy = row.caption.replace("Shared by ", "").trim()
+  }
+
   return {
     id: row.id,
     title: row.caption || (row.media_type === "video" ? "Video Clip" : row.media_type === "audio" ? "Voice Note" : "Photograph"),
@@ -112,6 +118,8 @@ function mapMedia(row: MemorialRow, publicDelivery = false): GalleryItem {
     album: row.album || undefined,
     isPinned: Boolean(row.is_pinned),
     mediaUrl: resolveMediaUrl(row.url, { publicDelivery }),
+    addedBy,
+    sourceMemoryId: row.source_memory_id || undefined,
   }
 }
 
@@ -119,7 +127,7 @@ const MEMORIAL_PUBLIC_COLUMNS =
   "id, slug, owner_id, full_name, preferred_name, birth_year, death_year, location, headline, biography, portrait_photo_url, status, privacy, is_paid, section_settings, contribution_settings, access_pin_hash"
 
 const MEDIA_COLUMNS =
-  "id, caption, media_type, approx_year, location, album, is_pinned, url, order_index, created_at"
+  "id, caption, media_type, approx_year, location, album, is_pinned, url, order_index, created_at, source_memory_id"
 
 const STORY_COLUMNS =
   "id, author_name, author_relationship, approx_year, created_at, location, story, photo_url, photo_urls"

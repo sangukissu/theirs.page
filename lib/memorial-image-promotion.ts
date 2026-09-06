@@ -22,7 +22,7 @@ function extensionForImageMime(mime: string): string {
 }
 
 export function archivalHeicKeyForDisplay(displayKey: string): string | null {
-  const match = displayKey.match(/^memorials\/([^/]+)\/(portraits|gallery|timeline)\/([^/]+)\.webp$/i)
+  const match = displayKey.match(/^memorials\/([^/]+)\/(portraits|gallery|timeline|community)\/([^/]+)\.webp$/i)
   return match ? `originals/${match[1]}/${match[2]}/${match[3]}.heic` : null
 }
 
