@@ -42,37 +42,24 @@ export function IdentityTab({
     setLocalPreviewUrl(preview)
 
     try {
-      // 1. Request presigned upload URL from server
-      const presignedRes = await fetch("/api/r2/presigned-upload-url", {
+      // Use same-origin /api/r2/upload: eliminates cross-origin CORS preflight failures,
+      // validates image magic bytes server-side, strips EXIF/GPS, and securely stores in R2.
+      const formData = new FormData()
+      formData.append("file", file)
+      formData.append("folder", "portraits")
+      formData.append("memorialId", memorialId)
+
+      const uploadRes = await fetch("/api/r2/upload", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          filename: file.name,
-          contentType: file.type || "image/jpeg",
-          fileSize: file.size,
-          folder: "portraits",
-          memorialId,
-        }),
+        body: formData,
       })
 
-      const presignedData = await presignedRes.json()
-      if (!presignedRes.ok) {
-        throw new Error(presignedData.error || "Failed to prepare photo upload")
-      }
-
-      // 2. Direct browser -> Cloudflare R2 PUT
-      const uploadRes = await fetch(presignedData.uploadUrl, {
-        method: "PUT",
-        headers: {
-          "Content-Type": presignedData.contentType || file.type || "image/jpeg",
-        },
-        body: file,
-      })
+      const uploadData = await uploadRes.json()
       if (!uploadRes.ok) {
-        throw new Error("Failed to upload photo directly to storage")
+        throw new Error(uploadData.error || "Failed to upload portrait photo")
       }
 
-      const uploadKey = presignedData.stagingKey || presignedData.key
+      const uploadKey = uploadData.key
       onChange("portrait_photo_url", uploadKey)
     } catch (err: any) {
       console.error("Portrait upload error:", err)
@@ -80,6 +67,9 @@ export function IdentityTab({
       setLocalPreviewUrl(null)
     } finally {
       setIsUploading(false)
+      if (e.target) {
+        e.target.value = ""
+      }
     }
   }
 
@@ -122,17 +112,32 @@ export function IdentityTab({
             Choose a photo that captures their everyday warmth or spirit. High-resolution photos are preserved untouched.
           </p>
 
-          <label className="self-start inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-[#f4f4f6] hover:bg-neutral-200 text-[#181925] text-xs font-medium transition-colors cursor-pointer select-none">
-            <Upload className="size-3" />
-            <span>{isUploading ? "Uploading photo..." : "Upload portrait"}</span>
-            <input
-              type="file"
-              accept="image/*"
-              disabled={isUploading}
-              onChange={handlePortraitUpload}
-              className="hidden"
-            />
-          </label>
+          <div className="flex items-center gap-2">
+            <label className="self-start inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-[#f4f4f6] hover:bg-neutral-200 text-[#181925] text-xs font-medium transition-colors cursor-pointer select-none">
+              <Upload className="size-3" />
+              <span>{isUploading ? "Uploading photo..." : (portraitUrl ? "Change photo" : "Upload portrait")}</span>
+              <input
+                type="file"
+                accept="image/*"
+                disabled={isUploading}
+                onChange={handlePortraitUpload}
+                className="hidden"
+              />
+            </label>
+            {portraitUrl && (
+              <button
+                type="button"
+                disabled={isUploading}
+                onClick={() => {
+                  setLocalPreviewUrl(null)
+                  onChange("portrait_photo_url", "")
+                }}
+                className="inline-flex items-center gap-1 px-3 py-1.5 rounded-full text-xs text-rose-600 hover:bg-rose-50 transition-colors"
+              >
+                Remove
+              </button>
+            )}
+          </div>
 
           {uploadError && (
             <span className="text-[11px] text-rose-600 flex items-center gap-1">

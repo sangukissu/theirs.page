@@ -102,25 +102,51 @@ export function TimelineTab({
         throw new Error(presignedData.error || "Failed to prepare photo upload")
       }
 
-      // 2. Direct browser -> Cloudflare R2 PUT
-      const uploadRes = await fetch(presignedData.uploadUrl, {
-        method: "PUT",
-        headers: {
-          "Content-Type": presignedData.contentType || file.type || "image/jpeg",
-        },
-        body: file,
-      })
-      if (!uploadRes.ok) {
-        throw new Error("Failed to upload photo directly to storage")
+      // 2. Direct browser -> Cloudflare R2 PUT with server fallback
+      let uploadKey = presignedData.stagingKey || presignedData.key
+      let directSucceeded = false
+
+      try {
+        const uploadRes = await fetch(presignedData.uploadUrl, {
+          method: "PUT",
+          headers: {
+            "Content-Type": presignedData.contentType || file.type || "image/jpeg",
+          },
+          body: file,
+        })
+        if (uploadRes.ok) {
+          directSucceeded = true
+        }
+      } catch (directErr) {
+        console.warn("Direct timeline upload failed (likely CORS preflight), falling back to /api/r2/upload:", directErr)
       }
 
-      const uploadKey = presignedData.stagingKey || presignedData.key
+      if (!directSucceeded) {
+        const formData = new FormData()
+        formData.append("file", file)
+        formData.append("folder", "timeline")
+        formData.append("memorialId", memorialId)
+
+        const fallbackRes = await fetch("/api/r2/upload", {
+          method: "POST",
+          body: formData,
+        })
+        const fallbackData = await fallbackRes.json()
+        if (!fallbackRes.ok) {
+          throw new Error(fallbackData.error || "Failed to upload photo via server fallback")
+        }
+        uploadKey = fallbackData.key
+      }
+
       setPhotoUrl(uploadKey)
     } catch (err) {
       console.error("Timeline photo upload failed:", err)
       setPhotoPreviewUrl(null)
     } finally {
       setIsUploadingPhoto(false)
+      if (e.target) {
+        e.target.value = ""
+      }
     }
   }
 

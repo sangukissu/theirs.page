@@ -314,22 +314,42 @@ export async function POST(req: NextRequest) {
         )
       }
 
-      // Check storage quota & format restrictions via paywall rules
-      const { count, error: countErr } = await supabase
-        .from("media_items")
-        .select("id", { count: "exact", head: true })
-        .eq("memorial_id", resolvedMemorialId)
+      const safeFolder = folder.replace(/[^a-zA-Z0-9_-]/g, "").toLowerCase()
+      const isPortrait = safeFolder === "portraits"
 
-      const currentCount = !countErr && typeof count === "number" ? count : 0
-      const quotaCheck = assertMediaQuota(authCheck.memorial, currentCount, mediaType)
-      if (!quotaCheck.allowed) {
-        return NextResponse.json({ error: quotaCheck.error }, { status: quotaCheck.status || 403 })
-      }
+      if (isPortrait) {
+        // Primary portraits can be uploaded or replaced on any tier at any time
+        if (mediaType !== "image") {
+          return NextResponse.json(
+            { error: "Only image files are supported for memorial portraits." },
+            { status: 400 }
+          )
+        }
+        const MAX_PORTRAIT_SIZE = 15 * 1024 * 1024
+        if (file.size > MAX_PORTRAIT_SIZE) {
+          return NextResponse.json(
+            { error: "Portrait file size must be under 15MB." },
+            { status: 400 }
+          )
+        }
+      } else {
+        // Check storage quota & format restrictions via paywall rules
+        const { count, error: countErr } = await supabase
+          .from("media_items")
+          .select("id", { count: "exact", head: true })
+          .eq("memorial_id", resolvedMemorialId)
 
-      // Max 50MB for authenticated admin uploads
-      const MAX_ADMIN_SIZE = 50 * 1024 * 1024
-      if (file.size > MAX_ADMIN_SIZE) {
-        return NextResponse.json({ error: "File size exceeds 50MB limit." }, { status: 400 })
+        const currentCount = !countErr && typeof count === "number" ? count : 0
+        const quotaCheck = assertMediaQuota(authCheck.memorial, currentCount, mediaType)
+        if (!quotaCheck.allowed) {
+          return NextResponse.json({ error: quotaCheck.error }, { status: quotaCheck.status || 403 })
+        }
+
+        // Max 50MB for authenticated admin uploads
+        const MAX_ADMIN_SIZE = 50 * 1024 * 1024
+        if (file.size > MAX_ADMIN_SIZE) {
+          return NextResponse.json({ error: "File size exceeds 50MB limit." }, { status: 400 })
+        }
       }
     }
 
@@ -449,7 +469,7 @@ export async function POST(req: NextRequest) {
     const timestamp = Date.now()
     const randomId = crypto.randomUUID()
     const cleanFilename = file.name.replace(/[^a-zA-Z0-9.-]/g, "_").slice(-180)
-    const safeFolder = folder.replace(/[^a-zA-Z0-9_-]/g, "")
+    const safeFolder = folder.replace(/[^a-zA-Z0-9_-]/g, "").toLowerCase()
 
     let key: string
     if (resolvedMemorialId) {

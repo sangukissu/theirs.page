@@ -201,16 +201,40 @@ export function GalleryTab({
           throw new Error(presignedData.error || `Failed to prepare upload for ${item.name}`)
         }
 
-        // 2. Direct browser -> Cloudflare R2 upload (bypasses Worker memory)
-        const uploadRes = await fetch(presignedData.uploadUrl, {
-          method: "PUT",
-          headers: {
-            "Content-Type": presignedData.contentType || item.file.type || "application/octet-stream",
-          },
-          body: item.file,
-        })
-        if (!uploadRes.ok) {
-          throw new Error(`Failed to upload ${item.name} directly to storage`)
+        // 2. Direct browser -> Cloudflare R2 upload with server fallback
+        let uploadKey = presignedData.key
+        let stagingKey = presignedData.stagingKey || presignedData.key
+        let mediaType = presignedData.mediaType
+
+        try {
+          const uploadRes = await fetch(presignedData.uploadUrl, {
+            method: "PUT",
+            headers: {
+              "Content-Type": presignedData.contentType || item.file.type || "application/octet-stream",
+            },
+            body: item.file,
+          })
+          if (!uploadRes.ok) {
+            throw new Error(`Direct upload returned ${uploadRes.status}`)
+          }
+        } catch (directErr) {
+          console.warn("Direct R2 upload failed (likely CORS preflight), using server upload fallback:", directErr)
+          const formData = new FormData()
+          formData.append("file", item.file)
+          formData.append("folder", "gallery")
+          formData.append("memorialId", memorialId)
+
+          const fallbackRes = await fetch("/api/r2/upload", {
+            method: "POST",
+            body: formData,
+          })
+          const fallbackData = await fallbackRes.json()
+          if (!fallbackRes.ok) {
+            throw new Error(fallbackData.error || `Failed to upload ${item.name}`)
+          }
+          uploadKey = fallbackData.key
+          stagingKey = fallbackData.key
+          mediaType = fallbackData.mediaType || mediaType
         }
 
         // 3. Save record to Supabase
@@ -218,9 +242,9 @@ export function GalleryTab({
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
-            stagingKey: presignedData.stagingKey || presignedData.key,
-            url: presignedData.key,
-            media_type: presignedData.mediaType,
+            stagingKey,
+            url: uploadKey,
+            media_type: mediaType,
             caption: null,
             approx_year: null,
             album:
