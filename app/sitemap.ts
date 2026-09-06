@@ -30,5 +30,17 @@ export default function sitemap(): MetadataRoute.Sitemap {
       changeFrequency: "monthly",
       priority: 0.3,
     },
+    {
+      url: `${BASE}/guidelines`,
+      lastModified,
+      changeFrequency: "monthly",
+      priority: 0.3,
+    },
+    {
+      url: `${BASE}/refunds`,
+      lastModified,
+      changeFrequency: "monthly",
+      priority: 0.3,
+    },
   ]
 }

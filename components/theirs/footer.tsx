@@ -29,7 +29,7 @@ export function TheirsFooter() {
         </div>
 
         {/* Links */}
-        <div className="flex items-center gap-6">
+        <div className="flex items-center gap-4 sm:gap-6 flex-wrap">
           <Link href="/login" className="hover:text-[#454545] transition-colors">
             Sign in
           </Link>
@@ -38,6 +38,12 @@ export function TheirsFooter() {
           </Link>
           <Link href="/terms" className="hover:text-[#454545] transition-colors">
             Terms
+          </Link>
+          <Link href="/guidelines" className="hover:text-[#454545] transition-colors">
+            Guidelines
+          </Link>
+          <Link href="/refunds" className="hover:text-[#454545] transition-colors">
+            Refunds
           </Link>
         </div>
 
