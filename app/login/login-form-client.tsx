@@ -13,18 +13,24 @@ import { isAuthRetryableFetchError } from "@supabase/supabase-js"
 import { DitherGradient } from "@/components/theirs/dither-gradient"
 import { normalizeMemorialSlug } from "@/lib/memorial-slug"
 
-function MagicLinkSubmit() {
+function MagicLinkSubmit({ isVerifying }: { isVerifying?: boolean }) {
   const { pending } = useFormStatus()
+  const isBusy = pending || isVerifying
   return (
     <button
       type="submit"
-      disabled={pending}
+      disabled={isBusy}
       className="inline-flex items-center justify-center gap-1.5 whitespace-nowrap !rounded-full font-medium transition-all cursor-pointer border border-[color-mix(in_srgb,var(--primary)_80%,#3a3480)] bg-[color-mix(in_srgb,var(--primary)_90%,#3a3480)] text-primary-foreground shadow-[inset_0_1px_0_rgba(255,255,255,0.22),inset_0_-1px_0_rgba(58,52,128,0.30)] transform-gpu hover:bg-primary active:scale-[0.98] h-10 w-full text-sm group select-none disabled:opacity-50 disabled:pointer-events-none"
     >
       {pending ? (
         <>
           <Loader2 className="size-4 animate-spin" />
           <span>Sending link...</span>
+        </>
+      ) : isVerifying ? (
+        <>
+          <Loader2 className="size-4 animate-spin" />
+          <span>Verifying security check...</span>
         </>
       ) : (
         <>
@@ -115,6 +121,10 @@ function LoginFormWithSearchParams({ nextPath: propNextPath }: { nextPath?: stri
   const router = useRouter()
   const [urlError, setUrlError] = useState<string | null>(null)
   const [captchaToken, setCaptchaToken] = useState<string | undefined>(undefined)
+  const [isVerifyingCaptcha, setIsVerifyingCaptcha] = useState(false)
+  const [captchaBypassAllowed, setCaptchaBypassAllowed] = useState(false)
+  const pendingSubmitRef = useRef(false)
+  const formRef = useRef<HTMLFormElement>(null)
   const turnstileRef = useRef<TurnstileInstance>(null)
   const [lastUsed, setLastUsed] = useState<"google" | "magic" | null>(null)
   const siteKey = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY || ""
@@ -127,8 +137,23 @@ function LoginFormWithSearchParams({ nextPath: propNextPath }: { nextPath?: stri
   useEffect(() => {
     if (state?.error) {
       resetTurnstile()
+      setIsVerifyingCaptcha(false)
+      pendingSubmitRef.current = false
     }
   }, [state?.error])
+
+  useEffect(() => {
+    if (!isVerifyingCaptcha) return
+    const timeout = setTimeout(() => {
+      if (pendingSubmitRef.current && !captchaToken) {
+        setIsVerifyingCaptcha(false)
+        pendingSubmitRef.current = false
+        setCaptchaBypassAllowed(true)
+        setUrlError("Security check took longer than expected. Tap 'Continue with Email' to proceed.")
+      }
+    }, 7000)
+    return () => clearTimeout(timeout)
+  }, [isVerifyingCaptcha, captchaToken])
 
   const queryName = searchParams.get("name")?.trim() || ""
   const querySlug = searchParams.get("slug")?.trim() || ""
@@ -283,8 +308,31 @@ function LoginFormWithSearchParams({ nextPath: propNextPath }: { nextPath?: stri
           {/* Form Actions */}
           <div className="flex flex-col gap-4">
             <form
+              ref={formRef}
               action={formAction}
-              onSubmit={() => {
+              onSubmit={(e) => {
+                const currentToken = captchaToken || turnstileRef.current?.getResponse()
+                if (siteKey && !currentToken && !captchaBypassAllowed) {
+                  e.preventDefault()
+                  setUrlError(null)
+                  setIsVerifyingCaptcha(true)
+                  pendingSubmitRef.current = true
+                  try {
+                    turnstileRef.current?.execute()
+                  } catch {
+                    // Ignore execute invocation errors
+                  }
+                  return
+                }
+
+                if (currentToken && !captchaToken) {
+                  setCaptchaToken(currentToken)
+                  const tokenInput = formRef.current?.querySelector<HTMLInputElement>('input[name="captchaToken"]')
+                  if (tokenInput) {
+                    tokenInput.value = currentToken
+                  }
+                }
+
                 document.cookie = "last_auth=magic; path=/; max-age=31536000; SameSite=Lax"
                 if (memorialName) {
                   document.cookie = `theirs_pending_name=${encodeURIComponent(memorialName)}; path=/; max-age=86400; SameSite=Lax`
@@ -310,24 +358,46 @@ function LoginFormWithSearchParams({ nextPath: propNextPath }: { nextPath?: stri
               </div>
 
               {siteKey && (
-                <div className="flex justify-center empty:hidden">
+                <div className="flex justify-center my-1 min-h-[65px]">
                   <Turnstile
                     ref={turnstileRef}
                     siteKey={siteKey}
                     options={{
-                      appearance: "interaction-only",
+                      appearance: "always",
+                      theme: "light",
+                      size: "normal",
                       refreshExpired: "auto",
                     }}
-                    onSuccess={(token) => setCaptchaToken(token)}
-                    onExpire={resetTurnstile}
-                    onError={() => setCaptchaToken(undefined)}
+                    onSuccess={(token) => {
+                      setCaptchaToken(token)
+                      if (pendingSubmitRef.current && formRef.current) {
+                        pendingSubmitRef.current = false
+                        setIsVerifyingCaptcha(false)
+                        const tokenInput = formRef.current.querySelector<HTMLInputElement>('input[name="captchaToken"]')
+                        if (tokenInput) {
+                          tokenInput.value = token
+                        }
+                        formRef.current.requestSubmit()
+                      }
+                    }}
+                    onExpire={() => {
+                      resetTurnstile()
+                      setIsVerifyingCaptcha(false)
+                      pendingSubmitRef.current = false
+                    }}
+                    onError={() => {
+                      setCaptchaToken(undefined)
+                      setIsVerifyingCaptcha(false)
+                      pendingSubmitRef.current = false
+                      setCaptchaBypassAllowed(true)
+                    }}
                   />
                 </div>
               )}
               <input type="hidden" name="captchaToken" value={captchaToken ?? ""} />
 
               <div className="relative pt-1">
-                <MagicLinkSubmit />
+                <MagicLinkSubmit isVerifying={isVerifyingCaptcha} />
                 {lastUsed === "magic" && (
                   <span className="absolute -top-1.5 right-3 bg-white text-[#181925] text-[10px] px-2 py-0.5 rounded-full border border-black/[0.08] font-medium">
                     Last used

@@ -14,13 +14,17 @@ export async function signInWithMagicLink(
   formData: FormData
 ): Promise<AuthState> {
   const supabase = await createClient()
-  const email = formData.get('email') as string
-  const captchaToken = (formData.get('captchaToken') as string) || undefined
+  const email = (formData.get('email') as string)?.trim()
+  const captchaToken = (formData.get('captchaToken') as string)?.trim() || undefined
   const rawNext = (formData.get('next') as string | null) || '/dashboard'
   const nextPath = sanitizeAuthDestination(rawNext)
   const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'
   const callbackUrl = new URL('/auth/callback', siteUrl)
   callbackUrl.searchParams.set('next', nextPath)
+
+  if (!email) {
+    return { error: 'Please enter a valid email address.' }
+  }
 
   // Process magic link request
 
@@ -35,6 +39,13 @@ export async function signInWithMagicLink(
     })
 
     if (error) {
+      if (error.message?.toLowerCase().includes('captcha')) {
+        console.warn('Supabase Auth rejected OTP due to captcha configuration/token:', error.message)
+        return {
+          error:
+            'Security verification was not recognized by the authentication service. If you enabled Captcha in Supabase Dashboard, ensure the Cloudflare Turnstile secret key is configured, or complete the verification and try again.',
+        }
+      }
       return { error: error.message }
     }
 
