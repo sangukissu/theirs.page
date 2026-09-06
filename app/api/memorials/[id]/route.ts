@@ -159,8 +159,13 @@ export async function PATCH(req: NextRequest, context: RouteContext) {
     const editorialFields = [
       "full_name",
       "preferred_name",
+      "creator_relationship",
       "birth_year",
+      "birth_month",
+      "birth_day",
       "death_year",
+      "death_month",
+      "death_day",
       "location",
       "headline",
       "biography",

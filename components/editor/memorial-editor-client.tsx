@@ -45,7 +45,12 @@ interface InitialMemorialData {
   full_name: string
   preferred_name?: string | null
   birth_year?: number | null
+  birth_month?: number | null
+  birth_day?: number | null
   death_year?: number | null
+  death_month?: number | null
+  death_day?: number | null
+  creator_relationship?: string | null
   location?: string | null
   headline?: string | null
   biography?: string | null
@@ -68,7 +73,7 @@ interface MemorialEditorClientProps {
   initialMediaItems: EditorMediaItem[]
   initialTimelineEvents: EditorTimelineEvent[]
   initialMemories: EditorMemory[]
-  initialCaretakerMessages: EditorCaretakerMessage[]
+  initialCaretakerMessages?: EditorCaretakerMessage[]
 }
 
 type SaveStatus = "saved" | "saving" | "local-saved"
@@ -78,7 +83,7 @@ export function MemorialEditorClient({
   initialMediaItems,
   initialTimelineEvents,
   initialMemories,
-  initialCaretakerMessages,
+  initialCaretakerMessages = [],
 }: MemorialEditorClientProps) {
   const router = useRouter()
   const searchParams = useSearchParams()
@@ -96,7 +101,12 @@ export function MemorialEditorClient({
     full_name: initialMemorial.full_name || "",
     preferred_name: initialMemorial.preferred_name || "",
     birth_year: initialMemorial.birth_year ? String(initialMemorial.birth_year) : "",
+    birth_month: initialMemorial.birth_month ? String(initialMemorial.birth_month) : "",
+    birth_day: initialMemorial.birth_day ? String(initialMemorial.birth_day) : "",
     death_year: initialMemorial.death_year ? String(initialMemorial.death_year) : "",
+    death_month: initialMemorial.death_month ? String(initialMemorial.death_month) : "",
+    death_day: initialMemorial.death_day ? String(initialMemorial.death_day) : "",
+    creator_relationship: initialMemorial.creator_relationship || "",
     location: initialMemorial.location || "",
     headline: initialMemorial.headline || "",
     biography: initialMemorial.biography || "",
@@ -199,7 +209,12 @@ export function MemorialEditorClient({
           full_name: currentForm.full_name,
           preferred_name: currentForm.preferred_name || null,
           birth_year: currentForm.birth_year ? Number(currentForm.birth_year) : null,
+          birth_month: currentForm.birth_month ? Number(currentForm.birth_month) : null,
+          birth_day: currentForm.birth_day ? Number(currentForm.birth_day) : null,
           death_year: currentForm.death_year ? Number(currentForm.death_year) : null,
+          death_month: currentForm.death_month ? Number(currentForm.death_month) : null,
+          death_day: currentForm.death_day ? Number(currentForm.death_day) : null,
+          creator_relationship: currentForm.creator_relationship || null,
           location: currentForm.location || null,
           headline: currentForm.headline || null,
           biography: currentForm.biography || null,
@@ -584,7 +599,12 @@ export function MemorialEditorClient({
               fullName={form.full_name}
               preferredName={form.preferred_name}
               birthYear={form.birth_year}
+              birthMonth={form.birth_month}
+              birthDay={form.birth_day}
               deathYear={form.death_year}
+              deathMonth={form.death_month}
+              deathDay={form.death_day}
+              creatorRelationship={form.creator_relationship}
               location={form.location}
               headline={form.headline}
               portraitUrl={form.portrait_photo_url}

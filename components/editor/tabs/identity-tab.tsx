@@ -1,9 +1,26 @@
 "use client"
 
 import { useState } from "react"
-import { Upload, Image as ImageIcon, CheckCircle2, AlertCircle } from "lucide-react"
+import { Upload, AlertCircle } from "lucide-react"
 import { PortraitPlaceholder } from "@/components/memorial/portrait-placeholder"
 import { TEXT_LIMITS } from "@/lib/validation/text-limits"
+
+const RELATIONSHIP_CHOICES = [
+  "Daughter",
+  "Son",
+  "Child",
+  "Spouse / Partner",
+  "Grandchild",
+  "Parent",
+  "Sibling",
+  "Friend",
+  "Other",
+]
+
+const MONTH_NAMES = [
+  "January", "February", "March", "April", "May", "June",
+  "July", "August", "September", "October", "November", "December",
+]
 
 interface IdentityTabProps {
   memorialId: string
@@ -11,6 +28,11 @@ interface IdentityTabProps {
   preferredName: string
   birthYear: string
   deathYear: string
+  birthMonth?: string
+  birthDay?: string
+  deathMonth?: string
+  deathDay?: string
+  creatorRelationship?: string
   location: string
   headline: string
   portraitUrl: string
@@ -23,6 +45,11 @@ export function IdentityTab({
   preferredName,
   birthYear,
   deathYear,
+  birthMonth = "",
+  birthDay = "",
+  deathMonth = "",
+  deathDay = "",
+  creatorRelationship = "",
   location,
   headline,
   portraitUrl,
@@ -31,6 +58,8 @@ export function IdentityTab({
   const [isUploading, setIsUploading] = useState(false)
   const [uploadError, setUploadError] = useState<string | null>(null)
   const [localPreviewUrl, setLocalPreviewUrl] = useState<string | null>(null)
+  const [showExactBirth, setShowExactBirth] = useState(() => Boolean(birthMonth || birthDay))
+  const [showExactDeath, setShowExactDeath] = useState(() => Boolean(deathMonth || deathDay))
 
   // Direct upload handler for portrait photo
   const handlePortraitUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -126,7 +155,7 @@ export function IdentityTab({
         </div>
 
         <div className="flex flex-col gap-2 flex-1">
-          <span className="text-xs font-medium text-[#181925]">Primary Portrait</span>
+          <span className="text-xs font-medium text-[#181925]">Their photo</span>
           <p className="text-[11px] text-[#71717a]">
             Choose a photo that captures their everyday warmth or spirit. High-resolution photos are preserved untouched.
           </p>
@@ -186,7 +215,7 @@ export function IdentityTab({
 
         <div className="flex flex-col gap-1.5">
           <label className="text-xs font-medium text-[#181925]">
-            Preferred / Nickname
+            What people called them
           </label>
           <input
             type="text"
@@ -199,12 +228,24 @@ export function IdentityTab({
         </div>
       </div>
 
-      {/* 3. Lifespan Years & Location */}
+      {/* 3. Lifespan & Location */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        {/* Born */}
         <div className="flex flex-col gap-1.5">
-          <label className="text-xs font-medium text-[#181925]">
-            Born
-          </label>
+          <div className="flex items-center justify-between">
+            <label className="text-xs font-medium text-[#181925]">
+              Born
+            </label>
+            {!showExactBirth && (
+              <button
+                type="button"
+                onClick={() => setShowExactBirth(true)}
+                className="text-[11px] text-primary hover:underline cursor-pointer"
+              >
+                + Add exact date
+              </button>
+            )}
+          </div>
           <input
             type="number"
             value={birthYear}
@@ -212,12 +253,61 @@ export function IdentityTab({
             placeholder="1948"
             className="px-3.5 py-2 rounded-xl bg-white border border-black/[0.08] text-xs sm:text-sm text-[#181925] font-mono outline-none focus:border-primary/60 transition-colors"
           />
+          {showExactBirth && (
+            <div className="flex items-center gap-2 pt-1 animate-in fade-in">
+              <select
+                value={birthMonth || ""}
+                onChange={(e) => onChange("birth_month", e.target.value)}
+                className="w-1/2 px-2.5 py-1.5 rounded-lg bg-neutral-50 border border-black/[0.08] text-xs text-[#181925] outline-none focus:border-primary/60"
+              >
+                <option value="">Month</option>
+                {MONTH_NAMES.map((m, idx) => (
+                  <option key={idx + 1} value={String(idx + 1)}>
+                    {m}
+                  </option>
+                ))}
+              </select>
+              <input
+                type="number"
+                min={1}
+                max={31}
+                value={birthDay || ""}
+                onChange={(e) => onChange("birth_day", e.target.value)}
+                placeholder="Day"
+                className="w-1/2 px-2.5 py-1.5 rounded-lg bg-neutral-50 border border-black/[0.08] text-xs text-[#181925] font-mono outline-none focus:border-primary/60"
+              />
+              <button
+                type="button"
+                onClick={() => {
+                  onChange("birth_month", "")
+                  onChange("birth_day", "")
+                  setShowExactBirth(false)
+                }}
+                className="text-xs text-[#888] hover:text-rose-600 px-1 py-0.5 rounded cursor-pointer"
+                title="Remove exact date"
+              >
+                ×
+              </button>
+            </div>
+          )}
         </div>
 
+        {/* Passed Away */}
         <div className="flex flex-col gap-1.5">
-          <label className="text-xs font-medium text-[#181925]">
-            Passed Away
-          </label>
+          <div className="flex items-center justify-between">
+            <label className="text-xs font-medium text-[#181925]">
+              Passed away
+            </label>
+            {!showExactDeath && (
+              <button
+                type="button"
+                onClick={() => setShowExactDeath(true)}
+                className="text-[11px] text-primary hover:underline cursor-pointer"
+              >
+                + Add exact date
+              </button>
+            )}
+          </div>
           <input
             type="number"
             value={deathYear}
@@ -225,11 +315,49 @@ export function IdentityTab({
             placeholder="2024"
             className="px-3.5 py-2 rounded-xl bg-white border border-black/[0.08] text-xs sm:text-sm text-[#181925] font-mono outline-none focus:border-primary/60 transition-colors"
           />
+          {showExactDeath && (
+            <div className="flex items-center gap-2 pt-1 animate-in fade-in">
+              <select
+                value={deathMonth || ""}
+                onChange={(e) => onChange("death_month", e.target.value)}
+                className="w-1/2 px-2.5 py-1.5 rounded-lg bg-neutral-50 border border-black/[0.08] text-xs text-[#181925] outline-none focus:border-primary/60"
+              >
+                <option value="">Month</option>
+                {MONTH_NAMES.map((m, idx) => (
+                  <option key={idx + 1} value={String(idx + 1)}>
+                    {m}
+                  </option>
+                ))}
+              </select>
+              <input
+                type="number"
+                min={1}
+                max={31}
+                value={deathDay || ""}
+                onChange={(e) => onChange("death_day", e.target.value)}
+                placeholder="Day"
+                className="w-1/2 px-2.5 py-1.5 rounded-lg bg-neutral-50 border border-black/[0.08] text-xs text-[#181925] font-mono outline-none focus:border-primary/60"
+              />
+              <button
+                type="button"
+                onClick={() => {
+                  onChange("death_month", "")
+                  onChange("death_day", "")
+                  setShowExactDeath(false)
+                }}
+                className="text-xs text-[#888] hover:text-rose-600 px-1 py-0.5 rounded cursor-pointer"
+                title="Remove exact date"
+              >
+                ×
+              </button>
+            </div>
+          )}
         </div>
 
+        {/* Where they called home */}
         <div className="flex flex-col gap-1.5">
           <label className="text-xs font-medium text-[#181925]">
-            Home / Region
+            Where they called home
           </label>
           <input
             type="text"
@@ -242,11 +370,11 @@ export function IdentityTab({
         </div>
       </div>
 
-      {/* 4. Defining Quote / Epitaph */}
+      {/* 4. Defining Quote / Line that feels like them */}
       <div className="flex flex-col gap-1.5">
         <div className="flex items-baseline justify-between">
           <label className="text-xs font-medium text-[#181925]">
-            Defining Quote or Epitaph
+            A line that feels like them
           </label>
           <span className="text-[11px] text-[#888]">1–2 sentences</span>
         </div>
@@ -260,6 +388,26 @@ export function IdentityTab({
         />
         <span className="text-[11px] text-[#888]">
           Appears in large serif text below their name on the live memorial.
+        </span>
+      </div>
+
+      {/* 5. Connection to them */}
+      <div className="flex flex-col gap-1.5 pt-3 border-t border-black/[0.06]">
+        <label className="text-xs font-medium text-[#181925]">
+          Your connection to {fullName.trim().split(/\s+/)[0] || "them"}
+        </label>
+        <select
+          value={creatorRelationship || ""}
+          onChange={(e) => onChange("creator_relationship", e.target.value)}
+          className="px-3.5 py-2 rounded-xl bg-white border border-black/[0.08] text-xs sm:text-sm text-[#181925] outline-none focus:border-primary/60 transition-colors"
+        >
+          <option value="">Select relationship (optional)...</option>
+          {RELATIONSHIP_CHOICES.map((rel) => (
+            <option key={rel} value={rel}>{rel}</option>
+          ))}
+        </select>
+        <span className="text-[11px] text-[#888]">
+          Used gently in the memorial footer (e.g. &ldquo;Created by Anita &middot; Robert’s granddaughter&rdquo;).
         </span>
       </div>
     </div>

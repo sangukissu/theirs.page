@@ -73,6 +73,7 @@ export function MemorialShell({ identity, children }: { identity: MemorialIdenti
         <MemorialFooter
           fullName={identity.fullName}
           caretakerName={identity.caretakerName || undefined}
+          caretakerRelationship={identity.caretakerRelationship || undefined}
         />
         {visitorPreview && (
           <div className="fixed bottom-5 right-5 z-50 bg-[#181925]/95 text-white px-4 py-2.5 rounded-full shadow-2xl text-xs font-sans flex items-center gap-3 border border-white/20 backdrop-blur-md animate-in fade-in slide-in-from-bottom-3 select-none">

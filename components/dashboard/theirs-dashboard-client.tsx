@@ -4,7 +4,6 @@ import { useState, useEffect, useRef } from "react"
 import Link from "next/link"
 import { useRouter, useSearchParams } from "next/navigation"
 import { normalizeMemorialSlug } from "@/lib/memorial-slug"
-import { ProfileOnboarding } from "@/components/dashboard/profile-onboarding"
 import {
   Plus,
   ArrowRight,
@@ -13,10 +12,9 @@ import {
   Image as ImageIcon,
   Share2,
   Check,
-  AlertCircle,
-  CheckCircle2,
   Shield,
   Loader2,
+  ChevronDown,
 } from "lucide-react"
 import { PortraitPlaceholder } from "@/components/memorial/portrait-placeholder"
 
@@ -44,12 +42,19 @@ interface TheirsDashboardClientProps {
   initialCaretakerName?: string
 }
 
-interface SlugCheckResult {
-  checking: boolean
-  available: boolean | null
-  message: string | null
-  suggestions: string[]
-}
+const RELATIONSHIP_CHOICES = [
+  "Child",
+  "Parent",
+  "Spouse / partner",
+  "Sibling",
+  "Grandchild",
+  "Grandparent",
+  "Other family",
+  "Friend",
+  "Colleague",
+  "Caregiver",
+  "Something else",
+]
 
 export function TheirsDashboardClient({
   userEmail,
@@ -62,25 +67,18 @@ export function TheirsDashboardClient({
   const router = useRouter()
   const searchParams = useSearchParams()
 
-  const computedInitialSlug =
-    initialSlug || (initialName ? normalizeMemorialSlug(initialName) : "")
-
   const [memorials, setMemorials] = useState<MemorialSummary[]>(initialMemorials)
   const [profileName, setProfileName] = useState(initialCaretakerName.trim())
+  const [creatorNameInput, setCreatorNameInput] = useState(initialCaretakerName.trim())
   const [isCreating, setIsCreating] = useState(Boolean(initialName.trim()))
   const [fullNameInput, setFullNameInput] = useState(initialName)
-  const [slugInput, setSlugInput] = useState(computedInitialSlug)
-  const [slugCheck, setSlugCheck] = useState<SlugCheckResult>({
-    checking: false,
-    available: null,
-    message: null,
-    suggestions: [],
-  })
+  const [relationship, setRelationship] = useState("")
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [copiedId, setCopiedId] = useState<string | null>(null)
   const [errorMsg, setErrorMsg] = useState<string | null>(null)
   const [checkingOutId, setCheckingOutId] = useState<string | null>(null)
-  const checkDebounceRef = useRef<NodeJS.Timeout | null>(null)
+
+  const firstName = fullNameInput.trim().split(" ")[0] || ""
 
   const handleUpgrade = async (memorialId: string) => {
     setCheckingOutId(memorialId)
@@ -104,24 +102,19 @@ export function TheirsDashboardClient({
     }
   }
 
-  // Auto-fill and verify slug on initial load if pending memorial exists
+  // Auto-fill on initial load if pending memorial exists
   useEffect(() => {
     let nameToUse = initialName
-    let slugToUse = computedInitialSlug
 
     if (!nameToUse) {
       const paramName = searchParams.get("name")?.trim()
-      const paramSlug = searchParams.get("slug")?.trim()
       if (paramName) {
         nameToUse = paramName
-        slugToUse = paramSlug || normalizeMemorialSlug(paramName)
       } else {
         // Fallback to cookie
         const nameMatch = document.cookie.match(/(?:^|;\s*)theirs_pending_name=([^;]+)/)
-        const slugMatch = document.cookie.match(/(?:^|;\s*)theirs_pending_slug=([^;]+)/)
         if (nameMatch && nameMatch[1]) {
           nameToUse = decodeURIComponent(nameMatch[1]).trim()
-          slugToUse = slugMatch && slugMatch[1] ? decodeURIComponent(slugMatch[1]).trim() : normalizeMemorialSlug(nameToUse)
         } else {
           // Fallback to localStorage
           try {
@@ -130,7 +123,6 @@ export function TheirsDashboardClient({
               const parsed = JSON.parse(stored)
               if (parsed?.name) {
                 nameToUse = parsed.name.trim()
-                slugToUse = parsed.slug?.trim() || normalizeMemorialSlug(nameToUse)
               }
             }
           } catch { }
@@ -140,85 +132,46 @@ export function TheirsDashboardClient({
 
     if (nameToUse) {
       setFullNameInput(nameToUse)
-      const finalSlug = slugToUse || normalizeMemorialSlug(nameToUse)
-      setSlugInput(finalSlug)
       setIsCreating(true)
-      checkSlugAvailability(finalSlug, nameToUse)
     }
-  }, [initialName, computedInitialSlug, searchParams])
+  }, [initialName, searchParams])
 
-  // Live availability check
-  const checkSlugAvailability = (slug: string, name: string) => {
-    if (!slug || slug.length < 3) {
-      setSlugCheck({ checking: false, available: null, message: null, suggestions: [] })
+  const handleCreate = async (e?: React.FormEvent, skipRelationship = false) => {
+    if (e) e.preventDefault()
+    const targetName = fullNameInput.trim()
+    if (!targetName) {
+      setErrorMsg("Please provide the name of the person you are remembering.")
       return
     }
 
-    setSlugCheck((prev) => ({ ...prev, checking: true }))
-
-    if (checkDebounceRef.current) clearTimeout(checkDebounceRef.current)
-    checkDebounceRef.current = setTimeout(async () => {
-      try {
-        const res = await fetch(
-          `/api/memorials/check-slug?slug=${encodeURIComponent(slug)}&fullName=${encodeURIComponent(name)}`
-        )
-        const data = await res.json()
-        setSlugCheck({
-          checking: false,
-          available: data.available,
-          message: data.message,
-          suggestions: data.suggestions || [],
-        })
-      } catch (err) {
-        setSlugCheck({ checking: false, available: null, message: null, suggestions: [] })
-      }
-    }, 300)
-  }
-
-  // Auto-generate slug when name changes
-  const handleNameChange = (val: string) => {
-    setFullNameInput(val)
-    const generated = val
-      .normalize("NFKD")
-      .replace(/[\u0300-\u036f]/g, "")
-      .toLowerCase()
-      .replace(/[^a-z0-9]+/g, "-")
-      .replace(/^-+|-+$/g, "")
-      .slice(0, 50)
-
-    setSlugInput(generated)
-    checkSlugAvailability(generated, val)
-  }
-
-  const handleSlugInputChange = (val: string) => {
-    const cleaned = val
-      .toLowerCase()
-      .replace(/[^a-z0-9-]/g, "")
-      .replace(/-{2,}/g, "-")
-    setSlugInput(cleaned)
-    checkSlugAvailability(cleaned, fullNameInput)
-  }
-
-  const handleCreate = async (e: React.FormEvent) => {
-    e.preventDefault()
-    if (!fullNameInput.trim() || !profileName) return
+    const effectiveCreatorName = (profileName || creatorNameInput).trim()
+    if (!profileName && effectiveCreatorName.length < 2) {
+      setErrorMsg("Please enter your name so family and friends know who is caring for this memorial.")
+      return
+    }
 
     setIsSubmitting(true)
     setErrorMsg(null)
 
     try {
+      const selectedRel = skipRelationship ? null : (relationship.trim() || null)
       const res = await fetch("/api/memorials", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          full_name: fullNameInput.trim(),
-          desired_slug: slugInput.trim(),
+          full_name: targetName,
+          creator_name: !profileName ? effectiveCreatorName : undefined,
+          creator_relationship: selectedRel,
         }),
       })
 
       const data = await res.json()
       if (!res.ok) {
         throw new Error(data.error || "Failed to create memorial")
+      }
+
+      if (!profileName && effectiveCreatorName) {
+        setProfileName(effectiveCreatorName)
       }
 
       // Clean up pending memorial storage & cookies
@@ -239,8 +192,8 @@ export function TheirsDashboardClient({
   const handleCancelCreate = () => {
     setIsCreating(false)
     setFullNameInput("")
-    setSlugInput("")
-    setSlugCheck({ checking: false, available: null, message: null, suggestions: [] })
+    setRelationship("")
+    setErrorMsg(null)
     try {
       localStorage.removeItem("theirs_pending_memorial")
       document.cookie = "theirs_pending_name=; path=/; max-age=0"
@@ -278,7 +231,7 @@ export function TheirsDashboardClient({
             </p>
           </div>
 
-          {profileName && memorials.length > 0 && !isCreating && (
+          {memorials.length > 0 && !isCreating && (
             <button
               type="button"
               onClick={() => setIsCreating(true)}
@@ -290,145 +243,146 @@ export function TheirsDashboardClient({
           )}
         </div>
 
-        {!profileName && <ProfileOnboarding onComplete={setProfileName} />}
-
-        {/* 1. CREATION CARD (When creating or 0 memorials) */}
-        {profileName && (memorials.length === 0 || isCreating) && (
-          <div className="p-6 sm:p-8 rounded-3xl bg-white border border-black/[0.08] shadow-xs flex flex-col gap-6">
-            <div className="flex flex-col gap-1 border-b border-black/[0.05] pb-4">
-              <div className="flex items-center justify-between gap-2 flex-wrap">
-                <span className="text-xs font-mono font-medium text-primary uppercase tracking-wider">
-                  New Memorial
-                </span>
-              </div>
-              <h2 className="text-lg sm:text-xl font-medium text-[#181925]">
-                Who would you like to remember?
+        {/* 1. UNIFIED HUMAN-FIRST CREATION CARD */}
+        {(memorials.length === 0 || isCreating) && (
+          <div className="p-6 sm:p-9 rounded-3xl bg-white border border-black/[0.08] shadow-xs flex flex-col gap-6 max-w-xl mx-auto w-full">
+            <div className="flex flex-col gap-1.5 border-b border-black/[0.06] pb-4">
+              <span className="text-[11px] font-mono font-medium text-primary uppercase tracking-wider">
+                New Memorial
+              </span>
+              <h2 className="font-serif text-2xl sm:text-3xl font-medium tracking-tight text-[#181925]">
+                {firstName ? `Your connection to ${firstName}` : "Who would you like to remember?"}
               </h2>
-              <p className="text-xs text-[#71717a]">
-                Start with their name. You can add their stories, photos, voice notes, and memories whenever you’re ready.              </p>
+              <p className="text-xs sm:text-sm text-[#71717a] leading-relaxed">
+                {firstName
+                  ? "A little context helps family and friends know who’s caring for this page."
+                  : "Start with their name. You can add their stories, photos, voice notes, and memories whenever you’re ready."}
+              </p>
             </div>
 
-            <form onSubmit={handleCreate} className="flex flex-col gap-5">
+            <form onSubmit={(e) => handleCreate(e, false)} className="flex flex-col gap-5">
               {errorMsg && (
                 <div className="p-3 rounded-xl bg-rose-50 border border-rose-200 text-xs text-rose-700">
                   {errorMsg}
                 </div>
               )}
 
-              <div className="flex flex-col gap-1.5">
-                <label className="text-xs font-medium text-[#181925]">
-                  Full Name of the Person *
-                </label>
-                <input
-                  type="text"
-                  required
-                  autoFocus
-                  value={fullNameInput}
-                  onChange={(e) => handleNameChange(e.target.value)}
-                  placeholder="e.g. Robert Edward Carter"
-                  className="px-4 py-2.5 rounded-xl bg-[#fafafb] border border-black/[0.08] text-sm text-[#181925] placeholder:text-[#aaa] outline-none focus:border-primary/60 transition-colors"
-                />
-              </div>
-
-              <div className="flex gap-3 rounded-2xl border border-primary/15 bg-primary/[0.035] p-3.5">
-                <Shield className="mt-0.5 size-4 shrink-0 text-primary" />
-                <div className="flex flex-col gap-0.5">
-                  <span className="text-xs font-medium text-[#181925]">Starts as a private draft</span>
-                  <span className="text-[11px] leading-relaxed text-[#71717a]">
-                    Nobody else can view or contribute until you publish it. When published, it starts as link-only and can be made public in Settings.
-                  </span>
-                </div>
-              </div>
-
-              {/* Web Address (Slug) with Live Collision Checking & Suggestions */}
-              <div className="flex flex-col gap-2">
-                <label className="text-xs font-medium text-[#181925]">
-                  Their Memorial Page
-                </label>
-                <div className="flex items-center px-4 py-2.5 rounded-xl bg-[#fafafb] border border-black/[0.08] text-xs text-[#888] font-mono">
-                  <span>theirs.page/</span>
+              {/* If name not already entered on landing page, ask for their full name */}
+              {!initialName && (
+                <div className="flex flex-col gap-1.5">
+                  <label htmlFor="memorial-person-name" className="text-xs font-medium text-[#181925]">
+                    Their full name *
+                  </label>
                   <input
+                    id="memorial-person-name"
                     type="text"
                     required
-                    value={slugInput}
-                    onChange={(e) => handleSlugInputChange(e.target.value)}
-                    placeholder="robert-carter"
-                    className="flex-1 bg-transparent text-xs text-[#181925] font-mono outline-none ml-0.5"
+                    autoFocus
+                    value={fullNameInput}
+                    onChange={(e) => setFullNameInput(e.target.value)}
+                    placeholder="e.g. Robert Edward Carter"
+                    className="px-4 py-2.5 rounded-xl bg-[#fafafb] border border-black/[0.08] text-sm text-[#181925] placeholder:text-[#aaa] outline-none focus:border-primary/60 transition-colors"
                   />
-                  {slugCheck.checking && (
-                    <span className="text-[10px] text-[#888] font-sans">Checking...</span>
-                  )}
-                  {!slugCheck.checking && slugCheck.available === true && (
-                    <span className="inline-flex items-center gap-1 text-[11px] text-emerald-600 font-sans font-medium">
-                      <CheckCircle2 className="size-3.5" />
-                      <span>Available</span>
-                    </span>
-                  )}
-                  {!slugCheck.checking && slugCheck.available === false && (
-                    <span className="inline-flex items-center gap-1 text-[11px] text-amber-600 font-sans font-medium">
-                      <AlertCircle className="size-3.5" />
-                      <span>Taken</span>
-                    </span>
-                  )}
                 </div>
+              )}
 
-                {/* Suggestions Pills if Collision */}
-                {slugCheck.available === false && slugCheck.suggestions.length > 0 && (
-                  <div className="flex items-center gap-1.5 flex-wrap pt-1">
-                    <span className="text-[11px] text-[#71717a]">Suggested available addresses:</span>
-                    {slugCheck.suggestions.map((sug) => (
-                      <button
-                        key={sug}
-                        type="button"
-                        onClick={() => {
-                          setSlugInput(sug)
-                          checkSlugAvailability(sug, fullNameInput)
-                        }}
-                        className="px-2.5 py-0.5 rounded-full bg-primary/10 hover:bg-primary/20 text-primary text-[11px] font-mono font-medium transition-colors cursor-pointer"
-                      >
-                        {sug}
-                      </button>
+              {/* If user profile name is not yet saved, ask for their name once */}
+              {!profileName && (
+                <div className="flex flex-col gap-1.5">
+                  <label htmlFor="creator-name" className="text-xs font-medium text-[#181925]">
+                    Your name *
+                  </label>
+                  <input
+                    id="creator-name"
+                    type="text"
+                    required
+                    autoComplete="name"
+                    autoFocus={Boolean(initialName)}
+                    value={creatorNameInput}
+                    onChange={(e) => setCreatorNameInput(e.target.value)}
+                    placeholder="e.g. Anita Carter"
+                    className="px-4 py-2.5 rounded-xl bg-[#fafafb] border border-black/[0.08] text-sm text-[#181925] placeholder:text-[#aaa] outline-none focus:border-primary/60 transition-colors"
+                  />
+                  <span className="text-[11px] text-[#888]">
+                    Family and friends will see this as the creator of the memorial.
+                  </span>
+                </div>
+              )}
+
+              {/* Relationship dropdown */}
+              <div className="flex flex-col gap-1.5">
+                <label htmlFor="creator-relationship" className="text-xs font-medium text-[#181925]">
+                  {firstName ? `You are ${firstName}’s…` : "You are their…"}
+                </label>
+                <div className="relative">
+                  <select
+                    id="creator-relationship"
+                    value={relationship}
+                    onChange={(e) => setRelationship(e.target.value)}
+                    className="w-full px-4 py-2.5 rounded-xl bg-[#fafafb] border border-black/[0.08] text-sm text-[#181925] outline-none focus:border-primary/60 transition-colors appearance-none cursor-pointer pr-10"
+                  >
+                    <option value="">Select relationship (optional)...</option>
+                    {RELATIONSHIP_CHOICES.map((rel) => (
+                      <option key={rel} value={rel}>
+                        {rel}
+                      </option>
                     ))}
+                  </select>
+                  <div className="absolute right-3.5 top-1/2 -translate-y-1/2 pointer-events-none text-[#888]">
+                    <ChevronDown className="size-4" />
                   </div>
-                )}
-
+                </div>
                 <span className="text-[11px] text-[#888]">
-                  This is the permanent link you will share with family and friends.
+                  You can change or hide this later.
                 </span>
               </div>
 
-              <div className="flex items-center justify-end gap-3 pt-2">
-                {memorials.length > 0 && (
-                  <button
-                    type="button"
-                    onClick={handleCancelCreate}
-                    className="px-4 py-2 rounded-full text-xs font-medium text-[#666] hover:text-[#181925] hover:bg-neutral-100 transition-colors cursor-pointer"
-                  >
-                    Cancel
-                  </button>
-                )}
-
+              {/* Action Buttons */}
+              <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-2">
                 <button
                   type="submit"
-                  disabled={isSubmitting || !fullNameInput.trim() || slugCheck.available === false}
-                  className="inline-flex items-center justify-center gap-1.5 whitespace-nowrap !rounded-full font-medium transition-all cursor-pointer border border-[color-mix(in_srgb,var(--primary)_80%,#3a3480)] bg-[color-mix(in_srgb,var(--primary)_90%,#3a3480)] text-primary-foreground shadow-[inset_0_1px_0_rgba(255,255,255,0.22),inset_0_-1px_0_rgba(58,52,128,0.30)] transform-gpu hover:bg-primary hover:border-[color-mix(in_srgb,var(--primary)_70%,#3a3480)] active:translate-y-px active:scale-[0.98] h-9 px-5 text-xs select-none disabled:opacity-50"
+                  disabled={isSubmitting || !fullNameInput.trim() || (!profileName && creatorNameInput.trim().length < 2)}
+                  className="w-full sm:w-auto inline-flex items-center justify-center gap-1.5 whitespace-nowrap !rounded-full font-medium transition-all cursor-pointer border border-[color-mix(in_srgb,var(--primary)_80%,#3a3480)] bg-[color-mix(in_srgb,var(--primary)_90%,#3a3480)] text-primary-foreground shadow-[inset_0_1px_0_rgba(255,255,255,0.22),inset_0_-1px_0_rgba(58,52,128,0.30)] transform-gpu hover:bg-primary hover:border-[color-mix(in_srgb,var(--primary)_70%,#3a3480)] active:translate-y-px active:scale-[0.98] h-10 px-6 text-xs sm:text-sm select-none disabled:opacity-50 disabled:pointer-events-none"
                 >
                   {isSubmitting ? (
-                    <span>Creating...</span>
+                    <>
+                      <Loader2 className="size-3.5 animate-spin" />
+                      <span>Creating memorial...</span>
+                    </>
                   ) : (
                     <>
-                      <span>Start their page</span>
+                      <span>{firstName ? `Create ${firstName}’s memorial` : "Create memorial"}</span>
                       <ArrowRight className="size-3.5" />
                     </>
                   )}
                 </button>
+
+                <div className="flex items-center gap-3">
+                  <button
+                    type="button"
+                    disabled={isSubmitting}
+                    onClick={() => handleCreate(undefined, true)}
+                    className="text-xs text-[#71717a] hover:text-[#181925] underline underline-offset-2 transition-colors cursor-pointer py-1"
+                  >
+                    Skip for now
+                  </button>
+                  {memorials.length > 0 && (
+                    <button
+                      type="button"
+                      onClick={handleCancelCreate}
+                      className="text-xs text-[#71717a] hover:text-[#181925] transition-colors cursor-pointer py-1"
+                    >
+                      Cancel
+                    </button>
+                  )}
+                </div>
               </div>
             </form>
           </div>
         )}
 
         {/* 2. EXISTING MEMORIALS LIST */}
-        {profileName && memorials.length > 0 && (
+        {memorials.length > 0 && (
           <div className="flex flex-col gap-4">
             {/* Complete Highlights Banner if user has unpaid memorials */}
             {memorials.some((m) => !m.is_paid) && (

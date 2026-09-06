@@ -5,9 +5,16 @@ import Link from "next/link"
 interface MemorialFooterProps {
   fullName?: string
   caretakerName?: string
+  caretakerRelationship?: string
 }
 
-export function MemorialFooter({ fullName, caretakerName }: MemorialFooterProps = {}) {
+export function MemorialFooter({
+  fullName,
+  caretakerName,
+  caretakerRelationship,
+}: MemorialFooterProps = {}) {
+  const firstName = fullName?.trim().split(/\s+/)[0]
+
   return (
     <aside
       aria-label={fullName ? `About ${fullName}'s memorial` : "Theirs branding"}
@@ -49,8 +56,11 @@ export function MemorialFooter({ fullName, caretakerName }: MemorialFooterProps 
         </span>
       </Link>
       {caretakerName && (
-        <span className="max-w-[min(70vw,18rem)] truncate rounded-full border border-black/[0.08] bg-white/90 px-3 py-1.5 text-[11px] text-[#666] shadow-[0_2px_10px_rgba(0,0,0,0.05)] backdrop-blur-md sm:text-xs">
-          Maintained by <strong className="font-medium text-[#181925]">{caretakerName}</strong>
+        <span className="max-w-[min(70vw,24rem)] truncate rounded-full border border-black/[0.08] bg-white/90 px-3 py-1.5 text-[11px] text-[#666] shadow-[0_2px_10px_rgba(0,0,0,0.05)] backdrop-blur-md sm:text-xs">
+          Created by <strong className="font-medium text-[#181925]">{caretakerName}</strong>
+          {caretakerRelationship ? (
+            <> &middot; {firstName ? `${firstName}’s ` : ""}{caretakerRelationship.toLowerCase()}</>
+          ) : null}
         </span>
       )}
     </aside>

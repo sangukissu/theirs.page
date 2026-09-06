@@ -124,7 +124,7 @@ function mapMedia(row: MemorialRow, publicDelivery = false): GalleryItem {
 }
 
 const MEMORIAL_PUBLIC_COLUMNS =
-  "id, slug, owner_id, full_name, preferred_name, birth_year, death_year, location, headline, biography, portrait_photo_url, status, privacy, is_paid, section_settings, contribution_settings, access_pin_hash"
+  "id, slug, owner_id, full_name, preferred_name, creator_relationship, birth_year, birth_month, birth_day, death_year, death_month, death_day, location, headline, biography, portrait_photo_url, status, privacy, is_paid, section_settings, contribution_settings, access_pin_hash"
 
 const MEDIA_COLUMNS =
   "id, caption, media_type, approx_year, location, album, is_pinned, url, order_index, created_at, source_memory_id"
@@ -286,6 +286,11 @@ export const getMemorialViewContext = cache(async (slug: string): Promise<Memori
       isPaid: isDemo || Boolean(memorial?.is_paid),
       isOwner,
       caretakerName,
+      caretakerRelationship: memorial?.creator_relationship || (isDemo ? "Granddaughter" : null),
+      birthMonth: memorial?.birth_month ?? null,
+      birthDay: memorial?.birth_day ?? null,
+      deathMonth: memorial?.death_month ?? null,
+      deathDay: memorial?.death_day ?? null,
       status: memorial?.status,
       privacy: memorial?.privacy,
       sectionSettings: sections,

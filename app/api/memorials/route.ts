@@ -99,10 +99,26 @@ export async function POST(req: NextRequest) {
       .select("full_name")
       .eq("user_id", user.id)
       .maybeSingle()
-    const caretakerName = cleanDisplayName(profile?.full_name, 100)
-    if (profileError || caretakerName.length < 2) {
-      return NextResponse.json({ error: "Complete your profile before creating a memorial." }, { status: 409 })
+
+    let caretakerName = cleanDisplayName(profile?.full_name, 100)
+    if (caretakerName.length < 2 && typeof body.creator_name === "string" && body.creator_name.trim().length >= 2) {
+      const cleanCreator = cleanDisplayName(body.creator_name, 100)
+      const { error: profUpdateErr } = await db
+        .from("user_profiles")
+        .update({ full_name: cleanCreator, updated_at: new Date().toISOString() })
+        .eq("user_id", user.id)
+      if (!profUpdateErr) {
+        caretakerName = cleanCreator
+      }
     }
+
+    if (caretakerName.length < 2) {
+      return NextResponse.json({ error: "Your name is required to care for this memorial." }, { status: 400 })
+    }
+
+    const creatorRelationship = typeof body.creator_relationship === "string"
+      ? cleanDisplayName(body.creator_relationship, 80)
+      : null
 
     // Normalize and validate candidate slug
     const rawRequested = desiredSlug.trim() ? desiredSlug : fullName
@@ -154,15 +170,20 @@ export async function POST(req: NextRequest) {
     }
 
     // 3. Create the memorial record
+    const insertPayload: Record<string, any> = {
+      owner_id: user.id,
+      slug: finalSlug,
+      full_name: fullName,
+      status: "draft",
+      privacy: "unlisted",
+    }
+    if (creatorRelationship) {
+      insertPayload.creator_relationship = creatorRelationship
+    }
+
     const { data: newMemorial, error } = await db
       .from("memorials")
-      .insert({
-        owner_id: user.id,
-        slug: finalSlug,
-        full_name: fullName,
-        status: "draft",
-        privacy: "unlisted",
-      })
+      .insert(insertPayload)
       .select()
       .single()
 
@@ -170,15 +191,19 @@ export async function POST(req: NextRequest) {
       // Catch concurrent unique collision
       const suffix = Math.floor(10000 + Math.random() * 90000)
       const fallbackSlug = `${normalized.slice(0, 48)}-${suffix}`
+      const retryPayload: Record<string, any> = {
+        owner_id: user.id,
+        slug: fallbackSlug,
+        full_name: fullName,
+        status: "draft",
+        privacy: "unlisted",
+      }
+      if (creatorRelationship) {
+        retryPayload.creator_relationship = creatorRelationship
+      }
       const retry = await db
         .from("memorials")
-        .insert({
-          owner_id: user.id,
-          slug: fallbackSlug,
-          full_name: fullName,
-          status: "draft",
-          privacy: "unlisted",
-        })
+        .insert(retryPayload)
         .select()
         .single()
 

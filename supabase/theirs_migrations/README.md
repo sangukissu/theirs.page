@@ -62,6 +62,11 @@ Run these SQL scripts in numerical order in your new Supabase project's **SQL Ed
    - Links gallery projections of story photos to the originating memory without duplicating R2 storage.
    - Creates a partial index on `media_items(source_memory_id)`.
 
+10. **`19_memorial_exact_dates_and_relationship.sql`**
+    - Adds `creator_relationship` to `memorials` (per-memorial relationship, not on `user_profiles`).
+    - Adds nullable `birth_month`, `birth_day`, `death_month`, and `death_day` to `memorials` for progressive date precision while preserving forgiving year-only defaults.
+    - Adds `relationship` to `collaborators` for co-admin / family steward attribution.
+
 ---
 
 ## Environment Variables Mapping

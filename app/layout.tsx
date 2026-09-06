@@ -52,6 +52,9 @@ export const metadata: Metadata = {
     index: true,
     follow: true,
   },
+  appleWebApp: {
+    title: "Theirs",
+  },
 }
 
 export default function RootLayout({
@@ -65,6 +68,7 @@ export default function RootLayout({
       className={`${interTight.variable} ${inter.variable} ${GeistMono.variable}`}
     >
       <head>
+        <meta name="apple-mobile-web-app-title" content="Theirs" />
         <meta name="theme-color" content="#f6f6f6" />
         <meta name="color-scheme" content="light" />
         <link rel="icon" type="image/svg+xml" href="/placeholder-logo.svg" />

@@ -7,7 +7,7 @@ import { LifePanorama } from "./life-panorama"
 
 export function TheirsHero() {
   const router = useRouter()
-  const [name, setName] = useState("Robert Carter")
+  const [name, setName] = useState("")
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()

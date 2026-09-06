@@ -76,6 +76,11 @@ export interface Memorial {
   headline: string | null
   biography: string | null
   location: string | null
+  creator_relationship?: string | null
+  birth_month?: number | null
+  birth_day?: number | null
+  death_month?: number | null
+  death_day?: number | null
   portrait_photo_url: string | null
   privacy: PrivacyMode
   access_pin_hash: string | null
@@ -96,6 +101,7 @@ export interface Collaborator {
   user_id: string | null
   email: string
   role: CollaboratorRole
+  relationship?: string | null
   invitation_accepted: boolean
   is_trusted: boolean
   created_at: string
@@ -226,6 +232,8 @@ export interface MemorialWithDetails extends Memorial {
 export interface CreateMemorialInput {
   full_name: string
   preferred_name?: string | null
+  creator_name?: string | null
+  creator_relationship?: string | null
   portrait_photo_url?: string | null
   headline?: string | null
   birth_year?: number | null
@@ -239,8 +247,13 @@ export interface CreateMemorialInput {
 export interface UpdateMemorialInput {
   full_name?: string
   preferred_name?: string | null
+  creator_relationship?: string | null
   birth_year?: number | null
+  birth_month?: number | null
+  birth_day?: number | null
   death_year?: number | null
+  death_month?: number | null
+  death_day?: number | null
   headline?: string | null
   biography?: string | null
   location?: string | null
