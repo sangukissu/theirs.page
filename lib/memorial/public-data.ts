@@ -104,9 +104,6 @@ function mapMedia(row: MemorialRow, publicDelivery = false): GalleryItem {
     album: row.album || undefined,
     isPinned: Boolean(row.is_pinned),
     mediaUrl: resolveMediaUrl(row.url, { publicDelivery }),
-    posterUrl: row.poster_url ? resolveMediaUrl(row.poster_url, { publicDelivery }) : undefined,
-    addedBy: row.uploaded_by || undefined,
-    people: row.tagged_people ? row.tagged_people.split(",").map((item: string) => item.trim()).filter(Boolean) : undefined,
   }
 }
 
@@ -114,7 +111,7 @@ const MEMORIAL_PUBLIC_COLUMNS =
   "id, slug, owner_id, full_name, preferred_name, birth_year, death_year, location, headline, biography, portrait_photo_url, status, privacy, is_paid, section_settings, contribution_settings, access_pin_hash"
 
 const MEDIA_COLUMNS =
-  "id, caption, media_type, approx_year, location, album, is_pinned, url, poster_url, uploaded_by, tagged_people, order_index, created_at"
+  "id, caption, media_type, approx_year, location, album, is_pinned, url, order_index, created_at"
 
 const STORY_COLUMNS =
   "id, author_name, author_relationship, approx_year, created_at, location, story, photo_url, photo_urls"
@@ -130,6 +127,10 @@ export async function loadGalleryItem(context: MemorialViewContext, mediaId?: st
   if (context.identity.isDemo) return DEMO_GALLERY.find((item) => item.id === mediaId) || null
   if (!context.db || !context.memorial?.id) return null
   const result = await context.db.from("media_items").select(MEDIA_COLUMNS).eq("memorial_id", context.memorial.id).eq("id", mediaId).maybeSingle()
+  if (result.error) {
+    console.error("Load gallery item failed:", result.error)
+    throw result.error
+  }
   const publicDelivery = context.memorial?.status === "published" && context.memorial?.privacy !== "private"
   return result.data ? mapMedia(result.data, publicDelivery) : null
 }
@@ -202,22 +203,21 @@ export const getMemorialViewContext = cache(async (slug: string): Promise<Memori
 
   if (!memorial && !isDemo) return null
 
-  // Hot path: Published public or unlisted memorials skip auth completely.
-  // Anonymous visitors never incur supabase.auth.getUser() overhead.
+  const cookieStore = await cookies()
+  const hasAuthCookie = cookieStore.getAll().some((c) => c.name.startsWith("sb-") && c.name.includes("-auth-token"))
+
+  // Hot path: Truly anonymous visitors (no Supabase session cookie) on published
+  // public/unlisted memorials skip auth completely. If a session cookie exists,
+  // we resolve the user to preserve caretaker/owner permissions.
   let isOwner = false
   const isPublishedPublicOrUnlisted = memorial?.status === "published" && memorial?.privacy !== "private"
 
-  if (!isPublishedPublicOrUnlisted && memorial) {
-    // Only resolve auth when required:
-    // 1. Private memorial with PIN gate
-    // 2. Draft/archived memorial for owner preview
+  if (memorial && (hasAuthCookie || !isPublishedPublicOrUnlisted)) {
     if (!serverClient) serverClient = await createClient()
     const { data: { user } } = await serverClient.auth.getUser().catch(() => ({ data: { user: null } }))
     isOwner = Boolean(user?.id && memorial.owner_id === user.id)
     if (memorial.status !== "published" && !isOwner) return null
   }
-
-  const cookieStore = await cookies()
   const pinUnlocked = Boolean(
     memorial?.privacy === "private" &&
       verifyPinAccessToken(
@@ -355,6 +355,10 @@ export async function loadBrowsePage<T>(context: MemorialViewContext, collection
       .order("id", { ascending: true })
       .range(offset, offset + pageSize - 1)
     const result = await query
+    if (result.error) {
+      console.error("Public gallery query failed:", result.error)
+      throw result.error
+    }
     const items = (result.data || []).map((row: MemorialRow) => mapMedia(row, publicDelivery))
     const total = result.count || 0
     const nextOffset = offset + items.length
@@ -388,6 +392,10 @@ export async function loadBrowsePage<T>(context: MemorialViewContext, collection
       .range(offset, offset + pageSize - 1)
     if (!context.canSeeFamilyOnly) query = query.eq("visibility", "everyone")
     const result = await query
+    if (result.error) {
+      console.error("Public memories query failed:", result.error)
+      throw result.error
+    }
     const items = (result.data || []).map((row: MemorialRow) => mapStory(row, publicDelivery))
     const total = result.count || 0
     const nextOffset = offset + items.length
@@ -399,6 +407,10 @@ export async function loadBrowsePage<T>(context: MemorialViewContext, collection
     let query = db.from("timeline_events").select(TIMELINE_COLUMNS, { count: "exact" }).eq("memorial_id", memorialId).lte("created_at", cursor.snapshot)
     if (options.decade) query = query.gte("year", options.decade).lt("year", options.decade + 10)
     const result = await query.order("year", { ascending: true }).order("order_index", { ascending: true }).order("id", { ascending: true }).range(offset, offset + pageSize - 1)
+    if (result.error) {
+      console.error("Public timeline query failed:", result.error)
+      throw result.error
+    }
     const items = (result.data || []).map((row: MemorialRow) => mapTimeline(row, publicDelivery))
     const total = result.count || 0
     const nextOffset = offset + items.length
@@ -412,6 +424,10 @@ export async function loadBrowsePage<T>(context: MemorialViewContext, collection
     .range(offset, offset + pageSize - 1)
   if (!context.canSeeFamilyOnly) memoryQuery = memoryQuery.eq("visibility", "everyone")
   const memoryResult = await memoryQuery
+  if (memoryResult.error) {
+    console.error("Public tributes query failed:", memoryResult.error)
+    throw memoryResult.error
+  }
   const items = (memoryResult.data || []).map(mapTribute)
   const total = memoryResult.count || 0
   const nextOffset = offset + items.length

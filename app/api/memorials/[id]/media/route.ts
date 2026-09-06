@@ -1,9 +1,10 @@
+import crypto from "crypto"
 import { NextRequest, NextResponse } from "next/server"
 import { createClient } from "@/utils/supabase/server"
 import { getSupabaseAdminSafe } from "@/utils/supabase/admin"
 import { assertMemorialAdmin } from "@/lib/memorial-auth"
 import { assertMediaQuota } from "@/lib/paywall"
-import { deleteR2Object, extractManagedR2Key } from "@/lib/r2"
+import { copyR2Object, deleteR2Object, extractManagedR2Key, resolveMediaUrl } from "@/lib/r2"
 
 interface RouteContext {
   params: Promise<{ id: string }>
@@ -34,14 +35,26 @@ export async function POST(req: NextRequest, context: RouteContext) {
     }
 
     const body = await req.json()
-    const { url, media_type, caption, approx_year, location, album, is_pinned, order_index } = body
+    const { url, stagingKey, media_type, caption, approx_year, location, album, is_pinned, order_index } = body
 
-    if (typeof url !== "string" || !url) {
-      return NextResponse.json({ error: "Media URL is required" }, { status: 400 })
+    const inputKey = extractManagedR2Key(stagingKey || url)
+    if (!inputKey) {
+      return NextResponse.json({ error: "Media URL or staging key is required" }, { status: 400 })
     }
-    const storageKey = extractManagedR2Key(url)
-    if (!storageKey?.startsWith(`memorials/${authCheck.memorial.id}/`)) {
+
+    const isStaging = inputKey.startsWith(`dashboard-staging/${authCheck.memorial.id}/`)
+    const isPermanent = inputKey.startsWith(`memorials/${authCheck.memorial.id}/`)
+    if (!isStaging && !isPermanent) {
       return NextResponse.json({ error: "Media does not belong to this memorial." }, { status: 400 })
+    }
+
+    let finalKey = inputKey
+    if (isStaging) {
+      const filename = inputKey.split("/").pop() || "upload"
+      const timestamp = Date.now()
+      const randomId = crypto.randomUUID()
+      finalKey = `memorials/${authCheck.memorial.id}/gallery/${timestamp}_${randomId}_${filename}`
+      await copyR2Object(inputKey, finalKey)
     }
 
     const db = getSupabaseAdminSafe() || supabase
@@ -59,6 +72,9 @@ export async function POST(req: NextRequest, context: RouteContext) {
     )
 
     if (!quotaCheck.allowed) {
+      if (isStaging) {
+        await deleteR2Object(finalKey).catch(() => {})
+      }
       return NextResponse.json(
         { error: quotaCheck.error },
         { status: quotaCheck.status || 402 }
@@ -69,7 +85,7 @@ export async function POST(req: NextRequest, context: RouteContext) {
       .from("media_items")
       .insert({
         memorial_id: memorialId,
-        url: storageKey,
+        url: finalKey,
         media_type: media_type || "image",
         caption: caption?.trim() || null,
         approx_year: approx_year ? Number(approx_year) : null,
@@ -83,10 +99,30 @@ export async function POST(req: NextRequest, context: RouteContext) {
 
     if (error) {
       console.error("Media insert error:", error)
+      if (isStaging) {
+        await deleteR2Object(finalKey).catch(() => {})
+      }
+      if (error.message?.includes("5-photo limit") || error.code === "P0001") {
+        return NextResponse.json(
+          { error: "This memorial has reached the 5-photo limit on the free plan." },
+          { status: 402 }
+        )
+      }
       return NextResponse.json({ error: "Failed to save media item." }, { status: 500 })
     }
 
-    return NextResponse.json({ success: true, mediaItem })
+    // Insert succeeded: Remove the temporary staging object
+    if (isStaging) {
+      await deleteR2Object(inputKey).catch(() => {})
+    }
+
+    return NextResponse.json({
+      success: true,
+      mediaItem: {
+        ...mediaItem,
+        url: resolveMediaUrl(finalKey),
+      },
+    })
   } catch (err: any) {
     console.error("Media POST error:", err)
     return NextResponse.json({ error: "Internal server error" }, { status: 500 })

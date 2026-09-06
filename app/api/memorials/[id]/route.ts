@@ -3,7 +3,12 @@ import { createClient } from "@/utils/supabase/server"
 import { getSupabaseAdminSafe } from "@/utils/supabase/admin"
 import { assertMemorialAdmin, assertMemorialOwner } from "@/lib/memorial-auth"
 import { canAccessFeature } from "@/lib/paywall"
-import { deleteR2MemorialFolder, extractManagedR2Key } from "@/lib/r2"
+import {
+  copyR2Object,
+  deleteR2Object,
+  deleteR2MemorialFolder,
+  extractManagedR2Key,
+} from "@/lib/r2"
 import {
   normalizeMemorialSlug,
   memorialSlugSchema,
@@ -154,13 +159,28 @@ export async function PATCH(req: NextRequest, context: RouteContext) {
         const portraitKey = typeof body.portrait_photo_url === "string"
           ? extractManagedR2Key(body.portrait_photo_url)
           : null
-        if (!portraitKey?.startsWith(`memorials/${authCheck.memorial.id}/`)) {
+        if (!portraitKey) {
           return NextResponse.json(
             { error: "Portrait photograph does not belong to this memorial." },
             { status: 400 }
           )
         }
-        updates.portrait_photo_url = portraitKey
+
+        if (portraitKey.startsWith(`dashboard-staging/${authCheck.memorial.id}/`)) {
+          // Promote from dashboard staging to permanent memorial portraits
+          const ext = portraitKey.split(".").pop() || "jpg"
+          const permanentKey = `memorials/${authCheck.memorial.id}/portraits/${crypto.randomUUID()}.${ext}`
+          await copyR2Object(portraitKey, permanentKey)
+          await deleteR2Object(portraitKey).catch(() => {})
+          updates.portrait_photo_url = permanentKey
+        } else if (portraitKey.startsWith(`memorials/${authCheck.memorial.id}/`)) {
+          updates.portrait_photo_url = portraitKey
+        } else {
+          return NextResponse.json(
+            { error: "Portrait photograph does not belong to this memorial." },
+            { status: 400 }
+          )
+        }
       }
     }
 

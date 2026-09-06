@@ -38,6 +38,7 @@ export function TimelineTab({
   const [descInput, setDescInput] = useState("")
   const [locationInput, setLocationInput] = useState("")
   const [photoUrl, setPhotoUrl] = useState<string | null>(null)
+  const [photoPreviewUrl, setPhotoPreviewUrl] = useState<string | null>(null)
   const [isUploadingPhoto, setIsUploadingPhoto] = useState(false)
   const fileInputRef = useRef<HTMLInputElement | null>(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
@@ -79,6 +80,9 @@ export function TimelineTab({
     if (!file) return
 
     setIsUploadingPhoto(true)
+    const preview = URL.createObjectURL(file)
+    setPhotoPreviewUrl(preview)
+
     try {
       // 1. Request presigned upload URL from server
       const presignedRes = await fetch("/api/r2/presigned-upload-url", {
@@ -110,11 +114,11 @@ export function TimelineTab({
         throw new Error("Failed to upload photo directly to storage")
       }
 
-      if (presignedData.publicUrl) {
-        setPhotoUrl(presignedData.publicUrl)
-      }
+      const uploadKey = presignedData.stagingKey || presignedData.key
+      setPhotoUrl(uploadKey)
     } catch (err) {
       console.error("Timeline photo upload failed:", err)
+      setPhotoPreviewUrl(null)
     } finally {
       setIsUploadingPhoto(false)
     }
@@ -140,12 +144,13 @@ export function TimelineTab({
 
       const data = await res.json()
       if (res.ok && data.event) {
-        onAddEvent({ ...data.event, photo_url: photoUrl })
+        onAddEvent(data.event)
         setYearInput("")
         setTitleInput("")
         setDescInput("")
         setLocationInput("")
         setPhotoUrl(null)
+        setPhotoPreviewUrl(null)
         if (typeof window !== "undefined") {
           try {
             localStorage.removeItem(DRAFT_KEY)
@@ -301,14 +306,17 @@ export function TimelineTab({
           {photoUrl ? (
             <div className="inline-flex items-center gap-2 p-1.5 pr-2.5 rounded-xl bg-[#fafafb] border border-black/[0.08]">
               <img
-                src={photoUrl}
+                src={photoPreviewUrl || photoUrl}
                 alt="Milestone preview"
                 className="size-7 rounded-lg object-cover"
               />
               <span className="text-[11px] text-[#444] font-medium">Photo attached</span>
               <button
                 type="button"
-                onClick={() => setPhotoUrl(null)}
+                onClick={() => {
+                  setPhotoUrl(null)
+                  setPhotoPreviewUrl(null)
+                }}
                 className="size-5 rounded-full hover:bg-rose-50 text-neutral-400 hover:text-rose-600 flex items-center justify-center transition-colors cursor-pointer"
                 title="Remove photo"
               >

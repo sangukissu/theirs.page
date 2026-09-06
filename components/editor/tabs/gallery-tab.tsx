@@ -218,6 +218,7 @@ export function GalleryTab({
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
+            stagingKey: presignedData.stagingKey || presignedData.key,
             url: presignedData.key,
             media_type: presignedData.mediaType,
             caption: null,
@@ -235,10 +236,7 @@ export function GalleryTab({
         }
 
         // 4. Immediately load into dashboard UI!
-        onAddMedia({
-          ...dbData.mediaItem,
-          url: presignedData.publicUrl,
-        })
+        onAddMedia(dbData.mediaItem)
 
         // Clean up preview object URL
         try {

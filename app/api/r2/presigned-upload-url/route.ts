@@ -156,21 +156,18 @@ export async function POST(req: NextRequest) {
       const mediaType = detectMediaType(filename, contentType)
 
       if (safeFolder === "portraits" || safeFolder === "timeline") {
-        if (!MEMORIAL_ALLOWED_IMAGE_TYPES.has(contentType) && !contentType.startsWith("image/")) {
-          return NextResponse.json({ error: "Only image files (JPEG, PNG, WebP) are supported for portraits and timeline events." }, { status: 400 })
+        if (!MEMORIAL_ALLOWED_IMAGE_TYPES.has(contentType)) {
+          return NextResponse.json({ error: "Only standard image files (JPEG, PNG, WebP) are supported for portraits and timeline events." }, { status: 400 })
         }
         if (fileSize < 1 || fileSize > MAX_MEMORIAL_PORTRAIT_BYTES) {
           return NextResponse.json({ error: "Image file must be under 15MB." }, { status: 400 })
         }
       } else {
-        // Gallery media validation
+        // Gallery media validation: Strict allowlists only (no startsWith wildcard)
         const isAllowedMedia =
           MEMORIAL_ALLOWED_IMAGE_TYPES.has(contentType) ||
           MEMORIAL_ALLOWED_AUDIO_TYPES.has(contentType) ||
-          MEMORIAL_ALLOWED_VIDEO_TYPES.has(contentType) ||
-          contentType.startsWith("image/") ||
-          contentType.startsWith("audio/") ||
-          contentType.startsWith("video/")
+          MEMORIAL_ALLOWED_VIDEO_TYPES.has(contentType)
 
         if (!isAllowedMedia) {
           return NextResponse.json({ error: "Unsupported media format. Please upload standard photos, audio notes, or videos." }, { status: 400 })
@@ -206,21 +203,21 @@ export async function POST(req: NextRequest) {
         )
       }
 
-      const timestamp = Date.now()
       const randomId = crypto.randomUUID()
       const cleanFilename = filename.replace(/[^a-zA-Z0-9.-]/g, "_").slice(-180)
-      const sanitizedFolder = safeFolder.replace(/[^a-zA-Z0-9_-]/g, "")
-      const key = `memorials/${authCheck.memorial.id}/${sanitizedFolder}/${timestamp}_${randomId}_${cleanFilename}`
+      // Upload directly into private dashboard-staging/ prefix.
+      // Promoted into permanent memorials/ storage only upon successful DB record creation.
+      const stagingKey = `dashboard-staging/${authCheck.memorial.id}/${randomId}/${cleanFilename}`
 
-      const uploadUrl = await getR2PresignedUploadUrl(key, contentType, 600, fileSize)
+      const uploadUrl = await getR2PresignedUploadUrl(stagingKey, contentType, 600, fileSize)
 
       return NextResponse.json({
         success: true,
         uploadUrl,
-        key,
+        key: stagingKey,
+        stagingKey,
         contentType,
         mediaType,
-        publicUrl: `/api/media?key=${encodeURIComponent(key)}`,
       })
     }
 

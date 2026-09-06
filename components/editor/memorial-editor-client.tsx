@@ -225,6 +225,17 @@ export function MemorialEditorClient({
         })
 
         if (res.ok) {
+          const resData = await res.json().catch(() => ({}))
+          if (resData.memorial?.portrait_photo_url && resData.memorial.portrait_photo_url !== currentForm.portrait_photo_url) {
+            currentForm = {
+              ...currentForm,
+              portrait_photo_url: resData.memorial.portrait_photo_url,
+            }
+            setForm((prev) => ({
+              ...prev,
+              portrait_photo_url: resData.memorial.portrait_photo_url,
+            }))
+          }
           setSaveStatus("saved")
           setLastSavedAt(new Date())
           try {

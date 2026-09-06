@@ -12,6 +12,7 @@ export const maxDuration = 60
 const TEMP_PREFIXES = [
   "temp/restorations/",
   "contribution-staging/",
+  "dashboard-staging/",
 ]
 
 // Keep temp objects for this long before deleting, so in-flight uploads and

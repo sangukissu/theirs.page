@@ -365,8 +365,17 @@ export async function deleteR2PrefixOlderThan(
  */
 export async function deleteR2MemorialFolder(memorialId: string): Promise<void> {
   if (!memorialId) return;
+  const prefixes = [
+    `memorials/${memorialId}/`,
+    `originals/${memorialId}/`,
+    `quarantine/${memorialId}/`,
+    `contribution-staging/${memorialId}/`,
+    `dashboard-staging/${memorialId}/`,
+  ];
   try {
-    await deleteR2PrefixOlderThan(`memorials/${memorialId}/`, 0);
+    await Promise.allSettled(
+      prefixes.map((prefix) => deleteR2PrefixOlderThan(prefix, 0))
+    );
   } catch (err) {
     console.error(`Failed to clean up R2 objects for memorial ${memorialId}:`, err);
   }
@@ -410,6 +419,7 @@ export function resolveMediaUrl(
     if (
       managedKey.startsWith("quarantine/") ||
       managedKey.startsWith("contribution-staging/") ||
+      managedKey.startsWith("dashboard-staging/") ||
       managedKey.startsWith("originals/")
     ) return ""
     const publicEndpoint = options.publicDelivery ? getPublicMediaEndpoint() : null
@@ -440,7 +450,7 @@ export function resolveMediaUrl(
 
 export function extractManagedR2Key(rawUrl: string | null | undefined): string | null {
   if (!rawUrl) return null
-  if (/^(memorials|quarantine|contribution-staging|originals|uploads|images|videos)\//.test(rawUrl)) {
+  if (/^(memorials|quarantine|contribution-staging|dashboard-staging|originals|uploads|images|videos)\//.test(rawUrl)) {
     return rawUrl.replace(/^\/+/, "")
   }
 

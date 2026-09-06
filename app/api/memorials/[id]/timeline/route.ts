@@ -3,7 +3,12 @@ import { createClient } from "@/utils/supabase/server"
 import { getSupabaseAdminSafe } from "@/utils/supabase/admin"
 import { assertMemorialAdmin } from "@/lib/memorial-auth"
 import { canAccessFeature } from "@/lib/paywall"
-import { extractManagedR2Key } from "@/lib/r2"
+import {
+  copyR2Object,
+  deleteR2Object,
+  extractManagedR2Key,
+  resolveMediaUrl,
+} from "@/lib/r2"
 
 interface RouteContext {
   params: Promise<{ id: string }>
@@ -41,9 +46,27 @@ export async function POST(req: NextRequest, context: RouteContext) {
     if (!year || !title) {
       return NextResponse.json({ error: "Year and title are required" }, { status: 400 })
     }
-    const photoKey = photo_url ? extractManagedR2Key(photo_url) : null
-    if (photo_url && !photoKey?.startsWith(`memorials/${authCheck.memorial.id}/`)) {
-      return NextResponse.json({ error: "Timeline photograph does not belong to this memorial." }, { status: 400 })
+
+    let finalPhotoKey: string | null = null
+    let stagingKeyToDelete: string | null = null
+
+    if (photo_url) {
+      const photoKey = extractManagedR2Key(photo_url)
+      if (!photoKey) {
+        return NextResponse.json({ error: "Invalid timeline photo URL." }, { status: 400 })
+      }
+
+      if (photoKey.startsWith(`dashboard-staging/${authCheck.memorial.id}/`)) {
+        // Promote from dashboard staging to permanent timeline folder
+        const ext = photoKey.split(".").pop() || "jpg"
+        finalPhotoKey = `memorials/${authCheck.memorial.id}/timeline/${crypto.randomUUID()}.${ext}`
+        await copyR2Object(photoKey, finalPhotoKey)
+        stagingKeyToDelete = photoKey
+      } else if (photoKey.startsWith(`memorials/${authCheck.memorial.id}/`)) {
+        finalPhotoKey = photoKey
+      } else {
+        return NextResponse.json({ error: "Timeline photograph does not belong to this memorial." }, { status: 400 })
+      }
     }
 
     const db = getSupabaseAdminSafe() || supabase
@@ -55,17 +78,31 @@ export async function POST(req: NextRequest, context: RouteContext) {
         title: title.trim(),
         description: description?.trim() || null,
         location: location?.trim() || null,
-        photo_url: photoKey,
+        photo_url: finalPhotoKey,
       })
       .select()
       .single()
 
     if (error) {
+      if (stagingKeyToDelete && finalPhotoKey) {
+        await deleteR2Object(finalPhotoKey).catch(() => {})
+      }
       console.error("Timeline insert error:", error)
       return NextResponse.json({ error: "Failed to add timeline event." }, { status: 500 })
     }
 
-    return NextResponse.json({ success: true, event })
+    // Insert succeeded: Remove the temporary staging object
+    if (stagingKeyToDelete) {
+      await deleteR2Object(stagingKeyToDelete).catch(() => {})
+    }
+
+    return NextResponse.json({
+      success: true,
+      event: {
+        ...event,
+        photo_url: resolveMediaUrl(finalPhotoKey),
+      },
+    })
   } catch (err: any) {
     console.error("Timeline POST error:", err)
     return NextResponse.json({ error: "Internal server error" }, { status: 500 })
@@ -95,6 +132,22 @@ export async function DELETE(req: NextRequest, context: RouteContext) {
     }
 
     const db = getSupabaseAdminSafe() || supabase
+
+    // Check for associated photo to clean up from R2
+    const { data: existingEvent } = await db
+      .from("timeline_events")
+      .select("photo_url")
+      .eq("id", eventId)
+      .eq("memorial_id", memorialId)
+      .maybeSingle()
+
+    if (existingEvent?.photo_url) {
+      const key = extractManagedR2Key(existingEvent.photo_url)
+      if (key?.startsWith(`memorials/${memorialId}/`)) {
+        await deleteR2Object(key).catch(() => {})
+      }
+    }
+
     const { error } = await db
       .from("timeline_events")
       .delete()

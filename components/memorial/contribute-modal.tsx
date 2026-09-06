@@ -96,8 +96,41 @@ export function ContributeModal({
   const [isUploadingMedia, setIsUploadingMedia] = useState(false)
   const [mediaUploadError, setMediaUploadError] = useState<string | null>(null)
 
-  const isPhotosFull = !isPaid && (photoCount ?? 0) >= 5
-  const remainingNewPhotoSlots = isPaid ? 3 : Math.max(0, 5 - (photoCount ?? 0))
+  const [lazyLimits, setLazyLimits] = useState<{
+    photoCount: number
+    canAddPhoto: boolean
+    remainingPhotoSlots: number
+  } | null>(null)
+
+  useEffect(() => {
+    if (!isOpen) return
+    if (!isPaid && photoCount === undefined && (memorialId || slug)) {
+      let isMounted = true
+      fetch(`/api/memorials/${memorialId || slug}/contribution-limits`)
+        .then((res) => (res.ok ? res.json() : null))
+        .then((data) => {
+          if (isMounted && data && typeof data.photo_count === "number") {
+            setLazyLimits({
+              photoCount: data.photo_count,
+              canAddPhoto: data.can_add_photo,
+              remainingPhotoSlots: data.remaining_photo_slots,
+            })
+          }
+        })
+        .catch(() => {})
+      return () => {
+        isMounted = false
+      }
+    }
+  }, [isOpen, isPaid, photoCount, memorialId, slug])
+
+  const effectivePhotoCount = lazyLimits ? lazyLimits.photoCount : photoCount
+  const isPhotosFull = !isPaid && effectivePhotoCount !== undefined && effectivePhotoCount >= 5
+  const remainingNewPhotoSlots = isPaid
+    ? 3
+    : effectivePhotoCount !== undefined
+    ? Math.max(0, 5 - effectivePhotoCount)
+    : 5
   const newMemoryPhotoCount = memoryPhotos.filter((photo) => Boolean(photo.mediaRef)).length
   const canAddMemoryPhoto = memoryPhotos.length < 3 && newMemoryPhotoCount < remainingNewPhotoSlots
   const firstName = memorialName.split(" ")[0] || memorialName
@@ -154,7 +187,12 @@ export function ContributeModal({
     if (isOpen) {
       if (initialType) {
         const resolvedType = initialType === "message" ? "tribute" : initialType
-        setSelectedType(resolvedType)
+        if (resolvedType === "photo" && isPhotosFull) {
+          setSelectedType(null)
+          setError("This memorial has reached its 5-photograph limit on the free plan.")
+        } else {
+          setSelectedType(resolvedType)
+        }
       } else {
         setSelectedType(null)
       }
@@ -179,7 +217,7 @@ export function ContributeModal({
       setError(null)
       setMediaUploadError(null)
     }
-  }, [isOpen, initialType, initialPhotoUrl, initialPhotoTitle, initialMediaId, isPaid, photoCount])
+  }, [isOpen, initialType, initialPhotoUrl, initialPhotoTitle, initialMediaId, isPaid, photoCount, isPhotosFull])
 
   const getUploadAuthorization = async (file: File): Promise<string> => {
     if (uploadAuthorization) return uploadAuthorization
@@ -231,6 +269,10 @@ export function ContributeModal({
 
   const handleFileSelect = async (file: File) => {
     if (!file) return
+    if (selectedType === "photo" && isPhotosFull) {
+      setMediaUploadError("This memorial has reached its 5-photograph limit on the free plan.")
+      return
+    }
     setIsUploadingMedia(true)
     setMediaUploadError(null)
 

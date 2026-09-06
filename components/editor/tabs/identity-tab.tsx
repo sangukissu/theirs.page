@@ -28,6 +28,7 @@ export function IdentityTab({
 }: IdentityTabProps) {
   const [isUploading, setIsUploading] = useState(false)
   const [uploadError, setUploadError] = useState<string | null>(null)
+  const [localPreviewUrl, setLocalPreviewUrl] = useState<string | null>(null)
 
   // Direct upload handler for portrait photo
   const handlePortraitUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -36,6 +37,9 @@ export function IdentityTab({
 
     setIsUploading(true)
     setUploadError(null)
+
+    const preview = URL.createObjectURL(file)
+    setLocalPreviewUrl(preview)
 
     try {
       // 1. Request presigned upload URL from server
@@ -68,10 +72,12 @@ export function IdentityTab({
         throw new Error("Failed to upload photo directly to storage")
       }
 
-      onChange("portrait_photo_url", presignedData.publicUrl)
+      const uploadKey = presignedData.stagingKey || presignedData.key
+      onChange("portrait_photo_url", uploadKey)
     } catch (err: any) {
       console.error("Portrait upload error:", err)
       setUploadError(err.message || "Upload failed")
+      setLocalPreviewUrl(null)
     } finally {
       setIsUploading(false)
     }
@@ -90,7 +96,16 @@ export function IdentityTab({
       <div className="flex flex-col sm:flex-row items-start sm:items-center gap-6 p-5 rounded-2xl bg-white border border-black/[0.07]">
         <div className="size-24 rounded-2xl overflow-hidden bg-neutral-100 border border-black/[0.08] relative shrink-0 shadow-xs">
           <img
-            src={portraitUrl || "/memorial-family-portrait-grandfather.jpg"}
+            src={
+              localPreviewUrl ||
+              (portraitUrl
+                ? portraitUrl.startsWith("http://") ||
+                  portraitUrl.startsWith("https://") ||
+                  portraitUrl.startsWith("/")
+                  ? portraitUrl
+                  : `/api/media?key=${encodeURIComponent(portraitUrl)}`
+                : "/memorial-family-portrait-grandfather.jpg")
+            }
             alt={fullName || "Portrait"}
             className="size-full object-cover"
           />

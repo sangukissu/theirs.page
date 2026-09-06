@@ -215,6 +215,43 @@ export async function PATCH(req: NextRequest, context: RouteContext) {
           { status: 409 }
         )
       }
+
+      // Pre-check Free tier quota before promoting media files from quarantine
+      if (records.length > 0) {
+        const { data: memorialRow } = await db
+          .from("memorials")
+          .select("is_paid")
+          .eq("id", memorialId)
+          .maybeSingle()
+
+        if (!memorialRow?.is_paid) {
+          const hasAudioOrVideo = records.some((r) => {
+            const type = mediaTypeForMime(r.mime)
+            return type === "audio" || type === "video"
+          })
+          if (hasAudioOrVideo) {
+            return NextResponse.json(
+              { error: "Audio and video contributions require the Complete plan. Please upgrade to approve this submission." },
+              { status: 402 }
+            )
+          }
+
+          const { count: currentImageCount } = await db
+            .from("media_items")
+            .select("id", { count: "exact", head: true })
+            .eq("memorial_id", memorialId)
+            .eq("media_type", "image")
+
+          const newImages = records.filter((r) => mediaTypeForMime(r.mime) === "image").length
+          if ((currentImageCount || 0) + newImages > 5) {
+            return NextResponse.json(
+              { error: `This memorial has reached the 5-photo limit on the free plan (${currentImageCount || 0}/5 used). Upgrade to Complete to approve additional photographs.` },
+              { status: 402 }
+            )
+          }
+        }
+      }
+
       const replacements = new Map<string, string>()
       const updatedRecords: ContributionMediaRecord[] = []
       const copiedSources: string[] = []
@@ -275,7 +312,7 @@ export async function PATCH(req: NextRequest, context: RouteContext) {
         const { data: existing } = await db.from("media_items")
           .select("id").eq("memorial_id", memorialId).eq("url", record.display_key).maybeSingle()
         if (!existing) {
-          await db.from("media_items").insert({
+          const { error: insertErr } = await db.from("media_items").insert({
             memorial_id: memorialId,
             media_type: mediaTypeForMime(record.mime),
             url: record.display_key,
@@ -283,6 +320,15 @@ export async function PATCH(req: NextRequest, context: RouteContext) {
             approx_year: memory.approx_year || null,
             album: "Community Memories",
           })
+          if (insertErr) {
+            console.error("Media insert error on approval:", insertErr)
+            if (insertErr.message?.includes("5-photo limit") || insertErr.code === "P0001") {
+              return NextResponse.json(
+                { error: "This memorial has reached the 5-photo limit on the free plan. Upgrade to Complete to approve additional photographs." },
+                { status: 402 }
+              )
+            }
+          }
         }
       }
 

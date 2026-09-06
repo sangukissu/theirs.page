@@ -16,7 +16,7 @@ In the Cloudflare Dashboard:
   {
     "AllowedOrigins": [
       "https://theirs.page",
-      "https://*.theirs.page",
+      "https://www.theirs.page",
       "http://localhost:3000",
       "http://127.0.0.1:3000",
       "http://localhost:8787",

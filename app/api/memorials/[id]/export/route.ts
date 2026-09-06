@@ -216,6 +216,21 @@ Thank you for trusting Theirs to help preserve ${memorial.full_name}'s memory.
 
     const mediaItems = mediaRes.data || []
 
+    // Build lookup map from community display keys to untouched high-res original keys
+    const displayToOriginalKeyMap = new Map<string, string>()
+    for (const memory of memoriesRes.data || []) {
+      const records = Array.isArray((memory as any).safety_details?.media)
+        ? ((memory as any).safety_details.media as Array<{ display_key?: string; original_key?: string }>)
+        : []
+      for (const rec of records) {
+        if (rec.display_key && rec.original_key) {
+          const cleanDisplay = extractManagedR2Key(rec.display_key) || rec.display_key
+          const cleanOriginal = extractManagedR2Key(rec.original_key) || rec.original_key
+          displayToOriginalKeyMap.set(cleanDisplay, cleanOriginal)
+        }
+      }
+    }
+
     // 3. Web Streams sequential generator (STORE/uncompressed for fast streaming & low memory)
     async function* generateArchiveEntries() {
       // Add manifest and README
@@ -250,14 +265,23 @@ Thank you for trusting Theirs to help preserve ${memorial.full_name}'s memory.
         const item = mediaItems[i]
         if (!item.url) continue
 
-        const media = await fetchMediaStream(item.url)
+        const itemKey = extractManagedR2Key(item.url) || item.url
+        // If this item was contributed by community and has an untouched high-res original in originals/, prefer it
+        const originalKey = displayToOriginalKeyMap.get(itemKey)
+        const targetSource = originalKey || item.url
+
+        let media = await fetchMediaStream(targetSource)
+        if (!media && originalKey) {
+          // Fallback to display derivative if original stream was not found
+          media = await fetchMediaStream(item.url)
+        }
         if (!media) continue
 
         const cleanCaption = (item.caption || "media")
           .replace(/[^a-zA-Z0-9_-]/g, "_")
           .substring(0, 30)
         const defaultExt = item.media_type === "video" ? "mp4" : item.media_type === "audio" ? "mp3" : "jpg"
-        const ext = getMediaExtension(item.url, defaultExt)
+        const ext = getMediaExtension(targetSource, defaultExt)
         const filename = `${String(i + 1).padStart(3, "0")}_${cleanCaption}.${ext}`
 
         let folder = "photos"
