@@ -44,6 +44,10 @@ Run these SQL scripts in numerical order in your new Supabase project's **SQL Ed
    - Drops the unused pre-launch `guestbook_entries` table.
    - Creates the private caretaker inbox and admin-only read, update, and delete policies.
 
+6. **`13_safe_onboarding_and_contribution_cleanup.sql`**
+   - Makes new memorials draft and unlisted by default at the database layer.
+   - Retires the broken public “life moment” contribution switch without deleting existing family content.
+
 ---
 
 ## Environment Variables Mapping

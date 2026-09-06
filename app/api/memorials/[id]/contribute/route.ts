@@ -9,6 +9,7 @@ import {
   getTheirsAppUrl,
   notifyCaretakers,
 } from "@/lib/email/caretaker-notifications"
+import { emailNotice, emailQuoteCard, renderTheirsEmail } from "@/lib/email/templates"
 import {
   contributionInputSchema,
   parseApproxYear,
@@ -68,7 +69,6 @@ function settingForType(
   if (type === "photo") return "photos"
   if (type === "voice") return "voice"
   if (type === "video") return "videos"
-  if (type === "moment") return "moments"
   return "memories"
 }
 
@@ -441,7 +441,13 @@ export async function POST(req: NextRequest, context: RouteContext) {
         ownerId: memorial.owner_id,
         eventKey: `contribution/${insertedMemory.id}`,
         subject: `${input.author_name} shared a remembrance of ${memorial.full_name}`,
-        html: `<div style="font-family:Georgia,serif;max-width:520px;margin:0 auto;padding:40px 20px;color:#181925;line-height:1.6"><h2 style="font-size:20px;font-weight:normal">A new remembrance has arrived</h2><p><strong>${escapeEmailHtml(input.author_name)}</strong> shared something about <strong>${escapeEmailHtml(memorial.full_name)}</strong>.</p><div style="background:#f7f7f8;border-left:3px solid #305dde;padding:16px 20px;margin:20px 0;border-radius:8px;color:#333">${escapeEmailHtml(effectiveContent.slice(0, 300))}</div><p style="font:12px sans-serif;color:#777">${escapeEmailHtml(statusLabel)}</p><a href="${escapeEmailHtml(editorUrl)}" style="background:#181925;color:#fff;padding:11px 22px;border-radius:22px;text-decoration:none;font:500 13px sans-serif;display:inline-block">Review contribution</a></div>`,
+        html: renderTheirsEmail({
+          preheader: `${input.author_name} shared a remembrance of ${memorial.full_name}.`,
+          eyebrow: "New remembrance",
+          title: `Someone added to ${memorial.full_name}’s story`,
+          bodyHtml: `<p style="margin:0"><strong style="color:#181925">${escapeEmailHtml(input.author_name)}</strong>${input.author_relationship ? ` (${escapeEmailHtml(input.author_relationship)})` : ""} shared this remembrance:</p>${emailQuoteCard(effectiveContent.slice(0, 500))}${emailNotice(`${statusLabel}. Nothing will appear publicly until you approve it.`)}`,
+          primaryAction: { label: "Review contribution", url: editorUrl },
+        }),
       })
     }
 

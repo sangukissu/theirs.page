@@ -29,10 +29,10 @@ export default async function DashboardPage(props: DashboardPageProps) {
 
   // Fetch memorials owned by user with resilient fast querying
   let memorials: any[] = []
+  let caretakerName = ""
   try {
-    const { data, error } = await supabaseAdmin
-      .from("memorials")
-      .select(`
+    const [memorialResult, profileResult] = await Promise.all([
+      supabaseAdmin.from("memorials").select(`
         id,
         slug,
         full_name,
@@ -45,18 +45,18 @@ export default async function DashboardPage(props: DashboardPageProps) {
         privacy,
         is_paid,
         created_at
-      `)
-      .eq("owner_id", user.id)
-      .order("created_at", { ascending: false })
+      `).eq("owner_id", user.id).order("created_at", { ascending: false }),
+      supabaseAdmin.from("user_profiles").select("full_name").eq("user_id", user.id).maybeSingle(),
+    ])
 
-    if (!error && data) {
-      memorials = data
+    if (!memorialResult.error && memorialResult.data) {
+      memorials = memorialResult.data
     }
+    caretakerName = profileResult.data?.full_name?.trim() || ""
   } catch {
     const supabase = await createClient()
-    const { data } = await supabase
-      .from("memorials")
-      .select(`
+    const [memorialResult, profileResult] = await Promise.all([
+      supabase.from("memorials").select(`
         id,
         slug,
         full_name,
@@ -69,13 +69,14 @@ export default async function DashboardPage(props: DashboardPageProps) {
         privacy,
         is_paid,
         created_at
-      `)
-      .eq("owner_id", user.id)
-      .order("created_at", { ascending: false })
+      `).eq("owner_id", user.id).order("created_at", { ascending: false }),
+      supabase.from("user_profiles").select("full_name").eq("user_id", user.id).maybeSingle(),
+    ])
 
-    if (data) {
-      memorials = data
+    if (memorialResult.data) {
+      memorials = memorialResult.data
     }
+    caretakerName = profileResult.data?.full_name?.trim() || ""
   }
 
   return (
@@ -85,6 +86,7 @@ export default async function DashboardPage(props: DashboardPageProps) {
       initialMemorials={memorials}
       initialName={initialName}
       initialSlug={initialSlug}
+      initialCaretakerName={caretakerName}
     />
   )
 }

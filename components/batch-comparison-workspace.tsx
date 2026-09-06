@@ -224,16 +224,6 @@ export default function BatchComparisonWorkspace({
                   onDownload={onDownload}
                   showStartOver={false}
                 />
-                {activeItem.restorationId && (
-                  <div className="mx-auto mt-4 flex max-w-4xl justify-center">
-                    <a
-                      href={`/dashboard/memory-book?sourceType=restoration&sourceId=${activeItem.restorationId}`}
-                      className="inline-flex items-center rounded-full border border-black/10 bg-white px-5 py-2.5 text-sm font-semibold shadow-xs hover:bg-gray-50 transition-colors"
-                    >
-                      Add to Family Heritage keepsake
-                    </a>
-                  </div>
-                )}
               </>
             ) : (
               <ActiveProcessingSurface item={activeItem} />

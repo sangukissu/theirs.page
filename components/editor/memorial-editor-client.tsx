@@ -17,8 +17,9 @@ import {
   Settings,
   Loader2,
   RotateCcw,
-  Shield,
   Eye,
+  Share2,
+  Sparkles,
 } from "lucide-react"
 
 import { IdentityTab } from "./tabs/identity-tab"
@@ -27,6 +28,7 @@ import { GalleryTab, EditorMediaItem } from "./tabs/gallery-tab"
 import { TimelineTab, EditorTimelineEvent } from "./tabs/timeline-tab"
 import { ModerationTab, EditorMemory, EditorCaretakerMessage } from "./tabs/moderation-tab"
 import { SettingsTab } from "./tabs/settings-tab"
+import { PublishMemorialDialog } from "./publish-memorial-dialog"
 import { SectionSettings, ContributionSettings } from "@/types/theirs"
 
 export type EditorSectionTab =
@@ -82,6 +84,7 @@ export function MemorialEditorClient({
   const searchParams = useSearchParams()
   const requestedTab = searchParams.get("tab")
   const [activeTab, setActiveTab] = useState<EditorSectionTab>(requestedTab === "moderation" ? "moderation" : "identity")
+  const [publishDialogOpen, setPublishDialogOpen] = useState(false)
 
   const isPaid = Boolean(initialMemorial.is_paid)
 
@@ -100,7 +103,7 @@ export function MemorialEditorClient({
     portrait_photo_url: initialMemorial.portrait_photo_url || "",
     slug: initialMemorial.slug || "",
     status: initialMemorial.status || "draft",
-    privacy: (!isPaid && initialMemorial.privacy === "private") ? "public" : (initialMemorial.privacy || "public"),
+    privacy: (!isPaid && initialMemorial.privacy === "private") ? "unlisted" : (initialMemorial.privacy || "unlisted"),
     pin: "",
     successor_name: initialMemorial.successor_name || "",
     successor_email: initialMemorial.successor_email || "",
@@ -118,7 +121,6 @@ export function MemorialEditorClient({
       photos: true,
       voice: false,
       videos: false,
-      moments: true,
     },
   })
 
@@ -138,9 +140,7 @@ export function MemorialEditorClient({
   formRef.current = form
 
   // Checkout handling for Pro Plan ($179)
-  const [checkingOut, setCheckingOut] = useState(false)
   const handleUpgradeComplete = async () => {
-    setCheckingOut(true)
     try {
       const res = await fetch("/api/checkout/session", {
         method: "POST",
@@ -153,11 +153,9 @@ export function MemorialEditorClient({
         window.location.href = redirectUrl
       } else {
         alert(data.error || "Could not launch checkout session")
-        setCheckingOut(false)
       }
     } catch {
       alert("Network error launching checkout")
-      setCheckingOut(false)
     }
   }
 
@@ -169,7 +167,7 @@ export function MemorialEditorClient({
         const parsed = JSON.parse(raw)
         if (parsed && parsed.form && parsed.isDirty) {
           if (!isPaid && parsed.form.privacy === "private") {
-            parsed.form.privacy = "public"
+            parsed.form.privacy = "unlisted"
             parsed.form.pin = ""
           }
 
@@ -193,7 +191,7 @@ export function MemorialEditorClient({
   const saveToCloud = useCallback(
     async (currentForm: typeof form): Promise<boolean> => {
       setSaveStatus("saving")
-      const safePrivacy = (!isPaid && currentForm.privacy === "private") ? "public" : currentForm.privacy
+      const safePrivacy = (!isPaid && currentForm.privacy === "private") ? "unlisted" : currentForm.privacy
       const safePin = !isPaid ? null : (currentForm.pin || null)
 
       try {
@@ -347,19 +345,33 @@ export function MemorialEditorClient({
     }
   }
 
-  // 7. PUBLISH TOGGLE
-  const togglePublishStatus = async () => {
-    const nextStatus = form.status === "published" ? "draft" : "published"
-    handleFieldChange("status", nextStatus)
-    try {
-      await fetch(`/api/memorials/${initialMemorial.id}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ status: nextStatus }),
-      })
-    } catch (err) {
-      console.error("Publish toggle failed:", err)
+  // Publishing is an intentional milestone, separate from ordinary autosave.
+  const updatePublication = async (
+    status: "draft" | "published",
+    privacy?: "public" | "unlisted" | "private"
+  ) => {
+    if (status === "published") {
+      const saved = await saveToCloud(formRef.current)
+      if (!saved) throw new Error("Save your latest changes before publishing.")
     }
+
+    const response = await fetch(`/api/memorials/${initialMemorial.id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ status, ...(privacy ? { privacy } : {}) }),
+    })
+    const data = await response.json().catch(() => ({}))
+    if (!response.ok) throw new Error(data.error || "The publication status could not be changed.")
+
+    setForm((previous) => {
+      const next = { ...previous, status, ...(privacy ? { privacy } : {}) }
+      formRef.current = next
+      try {
+        localStorage.setItem(DRAFT_KEY, JSON.stringify({ form: next, timestamp: Date.now(), isDirty: false }))
+      } catch { }
+      return next
+    })
+    router.refresh()
   }
 
   const pendingContributions =
@@ -374,33 +386,31 @@ export function MemorialEditorClient({
     count?: number
     isCompleteOnly?: boolean
   }[] = [
-    { id: "identity", label: "Identity", icon: User },
+    { id: "identity", label: "About", icon: User },
     {
       id: "story",
-      label: "Life Story",
+      label: "Story",
       icon: BookOpen,
     },
     {
       id: "gallery",
-      label: "Gallery",
+      label: "Photos",
       icon: ImageIcon,
-      count: mediaItems.length,
     },
     {
       id: "timeline",
       label: "Timeline",
       icon: Calendar,
-      count: timelineEvents.length,
       isCompleteOnly: true,
     },
     {
       id: "moderation",
-      label: "Contributions",
+      label: "Inbox",
       icon: MessageSquare,
       count: pendingContributions,
     },
     ...(initialMemorial.can_manage_owner_settings
-      ? [{ id: "settings" as const, label: "Settings", icon: Settings }]
+      ? [{ id: "settings" as const, label: "Manage", icon: Settings }]
       : []),
   ]
 
@@ -436,26 +446,19 @@ export function MemorialEditorClient({
               {form.full_name || "Untitled Memorial"}
             </h1>
 
-            {/* Status Pill Toggle */}
-            <button
-              type="button"
-              onClick={togglePublishStatus}
-              className={`px-2.5 py-0.5 rounded-full text-[10px] font-mono uppercase font-semibold cursor-pointer transition-all shrink-0 ${form.status === "published"
-                  ? "bg-emerald-50 text-emerald-700 border border-emerald-200 hover:bg-emerald-100"
-                  : "bg-amber-50 text-amber-700 border border-amber-200 hover:bg-amber-100"
+            <span
+              className={`px-2.5 py-0.5 rounded-full text-[10px] font-mono uppercase font-semibold shrink-0 ${form.status === "published"
+                  ? "bg-emerald-50 text-emerald-700 border border-emerald-200"
+                  : "bg-amber-50 text-amber-700 border border-amber-200"
                 }`}
-              title="Click to toggle between Draft and Published"
             >
               {form.status}
-            </button>
+            </span>
           </div>
         </div>
 
         {/* Right Actions & Auto-Save Indicator */}
-        <div className="flex items-center gap-3 shrink-0">
-
-
-
+        <div className="flex items-center gap-2 shrink-0">
           <Link
             href={`/${form.slug}?preview=visitor`}
             target="_blank"
@@ -463,60 +466,45 @@ export function MemorialEditorClient({
             title="Preview the memorial exactly as visitors see it, with draft banners hidden"
           >
             <Eye className="size-3 text-[#666]" />
-            <span>View as visitor</span>
-          </Link>
-
-          <Link
-            href={`/${form.slug}`}
-            target="_blank"
-            className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-[#f4f4f6] hover:bg-neutral-200 text-[#181925] text-xs font-medium transition-colors"
-          >
             <span>Preview</span>
             <ExternalLink className="size-3 text-[#888]" />
           </Link>
-
-          {/* Upgrade to Pro/Complete CTA (Only shown when not paid yet) */}
-          {!initialMemorial.is_paid && (
-            <button
-              type="button"
-              disabled={checkingOut}
-              onClick={handleUpgradeComplete}
-              className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-medium transition-all cursor-pointer shadow-2xs disabled:opacity-50"
-            >
-              {checkingOut ? (
-                <Loader2 className="size-3 animate-spin" />
-              ) : (
-                <Shield className="size-3" />
-              )}
-              <span className="hidden sm:inline">Upgrade ($179)</span>
-              <span className="sm:hidden">Upgrade</span>
-            </button>
-          )}
 
           {/* Manual Save Button */}
           <button
             type="button"
             onClick={handleManualSave}
             disabled={saveStatus === "saving"}
-            className="inline-flex items-center justify-center gap-1.5 whitespace-nowrap !rounded-full font-medium transition-all cursor-pointer border border-[color-mix(in_srgb,var(--primary)_80%,#3a3480)] bg-[color-mix(in_srgb,var(--primary)_90%,#3a3480)] text-primary-foreground shadow-[inset_0_1px_0_rgba(255,255,255,0.22),inset_0_-1px_0_rgba(58,52,128,0.30)] transform-gpu hover:bg-primary hover:border-[color-mix(in_srgb,var(--primary)_70%,#3a3480)] active:translate-y-px active:scale-[0.98] h-8 px-4 text-xs select-none disabled:opacity-50"
+            className="inline-flex size-8 sm:w-auto items-center justify-center gap-1.5 whitespace-nowrap rounded-full border border-black/[0.08] bg-white px-0 sm:px-3.5 text-xs font-medium text-[#555] transition-all hover:bg-neutral-50 active:scale-[0.98] disabled:opacity-50"
           >
             {saveStatus === "saving" ? (
               <>
                 <Loader2 className="size-3.5 animate-spin" />
-                <span>Saving...</span>
+                <span className="hidden sm:inline">Saving...</span>
               </>
             ) : saveStatus === "saved" ? (
               <>
                 <Check className="size-3.5 text-white" />
-                <span>Saved</span>
+                <span className="hidden sm:inline">Saved</span>
               </>
             ) : (
               <>
                 <Save className="size-3.5" />
-                <span>Save changes</span>
+                <span className="hidden sm:inline">Save</span>
               </>
             )}
           </button>
+
+          {initialMemorial.can_manage_owner_settings && (
+            <button
+              type="button"
+              onClick={() => setPublishDialogOpen(true)}
+              className={`inline-flex h-9 items-center justify-center gap-1.5 rounded-full px-4 text-xs font-semibold shadow-sm transition-all active:scale-[0.98] ${form.status === "published" ? "border border-black/[0.08] bg-[#181925] text-white hover:bg-black" : "bg-primary text-white hover:bg-primary/90"}`}
+            >
+              {form.status === "published" ? <Share2 className="size-3.5" /> : <Sparkles className="size-3.5" />}
+              <span>{form.status === "published" ? "Share" : "Publish"}</span>
+            </button>
+          )}
         </div>
       </header>
 
@@ -660,7 +648,6 @@ export function MemorialEditorClient({
             <SettingsTab
               memorialId={initialMemorial.id}
               slug={form.slug}
-              status={form.status}
               privacy={form.privacy}
               pin={form.pin}
               hasPin={Boolean(initialMemorial.has_access_pin)}
@@ -719,6 +706,19 @@ export function MemorialEditorClient({
         </main>
 
       </div>
+      <PublishMemorialDialog
+        isOpen={publishDialogOpen}
+        memorialName={form.preferred_name || form.full_name}
+        slug={form.slug}
+        status={form.status}
+        privacy={form.privacy}
+        hasPortrait={Boolean(form.portrait_photo_url)}
+        hasStory={Boolean(form.biography.trim())}
+        memoryCount={memories.filter((memory) => memory.status === "approved").length}
+        onClose={() => setPublishDialogOpen(false)}
+        onPublish={(privacy) => updatePublication("published", privacy)}
+        onUnpublish={() => updatePublication("draft")}
+      />
     </div>
   )
 }

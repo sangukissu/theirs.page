@@ -22,6 +22,7 @@ export interface MemorialIdentity {
   isDemo: boolean
   isPaid: boolean
   isOwner: boolean
+  caretakerName?: string | null
   status?: string
   privacy?: string
   sectionSettings: SectionSettings

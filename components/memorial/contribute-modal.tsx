@@ -15,7 +15,6 @@ import {
   AlertCircle,
   Sparkles,
   Film,
-  Calendar,
 } from "lucide-react"
 import { Turnstile, type TurnstileInstance } from "@marsidev/react-turnstile"
 import {
@@ -26,8 +25,12 @@ import {
 import { saveLocalReceipt } from "@/lib/memorial/optimistic-receipts"
 import type { ContributionSettings } from "@/types/theirs"
 
-export type ContributionType = "tribute" | "memory" | "photo" | "moment" | "voice" | "video" | "message"
+export type ContributionType = "tribute" | "memory" | "photo" | "voice" | "video" | "message"
 export type TributeRitual = "flower" | "candle" | "note"
+
+type SubmissionResult = {
+  status: "approved" | "pending_approval"
+}
 
 interface ContributeModalProps {
   isOpen: boolean
@@ -68,6 +71,7 @@ export function ContributeModal({
   const [extraField, setExtraField] = useState("") // approx year
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [isSubmitted, setIsSubmitted] = useState(false)
+  const [submissionResult, setSubmissionResult] = useState<SubmissionResult | null>(null)
   const [error, setError] = useState<string | null>(null)
 
   // Cloudflare Turnstile state
@@ -93,6 +97,9 @@ export function ContributeModal({
   const [mediaUploadError, setMediaUploadError] = useState<string | null>(null)
 
   const isPhotosFull = !isPaid && (photoCount ?? 0) >= 5
+  const remainingNewPhotoSlots = isPaid ? 3 : Math.max(0, 5 - (photoCount ?? 0))
+  const newMemoryPhotoCount = memoryPhotos.filter((photo) => Boolean(photo.mediaRef)).length
+  const canAddMemoryPhoto = memoryPhotos.length < 3 && newMemoryPhotoCount < remainingNewPhotoSlots
   const firstName = memorialName.split(" ")[0] || memorialName
 
   const allContributionsDisabled = contributionSettings?.accept_contributions === false
@@ -121,14 +128,6 @@ export function ContributeModal({
       desc: "Photographs the family and friends may cherish.",
       color: "text-primary bg-primary/5",
       available: !allContributionsDisabled && !isPhotosFull && contributionSettings?.photos !== false,
-    },
-    {
-      type: "moment" as const,
-      icon: Calendar,
-      title: "Suggest a life moment",
-      desc: `Help the family place an important chapter of ${firstName}'s life in time.`,
-      color: "text-primary bg-primary/5",
-      available: !allContributionsDisabled && contributionSettings?.moments !== false,
     },
     {
       type: "voice" as const,
@@ -176,6 +175,7 @@ export function ContributeModal({
 
       setUploadAuthorization(null)
       setIsSubmitted(false)
+      setSubmissionResult(null)
       setError(null)
       setMediaUploadError(null)
     }
@@ -249,8 +249,8 @@ export function ContributeModal({
 
   const handleMemoryPhotoSelect = async (file: File) => {
     if (!file) return
-    if (memoryPhotos.length >= 3) {
-      setMediaUploadError("You can attach up to 3 photographs to a story.")
+    if (!canAddMemoryPhoto) {
+      setMediaUploadError("This memorial has no remaining photograph space for this story.")
       return
     }
 
@@ -366,6 +366,9 @@ export function ContributeModal({
         })
       }
 
+      setSubmissionResult({
+        status: data.status === "approved" ? "approved" : "pending_approval",
+      })
       setIsSubmitted(true)
       onSubmitted?.()
     } catch (err: any) {
@@ -384,6 +387,7 @@ export function ContributeModal({
 
   const handleReset = () => {
     setIsSubmitted(false)
+    setSubmissionResult(null)
     setSelectedType(null)
     setTributeRitual("flower")
     setAuthorName("")
@@ -479,14 +483,18 @@ export function ContributeModal({
 
                   <div className="flex flex-col gap-1.5">
                     <h3 className="text-xl font-medium text-[#181925]">
-                      Added. Thank you for remembering {firstName}.
+                      {submissionResult?.status === "approved"
+                        ? "Your remembrance is now live."
+                        : `Sent to ${firstName}’s family.`}
                     </h3>
                     <p className="text-xs sm:text-sm text-[#666] max-w-sm leading-relaxed">
-                      Your remembrance has been added to your view and sent to {firstName}&apos;s family.
+                      {submissionResult?.status === "approved"
+                        ? `It has been published on ${firstName}’s memorial.`
+                        : "A caretaker will review it before it appears publicly."}
                     </p>
                     <div className="mt-2 inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-neutral-100 text-[11px] text-[#71717a] font-medium mx-auto">
-                      <span className="size-1.5 rounded-full bg-emerald-500" />
-                      <span>Sent to {firstName}&apos;s family</span>
+                      <span className={`size-1.5 rounded-full ${submissionResult?.status === "approved" ? "bg-emerald-500" : "bg-amber-500"}`} />
+                      <span>{submissionResult?.status === "approved" ? "Published" : "Waiting for approval"}</span>
                     </div>
                   </div>
 
@@ -577,7 +585,6 @@ export function ContributeModal({
                       {selectedType === "photo" && `Share a photograph of ${firstName}`}
                       {selectedType === "voice" && `Share a voice recording of ${firstName}`}
                       {selectedType === "video" && `Share a video clip of ${firstName}`}
-                      {selectedType === "moment" && `Suggest a timeline milestone`}
                     </h3>
                     <p className="text-xs text-[#71717a]">
                       {isTributeMode && "Choose a gesture and leave your words of remembrance."}
@@ -585,7 +592,6 @@ export function ContributeModal({
                       {selectedType === "photo" && "Upload original photographs to preserve in the family archive."}
                       {selectedType === "voice" && "Upload an audio file or voice memo from your phone."}
                       {selectedType === "video" && "Upload a video clip or home movie to preserve in the archive."}
-                      {selectedType === "moment" && "Help record when important milestones took place."}
                     </p>
                   </div>
 
@@ -669,8 +675,8 @@ export function ContributeModal({
                     </div>
                   </div>
 
-                  {/* Optional Year for Memories, Photos, or Milestones */}
-                  {(selectedType === "memory" || selectedType === "photo" || selectedType === "moment") && (
+                  {/* Optional year for memories and photographs. */}
+                  {(selectedType === "memory" || selectedType === "photo") && (
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
                       <div className="flex flex-col gap-1">
                         <label className="text-[11px] font-mono text-[#71717a] uppercase tracking-wider">
@@ -819,12 +825,11 @@ export function ContributeModal({
                               ? "Note or context (optional)"
                               : selectedType === "video"
                                 ? "Caption or story behind this video (optional)"
-                                : "Milestone story *"}
+                                : "Words of remembrance *"}
                     </label>
                     <textarea
                       required={
                         selectedType === "memory" ||
-                        selectedType === "moment" ||
                         (isTributeMode && tributeRitual === "note")
                       }
                       rows={isTributeMode || selectedType === "memory" ? 4 : 3}
@@ -853,12 +858,12 @@ export function ContributeModal({
                   {/* ========================================================= */}
                   {/* 4. OPTIONAL PHOTO ATTACHMENTS (UP TO 3) FOR MEMORY / STORY */}
                   {/* ========================================================= */}
-                  {selectedType === "memory" && (
+                  {selectedType === "memory" && (!isPhotosFull || memoryPhotos.length > 0) && (
                     <div className="flex flex-col gap-2 pt-0.5">
                       <input
                         ref={memoryPhotoInputRef}
                         type="file"
-                        accept="image/*"
+                        accept="image/jpeg,image/png,image/webp"
                         className="hidden"
                         disabled={isUploadingMedia}
                         onChange={(e) => {
@@ -875,7 +880,7 @@ export function ContributeModal({
                             <span className="text-[11px] font-mono uppercase text-[#71717a]">
                               Attached Photos ({memoryPhotos.length}/3)
                             </span>
-                            {memoryPhotos.length < 3 && (
+                            {canAddMemoryPhoto && (
                               <button
                                 type="button"
                                 disabled={isUploadingMedia}
@@ -907,7 +912,7 @@ export function ContributeModal({
                                 </button>
                               </div>
                             ))}
-                            {memoryPhotos.length < 3 && (
+                            {canAddMemoryPhoto && (
                               <button
                                 type="button"
                                 disabled={isUploadingMedia}
@@ -925,16 +930,20 @@ export function ContributeModal({
                           <Loader2 className="size-4 animate-spin text-primary" />
                           <span className="text-xs font-medium text-[#181925]">Uploading photograph...</span>
                         </div>
-                      ) : (
+                      ) : !isPhotosFull ? (
                         <button
                           type="button"
                           onClick={() => memoryPhotoInputRef.current?.click()}
                           className="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl border border-dashed border-black/[0.12] bg-[#f7f7f8] hover:bg-neutral-100 hover:border-black/[0.2] text-xs font-medium text-[#666] hover:text-[#181925] transition-all cursor-pointer self-start"
                         >
                           <Camera className="size-3.5 text-primary" />
-                          <span>Attach photographs (up to 3 photos)</span>
+                          <span>
+                            {remainingNewPhotoSlots === 1
+                              ? "Attach a photograph"
+                              : `Attach photographs (up to ${Math.min(3, remainingNewPhotoSlots)} photos)`}
+                          </span>
                         </button>
-                      )}
+                      ) : null}
 
                       {mediaUploadError && (
                         <div className="p-2.5 rounded-xl bg-rose-50 border border-rose-200 text-xs text-rose-700 flex items-center gap-2">
@@ -1004,8 +1013,6 @@ export function ContributeModal({
                         <span>Share memory</span>
                       ) : selectedType === "photo" ? (
                         <span>Share photograph</span>
-                      ) : selectedType === "moment" ? (
-                        <span>Send life moment</span>
                       ) : selectedType === "voice" ? (
                         <span>Share recording</span>
                       ) : selectedType === "video" ? (

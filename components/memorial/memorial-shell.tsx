@@ -66,7 +66,10 @@ export function MemorialShell({ identity, children }: { identity: MemorialIdenti
           hasTopBanner={Boolean(draftPreview)}
         />
         {children}
-        <MemorialFooter />
+        <MemorialFooter
+          fullName={identity.fullName}
+          caretakerName={identity.caretakerName || undefined}
+        />
         {visitorPreview && (
           <div className="fixed bottom-5 right-5 z-50 bg-[#181925]/95 text-white px-4 py-2.5 rounded-full shadow-2xl text-xs font-sans flex items-center gap-3 border border-white/20 backdrop-blur-md animate-in fade-in slide-in-from-bottom-3 select-none">
             <span className="flex items-center gap-1.5 font-medium"><span className="size-2 rounded-full bg-emerald-400 animate-pulse" />Viewing as visitor</span>

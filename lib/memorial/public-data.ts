@@ -201,9 +201,14 @@ export const getMemorialViewContext = cache(async (slug: string): Promise<Memori
   const requiresPin = Boolean(memorial?.privacy === "private" && !isOwner && !pinUnlocked)
   const sections = { ...DEFAULT_SECTIONS, ...(memorial?.section_settings || {}) }
   let photoCount = DEMO_GALLERY.filter((item) => item.mediaType === "photo").length
+  let caretakerName: string | null = isDemo ? "Anita Carter" : null
   if (memorial && db) {
-    const result = await db.from("media_items").select("id", { count: "exact", head: true }).eq("memorial_id", memorial.id).eq("media_type", "image")
-    photoCount = result.count || 0
+    const [photoResult, profileResult] = await Promise.all([
+      db.from("media_items").select("id", { count: "exact", head: true }).eq("memorial_id", memorial.id).eq("media_type", "image"),
+      (admin || db).from("user_profiles").select("full_name").eq("user_id", memorial.owner_id).maybeSingle(),
+    ])
+    photoCount = photoResult.count || 0
+    caretakerName = profileResult.data?.full_name?.trim() || null
   }
 
   return {
@@ -229,6 +234,7 @@ export const getMemorialViewContext = cache(async (slug: string): Promise<Memori
       isDemo,
       isPaid: isDemo || Boolean(memorial?.is_paid),
       isOwner,
+      caretakerName,
       status: memorial?.status,
       privacy: memorial?.privacy,
       sectionSettings: sections,

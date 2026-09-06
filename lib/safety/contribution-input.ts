@@ -6,7 +6,6 @@ export const CONTRIBUTION_TYPES = [
   "memory",
   "story",
   "photo",
-  "moment",
   "voice",
   "video",
 ] as const

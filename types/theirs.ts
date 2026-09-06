@@ -63,7 +63,6 @@ export interface ContributionSettings {
   photos?: boolean
   voice?: boolean
   videos?: boolean
-  moments?: boolean
 }
 
 export interface Memorial {

@@ -16,7 +16,7 @@ alter table public.memories add constraint memories_status_check check (status i
 alter table public.collaborators add column if not exists is_trusted boolean not null default false;
 
 -- 3. Updates to public.memorials
-alter table public.memorials add column if not exists contribution_settings jsonb default '{"accept_contributions":true,"tributes":true,"memories":true,"photos":true,"voice":false,"videos":false,"moments":true}'::jsonb;
+alter table public.memorials add column if not exists contribution_settings jsonb default '{"accept_contributions":true,"tributes":true,"memories":true,"photos":true,"voice":false,"videos":false}'::jsonb;
 
 -- 4. Fast Query Indexes
 create index if not exists idx_memories_moderation_queue on public.memories(memorial_id, status, safety_decision, created_at desc);

@@ -10,6 +10,7 @@ import {
   RESERVED_MEMORIAL_SLUGS,
 } from "@/lib/memorial-slug"
 import { hashPin } from "@/lib/security/pin"
+import { sendMemorialDeletedEmail, sendMemorialPublishedEmail } from "@/lib/email/lifecycle-emails"
 
 interface RouteContext {
   params: Promise<{ id: string }>
@@ -83,6 +84,13 @@ export async function PATCH(req: NextRequest, context: RouteContext) {
     const db = getSupabaseAdminSafe() || supabase
     const body = await req.json().catch(() => ({}))
 
+    if (body.status !== undefined && !["draft", "published", "archived"].includes(body.status)) {
+      return NextResponse.json({ error: "Invalid publication status." }, { status: 400 })
+    }
+    if (body.privacy !== undefined && !["public", "unlisted", "private"].includes(body.privacy)) {
+      return NextResponse.json({ error: "Invalid privacy level." }, { status: 400 })
+    }
+
     // 1. Permissions Split: Owner-Only Settings vs Co-Admin Editorial Content
     const ownerOnlyFields = [
       "slug",
@@ -111,7 +119,7 @@ export async function PATCH(req: NextRequest, context: RouteContext) {
       const paywallCheck = canAccessFeature(authCheck.memorial, "private_mode")
       if (!paywallCheck.allowed) {
         // Prevent free memorials from activating private PIN mode without blocking saving of editorial fields
-        body.privacy = authCheck.memorial.privacy === "private" ? "public" : (authCheck.memorial.privacy || "public")
+        body.privacy = authCheck.memorial.privacy === "private" ? "unlisted" : (authCheck.memorial.privacy || "unlisted")
         body.pin = null
       }
     }
@@ -232,6 +240,21 @@ export async function PATCH(req: NextRequest, context: RouteContext) {
       return NextResponse.json({ error: "Failed to update memorial" }, { status: 500 })
     }
 
+    if (authCheck.memorial.status !== "published" && updated.status === "published") {
+      const { data: profile } = await db
+        .from("user_profiles")
+        .select("full_name")
+        .eq("user_id", user.id)
+        .maybeSingle()
+      await sendMemorialPublishedEmail({
+        email: user.email,
+        caretakerName: profile?.full_name,
+        memorialId: updated.id,
+        memorialName: updated.full_name,
+        slug: updated.slug,
+      })
+    }
+
     return NextResponse.json({ success: true, memorial: updated })
   } catch (err: any) {
     console.error("Memorial PATCH error:", err)
@@ -258,6 +281,11 @@ export async function DELETE(req: NextRequest, context: RouteContext) {
     }
 
     const db = getSupabaseAdminSafe() || supabase
+    const { data: profile } = await db
+      .from("user_profiles")
+      .select("full_name")
+      .eq("user_id", user.id)
+      .maybeSingle()
 
     // 1. Storage Cleanup: Delete all physical R2 media files for this memorial
     await deleteR2MemorialFolder(id)
@@ -272,6 +300,13 @@ export async function DELETE(req: NextRequest, context: RouteContext) {
       console.error("Memorial delete error:", error)
       return NextResponse.json({ error: "Failed to delete memorial." }, { status: 500 })
     }
+
+    await sendMemorialDeletedEmail({
+      email: user.email,
+      caretakerName: profile?.full_name,
+      memorialId: authCheck.memorial.id,
+      memorialName: authCheck.memorial.full_name,
+    })
 
     return NextResponse.json({ success: true })
   } catch (err: any) {

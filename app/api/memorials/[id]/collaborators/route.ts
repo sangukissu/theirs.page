@@ -10,6 +10,7 @@ import {
   sendTheirsEmail,
   THEIRS_INVITATION_SENDER,
 } from "@/lib/email/caretaker-notifications"
+import { emailNotice, renderTheirsEmail } from "@/lib/email/templates"
 
 interface RouteContext {
   params: Promise<{ id: string }>
@@ -197,25 +198,14 @@ export async function POST(req: NextRequest, context: RouteContext) {
       to: cleanEmail,
       eventKey: `collaborator-invite/${targetCollab.id}`,
       subject: `Invitation to care for ${String(authCheck.memorial.full_name).replace(/[\r\n]/g, " ")}'s memorial`,
-      html: `
-            <div style="font-family: serif; max-width: 520px; margin: 0 auto; padding: 40px 20px; color: #181925; line-height: 1.6;">
-              <h2 style="font-size: 22px; font-weight: normal; margin-bottom: 16px;">Family Caretaker Invitation</h2>
-              <p style="font-size: 15px; color: #444;">
-                You have been invited to help care for the memory and life story of <strong>${escapeEmailHtml(String(authCheck.memorial.full_name))}</strong> on Theirs.
-              </p>
-              <p style="font-size: 14px; color: #666; margin: 24px 0;">
-                As a ${roleLabel}, ${roleExplanation}
-              </p>
-              <div style="margin: 32px 0;">
-                <a href="${escapeEmailHtml(inviteLink)}" style="background-color: #181925; color: #ffffff; padding: 12px 24px; border-radius: 24px; text-decoration: none; font-size: 13px; font-family: sans-serif; font-weight: 500; display: inline-block;">
-                  Accept Invitation
-                </a>
-              </div>
-              <p style="font-size: 12px; color: #888; margin-top: 32px; border-top: 1px solid #eaeaea; padding-top: 16px;">
-                Direct link: <a href="${escapeEmailHtml(inviteLink)}" style="color: #444;">${escapeEmailHtml(inviteLink)}</a>
-              </p>
-            </div>
-          `,
+      html: renderTheirsEmail({
+        preheader: `You have been invited to help care for ${authCheck.memorial.full_name}’s memorial.`,
+        eyebrow: "Family invitation",
+        title: `Help gather ${authCheck.memorial.full_name}’s life`,
+        bodyHtml: `<p style="margin:0 0 16px">Someone caring for <strong style="color:#181925">${escapeEmailHtml(String(authCheck.memorial.full_name))}</strong> has invited you to join their memorial on Theirs.</p><p style="margin:0">As a <strong style="color:#181925">${escapeEmailHtml(roleLabel)}</strong>, ${escapeEmailHtml(roleExplanation)}</p>${emailNotice("This invitation is personal. Only accept it if you recognise the memorial and expected to receive it.")}`,
+        primaryAction: { label: "Accept invitation", url: inviteLink },
+        secondaryAction: { label: "Open the invitation link", url: inviteLink },
+      }),
     })
 
     return NextResponse.json({

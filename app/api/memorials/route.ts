@@ -3,10 +3,17 @@ import { createClient } from "@/utils/supabase/server"
 import { getSupabaseAdminSafe } from "@/utils/supabase/admin"
 import {
   normalizeMemorialSlug,
-  memorialSlugSchema,
   RESERVED_MEMORIAL_SLUGS,
   createMemorialSlugCandidates,
 } from "@/lib/memorial-slug"
+import { sendMemorialCreatedEmail } from "@/lib/email/lifecycle-emails"
+
+function cleanDisplayName(value: unknown, maxLength: number): string {
+  if (typeof value !== "string") return ""
+  const normalized = value.trim().replace(/\s+/g, " ")
+  if (/[\u0000-\u001f\u007f]/.test(normalized)) return ""
+  return normalized.slice(0, maxLength)
+}
 
 export async function GET() {
   try {
@@ -65,17 +72,30 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
-    const body = await req.json()
-    const { full_name, desired_slug } = body
+    const body = await req.json().catch(() => null)
+    if (!body || typeof body !== "object" || Array.isArray(body)) {
+      return NextResponse.json({ error: "Invalid request." }, { status: 400 })
+    }
+    const fullName = cleanDisplayName(body.full_name, 120)
+    const desiredSlug = typeof body.desired_slug === "string" ? body.desired_slug : ""
 
-    if (!full_name || !full_name.trim()) {
+    if (fullName.length < 2) {
       return NextResponse.json({ error: "Full name is required" }, { status: 400 })
     }
-
     const db = getSupabaseAdminSafe() || supabase
 
+    const { data: profile, error: profileError } = await db
+      .from("user_profiles")
+      .select("full_name")
+      .eq("user_id", user.id)
+      .maybeSingle()
+    const caretakerName = cleanDisplayName(profile?.full_name, 100)
+    if (profileError || caretakerName.length < 2) {
+      return NextResponse.json({ error: "Complete your profile before creating a memorial." }, { status: 409 })
+    }
+
     // Normalize and validate candidate slug
-    const rawRequested = desired_slug?.trim() ? desired_slug : full_name
+    const rawRequested = desiredSlug.trim() ? desiredSlug : fullName
     let normalized = normalizeMemorialSlug(rawRequested)
     if (normalized.length < 3) {
       normalized = normalizeMemorialSlug(`memorial-${normalized}`)
@@ -99,7 +119,7 @@ export async function POST(req: NextRequest) {
 
     // 2. If collision, try smart candidates
     if (isTaken) {
-      const candidates = createMemorialSlugCandidates(full_name)
+      const candidates = createMemorialSlugCandidates(fullName)
       let foundAvailable = false
 
       for (const candidate of candidates) {
@@ -129,9 +149,9 @@ export async function POST(req: NextRequest) {
       .insert({
         owner_id: user.id,
         slug: finalSlug,
-        full_name: full_name.trim(),
-        status: "published",
-        privacy: "public",
+        full_name: fullName,
+        status: "draft",
+        privacy: "unlisted",
       })
       .select()
       .single()
@@ -145,9 +165,9 @@ export async function POST(req: NextRequest) {
         .insert({
           owner_id: user.id,
           slug: fallbackSlug,
-          full_name: full_name.trim(),
-          status: "published",
-          privacy: "public",
+          full_name: fullName,
+          status: "draft",
+          privacy: "unlisted",
         })
         .select()
         .single()
@@ -155,6 +175,12 @@ export async function POST(req: NextRequest) {
       if (retry.error) {
         return NextResponse.json({ error: "Could not create memorial address. Please try another name." }, { status: 409 })
       }
+      await sendMemorialCreatedEmail({
+        email: user.email,
+        caretakerName,
+        memorialId: retry.data.id,
+        memorialName: retry.data.full_name,
+      })
       return NextResponse.json({ success: true, memorial: retry.data })
     }
 
@@ -163,6 +189,12 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Failed to create memorial." }, { status: 500 })
     }
 
+    await sendMemorialCreatedEmail({
+      email: user.email,
+      caretakerName,
+      memorialId: newMemorial.id,
+      memorialName: newMemorial.full_name,
+    })
     return NextResponse.json({ success: true, memorial: newMemorial })
   } catch (err: any) {
     console.error("Memorials POST error:", err)

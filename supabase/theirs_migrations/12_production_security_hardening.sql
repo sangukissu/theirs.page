@@ -215,7 +215,7 @@ drop policy if exists "Users can delete their own uploads" on storage.objects;
 -- Audio/video contribution screening was described but not implemented. Keep
 -- those switches off until transcript and frame moderation genuinely exist.
 alter table public.memorials alter column contribution_settings set default
-  '{"accept_contributions":true,"tributes":true,"memories":true,"photos":true,"voice":false,"videos":false,"moments":true}'::jsonb;
+  '{"accept_contributions":true,"tributes":true,"memories":true,"photos":true,"voice":false,"videos":false}'::jsonb;
 update public.memorials
 set contribution_settings = jsonb_set(
   jsonb_set(coalesce(contribution_settings, '{}'::jsonb), '{voice}', 'false'::jsonb, true),

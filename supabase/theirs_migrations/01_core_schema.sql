@@ -57,7 +57,7 @@ create table if not exists public.memorials (
   biography text,
   location text,
   portrait_photo_url text,
-  privacy text not null default 'public' check (privacy in ('public', 'unlisted', 'private')),
+  privacy text not null default 'unlisted' check (privacy in ('public', 'unlisted', 'private')),
   access_pin_hash text,
   successor_name text,
   successor_email text,

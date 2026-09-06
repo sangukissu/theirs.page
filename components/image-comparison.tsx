@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button"
 import { SparklesCore } from "@/components/ui/sparkles"
 import { AnimatePresence, motion } from "framer-motion"
 import { IconDotsVertical } from "@tabler/icons-react"
-import { DownloadIcon, ImageOffIcon, ImageUpIcon, Videotape } from "lucide-react"
+import { DownloadIcon, ImageOffIcon, ImageUpIcon } from "lucide-react"
 
 interface ImageComparisonProps {
   originalUrl: string
@@ -13,7 +13,6 @@ interface ImageComparisonProps {
   onStartOver: () => void
   onDownload?: (restoredUrl: string) => void
   showStartOver?: boolean
-  showGenerateVideo?: boolean
   beforeLabel?: string
   afterLabel?: string
   compareHint?: string
@@ -26,7 +25,6 @@ export default function ImageComparison({
   onStartOver,
   onDownload,
   showStartOver = true,
-  showGenerateVideo = true,
   beforeLabel = "Original",
   afterLabel = "Restored",
   compareHint = "Drag the slider to compare before and after",
@@ -142,25 +140,6 @@ export default function ImageComparison({
     }
   }
 
-  const handleGenerateVideo = () => {
-    // Store the restored image URL in sessionStorage to pass to animate dashboard
-    sessionStorage.setItem('preloadedImageUrl', restoredUrl)
-    // Navigate to animate dashboard
-    window.location.href = '/dashboard/animate'
-  }
-
-  // Add navigation to Enhance page with restored image
-  const handleNavigateEnhance = () => {
-    try {
-      const url = new URL('/enhance', window.location.origin)
-      url.searchParams.set('image', restoredUrl)
-      window.location.href = url.toString()
-    } catch (e) {
-      // Fallback if URL construction fails
-      window.location.href = `/enhance?image=${encodeURIComponent(restoredUrl)}`
-    }
-  }
-
   // Memoize the clip path to prevent unnecessary recalculations
   const clipPathStyle = useMemo(() => ({
     clipPath: `inset(0 ${100 - sliderPosition}% 0 0)`,
@@ -254,16 +233,6 @@ export default function ImageComparison({
               <DownloadIcon className="w-4 h-4 mr-1" />
               Download
             </Button>
-
-            {showGenerateVideo && (
-              <Button
-                onClick={handleGenerateVideo}
-                className="h-10 px-5 rounded-full bg-blue-600 text-sm font-semibold text-white hover:bg-blue-700 transition-all flex items-center gap-2 shadow-xs cursor-pointer"
-              >
-                <Videotape className="w-4 h-4 mr-1" />
-                Generate Video
-              </Button>
-            )}
 
             {showStartOver && (
               <Button

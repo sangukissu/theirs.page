@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@/utils/supabase/server'
 import { sanitizeAuthDestination } from '@/lib/auth/redirect'
+import { sendWelcomeEmailForNewUser } from '@/lib/email/lifecycle-emails'
 
 export async function GET(request: Request) {
   const { searchParams, origin } = new URL(request.url)
@@ -35,6 +36,7 @@ export async function GET(request: Request) {
       const { data: sessionData } = await supabase.auth.getSession()
       
       if (sessionData.session) {
+        await sendWelcomeEmailForNewUser(sessionData.session.user)
         return NextResponse.redirect(`${origin}${next}`)
       }
       
@@ -57,6 +59,7 @@ export async function GET(request: Request) {
         const { data: retrySessionData } = await supabase.auth.getSession()
         
         if (retrySessionData.session) {
+          await sendWelcomeEmailForNewUser(retrySessionData.session.user)
           return NextResponse.redirect(`${origin}${next}`)
         }
         
@@ -67,6 +70,7 @@ export async function GET(request: Request) {
       }
 
       if (data.session) {
+        await sendWelcomeEmailForNewUser(data.session.user)
         return NextResponse.redirect(`${origin}${next}`)
       }
     } catch (err) {
@@ -81,5 +85,4 @@ export async function GET(request: Request) {
   loginUrl.searchParams.set('error', 'Invalid authentication request. Please try logging in again.')
   return NextResponse.redirect(loginUrl)
 }
-
 

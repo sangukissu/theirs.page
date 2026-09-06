@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from "react"
 import Link from "next/link"
 import { useRouter, useSearchParams } from "next/navigation"
 import { normalizeMemorialSlug } from "@/lib/memorial-slug"
+import { ProfileOnboarding } from "@/components/dashboard/profile-onboarding"
 import {
   Plus,
   ArrowRight,
@@ -39,6 +40,7 @@ interface TheirsDashboardClientProps {
   initialMemorials: MemorialSummary[]
   initialName?: string
   initialSlug?: string
+  initialCaretakerName?: string
 }
 
 interface SlugCheckResult {
@@ -54,6 +56,7 @@ export function TheirsDashboardClient({
   initialMemorials,
   initialName = "",
   initialSlug = "",
+  initialCaretakerName = "",
 }: TheirsDashboardClientProps) {
   const router = useRouter()
   const searchParams = useSearchParams()
@@ -62,6 +65,7 @@ export function TheirsDashboardClient({
     initialSlug || (initialName ? normalizeMemorialSlug(initialName) : "")
 
   const [memorials, setMemorials] = useState<MemorialSummary[]>(initialMemorials)
+  const [profileName, setProfileName] = useState(initialCaretakerName.trim())
   const [isCreating, setIsCreating] = useState(Boolean(initialName.trim()))
   const [fullNameInput, setFullNameInput] = useState(initialName)
   const [slugInput, setSlugInput] = useState(computedInitialSlug)
@@ -196,7 +200,7 @@ export function TheirsDashboardClient({
 
   const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!fullNameInput.trim()) return
+    if (!fullNameInput.trim() || !profileName) return
 
     setIsSubmitting(true)
     setErrorMsg(null)
@@ -273,7 +277,7 @@ export function TheirsDashboardClient({
             </p>
           </div>
 
-          {memorials.length > 0 && !isCreating && (
+          {profileName && memorials.length > 0 && !isCreating && (
             <button
               type="button"
               onClick={() => setIsCreating(true)}
@@ -285,8 +289,10 @@ export function TheirsDashboardClient({
           )}
         </div>
 
+        {!profileName && <ProfileOnboarding onComplete={setProfileName} />}
+
         {/* 1. CREATION CARD (When creating or 0 memorials) */}
-        {(memorials.length === 0 || isCreating) && (
+        {profileName && (memorials.length === 0 || isCreating) && (
           <div className="p-6 sm:p-8 rounded-3xl bg-white border border-black/[0.08] shadow-xs flex flex-col gap-6">
             <div className="flex flex-col gap-1 border-b border-black/[0.05] pb-4">
               <div className="flex items-center justify-between gap-2 flex-wrap">
@@ -321,6 +327,16 @@ export function TheirsDashboardClient({
                   placeholder="e.g. Robert Edward Carter"
                   className="px-4 py-2.5 rounded-xl bg-[#fafafb] border border-black/[0.08] text-sm text-[#181925] placeholder:text-[#aaa] outline-none focus:border-primary/60 transition-colors"
                 />
+              </div>
+
+              <div className="flex gap-3 rounded-2xl border border-primary/15 bg-primary/[0.035] p-3.5">
+                <Shield className="mt-0.5 size-4 shrink-0 text-primary" />
+                <div className="flex flex-col gap-0.5">
+                  <span className="text-xs font-medium text-[#181925]">Starts as a private draft</span>
+                  <span className="text-[11px] leading-relaxed text-[#71717a]">
+                    Nobody else can view or contribute until you publish it. When published, it starts as link-only and can be made public in Settings.
+                  </span>
+                </div>
               </div>
 
               {/* Web Address (Slug) with Live Collision Checking & Suggestions */}
@@ -411,7 +427,7 @@ export function TheirsDashboardClient({
         )}
 
         {/* 2. EXISTING MEMORIALS LIST */}
-        {memorials.length > 0 && (
+        {profileName && memorials.length > 0 && (
           <div className="flex flex-col gap-4">
             {/* Complete Highlights Banner if user has unpaid memorials */}
             {memorials.some((m) => !m.is_paid) && (
@@ -493,19 +509,21 @@ export function TheirsDashboardClient({
 
                   {/* Right: Actions */}
                   <div className="flex items-center gap-2 self-end sm:self-auto shrink-0 flex-wrap sm:flex-nowrap">
-                    {/* Share Button */}
-                    <button
-                      type="button"
-                      onClick={() => handleCopyLink(m.slug, m.id)}
-                      className="size-8.5 rounded-full bg-[#f4f4f6] hover:bg-neutral-200 text-[#555] flex items-center justify-center transition-colors cursor-pointer"
-                      title="Copy share link"
-                    >
-                      {copiedId === m.id ? (
-                        <Check className="size-3.5 text-emerald-600" />
-                      ) : (
-                        <Share2 className="size-3.5" />
-                      )}
-                    </button>
+                    {/* Draft links are intentionally not shareable. */}
+                    {m.status === "published" && (
+                      <button
+                        type="button"
+                        onClick={() => handleCopyLink(m.slug, m.id)}
+                        className="size-8.5 rounded-full bg-[#f4f4f6] hover:bg-neutral-200 text-[#555] flex items-center justify-center transition-colors cursor-pointer"
+                        title="Copy share link"
+                      >
+                        {copiedId === m.id ? (
+                          <Check className="size-3.5 text-emerald-600" />
+                        ) : (
+                          <Share2 className="size-3.5" />
+                        )}
+                      </button>
+                    )}
 
                     {/* View Live */}
                     <Link
@@ -513,7 +531,7 @@ export function TheirsDashboardClient({
                       target="_blank"
                       className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-[#f4f4f6] hover:bg-neutral-200 text-[#181925] text-xs font-medium transition-colors"
                     >
-                      <span>View live</span>
+                      <span>{m.status === "published" ? "View live" : "Preview"}</span>
                       <ExternalLink className="size-3 text-[#888]" />
                     </Link>
 

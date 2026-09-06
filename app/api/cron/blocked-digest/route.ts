@@ -2,10 +2,10 @@ import { NextResponse } from "next/server"
 import { getSupabaseAdminSafe } from "@/utils/supabase/admin"
 import { isAuthorizedCronRequest } from "@/lib/security/cron"
 import {
-  escapeEmailHtml,
   getTheirsAppUrl,
   notifyCaretakers,
 } from "@/lib/email/caretaker-notifications"
+import { emailNotice, renderTheirsEmail } from "@/lib/email/templates"
 
 export const dynamic = "force-dynamic"
 export const maxDuration = 60
@@ -97,7 +97,13 @@ export async function GET(request: Request) {
       ownerId: memorial.owner_id,
       eventKey: `blocked-digest/${end.toISOString().slice(0, 10)}/${memorial.id}`,
       subject: `Weekly safety digest for ${memorial.full_name}: ${countLabel}`,
-      html: `<div style="font-family:Georgia,serif;max-width:520px;margin:0 auto;padding:40px 20px;color:#181925;line-height:1.6"><h2 style="font-size:20px;font-weight:normal">Weekly blocked-submission digest</h2><p>Theirs blocked <strong>${submissions.length}</strong> visitor submission${submissions.length === 1 ? "" : "s"} for <strong>${escapeEmailHtml(memorial.full_name)}</strong> before publication.</p><p style="font:13px sans-serif;color:#666">Categories: ${escapeEmailHtml(categorySummary(submissions))}. Harmful submission text is intentionally omitted from email.</p><a href="${escapeEmailHtml(dashboardUrl)}" style="background:#181925;color:#fff;padding:11px 22px;border-radius:22px;text-decoration:none;font:500 13px sans-serif;display:inline-block">Open protected moderation</a></div>`,
+      html: renderTheirsEmail({
+        preheader: `${countLabel} were stopped before reaching ${memorial.full_name}’s page.`,
+        eyebrow: "Weekly safety summary",
+        title: `Theirs protected ${memorial.full_name}’s memorial`,
+        bodyHtml: `<p style="margin:0"><strong style="color:#181925">${submissions.length}</strong> visitor submission${submissions.length === 1 ? " was" : "s were"} blocked before publication.</p>${emailNotice(`Categories: ${categorySummary(submissions)}. Harmful text is intentionally never copied into email.`)}`,
+        primaryAction: { label: "Open protected moderation", url: dashboardUrl },
+      }),
     })
   }
 

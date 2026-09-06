@@ -9,7 +9,6 @@ import {
   AlertTriangle,
   CheckCircle2,
   AlertCircle,
-  ExternalLink,
   Download,
   Users,
   UserPlus,
@@ -41,7 +40,6 @@ interface CollaboratorItem {
 interface SettingsTabProps {
   memorialId: string
   slug: string
-  status: "draft" | "published" | "archived"
   privacy: "public" | "unlisted" | "private"
   pin?: string
   hasPin?: boolean
@@ -57,7 +55,6 @@ interface SettingsTabProps {
 export function SettingsTab({
   memorialId,
   slug,
-  status,
   privacy,
   pin = "",
   hasPin = false,
@@ -108,7 +105,6 @@ export function SettingsTab({
     photos: true,
     voice: false,
     videos: false,
-    moments: true,
   }
 
   const handleToggleContributionSetting = (key: keyof ContributionSettings, value: boolean) => {
@@ -335,10 +331,10 @@ export function SettingsTab({
       {/* Header */}
       <div className="flex flex-col gap-1 border-b border-black/[0.06] pb-4">
         <h2 className="text-lg sm:text-xl font-medium text-[#181925]">
-          Memorial Settings & Stewardship
+          Manage this memorial
         </h2>
         <p className="text-xs sm:text-sm text-[#71717a]">
-          Manage publication status, shareable web address, privacy levels, and long-term family caretaking.
+          Manage the memorial address, privacy, contributions, and long-term family access.
         </p>
       </div>
 
@@ -401,77 +397,7 @@ export function SettingsTab({
         </div>
       )}
 
-      {/* 1. Publication Status Switcher */}
-      <div className="flex flex-col gap-3 p-5 rounded-2xl bg-white border border-black/[0.07]">
-        <div className="flex items-center justify-between">
-          <div className="flex flex-col gap-0.5">
-            <label className="text-xs font-medium text-[#181925]">
-              Publication Status
-            </label>
-            <p className="text-[11px] text-[#71717a]">
-              Control whether this memorial is open to visitors or in private drafting.
-            </p>
-          </div>
-
-          <div className="flex items-center gap-1.5 p-1 bg-[#f4f4f6] rounded-full border border-black/[0.05]">
-            <button
-              type="button"
-              onClick={() => onChange("status", "published")}
-              className={`px-3 py-1 rounded-full text-xs font-medium transition-all cursor-pointer ${
-                status === "published"
-                  ? "bg-emerald-600 text-white shadow-xs"
-                  : "text-[#666] hover:text-[#181925]"
-              }`}
-            >
-              Published (Live)
-            </button>
-            <button
-              type="button"
-              onClick={() => onChange("status", "draft")}
-              className={`px-3 py-1 rounded-full text-xs font-medium transition-all cursor-pointer ${
-                status === "draft"
-                  ? "bg-[#181925] text-white shadow-xs"
-                  : "text-[#666] hover:text-[#181925]"
-              }`}
-            >
-              Draft (Private)
-            </button>
-          </div>
-        </div>
-
-        {status === "published" ? (
-          <div className="flex items-center justify-between p-3 rounded-xl bg-emerald-50/60 border border-emerald-200 text-xs text-emerald-800">
-            <span className="flex items-center gap-1.5">
-              <CheckCircle2 className="size-3.5 text-emerald-600" />
-              <span>Live at <strong>theirs.page/{slug}</strong></span>
-            </span>
-            <a
-              href={`/${slug}`}
-              target="_blank"
-              rel="noreferrer"
-              className="inline-flex items-center gap-1 text-emerald-700 font-semibold hover:underline"
-            >
-              <span>View live page</span>
-              <ExternalLink className="size-3" />
-            </a>
-          </div>
-        ) : (
-          <div className="p-3 rounded-xl bg-amber-50/60 border border-amber-200 text-xs text-amber-800 flex items-center justify-between">
-            <span>In Draft mode. Only you can preview this page.</span>
-            <a
-              href={`/${slug}`}
-              target="_blank"
-              rel="noreferrer"
-              className="inline-flex items-center gap-1 text-amber-700 font-semibold hover:underline"
-            >
-              <span>Preview</span>
-              <ExternalLink className="size-3" />
-            </a>
-          </div>
-        )}
-      </div>
-
-      {/* 2. Permanent Web Address (Slug) with Live Check */}
+      {/* Permanent web address */}
       <div className="flex flex-col gap-2 p-5 rounded-2xl bg-white border border-black/[0.07]">
         <label className="text-xs font-medium text-[#181925]">
           Web Address (Link)
@@ -838,11 +764,6 @@ export function SettingsTab({
                 key: "videos" as const,
                 title: "Video Clips",
                 desc: "Visitors can upload a video for a caretaker to watch and approve.",
-              },
-              {
-                key: "moments" as const,
-                title: "Life Moments",
-                desc: "Timeline additions and significant milestone suggestions.",
               },
             ].map((opt) => {
               const unavailable = (opt.key === "voice" || opt.key === "videos") && !isPaid

@@ -4,16 +4,14 @@ import Link from "next/link"
 
 interface MemorialFooterProps {
   fullName?: string
-  slug?: string
   caretakerName?: string
-  successorName?: string
 }
 
-export function MemorialFooter({}: MemorialFooterProps = {}) {
+export function MemorialFooter({ fullName, caretakerName }: MemorialFooterProps = {}) {
   return (
     <aside
-      aria-label="Theirs branding"
-      className="fixed bottom-4 left-4 sm:bottom-5 sm:left-5 z-30 print:hidden select-none"
+      aria-label={fullName ? `About ${fullName}'s memorial` : "Theirs branding"}
+      className="fixed bottom-4 left-4 sm:bottom-5 sm:left-5 z-30 print:hidden select-none flex flex-wrap items-center gap-2"
     >
       <Link
         href="/"
@@ -50,6 +48,11 @@ export function MemorialFooter({}: MemorialFooterProps = {}) {
           theirs<span className="text-primary font-semibold">.page</span>
         </span>
       </Link>
+      {caretakerName && (
+        <span className="max-w-[min(70vw,18rem)] truncate rounded-full border border-black/[0.08] bg-white/90 px-3 py-1.5 text-[11px] text-[#666] shadow-[0_2px_10px_rgba(0,0,0,0.05)] backdrop-blur-md sm:text-xs">
+          Maintained by <strong className="font-medium text-[#181925]">{caretakerName}</strong>
+        </span>
+      )}
     </aside>
   )
 }

@@ -8,6 +8,7 @@ import {
   getTheirsAppUrl,
   notifyCaretakers,
 } from "@/lib/email/caretaker-notifications"
+import { emailNotice, emailQuoteCard, renderTheirsEmail } from "@/lib/email/templates"
 
 interface RouteContext {
   params: Promise<{ id: string }>
@@ -83,22 +84,13 @@ export async function POST(request: NextRequest, context: RouteContext) {
       eventKey: `caretaker-message/${inserted.id}`,
       replyTo: senderEmail,
       subject: `${senderName} sent a private message about ${memorial.full_name}`,
-      html: `
-              <div style="background:#f5f6f8;padding:36px 16px;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;color:#181925">
-                <div style="max-width:560px;margin:0 auto;background:#fff;border:1px solid #e3e4e7;border-radius:20px;overflow:hidden">
-                  <div style="height:5px;background:#305dde"></div>
-                  <div style="padding:30px">
-                    <p style="margin:0 0 8px;color:#305dde;font-size:12px;font-weight:700;letter-spacing:.08em;text-transform:uppercase">Private caretaker message</p>
-                    <h1 style="margin:0 0 18px;font-family:Georgia,serif;font-size:25px;font-weight:400">A visitor wrote about ${escapeEmailHtml(memorial.full_name)}</h1>
-                    <p style="margin:0 0 18px;font-size:14px;color:#666970">From <strong style="color:#303136">${escapeEmailHtml(senderName)}</strong> · ${escapeEmailHtml(senderEmail)}</p>
-                    <div style="border-left:3px solid #305dde;background:#f7f8fc;border-radius:0 12px 12px 0;padding:18px 20px;white-space:pre-wrap;font-family:Georgia,serif;font-size:16px;line-height:1.65;color:#303136">${escapeEmailHtml(message)}</div>
-                    <div style="margin-top:26px">
-                      <a href="${escapeEmailHtml(inboxUrl)}" style="display:inline-block;border-radius:999px;background:#305dde;color:#fff;padding:12px 20px;text-decoration:none;font-size:13px;font-weight:700">Open message in dashboard</a>
-                    </div>
-                    <p style="margin:24px 0 0;border-top:1px solid #ececef;padding-top:16px;color:#8a8c92;font-size:12px">Replying to this email will reply directly to ${escapeEmailHtml(senderName)}.</p>
-                  </div>
-                </div>
-              </div>`,
+      html: renderTheirsEmail({
+        preheader: `${senderName} sent a private message about ${memorial.full_name}.`,
+        eyebrow: "Private caretaker message",
+        title: `A visitor wrote about ${memorial.full_name}`,
+        bodyHtml: `<p style="margin:0">From <strong style="color:#181925">${escapeEmailHtml(senderName)}</strong><br><span style="color:#74767c">${escapeEmailHtml(senderEmail)}</span></p>${emailQuoteCard(message)}${emailNotice(`Reply to this email to answer ${senderName} directly.`)}`,
+        primaryAction: { label: "Open private message", url: inboxUrl },
+      }),
     })
 
     return NextResponse.json({ success: true, id: inserted.id })
