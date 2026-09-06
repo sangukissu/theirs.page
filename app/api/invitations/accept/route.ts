@@ -35,22 +35,56 @@ export async function POST(req: NextRequest) {
 
     const payload = verification.payload
 
-    // 2. Strict Account-Bound Identity Verification
+    const admin = getSupabaseAdminSafe() || supabase
+    const { data: invitation, error: invitationError } = await admin
+      .from("collaborators")
+      .select("id, memorial_id, user_id, email, role, is_trusted, invitation_accepted")
+      .eq("id", payload.collaboratorId)
+      .eq("memorial_id", payload.memorialId)
+      .maybeSingle()
+
+    if (invitationError) {
+      console.error("Failed to load invitation on accept:", invitationError)
+      return NextResponse.json(
+        { error: "Failed to verify invitation. Please try again in a moment." },
+        { status: 500 }
+      )
+    }
+
+    if (!invitation || invitation.email.toLowerCase().trim() !== payload.email.toLowerCase().trim()) {
+      return NextResponse.json(
+        { error: "This invitation has been revoked or replaced." },
+        { status: 410 }
+      )
+    }
+
+    // 2. Strict Account-Bound Identity Verification against the live record.
     const loggedInEmail = user.email.toLowerCase().trim()
-    const invitedEmail = payload.email.toLowerCase().trim()
+    const invitedEmail = invitation.email.toLowerCase().trim()
 
     if (loggedInEmail !== invitedEmail) {
       return NextResponse.json(
         {
-          error: `This invitation was issued for ${payload.email}. You are currently signed in as ${user.email}. Please switch accounts to accept.`,
+          error: `This invitation was issued for ${invitation.email}. You are currently signed in as ${user.email}. Please switch accounts to accept.`,
         },
         { status: 403 }
       )
     }
 
-    // 3. Update Collaborator Record
-    const admin = getSupabaseAdminSafe() || supabase
-    const { error: updateErr } = await admin
+    if (
+      invitation.invitation_accepted &&
+      invitation.user_id &&
+      invitation.user_id !== user.id
+    ) {
+      return NextResponse.json(
+        { error: "This invitation has already been accepted by another account." },
+        { status: 409 }
+      )
+    }
+
+    // 3. Bind the live collaborator record. The database role and trust flag,
+    // not the older token payload, remain authoritative.
+    const { data: acceptedInvitation, error: updateErr } = await admin
       .from("collaborators")
       .update({
         user_id: user.id,
@@ -58,12 +92,22 @@ export async function POST(req: NextRequest) {
       })
       .eq("id", payload.collaboratorId)
       .eq("memorial_id", payload.memorialId)
+      .eq("email", invitation.email)
+      .select("id, role, is_trusted")
+      .maybeSingle()
 
     if (updateErr) {
       console.error("Failed to update collaborator on accept:", updateErr)
       return NextResponse.json(
         { error: "Failed to accept invitation. Please try again in a moment." },
         { status: 500 }
+      )
+    }
+
+    if (!acceptedInvitation) {
+      return NextResponse.json(
+        { error: "This invitation has been revoked." },
+        { status: 410 }
       )
     }
 
@@ -78,6 +122,12 @@ export async function POST(req: NextRequest) {
       success: true,
       memorialId: payload.memorialId,
       slug: memorial?.slug || payload.memorialId,
+      accessRole:
+        acceptedInvitation.role === "co_admin"
+          ? "co_admin"
+          : acceptedInvitation.is_trusted
+            ? "trusted"
+            : "contributor",
     })
   } catch (err: any) {
     console.error("Invitation acceptance error:", err)

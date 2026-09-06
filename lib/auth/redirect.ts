@@ -1,5 +1,9 @@
 const DEFAULT_AUTH_DESTINATION = "/dashboard"
-const ALLOWED_AUTH_PREFIXES = ["/dashboard", "/admin"] as const
+const ALLOWED_AUTH_PREFIXES = [
+  "/dashboard",
+  "/admin",
+  "/invitation/accept",
+] as const
 const AUTH_BASE_URL = "https://bringback.local"
 
 export function sanitizeAuthDestination(

@@ -15,7 +15,7 @@ interface InvitationAcceptClientProps {
     portrait_photo_url: string | null
   }
   invitedEmail: string
-  role: "co_admin" | "contributor"
+  role: "co_admin" | "trusted" | "contributor"
   userEmail: string | null
   alreadyAccepted?: boolean
 }
@@ -31,6 +31,7 @@ export function InvitationAcceptClient({
   const router = useRouter()
   const [isAccepting, setIsAccepting] = useState(false)
   const [accepted, setAccepted] = useState(alreadyAccepted)
+  const [accessRole, setAccessRole] = useState(role)
   const [error, setError] = useState<string | null>(null)
 
   const isEmailMatch =
@@ -52,6 +53,13 @@ export function InvitationAcceptClient({
         throw new Error(data.error || "Failed to accept invitation")
       }
 
+      if (
+        data.accessRole === "co_admin" ||
+        data.accessRole === "trusted" ||
+        data.accessRole === "contributor"
+      ) {
+        setAccessRole(data.accessRole)
+      }
       setAccepted(true)
     } catch (err: any) {
       setError(err.message || "Failed to accept invitation. Please try again.")
@@ -62,6 +70,18 @@ export function InvitationAcceptClient({
 
   // Already accepted or just accepted state
   if (accepted) {
+    const isCoAdmin = accessRole === "co_admin"
+    const roleName = isCoAdmin
+      ? "co-admin"
+      : accessRole === "trusted"
+        ? "trusted contributor"
+        : "contributor"
+    const roleDescription = isCoAdmin
+      ? "You can help edit the memorial and review family contributions."
+      : accessRole === "trusted"
+        ? "Your contributions can publish automatically when they pass safety checks."
+        : "Your contributions will be reviewed by a caretaker before they are published."
+
     return (
       <div className="min-h-screen bg-[#fafafb] flex items-center justify-center p-4">
         <div className="max-w-md w-full bg-white border border-black/[0.08] rounded-3xl p-4 sm:p-6 shadow-xs flex flex-col items-center text-center gap-5">
@@ -74,10 +94,10 @@ export function InvitationAcceptClient({
               Invitation Accepted
             </span>
             <h1 className="text-xl sm:text-2xl font-serif font-medium text-[#181925]">
-              Welcome to {memorial.full_name}&apos;s Circle
+              You&apos;re now a {roleName} for {memorial.full_name}
             </h1>
             <p className="text-xs text-[#71717a] leading-relaxed max-w-sm">
-              You now have access as a {role === "co_admin" ? "co-admin" : "collaborator"}. You can approve contributions, write stories, and care for this space together.
+              {roleDescription}
             </p>
           </div>
 
@@ -89,10 +109,12 @@ export function InvitationAcceptClient({
               View Live Memorial
             </Link>
             <Link
-              href={`/dashboard/memorials/${memorial.id}/editor`}
+              href={isCoAdmin
+                ? `/dashboard/memorials/${memorial.id}/editor`
+                : `/${memorial.slug}/memories#share-memory`}
               className="flex-1 inline-flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-full bg-[#181925] hover:bg-[#252736] text-white text-xs font-medium transition-colors"
             >
-              <span>Open Studio</span>
+              <span>{isCoAdmin ? "Open Studio" : "Contribute"}</span>
               <ArrowRight className="size-3.5" />
             </Link>
           </div>
@@ -180,11 +202,11 @@ export function InvitationAcceptClient({
             </span>
             <h1 className="text-xl sm:text-2xl font-serif font-medium text-[#181925]">
               <span className="text-[11px] font-mono uppercase tracking-wider font-semibold">
-                For
+                For Memorial of {" "}
               </span>{memorial.full_name}
             </h1>
             <p className="text-xs text-[#71717a] leading-relaxed max-w-sm">
-              You have been invited as a {role === "co_admin" ? "co-admin" : "collaborator"} to help care for and contribute to {memorial.full_name}&apos;s family archive.
+              You have been invited as a {accessRole === "co_admin" ? "co-admin" : accessRole === "trusted" ? "trusted contributor" : "contributor"} to help care for and contribute to {memorial.full_name}&apos;s family archive.
             </p>
           </div>
 
@@ -261,7 +283,7 @@ export function InvitationAcceptClient({
             </span>{" "}{memorial.full_name}
           </h1>
           <p className="text-xs text-[#71717a] leading-relaxed max-w-sm">
-            You have been invited as a {role === "co_admin" ? "co-admin" : "collaborator"} to help preserve memories, upload photos, and care for this memorial.
+            You have been invited as a {accessRole === "co_admin" ? "co-admin" : accessRole === "trusted" ? "trusted contributor" : "contributor"} to help preserve memories, upload photos, and care for this memorial.
           </p>
         </div>
 

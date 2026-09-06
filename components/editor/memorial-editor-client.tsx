@@ -29,6 +29,7 @@ import { TimelineTab, EditorTimelineEvent } from "./tabs/timeline-tab"
 import { ModerationTab, EditorMemory, EditorCaretakerMessage } from "./tabs/moderation-tab"
 import { SettingsTab } from "./tabs/settings-tab"
 import { PublishMemorialDialog } from "./publish-memorial-dialog"
+import { useEditorAuthorization } from "./use-editor-authorization"
 import { SectionSettings, ContributionSettings } from "@/types/theirs"
 import { toast } from "sonner"
 
@@ -87,6 +88,7 @@ export function MemorialEditorClient({
   initialCaretakerMessages = [],
 }: MemorialEditorClientProps) {
   const router = useRouter()
+  const handleAuthorizationFailure = useEditorAuthorization(initialMemorial.id)
   const searchParams = useSearchParams()
   const requestedTab = searchParams.get("tab")
   const [activeTab, setActiveTab] = useState<EditorSectionTab>(requestedTab === "moderation" ? "moderation" : "identity")
@@ -133,6 +135,22 @@ export function MemorialEditorClient({
 
   // Storage key for resilient local-first backup
   const DRAFT_KEY = `theirs_editor_draft_${initialMemorial.id}`
+
+  // Re-check access when the user returns to an already-open Studio tab.
+  useEffect(() => {
+    const verifyStillAuthorized = async () => {
+      try {
+        const response = await fetch(`/api/memorials/${initialMemorial.id}`, {
+          cache: "no-store",
+        })
+        handleAuthorizationFailure(response)
+      } catch {
+        // A network failure is not evidence that access was revoked.
+      }
+    }
+    window.addEventListener("focus", verifyStillAuthorized)
+    return () => window.removeEventListener("focus", verifyStillAuthorized)
+  }, [handleAuthorizationFailure, initialMemorial.id])
 
   // Form State
   const [form, setForm] = useState({
@@ -277,6 +295,8 @@ export function MemorialEditorClient({
           body: JSON.stringify(payload),
         })
 
+        if (handleAuthorizationFailure(res)) return false
+
         if (res.ok) {
           const resData = await res.json().catch(() => ({}))
           if (resData.memorial?.portrait_photo_url && resData.memorial.portrait_photo_url !== currentForm.portrait_photo_url) {
@@ -314,7 +334,7 @@ export function MemorialEditorClient({
         return false
       }
     },
-    [initialMemorial.id, DRAFT_KEY, isPaid]
+    [initialMemorial.id, initialMemorial.can_manage_owner_settings, DRAFT_KEY, isPaid, handleAuthorizationFailure]
   )
 
   // 3. FIELD CHANGE HANDLER (Immediate LocalStorage + Debounced Cloud Sync)
@@ -376,7 +396,7 @@ export function MemorialEditorClient({
     )
 
     try {
-      await fetch(`/api/memorials/${initialMemorial.id}/media`, {
+      const response = await fetch(`/api/memorials/${initialMemorial.id}/media`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -384,6 +404,7 @@ export function MemorialEditorClient({
           [field]: value,
         }),
       })
+      handleAuthorizationFailure(response)
     } catch (err) {
       console.error("Failed to auto-save media update:", err)
     }
@@ -401,6 +422,9 @@ export function MemorialEditorClient({
               mediaId: item.id,
               order_index: idx,
             }),
+          }).then((response) => {
+            handleAuthorizationFailure(response)
+            return response
           })
         )
       )
@@ -424,6 +448,9 @@ export function MemorialEditorClient({
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ status, ...(privacy ? { privacy } : {}) }),
     })
+    if (handleAuthorizationFailure(response)) {
+      throw new Error("Your access to this memorial has been removed.")
+    }
     const data = await response.json().catch(() => ({}))
     if (!response.ok) throw new Error(data.error || "The publication status could not be changed.")
 

@@ -3,7 +3,7 @@ import { getR2ObjectStream } from "@/lib/r2"
 import { getSupabaseAdminSafe } from "@/utils/supabase/admin"
 import { createClient } from "@/utils/supabase/server"
 import { getMemorialPinCookieName, verifyPinAccessToken } from "@/lib/security/pin"
-import { assertMemorialAdmin } from "@/lib/memorial-auth"
+import { assertMemorialAdmin, getMemorialAccess } from "@/lib/memorial-auth"
 
 const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
 
@@ -209,34 +209,22 @@ async function handleMediaRequest(req: NextRequest, isHead: boolean) {
         memorial.access_pin_hash
       )
 
-      let isOwnerOrAdmin = false
+      let hasMemberAccess = false
       if (!isPinUnlocked || memorial.status !== "published") {
         const supabase = await createClient()
         const {
           data: { user },
         } = await supabase.auth.getUser()
 
-        if (user) {
-          if (memorial.owner_id === user.id) {
-            isOwnerOrAdmin = true
-          } else {
-            const { data: collab } = await admin
-              .from("collaborators")
-              .select("id, role")
-              .eq("memorial_id", memorial.id)
-              .eq("user_id", user.id)
-              .eq("invitation_accepted", true)
-              .maybeSingle()
-            if (collab && (memorial.status === "published" || collab.role === "co_admin")) {
-              isOwnerOrAdmin = true
-            }
-          }
-        }
+        const access = user?.id
+          ? await getMemorialAccess(memorial.id, user.id)
+          : null
+        hasMemberAccess = Boolean(access)
       }
 
       if (
-        (memorial.status !== "published" && !isOwnerOrAdmin) ||
-        (memorial.privacy === "private" && !isPinUnlocked && !isOwnerOrAdmin)
+        (memorial.status !== "published" && !hasMemberAccess) ||
+        (memorial.privacy === "private" && !isPinUnlocked && !hasMemberAccess)
       ) {
         return NextResponse.json(
           { error: "Access to private memorial media requires unlocking with the family PIN." },

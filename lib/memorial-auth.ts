@@ -10,6 +10,24 @@ export interface MemorialAuthResult {
   role?: "owner" | "co_admin"
 }
 
+export type MemorialAccessRole =
+  | "owner"
+  | "co_admin"
+  | "trusted"
+  | "contributor"
+
+export interface MemorialAccess {
+  role: MemorialAccessRole
+  isOwner: boolean
+  canOpenStudio: boolean
+  canEditEditorial: boolean
+  canModerate: boolean
+  canManage: boolean
+  canContribute: boolean
+  canAutoPublishOwnContributions: boolean
+  memorial: any
+}
+
 export interface AssertAdminResult {
   authorized: boolean
   errorResponse: NextResponse | null
@@ -22,6 +40,80 @@ export interface AssertAdminResult {
  * Verifies whether a user is the primary owner (steward) of a memorial.
  */
 const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+
+/**
+ * Resolves the current user's capabilities for one memorial. Roles belong to
+ * this user × memorial relationship; they are never global account roles.
+ */
+export async function getMemorialAccess(
+  memorialId: string,
+  userId: string,
+): Promise<MemorialAccess | null> {
+  if (!memorialId || !userId) return null
+
+  const db = getSupabaseAdminSafe() || (await createClient())
+  const isUuid = UUID_REGEX.test(memorialId)
+  let memorialQuery = db
+    .from("memorials")
+    .select("id, owner_id, slug, status, privacy, is_paid, full_name")
+  memorialQuery = isUuid
+    ? memorialQuery.eq("id", memorialId)
+    : memorialQuery.eq("slug", memorialId)
+
+  const { data: memorial, error: memorialError } = await memorialQuery.maybeSingle()
+  if (memorialError || !memorial) return null
+
+  if (memorial.owner_id === userId) {
+    return {
+      role: "owner",
+      isOwner: true,
+      canOpenStudio: true,
+      canEditEditorial: true,
+      canModerate: true,
+      canManage: true,
+      canContribute: true,
+      canAutoPublishOwnContributions: true,
+      memorial,
+    }
+  }
+
+  const { data: collaborator, error: collaboratorError } = await db
+    .from("collaborators")
+    .select("role, is_trusted")
+    .eq("memorial_id", memorial.id)
+    .eq("user_id", userId)
+    .eq("invitation_accepted", true)
+    .maybeSingle()
+
+  if (collaboratorError || !collaborator) return null
+
+  if (collaborator.role === "co_admin") {
+    return {
+      role: "co_admin",
+      isOwner: false,
+      canOpenStudio: true,
+      canEditEditorial: true,
+      canModerate: true,
+      canManage: false,
+      canContribute: true,
+      canAutoPublishOwnContributions: true,
+      memorial,
+    }
+  }
+
+  const isTrusted = Boolean(collaborator.is_trusted)
+  return {
+    role: isTrusted ? "trusted" : "contributor",
+    isOwner: false,
+    canOpenStudio: false,
+    canEditEditorial: false,
+    canModerate: false,
+    canManage: false,
+    canContribute: true,
+    canAutoPublishOwnContributions: isTrusted,
+    memorial,
+  }
+}
 
 export async function verifyMemorialOwner(
   memorialId: string,
@@ -99,50 +191,14 @@ export async function verifyMemorialAdmin(
     }
   }
 
-  const db = getSupabaseAdminSafe() || (await createClient())
-
   try {
-    // 1. Check if user is the direct owner of the memorial
-    const isUuid = UUID_REGEX.test(memorialId)
-    let query = db
-      .from("memorials")
-      .select("id, owner_id, slug, status, privacy, is_paid, full_name")
-    query = isUuid ? query.eq("id", memorialId) : query.eq("slug", memorialId)
-    const { data: memorial, error: memorialError } = await query.maybeSingle()
-
-    if (memorialError || !memorial) {
-      return {
-        authorized: false,
-        status: 404,
-        error: "Memorial not found",
-      }
-    }
-
-    if (memorial.owner_id === userId) {
+    const access = await getMemorialAccess(memorialId, userId)
+    if (access?.canOpenStudio && access.canEditEditorial) {
       return {
         authorized: true,
         status: 200,
-        memorial,
-        role: "owner",
-      }
-    }
-
-    // 2. Check if user is an accepted co_admin collaborator
-    const { data: collaborator } = await db
-      .from("collaborators")
-      .select("id, role, invitation_accepted")
-      .eq("memorial_id", memorial.id)
-      .eq("user_id", userId)
-      .eq("role", "co_admin")
-      .eq("invitation_accepted", true)
-      .maybeSingle()
-
-    if (collaborator) {
-      return {
-        authorized: true,
-        status: 200,
-        memorial,
-        role: "co_admin",
+        memorial: access.memorial,
+        role: access.role === "owner" ? "owner" : "co_admin",
       }
     }
 

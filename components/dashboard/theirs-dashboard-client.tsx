@@ -39,6 +39,7 @@ interface MemorialSummary {
   privacy: "public" | "unlisted" | "private"
   is_paid: boolean
   created_at: string
+  access_role: "owner" | "co_admin" | "trusted" | "contributor"
 }
 
 interface TheirsDashboardClientProps {
@@ -89,6 +90,7 @@ export function TheirsDashboardClient({
 
   const showCreateForm = isCreating || memorials.length === 0
   const firstName = fullNameInput.trim().split(" ")[0] || ""
+  const accessNotice = searchParams.get("access")
 
   const handleUpgrade = async (memorialId: string) => {
     setCheckingOutId(memorialId)
@@ -402,11 +404,19 @@ export function TheirsDashboardClient({
       ) : (
         /* 2. EXISTING MEMORIALS LIST */
         <main className="max-w-3xl w-full mx-auto px-4 sm:px-6 py-10 sm:py-14 flex-1 flex flex-col gap-8">
+          {(accessNotice === "denied" || accessNotice === "revoked") && (
+            <div className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-xs text-amber-800">
+              {accessNotice === "revoked"
+                ? "Your access to that memorial has been removed."
+                : "You do not have permission to open that memorial’s Studio."}
+            </div>
+          )}
+
           {/* Title Header */}
           <div className="flex flex-col sm:flex-row sm:items-baseline justify-between gap-4">
             <div className="flex flex-col gap-1">
               <h1 className="text-2xl sm:text-3xl font-heading font-medium tracking-tight text-[#181925]">
-                Your Memorials
+                Memorials
               </h1>
               <p className="text-xs sm:text-sm text-[#71717a]">
                 A quiet place for the people you never want to forget.
@@ -425,7 +435,7 @@ export function TheirsDashboardClient({
 
           <div className="flex flex-col gap-4">
             {/* Complete Highlights Banner if user has unpaid memorials */}
-            {memorials.some((m) => !m.is_paid) && (
+            {memorials.some((m) => m.access_role === "owner" && !m.is_paid) && (
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 rounded-2xl bg-[#1f1f1f] text-white border border-white/[0.08] shadow-2xs">
                 <div className="flex items-center gap-3">
                   <div className="size-8 rounded-full bg-emerald-500/20 text-emerald-400 flex items-center justify-center shrink-0">
@@ -451,6 +461,15 @@ export function TheirsDashboardClient({
 
             {memorials.map((m) => {
               const yearSpan = m.birth_year && m.death_year ? `${m.birth_year} — ${m.death_year}` : "Memorial"
+              const canOpenStudio = m.access_role === "owner" || m.access_role === "co_admin"
+              const isOwner = m.access_role === "owner"
+              const roleLabel = isOwner
+                ? "Owner"
+                : m.access_role === "co_admin"
+                  ? "Co-admin"
+                  : m.access_role === "trusted"
+                    ? "Trusted contributor"
+                    : "Contributor"
 
               return (
                 <div
@@ -490,7 +509,10 @@ export function TheirsDashboardClient({
                         >
                           {m.status}
                         </span>
-                        {!m.is_paid && (
+                        <span className="px-2 py-0.5 rounded-full text-[10px] font-mono uppercase font-semibold bg-indigo-50 text-indigo-700 border border-indigo-200">
+                          {roleLabel}
+                        </span>
+                        {isOwner && !m.is_paid && (
                           <span className="px-2 py-0.5 rounded-full text-[10px] font-mono uppercase font-semibold bg-neutral-100 text-[#666] border border-black/[0.08]">
                             Free Tier
                           </span>
@@ -532,7 +554,7 @@ export function TheirsDashboardClient({
                     </Link>
 
                     {/* Upgrade to Pro CTA Button (for free memorials) */}
-                    {!m.is_paid && (
+                    {isOwner && !m.is_paid && (
                       <button
                         type="button"
                         disabled={checkingOutId === m.id}
@@ -548,12 +570,14 @@ export function TheirsDashboardClient({
                       </button>
                     )}
 
-                    {/* Open Editor */}
+                    {/* Capability-specific primary action */}
                     <Link
-                      href={`/dashboard/memorials/${m.id}/editor`}
+                      href={canOpenStudio
+                        ? `/dashboard/memorials/${m.id}/editor`
+                        : `/${m.slug}/memories#share-memory`}
                       className="inline-flex items-center justify-center gap-1 whitespace-nowrap !rounded-full font-medium transition-all cursor-pointer border border-[color-mix(in_srgb,var(--primary)_80%,#3a3480)] bg-[color-mix(in_srgb,var(--primary)_90%,#3a3480)] text-primary-foreground shadow-[inset_0_1px_0_rgba(255,255,255,0.22),inset_0_-1px_0_rgba(58,52,128,0.30)] transform-gpu hover:bg-primary hover:border-[color-mix(in_srgb,var(--primary)_70%,#3a3480)] active:translate-y-px active:scale-[0.98] h-8 px-4 text-xs select-none"
                     >
-                      <span>Edit memorial</span>
+                      <span>{canOpenStudio ? "Open Studio" : "Contribute"}</span>
                       <ArrowRight className="size-3" />
                     </Link>
                   </div>

@@ -5,6 +5,7 @@ import { Plus, Trash2, Calendar, MapPin, Lock, Upload, Image as ImageIcon, X, Lo
 import { UpgradeBanner } from "../upgrade-banner"
 import { ConfirmDeleteModal } from "../confirm-delete-modal"
 import { TEXT_LIMITS } from "@/lib/validation/text-limits"
+import { useEditorAuthorization } from "../use-editor-authorization"
 
 export interface EditorTimelineEvent {
   id: string
@@ -34,6 +35,7 @@ export function TimelineTab({
   onAddEvent,
   onRemoveEvent,
 }: TimelineTabProps) {
+  const handleAuthorizationFailure = useEditorAuthorization(memorialId)
   const [yearInput, setYearInput] = useState("")
   const [titleInput, setTitleInput] = useState("")
   const [descInput, setDescInput] = useState("")
@@ -99,6 +101,7 @@ export function TimelineTab({
       })
 
       const presignedData = await presignedRes.json()
+      if (handleAuthorizationFailure(presignedRes)) return
       if (!presignedRes.ok) {
         throw new Error(presignedData.error || "Failed to prepare photo upload")
       }
@@ -133,6 +136,7 @@ export function TimelineTab({
           body: formData,
         })
         const fallbackData = await fallbackRes.json()
+        if (handleAuthorizationFailure(fallbackRes)) return
         if (!fallbackRes.ok) {
           throw new Error(fallbackData.error || "Failed to upload photo via server fallback")
         }
@@ -170,6 +174,7 @@ export function TimelineTab({
       })
 
       const data = await res.json()
+      if (handleAuthorizationFailure(res)) return
       if (res.ok && data.event) {
         onAddEvent(data.event)
         setYearInput("")
@@ -198,6 +203,7 @@ export function TimelineTab({
       const res = await fetch(`/api/memorials/${memorialId}/timeline?eventId=${eventToDelete.id}`, {
         method: "DELETE",
       })
+      if (handleAuthorizationFailure(res)) return
       if (res.ok) {
         onRemoveEvent(eventToDelete.id)
         setEventToDelete(null)

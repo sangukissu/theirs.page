@@ -22,6 +22,7 @@ import type {
 import type { SectionSettings } from "@/types/theirs"
 import { getMemorialPinCookieName, verifyPinAccessToken } from "@/lib/security/pin"
 import { sanitizeContributionHtml } from "@/lib/safety/contribution-html"
+import { getMemorialAccess } from "@/lib/memorial-auth"
 
 const DEFAULT_SECTIONS: Required<SectionSettings> = {
   story: true,
@@ -227,13 +228,16 @@ export const getMemorialViewContext = cache(async (slug: string): Promise<Memori
   // public/unlisted memorials skip auth completely. If a session cookie exists,
   // we resolve the user to preserve caretaker/owner permissions.
   let isOwner = false
+  let hasMemberAccess = false
   const isPublishedPublicOrUnlisted = memorial?.status === "published" && memorial?.privacy !== "private"
 
   if (memorial && (hasAuthCookie || !isPublishedPublicOrUnlisted)) {
     if (!serverClient) serverClient = await createClient()
     const { data: { user } } = await serverClient.auth.getUser().catch(() => ({ data: { user: null } }))
-    isOwner = Boolean(user?.id && memorial.owner_id === user.id)
-    if (memorial.status !== "published" && !isOwner) return null
+    const access = user?.id ? await getMemorialAccess(memorial.id, user.id) : null
+    isOwner = Boolean(access?.isOwner)
+    hasMemberAccess = Boolean(access)
+    if (memorial.status !== "published" && !hasMemberAccess) return null
   }
   const pinUnlocked = Boolean(
     memorial?.privacy === "private" &&
@@ -243,7 +247,7 @@ export const getMemorialViewContext = cache(async (slug: string): Promise<Memori
         memorial.access_pin_hash
       )
   )
-  const requiresPin = Boolean(memorial?.privacy === "private" && !isOwner && !pinUnlocked)
+  const requiresPin = Boolean(memorial?.privacy === "private" && !hasMemberAccess && !pinUnlocked)
   const sections = { ...DEFAULT_SECTIONS, ...(memorial?.section_settings || {}) }
 
   let caretakerName: string | null = isDemo ? "Anita Carter" : null
@@ -260,7 +264,7 @@ export const getMemorialViewContext = cache(async (slug: string): Promise<Memori
     memorial,
     db,
     requiresPin,
-    canSeeFamilyOnly: Boolean(isOwner || pinUnlocked),
+    canSeeFamilyOnly: Boolean(hasMemberAccess || pinUnlocked),
     identity: {
       id: memorial?.id,
       slug,

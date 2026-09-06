@@ -23,6 +23,7 @@ import {
 import { ConfirmDeleteModal } from "../confirm-delete-modal"
 import { ContributionMediaPreview } from "../contribution-media-preview"
 import type { SectionSettings } from "@/types/theirs"
+import { useEditorAuthorization } from "../use-editor-authorization"
 
 export interface EditorMemory {
   id: string
@@ -101,6 +102,7 @@ export function ModerationTab({
   onDeleteMemory,
   onDeleteCaretakerMessage,
 }: ModerationTabProps) {
+  const handleAuthorizationFailure = useEditorAuthorization(memorialId)
   const [subTab, setSubTab] = useState<"memories" | "messages">(initialSubTab)
   const [activeBucket, setActiveBucket] = useState<"pending" | "published" | "blocked">("pending")
   const [typeFilter, setTypeFilter] = useState<"all" | "tribute" | "memory">("all")
@@ -132,6 +134,7 @@ export function ModerationTab({
       if (append && nextCursor) params.set("cursor", nextCursor)
       const response = await fetch(`/api/memorials/${memorialId}/moderation?${params.toString()}`, { cache: "no-store" })
       const data = await response.json().catch(() => ({}))
+      if (handleAuthorizationFailure(response)) return
       if (!response.ok) throw new Error(data.error || "Unable to load contributions.")
       if (requestId !== pageRequestRef.current) return
       const incoming = (data.items || []) as EditorMemory[]
@@ -167,6 +170,8 @@ export function ModerationTab({
         body: JSON.stringify({ target, targetId, action }),
       })
 
+      if (handleAuthorizationFailure(res)) return
+
       if (res.ok) {
         const nextStatus =
           action === "approve"
@@ -197,6 +202,8 @@ export function ModerationTab({
         }),
       })
 
+      if (handleAuthorizationFailure(res)) return
+
       if (res.ok) {
         if (deleteTarget.type === "memory") onDeleteMemory(deleteTarget.id)
         else onDeleteCaretakerMessage(deleteTarget.id)
@@ -221,6 +228,7 @@ export function ModerationTab({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ target: "caretaker_message", targetId: messageId, action }),
       })
+      if (handleAuthorizationFailure(response)) return
       if (response.ok) onUpdateCaretakerMessage(messageId, action === "archive" ? "archived" : "read")
     } catch (error) {
       console.error("Message update failed:", error)

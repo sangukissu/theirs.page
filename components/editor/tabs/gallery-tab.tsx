@@ -24,6 +24,7 @@ import {
 import { UpgradeBanner } from "../upgrade-banner"
 import { ConfirmDeleteModal } from "../confirm-delete-modal"
 import { TEXT_LIMITS } from "@/lib/validation/text-limits"
+import { useEditorAuthorization } from "../use-editor-authorization"
 
 export interface EditorMediaItem {
   id: string
@@ -74,6 +75,7 @@ export function GalleryTab({
   onUpdateMedia,
   onReorderMedia,
 }: GalleryTabProps) {
+  const handleAuthorizationFailure = useEditorAuthorization(memorialId)
   const [isUploading, setIsUploading] = useState(false)
   const [uploadProgress, setUploadProgress] = useState<string | null>(null)
   const [uploadError, setUploadError] = useState<string | null>(null)
@@ -198,6 +200,7 @@ export function GalleryTab({
           }),
         })
         const presignedData = await presignedRes.json()
+        if (handleAuthorizationFailure(presignedRes)) return
         if (!presignedRes.ok) {
           throw new Error(presignedData.error || `Failed to prepare upload for ${item.name}`)
         }
@@ -230,6 +233,7 @@ export function GalleryTab({
             body: formData,
           })
           const fallbackData = await fallbackRes.json()
+          if (handleAuthorizationFailure(fallbackRes)) return
           if (!fallbackRes.ok) {
             throw new Error(fallbackData.error || `Failed to upload ${item.name}`)
           }
@@ -256,6 +260,7 @@ export function GalleryTab({
         })
 
         const dbData = await dbRes.json()
+        if (handleAuthorizationFailure(dbRes)) return
         if (!dbRes.ok || !dbData.mediaItem) {
           throw new Error(dbData.error || `Failed to save ${item.name}`)
         }
@@ -315,6 +320,7 @@ export function GalleryTab({
       const res = await fetch(`/api/memorials/${memorialId}/media?mediaId=${itemToDelete.id}`, {
         method: "DELETE",
       })
+      if (handleAuthorizationFailure(res)) return
       if (res.ok) {
         onRemoveMedia(itemToDelete.id)
         setItemToDelete(null)

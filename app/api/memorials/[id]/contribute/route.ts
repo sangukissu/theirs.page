@@ -35,6 +35,7 @@ import type {
   MemoryStatus,
 } from "@/types/theirs"
 import { finalizeMemorialStorage, releaseMemorialStorage } from "@/lib/storage-quota"
+import { getMemorialAccess } from "@/lib/memorial-auth"
 import {
   MAX_CONTRIBUTION_BODY_BYTES,
   MAX_RICH_TEXT_HTML_BYTES,
@@ -205,6 +206,7 @@ export async function POST(req: NextRequest, context: RouteContext) {
       return NextResponse.json({ error: "Contributions are temporarily unavailable." }, { status: 503 })
     }
     const serverClient = await createClient()
+    const { data: { user } } = await serverClient.auth.getUser()
 
     const isUuid = UUID_REGEX.test(id)
     let memorialQuery = admin
@@ -218,6 +220,8 @@ export async function POST(req: NextRequest, context: RouteContext) {
       return NextResponse.json({ error: "This memorial is not currently open for contributions." }, { status: 403 })
     }
 
+    const access = user?.id ? await getMemorialAccess(memorial.id, user.id) : null
+
     if (memorial.privacy === "private") {
       const cookieName = getMemorialPinCookieName(memorial.slug || memorial.id)
       const hasPinAccess = verifyPinAccessToken(
@@ -225,25 +229,11 @@ export async function POST(req: NextRequest, context: RouteContext) {
         memorial.id,
         memorial.access_pin_hash
       )
-      if (!hasPinAccess) {
-        const { data: { user } } = await serverClient.auth.getUser()
-        const isOwner = user?.id === memorial.owner_id
-        let isAcceptedCollaborator = false
-        if (user && !isOwner) {
-          const { data: collaborator } = await admin.from("collaborators")
-            .select("id")
-            .eq("memorial_id", memorial.id)
-            .eq("user_id", user.id)
-            .eq("invitation_accepted", true)
-            .maybeSingle()
-          isAcceptedCollaborator = Boolean(collaborator)
-        }
-        if (!isOwner && !isAcceptedCollaborator) {
-          return NextResponse.json(
-            { error: "Please unlock this private memorial before contributing." },
-            { status: 403 }
-          )
-        }
+      if (!hasPinAccess && !access) {
+        return NextResponse.json(
+          { error: "Please unlock this private memorial before contributing." },
+          { status: 403 }
+        )
       }
     }
 
@@ -315,24 +305,10 @@ export async function POST(req: NextRequest, context: RouteContext) {
     }
 
     let contributorRole: ContributorRole = "anonymous"
-    const { data: { user } } = await serverClient.auth.getUser()
-    if (user?.id === memorial.owner_id) {
-      contributorRole = "owner"
-    } else if (user) {
-      const { data: collaborator } = await admin
-        .from("collaborators")
-        .select("role, invitation_accepted, is_trusted")
-        .eq("memorial_id", memorial.id)
-        .eq("user_id", user.id)
-        .maybeSingle()
-      if (collaborator?.invitation_accepted) {
-        contributorRole = collaborator.role === "co_admin"
-          ? "co_admin"
-          : collaborator.is_trusted
-            ? "trusted"
-            : "invited"
-      }
-    }
+    if (access?.role === "owner") contributorRole = "owner"
+    else if (access?.role === "co_admin") contributorRole = "co_admin"
+    else if (access?.role === "trusted") contributorRole = "trusted"
+    else if (access?.role === "contributor") contributorRole = "invited"
 
     const textForScreening = [
       input.author_name,

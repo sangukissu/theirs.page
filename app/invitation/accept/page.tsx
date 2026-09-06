@@ -70,12 +70,21 @@ export default async function InvitationAcceptPage({ searchParams }: PageProps) 
 
   const db = getSupabaseAdminSafe() || supabase
 
-  // 2. Fetch memorial details
-  const { data: memorial } = await db
-    .from("memorials")
-    .select("id, full_name, slug, portrait_photo_url")
-    .eq("id", payload.memorialId)
-    .maybeSingle()
+  // 2. Resolve both records from the database. The signed token identifies the
+  // invitation, while the live collaborator row remains the source of truth.
+  const [{ data: memorial }, { data: collab }] = await Promise.all([
+    db
+      .from("memorials")
+      .select("id, full_name, slug, portrait_photo_url")
+      .eq("id", payload.memorialId)
+      .maybeSingle(),
+    db
+      .from("collaborators")
+      .select("memorial_id, email, role, is_trusted, invitation_accepted, user_id")
+      .eq("id", payload.collaboratorId)
+      .eq("memorial_id", payload.memorialId)
+      .maybeSingle(),
+  ])
 
   if (!memorial) {
     return (
@@ -90,14 +99,40 @@ export default async function InvitationAcceptPage({ searchParams }: PageProps) 
     )
   }
 
-  // 3. Check if collaborator record is already accepted
-  const { data: collab } = await db
-    .from("collaborators")
-    .select("invitation_accepted, user_id")
-    .eq("id", payload.collaboratorId)
-    .maybeSingle()
+  if (!collab || collab.email.toLowerCase().trim() !== payload.email.toLowerCase().trim()) {
+    return (
+      <div className="min-h-screen bg-[#fafafb] flex items-center justify-center p-4">
+        <div className="max-w-md w-full bg-white border border-black/[0.08] rounded-3xl p-8 shadow-xs text-center flex flex-col items-center gap-4">
+          <div className="size-12 rounded-full bg-amber-50 text-amber-600 flex items-center justify-center">
+            <AlertCircle className="size-6" />
+          </div>
+          <h1 className="text-xl font-serif font-medium text-[#181925]">Invitation Revoked</h1>
+          <p className="text-xs text-[#71717a] leading-relaxed">
+            This invitation is no longer active. Please ask the memorial owner to send a new invitation if you still need access.
+          </p>
+          <Link
+            href="/dashboard"
+            className="mt-2 px-5 py-2.5 rounded-full bg-[#181925] text-white text-xs font-medium hover:bg-[#252736] transition-colors"
+          >
+            Go to Dashboard
+          </Link>
+        </div>
+      </div>
+    )
+  }
 
-  const alreadyAccepted = Boolean(collab?.invitation_accepted)
+  const normalizedUserEmail = user?.email?.toLowerCase().trim()
+  const alreadyAccepted = Boolean(
+    user?.id &&
+      collab.invitation_accepted &&
+      collab.user_id === user.id &&
+      normalizedUserEmail === collab.email.toLowerCase().trim()
+  )
+  const accessRole = collab.role === "co_admin"
+    ? "co_admin"
+    : collab.is_trusted
+      ? "trusted"
+      : "contributor"
 
   // 4. Render interactive client (no side-effects on GET)
   return (
@@ -107,8 +142,8 @@ export default async function InvitationAcceptPage({ searchParams }: PageProps) 
         ...memorial,
         portrait_photo_url: resolveMediaUrl(memorial.portrait_photo_url),
       }}
-      invitedEmail={payload.email}
-      role={payload.role}
+      invitedEmail={collab.email}
+      role={accessRole}
       userEmail={user?.email || null}
       alreadyAccepted={alreadyAccepted}
     />

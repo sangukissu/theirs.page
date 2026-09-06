@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server"
 import { createClient } from "@/utils/supabase/server"
 import { getSupabaseAdminSafe } from "@/utils/supabase/admin"
 import { deleteR2Object, getR2SignedUrl, putR2Object } from "@/lib/r2"
-import { assertMemorialAdmin } from "@/lib/memorial-auth"
+import { assertMemorialAdmin, getMemorialAccess } from "@/lib/memorial-auth"
 import { assertMediaQuota } from "@/lib/paywall"
 import {
   verifyUploadIntent,
@@ -255,19 +255,10 @@ export async function POST(req: NextRequest) {
           memorial.access_pin_hash
         )
         if (!isUnlocked) {
-          const isOwner = user?.id === memorial.owner_id
-          let isAcceptedCollaborator = false
-          if (user && !isOwner) {
-            const { data: collaborator } = await admin
-              .from("collaborators")
-              .select("id")
-              .eq("memorial_id", memorial.id)
-              .eq("user_id", user.id)
-              .eq("invitation_accepted", true)
-              .maybeSingle()
-            isAcceptedCollaborator = Boolean(collaborator)
-          }
-          if (!isOwner && !isAcceptedCollaborator) {
+          const access = user?.id
+            ? await getMemorialAccess(memorial.id, user.id)
+            : null
+          if (!access?.canContribute) {
             return NextResponse.json(
               { error: "This memorial is private. Please enter the family PIN before uploading." },
               { status: 403 }

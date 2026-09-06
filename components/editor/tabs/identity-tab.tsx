@@ -4,6 +4,7 @@ import { useState } from "react"
 import { Upload, AlertCircle } from "lucide-react"
 import { PortraitPlaceholder } from "@/components/memorial/portrait-placeholder"
 import { TEXT_LIMITS, formatMemorialLocation } from "@/lib/validation/text-limits"
+import { useEditorAuthorization } from "../use-editor-authorization"
 import {
   Select,
   SelectContent,
@@ -62,6 +63,7 @@ export function IdentityTab({
   portraitUrl,
   onChange,
 }: IdentityTabProps) {
+  const handleAuthorizationFailure = useEditorAuthorization(memorialId)
   const [isUploading, setIsUploading] = useState(false)
   const [uploadError, setUploadError] = useState<string | null>(null)
   const [localPreviewUrl, setLocalPreviewUrl] = useState<string | null>(null)
@@ -92,6 +94,7 @@ export function IdentityTab({
         }),
       })
       const presignedData = await presignedRes.json().catch(() => ({}))
+      if (handleAuthorizationFailure(presignedRes)) return
       if (!presignedRes.ok) throw new Error(presignedData.error || "Failed to prepare portrait upload")
 
       let uploadKey = presignedData.stagingKey || presignedData.key
@@ -110,6 +113,7 @@ export function IdentityTab({
         formData.append("memorialId", memorialId)
         const fallbackRes = await fetch("/api/r2/upload", { method: "POST", body: formData })
         const fallbackData = await fallbackRes.json().catch(() => ({}))
+        if (handleAuthorizationFailure(fallbackRes)) return
         if (!fallbackRes.ok) throw new Error(fallbackData.error || "Failed to upload portrait photo")
         uploadKey = fallbackData.key
       }

@@ -14,6 +14,7 @@ import { getMemorialPinCookieName, verifyPinAccessToken } from "@/lib/security/p
 import type { ContributionSettings } from "@/types/theirs"
 import { getR2PresignedUploadUrl } from "@/lib/r2"
 import { isStorageQuotaError, releaseMemorialStorage, reserveMemorialStorage } from "@/lib/storage-quota"
+import { getMemorialAccess } from "@/lib/memorial-auth"
 
 interface RouteContext {
   params: Promise<{ id: string }>
@@ -171,23 +172,11 @@ export async function POST(req: NextRequest, context: RouteContext) {
           data: { user },
         } = await serverClient.auth.getUser()
 
-        let isOwnerOrAdmin = false
-        if (user) {
-          if (memorial.owner_id === user.id) {
-            isOwnerOrAdmin = true
-          } else {
-            const { data: collab } = await db
-              .from("collaborators")
-              .select("id")
-              .eq("memorial_id", memorial.id)
-              .eq("user_id", user.id)
-              .eq("invitation_accepted", true)
-              .maybeSingle()
-            if (collab) isOwnerOrAdmin = true
-          }
-        }
+        const access = user?.id
+          ? await getMemorialAccess(memorial.id, user.id)
+          : null
 
-        if (!isOwnerOrAdmin) {
+        if (!access?.canContribute) {
           return NextResponse.json(
             { error: "This memorial is private. Please enter the family PIN before uploading." },
             { status: 403 }
