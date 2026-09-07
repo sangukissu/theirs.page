@@ -46,3 +46,15 @@ export class UploadPreparationRegistry {
     if (this.controllers.get(id) === controller) this.controllers.delete(id)
   }
 }
+
+export function hasUsableFileData(file: { isGhost?: boolean; data?: unknown } | null | undefined): boolean {
+  return Boolean(
+    file &&
+    !file.isGhost &&
+    file.data &&
+    typeof (file.data as { slice?: unknown }).slice === "function",
+  )
+}
+
+
+

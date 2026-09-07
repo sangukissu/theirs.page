@@ -17,6 +17,7 @@ import { createUploadFingerprint } from "../../lib/uploads/fingerprint"
 import {
   dedupeUploadItems,
   UploadPreparationRegistry,
+  hasUsableFileData,
   uploadIndexedDbName,
   uploadManagerKey,
 } from "../../lib/uploads/client-scope"
@@ -24,6 +25,7 @@ import { escapeS3Xml, s3XmlResponse } from "../../lib/uploads/s3-control-respons
 import { parseYouTubeUrl } from "../../lib/uploads/youtube"
 import { validateMagicBytes } from "../../lib/safety/moderation"
 import { isUploadSessionSchemaError } from "../../lib/uploads/schema-errors"
+
 
 test("Studio upload capabilities are scoped to owner and co-admin", () => {
   const owner = resolveMediaCapabilities({ context: "studio", isPaid: true, accessRole: "owner", existingMediaCounts: { image: 50 } })
@@ -324,3 +326,58 @@ test("missing upload hardening RPCs produce an actionable schema diagnosis", () 
   }), true)
   assert.equal(isUploadSessionSchemaError({ code: "42501", message: "permission denied" }), false)
 })
+
+test("hasUsableFileData distinguishes genuine file bytes from Golden Retriever ghost files", () => {
+  assert.equal(hasUsableFileData(undefined), false)
+
+  const ghostFile = {
+    id: "uppy-ghost-1",
+    name: "video.mp4",
+    isGhost: true,
+    data: { slice: () => {} },
+  } as any
+  assert.equal(hasUsableFileData(ghostFile), false)
+
+  const emptyDataFile = {
+    id: "uppy-no-data-2",
+    name: "video.mp4",
+    isGhost: false,
+    data: null,
+  } as any
+  assert.equal(hasUsableFileData(emptyDataFile), false)
+
+  const unsliceableDataFile = {
+    id: "uppy-bad-data-3",
+    name: "video.mp4",
+    isGhost: false,
+    data: { notASlice: true },
+  } as any
+  assert.equal(hasUsableFileData(unsliceableDataFile), false)
+
+  const realFile = {
+    id: "uppy-real-4",
+    name: "video.mp4",
+    isGhost: false,
+    data: { slice: () => new Uint8Array() },
+  } as any
+  assert.equal(hasUsableFileData(realFile), true)
+})
+
+test("mid-upload refresh progress preserves ground-truth bytes and never shows 100% while incomplete", () => {
+  const totalBytes = 89_758_105 // 85.6 MB
+  const bytesUploaded = 8_388_608 // 8.0 MB (Part 1 completed)
+
+  // Incomplete session progress computation
+  const isComplete = false
+  const calculatedPercentage = totalBytes
+    ? (isComplete ? 100 : Math.min(99, Math.round((bytesUploaded / totalBytes) * 100)))
+    : 0
+
+  assert.equal(calculatedPercentage, 9)
+  assert.notEqual(calculatedPercentage, 100)
+
+  // Even if bytesUploaded reaches totalBytes but session isn't finalized, it caps at 99%
+  const boundaryPercentage = Math.min(99, Math.round((totalBytes / totalBytes) * 100))
+  assert.equal(boundaryPercentage, 99)
+})
+

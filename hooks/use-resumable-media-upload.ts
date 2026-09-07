@@ -10,10 +10,13 @@ import { detectMediaType, MULTIPART_CHUNK_BYTES, resolveMediaMime } from "@/lib/
 import { createUploadFingerprint } from "@/lib/uploads/fingerprint"
 import {
   dedupeUploadItems,
+  hasUsableFileData,
   UploadPreparationRegistry,
   uploadIndexedDbName,
   uploadManagerKey,
 } from "@/lib/uploads/client-scope"
+
+export { hasUsableFileData }
 
 export type ResumableUploadStatus =
   | "preparing" | "uploading" | "paused" | "verifying" | "finalizing" | "complete" | "error"
@@ -38,7 +41,7 @@ export interface ResumableUploadItem {
   targetAlbum?: string | null
 }
 
-interface UploadMeta extends Record<string, unknown> {
+export interface UploadMeta extends Record<string, unknown> {
   sessionId: string
   r2Key: string
   uploadMode: "single" | "multipart"
@@ -46,6 +49,7 @@ interface UploadMeta extends Record<string, unknown> {
   fingerprint: string
   targetAlbum?: string | null
 }
+
 
 interface SessionContract {
   id: string
@@ -57,6 +61,8 @@ interface SessionContract {
   uploadMode: "single" | "multipart"
   status: string
   targetAlbum: string | null
+  bytesUploaded?: number
+  uploadedParts?: number
 }
 
 interface HookOptions {
@@ -138,7 +144,7 @@ function getManager(userId: string, memorialId: string, purpose: UploadPurpose) 
   })
   uppy.use(GoldenRetriever, {
     expires: 24 * 60 * 60 * 1000,
-    serviceWorker: false,
+    serviceWorker: true,
     indexedDB: { name: uploadIndexedDbName(userId, memorialId, purpose) },
   })
   uppy.use(AwsS3, {
@@ -160,20 +166,26 @@ function getManager(userId: string, memorialId: string, purpose: UploadPurpose) 
 }
 
 function initialItem(session: SessionContract, id = `session:${session.id}`): ResumableUploadItem {
+  const bytesUploaded = session.bytesUploaded || 0
+  const isComplete = ["uploaded", "verifying", "finalizing", "complete"].includes(session.status)
+  const percentage = session.fileSize
+    ? (isComplete ? 100 : Math.min(99, Math.round((bytesUploaded / session.fileSize) * 100)))
+    : 0
+
   return {
     id,
     sessionId: session.id,
     filename: session.filename,
     mediaType: session.mediaType,
-    bytesUploaded: 0,
+    bytesUploaded,
     totalBytes: session.fileSize,
-    percentage: 0,
+    percentage,
     bytesPerSecond: 0,
     etaSeconds: null,
     status: session.status === "uploaded" || session.status === "finalizing" ? "verifying" : "paused",
     resumable: session.uploadMode === "multipart",
     error: null,
-    needsFile: !["uploaded", "verifying", "finalizing"].includes(session.status),
+    needsFile: !isComplete,
     targetAlbum: session.targetAlbum,
   }
 }
@@ -233,7 +245,7 @@ export function useResumableMediaUpload(options: HookOptions) {
     if (finishingSessions.has(sessionId)) return
     finishingSessions.add(sessionId)
     try {
-      patchItem(itemId, { status: "verifying", percentage: 100, error: null, needsFile: false })
+      patchItem(itemId, { status: "verifying", error: null, needsFile: false })
       const verified = await apiRequest(
         `/api/memorials/${encodeURIComponent(options.memorialId)}/uploads/sessions/${encodeURIComponent(sessionId)}/verify`,
         { method: "POST" },
@@ -248,7 +260,12 @@ export function useResumableMediaUpload(options: HookOptions) {
             body: JSON.stringify({ album: targetAlbum || null }),
           },
         )
-        patchItem(itemId, { status: "complete", result: finalized.mediaItem, previewUrl: finalized.mediaItem?.url })
+        patchItem(itemId, {
+          status: "complete",
+          percentage: 100,
+          result: finalized.mediaItem,
+          previewUrl: finalized.mediaItem?.url,
+        })
         completeCallback.current?.(finalized.mediaItem)
         setTimeout(() => {
           const manager = managerRef.current
@@ -256,18 +273,24 @@ export function useResumableMediaUpload(options: HookOptions) {
           setItems((current) => current.filter((item) => item.id !== itemId))
         }, 8_000)
       } else {
-        patchItem(itemId, { status: "complete", previewUrl: verified.previewUrl, result: verified })
+        patchItem(itemId, {
+          status: "complete",
+          percentage: 100,
+          previewUrl: verified.previewUrl,
+          result: verified,
+        })
       }
     } catch (error) {
       const typed = error as Error & { code?: string }
       if (typed.code === "upload_not_complete") {
-        const hasRecoverableFile = Boolean(managerRef.current?.getFile(itemId))
+        const file = managerRef.current?.getFile(itemId)
+        const hasRecoverableFile = hasUsableFileData(file)
         patchItem(itemId, {
           status: hasRecoverableFile ? "error" : "paused",
           needsFile: !hasRecoverableFile,
           error: hasRecoverableFile
             ? "Upload completion was interrupted. Choose Resume to reconcile the uploaded parts."
-            : "Upload completion was interrupted. Choose the same file to continue; uploaded parts remain safe.",
+            : "Upload paused. Choose the same file to continue; uploaded parts remain safe.",
         })
       } else {
         const unrecoverable = ["invalid_uploaded_bytes", "failed", "expired", "aborted"].includes(typed.code || "")
@@ -284,6 +307,9 @@ export function useResumableMediaUpload(options: HookOptions) {
   }, [options.memorialId, options.purpose, patchItem])
 
   useEffect(() => {
+    if (typeof navigator !== "undefined" && "serviceWorker" in navigator) {
+      navigator.serviceWorker.register("/uppy-service-worker.js").catch(() => {})
+    }
     if (options.enabled === false || !options.memorialId || !options.userId) return
     const uppy = getManager(options.userId, options.memorialId, options.purpose)
     managerRef.current = uppy
@@ -291,6 +317,7 @@ export function useResumableMediaUpload(options: HookOptions) {
     const addFromFile = (file: UppyFile<UploadMeta, AwsBody>) => {
       if (!file.meta.sessionId) return
       setItems((current) => {
+        const isUsable = hasUsableFileData(file)
         const next = initialItem({
           id: file.meta.sessionId,
           mediaType: file.meta.mediaType,
@@ -299,18 +326,28 @@ export function useResumableMediaUpload(options: HookOptions) {
           key: file.meta.r2Key,
           uploadId: (file as typeof file & { s3Multipart?: { uploadId: string } }).s3Multipart?.uploadId || null,
           uploadMode: file.meta.uploadMode,
-          status: file.isGhost ? "uploading" : "created",
+          status: !isUsable ? "paused" : "created",
           targetAlbum: file.meta.targetAlbum || null,
         }, file.id)
-        next.status = file.isGhost ? "paused" : file.progress.uploadComplete ? "verifying" : "uploading"
-        next.needsFile = file.isGhost
+        next.status = !isUsable ? "paused" : file.progress.uploadComplete ? "verifying" : "uploading"
+        next.needsFile = !isUsable
         if (file.error) {
           next.status = "error"
           next.error = typeof file.error === "string" ? file.error : "Upload interrupted. Choose Resume to continue."
         }
         next.bytesUploaded = Number(file.progress.bytesUploaded || 0)
         next.totalBytes = Number(file.progress.bytesTotal || file.size || 0)
-        next.percentage = next.totalBytes ? Math.round((next.bytesUploaded / next.totalBytes) * 100) : 0
+        next.percentage = next.totalBytes
+          ? Math.min(next.bytesUploaded >= next.totalBytes && !file.progress.uploadComplete ? 99 : 100, Math.round((next.bytesUploaded / next.totalBytes) * 100))
+          : 0
+        if (!isUsable && next.percentage === 100) {
+          next.percentage = 99
+        }
+        const existingItem = current.find((item) => item.id === next.id || item.sessionId === next.sessionId)
+        if (existingItem && existingItem.bytesUploaded > next.bytesUploaded) {
+          next.bytesUploaded = existingItem.bytesUploaded
+          next.percentage = existingItem.percentage
+        }
         const withoutPlaceholder = current.filter((item) => item.id !== next.id && item.sessionId !== next.sessionId)
         return dedupeUploadItems([next, ...withoutPlaceholder])
       })
@@ -398,11 +435,11 @@ export function useResumableMediaUpload(options: HookOptions) {
         // retry-all behavior. The visible queue still offers explicit Resume.
         uppy.setFileState(file.id, { error: null, isPaused: false })
       })
-      restored.filter((file) => !file.isGhost && file.progress.uploadComplete).forEach((file) => {
+      restored.filter((file) => hasUsableFileData(file) && file.progress.uploadComplete).forEach((file) => {
         void finishUploadedSession(file.id, file.meta.sessionId, file.meta.targetAlbum)
       })
-      const resumable = restored.filter((file) => !file.isGhost && !file.error && !file.progress.uploadComplete)
-      if (resumable.length > 0 && navigator.onLine) void uppy.upload()
+      const resumable = restored.filter((file) => hasUsableFileData(file) && !file.error && !file.progress.uploadComplete)
+      if (resumable.length > 0 && navigator.onLine) void uppy.upload().catch(() => {})
     }
 
     uppy.on("file-added", onAdded)
@@ -413,26 +450,57 @@ export function useResumableMediaUpload(options: HookOptions) {
     uppy.on("restored", onRestored)
     const existingFiles = uppy.getFiles()
     existingFiles.forEach(addFromFile)
-    existingFiles.filter((file) => !file.isGhost && file.progress.uploadComplete).forEach((file) => {
+    existingFiles.filter((file) => hasUsableFileData(file) && file.progress.uploadComplete).forEach((file) => {
       void finishUploadedSession(file.id, file.meta.sessionId, file.meta.targetAlbum)
     })
 
     void apiRequest(`/api/memorials/${encodeURIComponent(options.memorialId)}/uploads/sessions?purpose=${options.purpose}`)
       .then((data) => {
         setItems((current) => {
-          const known = new Set(current.map((item) => item.sessionId))
-          const missing = (data.sessions || []).filter((session: SessionContract) => !known.has(session.id)).map((session: SessionContract) => initialItem(session))
-          return dedupeUploadItems([...current, ...missing])
+          const serverSessions = new Map<string, SessionContract>(
+            (data.sessions || []).map((s: SessionContract) => [s.id, s]),
+          )
+          const updated = current.map((item) => {
+            const serverSession = serverSessions.get(item.sessionId)
+            if (!serverSession) return item
+            const localFile = uppy.getFile(item.id)
+            if (hasUsableFileData(localFile) && item.status === "uploading") {
+              return item
+            }
+            if (serverSession.bytesUploaded !== undefined && serverSession.bytesUploaded > item.bytesUploaded) {
+              const bytesUploaded = serverSession.bytesUploaded
+              const percentage = item.totalBytes
+                ? Math.min(99, Math.round((bytesUploaded / item.totalBytes) * 100))
+                : item.percentage
+              return { ...item, bytesUploaded, percentage }
+            }
+            return item
+          })
+          const known = new Set(updated.map((item) => item.sessionId))
+          const missing = (data.sessions || [])
+            .filter((session: SessionContract) => !known.has(session.id))
+            .map((session: SessionContract) => initialItem(session))
+          return dedupeUploadItems([...updated, ...missing])
         })
         for (const session of (data.sessions || []) as SessionContract[]) {
           const localFile = uppy.getFiles().find((file) => file.meta.sessionId === session.id)
-          const serverMayAlreadyHaveObject = ["uploaded", "verifying", "finalizing"].includes(session.status) ||
-            !localFile || localFile.isGhost
-          // Reconcile orphaned server sessions on refresh. This covers the
-          // boundary where R2 completed the multipart object but the response
-          // was lost before the database status advanced from `uploading`.
-          if (serverMayAlreadyHaveObject) {
+          if (["uploaded", "verifying", "finalizing"].includes(session.status)) {
             void finishUploadedSession(localFile?.id || `session:${session.id}`, session.id, session.targetAlbum)
+            continue
+          }
+          if (!localFile || !hasUsableFileData(localFile)) {
+            patchItem(localFile?.id || `session:${session.id}`, {
+              status: "paused",
+              needsFile: true,
+              error: null,
+            })
+            continue
+          }
+
+          if (localFile.progress.uploadComplete) {
+            void finishUploadedSession(localFile.id, session.id, session.targetAlbum)
+          } else if (!localFile.error && navigator.onLine) {
+            void uppy.upload().catch(() => {})
           }
         }
       })
@@ -475,7 +543,7 @@ export function useResumableMediaUpload(options: HookOptions) {
         lastModified: file.lastModified,
       }, options.memorialId, options.userId, options.purpose)
       const existingLocalFile = uppy.getFiles().find((candidate) =>
-        candidate.meta.fingerprint === fingerprint && !candidate.isGhost,
+        candidate.meta.fingerprint === fingerprint && hasUsableFileData(candidate),
       )
       if (existingLocalFile) {
         prepared.add(existingLocalFile.id)
@@ -525,7 +593,7 @@ export function useResumableMediaUpload(options: HookOptions) {
         preparationFiles.current.delete(placeholderId)
         const recoveredFile = uppy.getFiles().find((candidate) => candidate.meta.sessionId === session.id)
         if (recoveredFile) {
-          if (!recoveredFile.isGhost) {
+          if (hasUsableFileData(recoveredFile)) {
             prepared.add(recoveredFile.id)
             continue
           }
@@ -580,11 +648,21 @@ export function useResumableMediaUpload(options: HookOptions) {
       await addFiles([file])
       return
     }
-    if (!item.needsFile && (!uppy?.getFile(id) || uppy.getFile(id)?.progress.uploadComplete)) {
+    if (!uppy) return
+    const localFile = uppy.getFile(id)
+    if (!hasUsableFileData(localFile)) {
+      patchItem(id, {
+        status: "paused",
+        needsFile: true,
+        canRetry: false,
+        error: "Upload paused. Choose the same file to continue; uploaded parts remain safe.",
+      })
+      return
+    }
+    if (localFile?.progress.uploadComplete) {
       await finishUploadedSession(id, item.sessionId, item.targetAlbum)
       return
     }
-    if (!uppy || item.needsFile) return
     try {
       await apiRequest(
         `/api/memorials/${encodeURIComponent(options.memorialId)}/uploads/sessions/${encodeURIComponent(item.sessionId)}/verify`,

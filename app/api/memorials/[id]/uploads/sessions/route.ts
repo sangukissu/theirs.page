@@ -12,6 +12,7 @@ import { checkDurableRateLimit } from "@/lib/turnstile"
 import { TEXT_LIMITS } from "@/lib/validation/text-limits"
 import type { UploadPurpose } from "@/lib/uploads/capabilities"
 import { detectMediaType } from "@/lib/uploads/constants"
+import { listR2MultipartParts } from "@/lib/r2"
 import {
   authorizeUploadPurpose,
   createUploadObjectKey,
@@ -26,7 +27,10 @@ import {
 
 interface RouteContext { params: Promise<{ id: string }> }
 
-function sessionResponse(session: MediaUploadSession) {
+function sessionResponse(
+  session: MediaUploadSession,
+  stats?: { bytesUploaded?: number; uploadedParts?: number },
+) {
   return {
     id: session.id,
     memorialId: session.memorial_id,
@@ -44,6 +48,8 @@ function sessionResponse(session: MediaUploadSession) {
     resultMediaItemId: session.result_media_item_id,
     resultMemoryId: session.result_memory_id,
     expiresAt: session.expires_at,
+    bytesUploaded: stats?.bytesUploaded ?? (["uploaded", "verifying", "finalizing", "complete"].includes(session.status) ? Number(session.file_size) : 0),
+    uploadedParts: stats?.uploadedParts ?? 0,
   }
 }
 
@@ -216,7 +222,26 @@ export async function GET(req: NextRequest, context: RouteContext) {
       .in("status", ["created", "uploading", "uploaded", "verifying", "finalizing"])
       .gt("expires_at", new Date().toISOString()).order("updated_at", { ascending: false }).limit(20)
     if (result.error) throw result.error
-    return NextResponse.json({ sessions: (result.data || []).map((row) => sessionResponse(row as MediaUploadSession)) })
+    const sessionsWithProgress = await Promise.all(
+      (result.data || []).map(async (row) => {
+        const session = row as MediaUploadSession
+        if (
+          session.upload_mode === "multipart" &&
+          session.multipart_upload_id &&
+          !["uploaded", "verifying", "finalizing", "complete"].includes(session.status)
+        ) {
+          try {
+            const parts = await listR2MultipartParts(session.r2_key, session.multipart_upload_id)
+            const bytesUploaded = parts.reduce((sum, part) => sum + part.size, 0)
+            return sessionResponse(session, { bytesUploaded, uploadedParts: parts.length })
+          } catch {
+            return sessionResponse(session)
+          }
+        }
+        return sessionResponse(session)
+      }),
+    )
+    return NextResponse.json({ sessions: sessionsWithProgress })
   } catch (error) {
     return errorResponse(error)
   }
