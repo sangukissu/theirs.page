@@ -49,6 +49,16 @@ function resolveColor(c: string | number): [number, number, number] {
     else [r, g, b] = [cVal, 0, x]
     return [Math.round((r + m) * 255), Math.round((g + m) * 255), Math.round((b + m) * 255)]
   }
+  if (typeof c === "string" && c.startsWith("#")) {
+    const hex = c.replace("#", "")
+    if (hex.length === 6) {
+      return [
+        parseInt(hex.slice(0, 2), 16),
+        parseInt(hex.slice(2, 4), 16),
+        parseInt(hex.slice(4, 6), 16),
+      ]
+    }
+  }
   return PALETTE[c] || [48, 93, 222]
 }
 

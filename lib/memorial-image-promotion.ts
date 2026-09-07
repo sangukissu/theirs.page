@@ -12,7 +12,7 @@ import {
 import { validateMagicBytes } from "@/lib/safety/moderation"
 
 const MAX_MEMORIAL_IMAGE_BYTES = 15 * 1024 * 1024
-type MemorialImageFolder = "portraits" | "gallery" | "timeline"
+type MemorialImageFolder = "portraits" | "gallery" | "timeline" | "covers"
 
 function extensionForImageMime(mime: string): string {
   if (mime === "image/png") return "png"
@@ -22,7 +22,7 @@ function extensionForImageMime(mime: string): string {
 }
 
 export function archivalHeicKeyForDisplay(displayKey: string): string | null {
-  const match = displayKey.match(/^memorials\/([^/]+)\/(portraits|gallery|timeline|community)\/([^/]+)\.webp$/i)
+  const match = displayKey.match(/^memorials\/([^/]+)\/(portraits|gallery|timeline|community|covers)\/([^/]+)\.webp$/i)
   return match ? `originals/${match[1]}/${match[2]}/${match[3]}.heic` : null
 }
 

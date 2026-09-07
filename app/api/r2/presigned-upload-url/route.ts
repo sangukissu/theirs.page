@@ -157,14 +157,14 @@ export async function POST(req: NextRequest) {
       }
 
       const safeFolder = folder.toLowerCase().trim()
-      if (!["gallery", "portraits", "timeline"].includes(safeFolder)) {
+      if (!["gallery", "portraits", "timeline", "covers"].includes(safeFolder)) {
         return NextResponse.json({ error: "Invalid upload destination folder." }, { status: 400 })
       }
 
       const contentType = resolveContentType(filename, rawContentType)
       const mediaType = detectMediaType(filename, contentType)
 
-      if (safeFolder === "portraits" || safeFolder === "timeline") {
+      if (safeFolder === "portraits" || safeFolder === "timeline" || safeFolder === "covers") {
         if (!MEMORIAL_ALLOWED_IMAGE_TYPES.has(contentType)) {
           return NextResponse.json({ error: "Only supported image files (JPEG, PNG, WebP, GIF, HEIC, or HEIF) are accepted here." }, { status: 400 })
         }

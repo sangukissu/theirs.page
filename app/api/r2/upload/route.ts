@@ -323,20 +323,20 @@ export async function POST(req: NextRequest) {
       }
 
       const safeFolder = folder.replace(/[^a-zA-Z0-9_-]/g, "").toLowerCase()
-      const isPortrait = safeFolder === "portraits"
+      const isDirectImage = safeFolder === "portraits" || safeFolder === "covers"
 
-      if (isPortrait) {
-        // Primary portraits can be uploaded or replaced on any tier at any time
+      if (isDirectImage) {
+        // Primary portraits and memorial covers can be uploaded or replaced on any tier at any time
         if (mediaType !== "image") {
           return NextResponse.json(
-            { error: "Only image files are supported for memorial portraits." },
+            { error: "Only image files are supported for memorial covers and portraits." },
             { status: 400 }
           )
         }
-        const MAX_PORTRAIT_SIZE = 15 * 1024 * 1024
-        if (file.size > MAX_PORTRAIT_SIZE) {
+        const MAX_IMAGE_SIZE = 15 * 1024 * 1024
+        if (file.size > MAX_IMAGE_SIZE) {
           return NextResponse.json(
-            { error: "Portrait file size must be under 15MB." },
+            { error: "Image file size must be under 15MB." },
             { status: 400 }
           )
         }

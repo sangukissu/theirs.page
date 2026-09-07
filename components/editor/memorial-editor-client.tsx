@@ -32,7 +32,7 @@ import { ModerationTab, EditorMemory, EditorCaretakerMessage } from "./tabs/mode
 import { SettingsTab } from "./tabs/settings-tab"
 import { PublishMemorialDialog } from "./publish-memorial-dialog"
 import { useEditorAuthorization } from "./use-editor-authorization"
-import { SectionSettings, ContributionSettings, MemorialTheme } from "@/types/theirs"
+import { SectionSettings, ContributionSettings, MemorialTheme, MemorialCoverSettings } from "@/types/theirs"
 import { toast } from "sonner"
 
 export type EditorSectionTab =
@@ -69,6 +69,7 @@ interface InitialMemorialData {
   section_settings?: SectionSettings | null
   contribution_settings?: ContributionSettings | null
   theme?: MemorialTheme | null
+  cover_settings?: MemorialCoverSettings | null
   is_paid?: boolean
   paid_at?: string | null
   updated_at?: string
@@ -176,6 +177,7 @@ export function MemorialEditorClient({
     biography: initialMemorial.biography || "",
     portrait_photo_url: initialMemorial.portrait_photo_url || "",
     theme: (initialMemorial.theme as MemorialTheme) || "quiet",
+    cover_settings: (initialMemorial.cover_settings as MemorialCoverSettings) || { type: "clean" },
     slug: initialMemorial.slug || "",
     status: initialMemorial.status || "draft",
     privacy: (!isPaid && initialMemorial.privacy === "private") ? "unlisted" : (initialMemorial.privacy || "unlisted"),
@@ -285,6 +287,7 @@ export function MemorialEditorClient({
           biography: currentForm.biography || null,
           portrait_photo_url: currentForm.portrait_photo_url || null,
           theme: currentForm.theme || "quiet",
+          cover_settings: currentForm.cover_settings || { type: "clean" },
           section_settings: currentForm.section_settings || null,
         }
         if (initialMemorial.can_manage_owner_settings) {
@@ -317,6 +320,16 @@ export function MemorialEditorClient({
             setForm((prev) => ({
               ...prev,
               portrait_photo_url: resData.memorial.portrait_photo_url,
+            }))
+          }
+          if (resData.memorial?.cover_settings?.cover_url && resData.memorial.cover_settings.cover_url !== currentForm.cover_settings?.cover_url) {
+            currentForm = {
+              ...currentForm,
+              cover_settings: resData.memorial.cover_settings,
+            }
+            setForm((prev) => ({
+              ...prev,
+              cover_settings: resData.memorial.cover_settings,
             }))
           }
           setSaveStatus("saved")
@@ -691,13 +704,20 @@ export function MemorialEditorClient({
 
           {activeTab === "appearance" && (
             <AppearanceTab
+              memorialId={initialMemorial.id}
               slug={form.slug}
               theme={form.theme}
+              coverSettings={form.cover_settings}
               portraitUrl={form.portrait_photo_url}
               fullName={form.full_name}
               birthYear={form.birth_year ? Number(form.birth_year) : null}
               deathYear={form.death_year ? Number(form.death_year) : null}
+              galleryPhotos={mediaItems
+                .filter((m) => m.media_type === "image")
+                .map((m) => ({ id: m.id, url: m.url, caption: m.caption }))}
               onChange={(theme) => handleFieldChange("theme", theme)}
+              onChangeTheme={(theme) => handleFieldChange("theme", theme)}
+              onChangeCoverSettings={(cover) => handleFieldChange("cover_settings", cover)}
             />
           )}
 

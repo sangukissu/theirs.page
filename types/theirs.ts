@@ -67,6 +67,31 @@ export interface ContributionSettings {
   videos?: boolean
 }
 
+export type HeroCoverType = 'clean' | 'pattern' | 'their_world'
+
+export type HeroPatternStyle =
+  | 'soft_aura'
+  | 'dither'
+  | 'heritage_lines'
+  | 'sanctuary_arch'
+  | 'eternal_crest'
+  | 'cadence'
+  | 'glow'
+  | 'botanical_veil'
+  | 'harmonic_ripples'
+  | 'fluted_colonnade'
+  | 'paper_grain'
+  | 'starlight'
+
+export interface MemorialCoverSettings {
+  type: HeroCoverType
+  pattern_style?: HeroPatternStyle | null
+  cover_url?: string | null
+  focal_y?: number | null
+  focal_x?: number | null
+  source_type?: 'uploaded' | 'memorial_media' | 'curated' | null
+}
+
 export interface Memorial {
   id: string
   owner_id: string
@@ -94,6 +119,7 @@ export interface Memorial {
   section_settings?: SectionSettings | null
   contribution_settings?: ContributionSettings | null
   theme?: MemorialTheme | null
+  cover_settings?: MemorialCoverSettings | null
   created_at: string
   updated_at: string
 }

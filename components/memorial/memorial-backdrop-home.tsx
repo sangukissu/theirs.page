@@ -35,7 +35,7 @@ const SAMPLE_COVERS = [
     id: "garden",
     label: "English Cottage Garden",
     subtitle: "Daisies, ferns & sunlight",
-    url: "https://images.unsplash.com/photo-1585320806297-9794b3e4eeae?q=80&w=2064&auto=format&fit=crop",
+    url: "/landing/robert-hero-image1.png",
     focalY: 25,
   },
   {
@@ -161,11 +161,10 @@ export function MemorialBackdropHome({
                     key={cover.id}
                     type="button"
                     onClick={() => handleSelectCover(idx)}
-                    className={`flex items-center justify-between px-3 py-2 rounded-xl text-left transition-all border ${
-                      selectedCoverIndex === idx
-                        ? "bg-neutral-900 text-white border-neutral-900 shadow-xs"
-                        : "bg-neutral-50 hover:bg-neutral-100 border-black/5 text-neutral-700"
-                    }`}
+                    className={`flex items-center justify-between px-3 py-2 rounded-xl text-left transition-all border ${selectedCoverIndex === idx
+                      ? "bg-neutral-900 text-white border-neutral-900 shadow-xs"
+                      : "bg-neutral-50 hover:bg-neutral-100 border-black/5 text-neutral-700"
+                      }`}
                   >
                     <div className="flex flex-col">
                       <span className="font-medium text-xs">{cover.label}</span>
@@ -200,11 +199,10 @@ export function MemorialBackdropHome({
                     key={item.val}
                     type="button"
                     onClick={() => setWashOpacity(item.val)}
-                    className={`px-2 py-1.5 rounded-lg text-center text-[10px] font-medium transition-colors border ${
-                      washOpacity === item.val
-                        ? "bg-neutral-900 text-white border-neutral-900"
-                        : "bg-neutral-100 text-neutral-600 hover:bg-neutral-200 border-transparent"
-                    }`}
+                    className={`px-2 py-1.5 rounded-lg text-center text-[10px] font-medium transition-colors border ${washOpacity === item.val
+                      ? "bg-neutral-900 text-white border-neutral-900"
+                      : "bg-neutral-100 text-neutral-600 hover:bg-neutral-200 border-transparent"
+                      }`}
                   >
                     {item.label}
                   </button>
@@ -221,11 +219,10 @@ export function MemorialBackdropHome({
                 <button
                   type="button"
                   onClick={() => setUseRadialVignette(true)}
-                  className={`px-2.5 py-1.5 rounded-lg text-[10px] font-medium transition-colors border text-left ${
-                    useRadialVignette
-                      ? "bg-neutral-900 text-white border-neutral-900"
-                      : "bg-neutral-100 text-neutral-600 hover:bg-neutral-200 border-transparent"
-                  }`}
+                  className={`px-2.5 py-1.5 rounded-lg text-[10px] font-medium transition-colors border text-left ${useRadialVignette
+                    ? "bg-neutral-900 text-white border-neutral-900"
+                    : "bg-neutral-100 text-neutral-600 hover:bg-neutral-200 border-transparent"
+                    }`}
                 >
                   <span className="block font-semibold">Radial Ellipse</span>
                   <span className="text-[9px] opacity-80">No rectangle (Dissolves)</span>
@@ -233,11 +230,10 @@ export function MemorialBackdropHome({
                 <button
                   type="button"
                   onClick={() => setUseRadialVignette(false)}
-                  className={`px-2.5 py-1.5 rounded-lg text-[10px] font-medium transition-colors border text-left ${
-                    !useRadialVignette
-                      ? "bg-neutral-900 text-white border-neutral-900"
-                      : "bg-neutral-100 text-neutral-600 hover:bg-neutral-200 border-transparent"
-                  }`}
+                  className={`px-2.5 py-1.5 rounded-lg text-[10px] font-medium transition-colors border text-left ${!useRadialVignette
+                    ? "bg-neutral-900 text-white border-neutral-900"
+                    : "bg-neutral-100 text-neutral-600 hover:bg-neutral-200 border-transparent"
+                    }`}
                 >
                   <span className="block font-semibold">Full Width</span>
                   <span className="text-[9px] opacity-80">Edge-to-edge</span>
@@ -256,11 +252,10 @@ export function MemorialBackdropHome({
                     key={t}
                     type="button"
                     onClick={() => setActiveTheme(t)}
-                    className={`px-1.5 py-1 rounded-md text-center text-[10px] capitalize transition-colors font-medium border ${
-                      activeTheme === t
-                        ? "bg-neutral-900 text-white border-neutral-900"
-                        : "bg-neutral-100 text-neutral-600 hover:bg-neutral-200 border-transparent"
-                    }`}
+                    className={`px-1.5 py-1 rounded-md text-center text-[10px] capitalize transition-colors font-medium border ${activeTheme === t
+                      ? "bg-neutral-900 text-white border-neutral-900"
+                      : "bg-neutral-100 text-neutral-600 hover:bg-neutral-200 border-transparent"
+                      }`}
                   >
                     {t}
                   </button>

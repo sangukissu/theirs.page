@@ -5,7 +5,9 @@ import { ContributionType } from "./contribute-modal"
 import { PortraitPlaceholder } from "./portrait-placeholder"
 import { formatMemorialLocation } from "@/lib/validation/text-limits"
 import { ThemeHeroFrame } from "./memorial-theme-decorations"
+import { MemorialCoverPattern } from "./memorial-cover-patterns"
 import type { MemorialThemeId } from "@/lib/memorial/themes"
+import type { MemorialCoverSettings } from "@/types/theirs"
 
 interface MemorialHeroProps {
   fullName: string
@@ -17,6 +19,7 @@ interface MemorialHeroProps {
   portraitUrl?: string | null
   isDemo?: boolean
   themeId?: MemorialThemeId
+  coverSettings?: MemorialCoverSettings | null
   onOpenContribute: (type?: ContributionType) => void
 }
 
@@ -30,13 +33,81 @@ export function MemorialHero({
   portraitUrl = null,
   isDemo = false,
   themeId = "quiet",
+  coverSettings,
   onOpenContribute,
 }: MemorialHeroProps) {
   const yearsSpan = birthYear && deathYear ? `${birthYear} \u2014 ${deathYear}` : "In Loving Memory"
   const age = birthYear && deathYear ? deathYear - birthYear : null
+  const displayCoverUrl = (() => {
+    const url = coverSettings?.cover_url
+    if (!url) return null
+    if (
+      url.startsWith("blob:") ||
+      url.startsWith("data:") ||
+      url.startsWith("http://") ||
+      url.startsWith("https://") ||
+      url.startsWith("/")
+    ) {
+      return url
+    }
+    return `/api/media?key=${encodeURIComponent(url)}`
+  })()
+
+  const isTheirWorld = coverSettings?.type === "their_world" && Boolean(displayCoverUrl)
+  const isPattern = coverSettings?.type === "pattern"
 
   return (
-    <section className="pt-24 sm:pt-32 pb-12 sm:pb-16 px-4 max-w-4xl mx-auto text-center flex flex-col items-center">
+    <section className="relative w-full overflow-hidden isolate">
+      {/* 1. Ambient Memorial Backdrop Layer (Their World) - FULL WIDTH */}
+      {isTheirWorld && (
+        <div
+          aria-hidden="true"
+          className="pointer-events-none absolute inset-x-0 top-0 w-full select-none z-0 overflow-hidden transition-all duration-500"
+          style={{
+            height: "clamp(460px, 55vw, 640px)",
+            WebkitMaskImage:
+              "radial-gradient(ellipse 95% 85% at 50% 25%, black 45%, rgba(0,0,0,0.85) 70%, transparent 100%)",
+            maskImage:
+              "radial-gradient(ellipse 95% 85% at 50% 25%, black 45%, rgba(0,0,0,0.85) 70%, transparent 100%)",
+          }}
+        >
+          <img
+            src={displayCoverUrl!}
+            alt=""
+            className="size-full object-cover transition-all duration-300"
+            style={{
+              objectPosition: `${coverSettings?.focal_x ?? 50}% ${coverSettings?.focal_y ?? 35}%`,
+              opacity: 0.75,
+            }}
+          />
+          <div className="absolute inset-0 bg-[var(--theme-bg-page)]/15" />
+          <div
+            className="absolute inset-0 pointer-events-none"
+            style={{
+              background: `linear-gradient(
+                to bottom,
+                rgba(255,255,255,0.02) 0%,
+                color-mix(in srgb, var(--theme-bg-page) 12%, transparent) 25%,
+                color-mix(in srgb, var(--theme-bg-page) 45%, transparent) 55%,
+                color-mix(in srgb, var(--theme-bg-page) 88%, transparent) 80%,
+                var(--theme-bg-page) 100%
+              )`,
+            }}
+          />
+        </div>
+      )}
+
+      {/* 2. Theme-Derived Curated Pattern Layer - FULL WIDTH */}
+      {isPattern && (
+        <MemorialCoverPattern
+          style={coverSettings?.pattern_style || "soft_aura"}
+          themeId={themeId}
+          className="w-full"
+        />
+      )}
+
+      {/* 3. Hero Content Foreground Canvas - INNER CONTAINER (max-w-4xl) */}
+      <div className="relative z-10 pt-24 sm:pt-32 pb-12 sm:pb-16 px-4 max-w-4xl mx-auto text-center flex flex-col items-center w-full">
       
       {/* Museum-Grade Archival Portrait Frame with Theme Matting */}
       <ThemeHeroFrame themeId={themeId}>
@@ -123,6 +194,8 @@ export function MemorialHero({
         </div>
 
       </div>
+
+    </div>
 
     </section>
   )

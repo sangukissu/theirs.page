@@ -77,6 +77,7 @@ export function MemorialHome({ identity, data }: { identity: MemorialIdentity; d
         portraitUrl={identity.portraitUrl}
         isDemo={identity.isDemo}
         themeId={currentTheme}
+        coverSettings={identity.coverSettings}
         onOpenContribute={openContribute}
       />
 

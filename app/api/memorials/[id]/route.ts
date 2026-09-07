@@ -129,6 +129,14 @@ export async function PATCH(req: NextRequest, context: RouteContext) {
     if (body.theme !== undefined && !["quiet", "warm", "garden", "classic", "dusk", "light"].includes(body.theme)) {
       return NextResponse.json({ error: "Invalid appearance atmosphere theme." }, { status: 400 })
     }
+    if (body.cover_settings !== undefined && body.cover_settings !== null) {
+      if (typeof body.cover_settings !== "object") {
+        return NextResponse.json({ error: "Invalid memorial cover settings." }, { status: 400 })
+      }
+      if (body.cover_settings.type && !["clean", "pattern", "their_world"].includes(body.cover_settings.type)) {
+        return NextResponse.json({ error: "Invalid memorial cover type." }, { status: 400 })
+      }
+    }
 
     // 1. Permissions Split: Owner-Only Settings vs Co-Admin Editorial Content
     const ownerOnlyFields = [
@@ -234,6 +242,35 @@ export async function PATCH(req: NextRequest, context: RouteContext) {
       }
     }
 
+    let stagedCoverToDelete: string | null = null
+    let newlyPromotedCoverKey: string | null = null
+    let newlyPromotedCoverOriginalKey: string | null = null
+    const oldCoverUrl = authCheck.memorial.cover_settings?.cover_url
+    const oldCoverKey = oldCoverUrl ? extractManagedR2Key(oldCoverUrl) : null
+
+    if (body.cover_settings !== undefined) {
+      if (!body.cover_settings) {
+        updates.cover_settings = { type: "clean" }
+      } else if (typeof body.cover_settings === "object") {
+        const nextCover = { ...body.cover_settings }
+        if (nextCover.cover_url && typeof nextCover.cover_url === "string") {
+          const coverKey = extractManagedR2Key(nextCover.cover_url)
+          if (coverKey && coverKey.startsWith(`dashboard-staging/${authCheck.memorial.id}/`)) {
+            const promoted = await promoteStagedMemorialImage(
+              coverKey,
+              authCheck.memorial.id,
+              "covers",
+            )
+            newlyPromotedCoverKey = promoted.displayKey
+            newlyPromotedCoverOriginalKey = promoted.originalKey
+            stagedCoverToDelete = coverKey
+            nextCover.cover_url = promoted.displayKey
+          }
+        }
+        updates.cover_settings = nextCover
+      }
+    }
+
     if (authCheck.isOwner) {
       if (body.status !== undefined) updates.status = body.status
       if (body.privacy !== undefined) updates.privacy = body.privacy
@@ -315,6 +352,15 @@ export async function PATCH(req: NextRequest, context: RouteContext) {
       if (stagedPortraitToDelete) {
         await releaseMemorialStorage(db, id, stagedPortraitToDelete).catch(() => {})
       }
+      if (newlyPromotedCoverKey) {
+        await deleteR2Object(newlyPromotedCoverKey).catch(() => {})
+      }
+      if (newlyPromotedCoverOriginalKey && newlyPromotedCoverOriginalKey !== newlyPromotedCoverKey) {
+        await deleteR2Object(newlyPromotedCoverOriginalKey).catch(() => {})
+      }
+      if (stagedCoverToDelete) {
+        await releaseMemorialStorage(db, id, stagedCoverToDelete).catch(() => {})
+      }
       console.error("Memorial update error:", updateError)
       return NextResponse.json({ error: "Failed to update memorial" }, { status: 500 })
     }
@@ -339,7 +385,27 @@ export async function PATCH(req: NextRequest, context: RouteContext) {
       }
     }
 
-    // DB update succeeded: Clean up staging file and old portrait file
+    if (stagedCoverToDelete && newlyPromotedCoverKey) {
+      try {
+        await finalizeMemorialStorage(
+          db,
+          id,
+          stagedCoverToDelete,
+          newlyPromotedCoverOriginalKey || newlyPromotedCoverKey,
+        )
+      } catch (quotaError) {
+        await db.from("memorials").update({ cover_settings: authCheck.memorial.cover_settings }).eq("id", id)
+        await deleteR2Object(newlyPromotedCoverKey).catch(() => {})
+        if (newlyPromotedCoverOriginalKey && newlyPromotedCoverOriginalKey !== newlyPromotedCoverKey) {
+          await deleteR2Object(newlyPromotedCoverOriginalKey).catch(() => {})
+        }
+        await releaseMemorialStorage(db, id, stagedCoverToDelete).catch(() => {})
+        console.error("Cover storage finalization error:", quotaError)
+        return NextResponse.json({ error: "Failed to finalize cover storage." }, { status: 500 })
+      }
+    }
+
+    // DB update succeeded: Clean up staging file and old portrait/cover files
     if (stagedPortraitToDelete) {
       await deleteR2Object(stagedPortraitToDelete).catch(() => {})
     }
@@ -355,6 +421,24 @@ export async function PATCH(req: NextRequest, context: RouteContext) {
       if (oldOriginalKey) {
         await deleteR2Object(oldOriginalKey).catch(() => {})
         await releaseMemorialStorage(db, id, oldOriginalKey).catch(() => {})
+      }
+    }
+
+    if (stagedCoverToDelete) {
+      await deleteR2Object(stagedCoverToDelete).catch(() => {})
+    }
+    if (
+      body.cover_settings !== undefined &&
+      oldCoverKey &&
+      oldCoverKey !== updates.cover_settings?.cover_url &&
+      oldCoverKey.startsWith(`memorials/${authCheck.memorial.id}/`)
+    ) {
+      await deleteR2Object(oldCoverKey).catch(() => {})
+      await releaseMemorialStorage(db, id, oldCoverKey).catch(() => {})
+      const oldOriginalCoverKey = archivalHeicKeyForDisplay(oldCoverKey)
+      if (oldOriginalCoverKey) {
+        await deleteR2Object(oldOriginalCoverKey).catch(() => {})
+        await releaseMemorialStorage(db, id, oldOriginalCoverKey).catch(() => {})
       }
     }
 
@@ -378,6 +462,12 @@ export async function PATCH(req: NextRequest, context: RouteContext) {
       memorial: {
         ...updated,
         portrait_photo_url: resolveMediaUrl(updated.portrait_photo_url),
+        cover_settings: updated.cover_settings
+          ? {
+              ...updated.cover_settings,
+              cover_url: resolveMediaUrl(updated.cover_settings.cover_url),
+            }
+          : null,
       },
     })
   } catch (err: any) {
