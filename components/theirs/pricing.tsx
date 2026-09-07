@@ -25,7 +25,7 @@ export function TheirsPricing() {
       {/* Pricing Cards Container */}
       <div className="w-full max-w-4xl mx-auto px-5">
         <ul className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6 list-none p-0 m-0">
-          
+
           {/* =============================================================== */}
           {/* CARD 1: FREE (Flat Gray Card, zero drop shadow)                  */}
           {/* =============================================================== */}
@@ -82,6 +82,14 @@ export function TheirsPricing() {
                     <path d="M4 0v8M0 4h8" />
                   </svg>
                 </span>
+                No Login/Sign up for contributions
+              </li>
+              <li className="flex items-start gap-2.5 text-sm leading-6 tracking-tight text-[#181925]">
+                <span aria-hidden="true" className="mt-2.5 block size-2 shrink-0 text-muted-foreground/50">
+                  <svg fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 8 8">
+                    <path d="M4 0v8M0 4h8" />
+                  </svg>
+                </span>
                 Up to 5 essential photos
               </li>
               <li className="flex items-start gap-2.5 text-sm leading-6 tracking-tight text-[#181925]">
@@ -100,6 +108,15 @@ export function TheirsPricing() {
                 </span>
                 Share with family and friends
               </li>
+
+              <li className="flex items-start gap-2.5 text-sm leading-6 tracking-tight text-[#181925]">
+                <span aria-hidden="true" className="mt-2.5 block size-2 shrink-0 text-muted-foreground/50">
+                  <svg fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 8 8">
+                    <path d="M4 0v8M0 4h8" />
+                  </svg>
+                </span>
+                Full Privacy Control
+              </li>
               <li className="flex items-start gap-2.5 text-sm leading-6 tracking-tight text-[#181925]">
                 <span aria-hidden="true" className="mt-2.5 block size-2 shrink-0 text-muted-foreground/50">
                   <svg fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 8 8">
@@ -107,6 +124,14 @@ export function TheirsPricing() {
                   </svg>
                 </span>
                 Quiet, ad-free environment
+              </li>
+              <li className="flex items-start gap-2.5 text-sm leading-6 tracking-tight text-[#181925]">
+                <span aria-hidden="true" className="mt-2.5 block size-2 shrink-0 text-muted-foreground/50">
+                  <svg fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 8 8">
+                    <path d="M4 0v8M0 4h8" />
+                  </svg>
+                </span>
+                AI Assisted moderation from Spammers
               </li>
             </ul>
 
@@ -187,9 +212,9 @@ export function TheirsPricing() {
                     <path d="M4 0v8M0 4h8" />
                   </svg>
                 </span>
-                Photo albums in original quality
+                Generous Media Storage Limits
               </li>
-               <li className="flex items-start gap-2.5 text-sm leading-6 tracking-tight text-[#e5e5e5]">
+              <li className="flex items-start gap-2.5 text-sm leading-6 tracking-tight text-[#e5e5e5]">
                 <span aria-hidden="true" className="mt-2.5 block size-2 shrink-0 text-muted-foreground/50">
                   <svg fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 8 8">
                     <path d="M4 0v8M0 4h8" />
@@ -197,6 +222,7 @@ export function TheirsPricing() {
                 </span>
                 Life Story timeline of their life
               </li>
+
               <li className="flex items-start gap-2.5 text-sm leading-6 tracking-tight text-[#e5e5e5]">
                 <span aria-hidden="true" className="mt-2.5 block size-2 shrink-0 text-muted-foreground/50">
                   <svg fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 8 8">
@@ -235,9 +261,17 @@ export function TheirsPricing() {
                     <path d="M4 0v8M0 4h8" />
                   </svg>
                 </span>
-                Choose the next caretaker
+                Choose the next Owner of Memorial
               </li>
-               <li className="flex items-start gap-2.5 text-sm leading-6 tracking-tight text-[#e5e5e5]">
+              <li className="flex items-start gap-2.5 text-sm leading-6 tracking-tight text-[#e5e5e5]">
+                <span aria-hidden="true" className="mt-2.5 block size-2 shrink-0 text-muted-foreground/50">
+                  <svg fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 8 8">
+                    <path d="M4 0v8M0 4h8" />
+                  </svg>
+                </span>
+                Private Messages to owners from Contributors
+              </li>
+              <li className="flex items-start gap-2.5 text-sm leading-6 tracking-tight text-[#e5e5e5]">
                 <span aria-hidden="true" className="mt-2.5 block size-2 shrink-0 text-muted-foreground/50">
                   <svg fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 8 8">
                     <path d="M4 0v8M0 4h8" />

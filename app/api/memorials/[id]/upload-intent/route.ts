@@ -15,6 +15,7 @@ import type { ContributionSettings } from "@/types/theirs"
 import { getR2PresignedUploadUrl } from "@/lib/r2"
 import { isStorageQuotaError, releaseMemorialStorage, reserveMemorialStorage } from "@/lib/storage-quota"
 import { getMemorialAccess } from "@/lib/memorial-auth"
+import { isMediaAllowed, resolveMediaCapabilities } from "@/lib/uploads/capabilities"
 
 interface RouteContext {
   params: Promise<{ id: string }>
@@ -27,9 +28,7 @@ function extensionForMime(mime: string): string {
   if (mime === "audio/wav") return "wav"
   if (mime === "audio/ogg") return "ogg"
   if (mime === "audio/m4a") return "m4a"
-  if (mime === "video/webm") return "webm"
-  if (mime === "video/quicktime") return "mov"
-  return "mp4"
+  return "bin"
 }
 
 function getClientIp(req: NextRequest): string {
@@ -48,7 +47,14 @@ export async function POST(req: NextRequest, context: RouteContext) {
     const mime_type = body.mime_type || body.fileType || body.type
     const file_size = Number(body.file_size ?? body.fileSize ?? body.size)
     const turnstile_token = body.turnstile_token || body.turnstileToken
-    const contributionType = body.contribution_type as GuestContributionType
+    const requestedContributionType = String(body.contribution_type || "")
+    if (requestedContributionType === "video") {
+      return NextResponse.json({ error: "Public video contributions accept a YouTube link, not a raw video file." }, { status: 403 })
+    }
+    if (!["photo", "memory", "voice"].includes(requestedContributionType)) {
+      return NextResponse.json({ error: "Invalid media contribution type." }, { status: 400 })
+    }
+    const contributionType = requestedContributionType as GuestContributionType
 
     const clientIp = getClientIp(req)
 
@@ -74,18 +80,13 @@ export async function POST(req: NextRequest, context: RouteContext) {
 
     // 3. MIME Type & File Size Validation
     const normalizedMime = typeof mime_type === "string" ? normalizeGuestMime(mime_type) : ""
-    if (!["photo", "memory", "voice", "video"].includes(contributionType)) {
-      return NextResponse.json({ error: "Invalid media contribution type." }, { status: 400 })
-    }
     const mediaRule = getGuestMediaRule(contributionType)
     if (!mediaRule.allowedMimeTypes.has(normalizedMime)) {
       return NextResponse.json(
         {
           error: contributionType === "voice"
             ? "Please choose an MP3, WAV, OGG, or M4A recording."
-            : contributionType === "video"
-              ? "Please choose an MP4, WebM, or MOV video."
-              : "Please choose a JPEG, PNG, or WebP photograph.",
+            : "Please choose a JPEG, PNG, or WebP photograph.",
         },
         { status: 400 }
       )
@@ -120,44 +121,35 @@ export async function POST(req: NextRequest, context: RouteContext) {
     }
 
     const contributionSettings = (memorial.contribution_settings || {}) as ContributionSettings
-    if (
-      contributionSettings.accept_contributions === false ||
-      contributionSettings[mediaRule.setting] === false ||
-      (contributionType === "memory" && contributionSettings.photos === false)
-    ) {
-      return NextResponse.json(
-        { error: `The family is not currently accepting ${mediaRule.label} contributions.` },
-        { status: 403 }
-      )
-    }
-
-    // 5. Enforce Tier Restrictions for Guest Contributions
-    const isPaid = Boolean(memorial.is_paid)
-    if (!isPaid && (contributionType === "voice" || contributionType === "video")) {
-      return NextResponse.json(
-        { error: "Voice notes and video clips require the Pro Plan." },
-        { status: 403 }
-      )
-    }
-    if (!isPaid) {
-      // Check 5-photo limit on free tier
-      if (normalizedMime.startsWith("image/")) {
-        const { count, error: countErr } = await db
-          .from("media_items")
-          .select("id", { count: "exact", head: true })
-          .eq("memorial_id", memorial.id)
-
-        const currentPhotos = !countErr && typeof count === "number" ? count : 0
-        if (currentPhotos >= 5) {
-          return NextResponse.json(
-            { error: "This memorial has reached its photograph limit (5 photos) on the free tier." },
-            { status: 403 }
-          )
-        }
+    let existingImageCount = 0
+    if (mediaRule.mediaType === "image") {
+      const imageCountResult = await db.from("media_items")
+        .select("id", { count: "exact", head: true })
+        .eq("memorial_id", memorial.id)
+        .eq("media_type", "image")
+      if (imageCountResult.error || typeof imageCountResult.count !== "number") {
+        return NextResponse.json({ error: "Media quota is temporarily unavailable." }, { status: 503 })
       }
+      existingImageCount = imageCountResult.count
+    }
+    const capabilities = resolveMediaCapabilities({
+      context: "guest_contribution",
+      isPaid: Boolean(memorial.is_paid),
+      contributionSettings,
+      existingMediaCounts: { image: existingImageCount },
+    })
+    if (!isMediaAllowed(capabilities, mediaRule.mediaType)) {
+      return NextResponse.json(
+        {
+          error: contributionType === "voice" && !memorial.is_paid
+            ? "Voice notes require the Pro Plan."
+            : `The family is not currently accepting ${mediaRule.label} contributions.`,
+        },
+        { status: 403 }
+      )
     }
 
-    // 6. Enforce Private Memorial PIN Gate
+    // 5. Enforce Private Memorial PIN Gate
     if (memorial.privacy === "private") {
       const cookieKey = memorial.slug || memorial.id
       const isUnlocked = verifyPinAccessToken(
@@ -187,7 +179,7 @@ export async function POST(req: NextRequest, context: RouteContext) {
 
     // 6. Generate Short-Lived HMAC Upload Intent Token (10 minutes)
     const nonce = crypto.randomBytes(16).toString("hex")
-    const usesDirectR2 = contributionType === "voice" || contributionType === "video"
+    const usesDirectR2 = contributionType === "voice"
     const directUploadKey = usesDirectR2
       ? `contribution-staging/${memorial.id}/${nonce}/original/${crypto.randomUUID()}.${extensionForMime(normalizedMime)}`
       : undefined

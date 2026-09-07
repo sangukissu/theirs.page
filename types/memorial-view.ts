@@ -3,6 +3,7 @@ import type { TimelineMilestone } from "@/components/memorial/life-timeline"
 import type { StoryItem } from "@/components/memorial/life-stories"
 import type { MemoryItem } from "@/components/memorial/memories-stream"
 import type { SectionSettings, ContributionSettings } from "@/types/theirs"
+import type { MemorialAccessRole } from "@/lib/memorial-auth"
 
 export type MemorialView = "home" | "timeline" | "memories" | "gallery" | "tributes"
 export type BrowseCollection = "gallery" | "memories" | "timeline" | "tributes"
@@ -22,6 +23,8 @@ export interface MemorialIdentity {
   isDemo: boolean
   isPaid: boolean
   isOwner: boolean
+  viewerUserId?: string | null
+  accessRole?: MemorialAccessRole | null
   caretakerName?: string | null
   caretakerRelationship?: string | null
   birthMonth?: number | null

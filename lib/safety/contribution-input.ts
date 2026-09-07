@@ -29,6 +29,7 @@ export const contributionInputSchema = z.object({
   existing_media_id: z.string().uuid().nullable().optional(),
   turnstile_token: z.string().max(2_048).nullable().optional(),
   upload_authorization: z.string().max(8_192).nullable().optional(),
+  external_url: z.string().trim().max(2_048).nullable().optional(),
 }).strict()
 
 export type ContributionInput = z.infer<typeof contributionInputSchema>

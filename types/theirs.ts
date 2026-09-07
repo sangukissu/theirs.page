@@ -140,6 +140,10 @@ export interface Memory {
   contributor_role?: ContributorRole
   receipt_token?: string | null
   is_quarantined?: boolean
+  media_source_type?: 'none' | 'uploaded' | 'youtube'
+  external_provider?: 'youtube' | null
+  external_id?: string | null
+  external_url?: string | null
   visibility: MemoryVisibility
   created_at: string
   approved_at: string | null
@@ -157,6 +161,10 @@ export interface MediaItem {
   album?: string | null
   is_pinned?: boolean
   source_memory_id?: string | null
+  source_type?: 'uploaded' | 'youtube'
+  external_provider?: 'youtube' | null
+  external_id?: string | null
+  external_url?: string | null
   created_at: string
 }
 

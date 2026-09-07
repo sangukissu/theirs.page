@@ -55,7 +55,7 @@ export async function getMemorialAccess(
   const isUuid = UUID_REGEX.test(memorialId)
   let memorialQuery = db
     .from("memorials")
-    .select("id, owner_id, slug, status, privacy, is_paid, full_name")
+    .select("id, owner_id, slug, status, privacy, is_paid, full_name, contribution_settings")
   memorialQuery = isUuid
     ? memorialQuery.eq("id", memorialId)
     : memorialQuery.eq("slug", memorialId)

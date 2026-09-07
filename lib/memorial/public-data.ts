@@ -119,6 +119,7 @@ function mapMedia(row: MemorialRow, publicDelivery = false): GalleryItem {
     album: row.album || undefined,
     isPinned: Boolean(row.is_pinned),
     mediaUrl: resolveMediaUrl(row.url, { publicDelivery }),
+    externalVideoId: row.source_type === "youtube" ? row.external_id || undefined : undefined,
     addedBy,
     sourceMemoryId: row.source_memory_id || undefined,
   }
@@ -128,7 +129,7 @@ const MEMORIAL_PUBLIC_COLUMNS =
   "id, slug, owner_id, full_name, preferred_name, creator_relationship, birth_year, birth_month, birth_day, death_year, death_month, death_day, location, headline, biography, portrait_photo_url, status, privacy, is_paid, section_settings, contribution_settings, access_pin_hash"
 
 const MEDIA_COLUMNS =
-  "id, caption, media_type, approx_year, location, album, is_pinned, url, order_index, created_at, source_memory_id"
+  "id, caption, media_type, approx_year, location, album, is_pinned, url, order_index, created_at, source_memory_id, source_type, external_provider, external_id, external_url"
 
 const STORY_COLUMNS =
   "id, author_name, author_relationship, approx_year, created_at, location, story, photo_url, photo_urls"
@@ -229,14 +230,18 @@ export const getMemorialViewContext = cache(async (slug: string): Promise<Memori
   // we resolve the user to preserve caretaker/owner permissions.
   let isOwner = false
   let hasMemberAccess = false
+  let viewerUserId: string | null = null
+  let accessRole: MemorialIdentity["accessRole"] = null
   const isPublishedPublicOrUnlisted = memorial?.status === "published" && memorial?.privacy !== "private"
 
   if (memorial && (hasAuthCookie || !isPublishedPublicOrUnlisted)) {
     if (!serverClient) serverClient = await createClient()
     const { data: { user } } = await serverClient.auth.getUser().catch(() => ({ data: { user: null } }))
+    viewerUserId = user?.id || null
     const access = user?.id ? await getMemorialAccess(memorial.id, user.id) : null
     isOwner = Boolean(access?.isOwner)
     hasMemberAccess = Boolean(access)
+    accessRole = access?.role || null
     if (memorial.status !== "published" && !hasMemberAccess) return null
   }
   const pinUnlocked = Boolean(
@@ -289,6 +294,8 @@ export const getMemorialViewContext = cache(async (slug: string): Promise<Memori
       isDemo,
       isPaid: isDemo || Boolean(memorial?.is_paid),
       isOwner,
+      viewerUserId,
+      accessRole,
       caretakerName,
       caretakerRelationship: memorial?.creator_relationship || (isDemo ? "Granddaughter" : null),
       birthMonth: memorial?.birth_month ?? null,
@@ -475,13 +482,13 @@ export async function loadMemorialHome(context: MemorialViewContext): Promise<Me
   const sections = context.identity.sectionSettings
   const empty = <T,>(): PagedCollection<T> => ({ items: [], total: 0, hasMore: false, nextCursor: null })
   const [media, memories, timeline, tributes] = await Promise.all([
-    sections.gallery === false ? empty<GalleryItem>() : loadBrowsePage<GalleryItem>(context, "gallery", { pageSize: 6, includeFacets: false }),
+    sections.gallery === false ? empty<GalleryItem>() : loadBrowsePage<GalleryItem>(context, "gallery", { pageSize: 6, includeFacets: true, filter: "photo" }),
     sections.stories === false ? empty<StoryItem>() : loadBrowsePage<StoryItem>(context, "memories", { pageSize: 2 }),
     sections.timeline === false ? empty<TimelineMilestone>() : loadBrowsePage<TimelineMilestone>(context, "timeline", { pageSize: context.identity.isDemo ? 3 : 5 }),
     sections.tributes === false ? empty<MemoryItem>() : loadBrowsePage<MemoryItem>(context, "tributes", { pageSize: 2 }),
   ])
   if (context.identity.photoCount === undefined) {
-    context.identity.photoCount = media.total
+    context.identity.photoCount = media.facets?.photo ?? 0
   }
   return { media, memories, timeline, tributes }
 }

@@ -157,6 +157,10 @@ export async function GET(req: NextRequest, context: RouteContext) {
         approx_year: m.approx_year,
         location: m.location,
         photo_url: m.photo_url,
+        media_source_type: m.media_source_type || (m.photo_url ? "uploaded" : "none"),
+        external_provider: m.external_provider || null,
+        external_id: m.external_id || null,
+        external_url: m.external_url || null,
         contributed_at: m.created_at,
       })),
       media_catalog: (mediaRes.data || []).map((media) => ({
@@ -166,6 +170,10 @@ export async function GET(req: NextRequest, context: RouteContext) {
         approx_year: media.approx_year,
         location: media.location,
         url: media.url,
+        source_type: media.source_type || "uploaded",
+        external_provider: media.external_provider || null,
+        external_id: media.external_id || null,
+        external_url: media.external_url || null,
         uploaded_at: media.created_at,
       })),
       caretakers: (collabsRes.data || []).map((c) => ({
@@ -203,6 +211,10 @@ PACKAGE CONTENTS:
 
 4. /documents/ & /video/
    Any additional media or video clips associated with the memorial.
+
+5. External video references
+   YouTube links are catalogued in archive-manifest.json. They are references,
+   not originals preserved by Theirs, so no YouTube binary is included here.
 
 PRESERVATION ADVICE:
 --------------------
@@ -269,6 +281,7 @@ Thank you for trusting Theirs to help preserve ${memorial.full_name}'s memory.
       for (let i = 0; i < mediaItems.length; i++) {
         const item = mediaItems[i]
         if (!item.url) continue
+        if (item.source_type === "youtube") continue
 
         const itemKey = extractManagedR2Key(item.url) || item.url
         // If this item was contributed by community and has an untouched high-res original in originals/, prefer it

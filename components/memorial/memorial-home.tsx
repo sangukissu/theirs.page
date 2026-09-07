@@ -115,9 +115,14 @@ export function MemorialHome({ identity, data }: { identity: MemorialIdentity; d
             items={data.media.items}
             isDemo={identity.isDemo}
             isPaid={identity.isPaid}
+            accessRole={identity.accessRole}
+            contributionSettings={identity.contributionSettings}
             onOpenContribute={openContribute}
             slug={identity.slug}
             initialPage={{ ...data.media, hasMore: false, nextCursor: null }}
+            hideAllTab
+            initialFilter="photo"
+            pageSize={6}
           />
           {(identity.isDemo || data.media.hasMore) && (
             <ViewFullSection href={viewHref("gallery")} kind="gallery">

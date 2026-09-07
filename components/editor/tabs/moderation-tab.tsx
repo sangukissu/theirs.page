@@ -18,6 +18,7 @@ import {
   Camera,
   Heart,
   BookOpen,
+  Film,
   Loader2,
 } from "lucide-react"
 import { ConfirmDeleteModal } from "../confirm-delete-modal"
@@ -41,6 +42,10 @@ export interface EditorMemory {
   contributor_role?: string | null
   is_quarantined?: boolean
   created_at: string
+  media_source_type?: string | null
+  external_provider?: string | null
+  external_id?: string | null
+  external_url?: string | null
 }
 
 export interface EditorCaretakerMessage {
@@ -76,6 +81,15 @@ function primaryMediaMime(memory: EditorMemory): string | undefined {
 }
 
 function ContributionTypeBadge({ memory }: { memory: EditorMemory }) {
+  const isVideo = memory.media_source_type === "youtube" || Boolean(memory.external_id) || memory.safety_details?.submission_type === "video"
+  if (isVideo) {
+    return (
+      <span className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-semibold bg-red-50 text-red-700">
+        <Film className="size-3" />
+        YouTube Video
+      </span>
+    )
+  }
   const isMemory = memory.contribution_type === "story"
   return (
     <span className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-semibold ${isMemory ? "bg-indigo-50 text-indigo-700" : "bg-rose-50 text-rose-700"}`}>
@@ -450,11 +464,13 @@ export function ModerationTab({
                       <ContributionBody memory={mem} className="text-xs sm:text-sm text-[#333] leading-relaxed" />
 
                       {/* Private attachment preview for caretaker review */}
-                      {mem.photo_url && (
+                      {(mem.photo_url || mem.external_id) && (
                         <div className="pt-1">
                           <ContributionMediaPreview
-                            src={mediaPreviewUrl(mem.photo_url)}
+                            src={mem.photo_url ? mediaPreviewUrl(mem.photo_url) : null}
                             mime={primaryMediaMime(mem)}
+                            externalVideoId={mem.external_id}
+                            externalUrl={mem.external_url}
                           />
                         </div>
                       )}
@@ -539,10 +555,12 @@ export function ModerationTab({
 
                     <ContributionBody memory={mem} className="text-xs text-[#444] leading-relaxed" />
 
-                    {mem.photo_url && (
+                    {(mem.photo_url || mem.external_id) && (
                       <ContributionMediaPreview
-                        src={mediaPreviewUrl(mem.photo_url)}
+                        src={mem.photo_url ? mediaPreviewUrl(mem.photo_url) : null}
                         mime={primaryMediaMime(mem)}
+                        externalVideoId={mem.external_id}
+                        externalUrl={mem.external_url}
                         compact
                       />
                     )}
@@ -677,11 +695,13 @@ export function ModerationTab({
                             {isRevealed ? mem.story.replace(/<[^>]*>/g, " ").replace(/\s+/g, " ").trim() : "Content is hidden to protect the family."}
                           </p>
 
-                          {isRevealed && mem.photo_url && (
+                          {isRevealed && (mem.photo_url || mem.external_id) && (
                             <div className="mt-2">
                               <ContributionMediaPreview
-                                src={mediaPreviewUrl(mem.photo_url)}
+                                src={mem.photo_url ? mediaPreviewUrl(mem.photo_url) : null}
                                 mime={primaryMediaMime(mem)}
+                                externalVideoId={mem.external_id}
+                                externalUrl={mem.external_url}
                                 compact
                               />
                             </div>

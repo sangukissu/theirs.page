@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useRef, useEffect, useMemo } from "react"
+import { useState, useRef, useMemo } from "react"
 import {
   Upload,
   Image as ImageIcon,
@@ -17,7 +17,6 @@ import {
   ArrowUp,
   ArrowDown,
   Folder,
-  Loader2,
   MapPin,
   Calendar,
 } from "lucide-react"
@@ -25,6 +24,11 @@ import { UpgradeBanner } from "../upgrade-banner"
 import { ConfirmDeleteModal } from "../confirm-delete-modal"
 import { TEXT_LIMITS } from "@/lib/validation/text-limits"
 import { useEditorAuthorization } from "../use-editor-authorization"
+import { useResumableMediaUpload } from "@/hooks/use-resumable-media-upload"
+import { MediaUploadList } from "@/components/uploads/media-upload-list"
+import type { MemorialAccessRole } from "@/lib/memorial-auth"
+import { isMediaAllowed, resolveMediaCapabilities } from "@/lib/uploads/capabilities"
+import { detectMediaType, MEDIA_ACCEPT_ATTRIBUTE, resolveMediaMime } from "@/lib/uploads/constants"
 
 export interface EditorMediaItem {
   id: string
@@ -43,6 +47,8 @@ interface GalleryTabProps {
   fullName: string
   mediaItems: EditorMediaItem[]
   isPaid?: boolean
+  currentUserId: string
+  accessRole: MemorialAccessRole
   onUpgrade?: () => void
   onAddMedia: (item: EditorMediaItem) => void
   onRemoveMedia: (id: string) => void
@@ -54,21 +60,13 @@ interface GalleryTabProps {
   onReorderMedia?: (reordered: EditorMediaItem[]) => void
 }
 
-export interface UploadingFileItem {
-  id: string
-  file: File
-  name: string
-  previewUrl: string
-  mediaType: "image" | "audio" | "video"
-  status: "uploading" | "error"
-  error?: string
-}
-
 export function GalleryTab({
   memorialId,
   fullName,
   mediaItems,
   isPaid = false,
+  currentUserId,
+  accessRole,
   onUpgrade,
   onAddMedia,
   onRemoveMedia,
@@ -76,11 +74,18 @@ export function GalleryTab({
   onReorderMedia,
 }: GalleryTabProps) {
   const handleAuthorizationFailure = useEditorAuthorization(memorialId)
-  const [isUploading, setIsUploading] = useState(false)
-  const [uploadProgress, setUploadProgress] = useState<string | null>(null)
   const [uploadError, setUploadError] = useState<string | null>(null)
-  const [uploadingItems, setUploadingItems] = useState<UploadingFileItem[]>([])
   const [selectedAlbumFilter, setSelectedAlbumFilter] = useState<string>("all")
+  const fileInputRef = useRef<HTMLInputElement | null>(null)
+  const uploads = useResumableMediaUpload({
+    memorialId,
+    userId: currentUserId,
+    purpose: "studio_gallery",
+    defaultAlbum: selectedAlbumFilter !== "all" && selectedAlbumFilter !== "__no_album__"
+      ? selectedAlbumFilter
+      : null,
+    onStudioComplete: (mediaItem) => onAddMedia(mediaItem as unknown as EditorMediaItem),
+  })
 
   // Dynamically derive all albums present across media items
   const existingAlbums = useMemo(() => {
@@ -98,24 +103,15 @@ export function GalleryTab({
     })
   }, [mediaItems, selectedAlbumFilter])
 
-  const uploadingItemsRef = useRef<UploadingFileItem[]>([])
-  uploadingItemsRef.current = uploadingItems
-
-  // Clean up object URLs on unmount
-  useEffect(() => {
-    return () => {
-      uploadingItemsRef.current.forEach((item) => {
-        try {
-          URL.revokeObjectURL(item.previewUrl)
-        } catch { }
-      })
-    }
-  }, [])
-
   const photoCount = mediaItems.filter((m) => m.media_type === "image" || !m.media_type).length
-  const isPhotoQuotaReached = !isPaid && photoCount >= 5
+  const mediaCapabilities = useMemo(() => resolveMediaCapabilities({
+    context: "studio",
+    isPaid,
+    accessRole,
+    existingMediaCounts: { image: photoCount },
+  }), [accessRole, isPaid, photoCount])
+  const isPhotoQuotaReached = mediaCapabilities.imageQuotaReached
 
-  // Multi-file drag and drop upload with instant local preview and incremental load
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files
     if (!files || files.length === 0) return
@@ -123,15 +119,18 @@ export function GalleryTab({
     setUploadError(null)
 
     const fileList = Array.from(files)
-    const currentCount = photoCount
-
-    // Check media type permissions on free plan
-    const hasProMedia = fileList.some(
-      (f) => f.type.startsWith("audio/") || f.type.startsWith("video/")
-    )
-    if (!isPaid && hasProMedia) {
+    const disallowedFile = fileList.find((file) => {
+      const mediaType = detectMediaType(resolveMediaMime(file.type, file.name))
+      return !mediaType || !isMediaAllowed(mediaCapabilities, mediaType)
+    })
+    if (disallowedFile) {
+      const mediaType = detectMediaType(resolveMediaMime(disallowedFile.type, disallowedFile.name))
       setUploadError(
-        "Audio voice notes and video clips are available on Pro Plan. Upgrade to preserve these recordings."
+        !isPaid && (mediaType === "audio" || mediaType === "video")
+          ? "Audio voice notes and video clips are available on Pro Plan. Upgrade to preserve these recordings."
+          : mediaType === "image" && mediaCapabilities.imageQuotaReached
+            ? `Free memorials are limited to ${mediaCapabilities.maxImageItems} photos. The Complete plan includes up to 10 GB of original media.`
+            : "One or more selected files use a format that this gallery cannot verify."
       )
       if (e.target) e.target.value = ""
       return
@@ -139,8 +138,8 @@ export function GalleryTab({
 
     // Check quota limits on free plan
     let allowedFiles = fileList
-    if (!isPaid) {
-      const remainingSlots = Math.max(0, 5 - currentCount)
+    if (mediaCapabilities.remainingImageItems !== null) {
+      const remainingSlots = mediaCapabilities.remainingImageItems
       if (remainingSlots === 0) {
         setUploadError(
           "Free memorials are limited to 5 photos. The Complete plan includes up to 10 GB of original media."
@@ -157,157 +156,8 @@ export function GalleryTab({
       }
     }
 
-    // Generate immediate optimistic preview cards
-    const newItems: UploadingFileItem[] = allowedFiles.map((file, idx) => {
-      const mediaType: "image" | "audio" | "video" = file.type.startsWith("video/")
-        ? "video"
-        : file.type.startsWith("audio/")
-          ? "audio"
-          : "image"
-      return {
-        id: `upload-${Date.now()}-${idx}-${Math.random().toString(36).slice(2, 7)}`,
-        file,
-        name: file.name,
-        previewUrl: URL.createObjectURL(file),
-        mediaType,
-        status: "uploading",
-      }
-    })
-
-    // Prepend new uploading cards so user sees them right away
-    setUploadingItems((prev) => [...newItems, ...prev])
-    setIsUploading(true)
-
-    // Reset input value so same files can be chosen again if needed
     if (e.target) e.target.value = ""
-
-    let completedCount = 0
-    setUploadProgress(`Uploading 1 of ${newItems.length}...`)
-
-    // Single file upload worker
-    const uploadSingle = async (item: UploadingFileItem) => {
-      try {
-        // 1. Request presigned upload URL (authenticates, validates quota/MIME/size, generates secure key)
-        const presignedRes = await fetch("/api/r2/presigned-upload-url", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            filename: item.file.name,
-            contentType: item.file.type || "application/octet-stream",
-            fileSize: item.file.size,
-            folder: "gallery",
-            memorialId,
-          }),
-        })
-        const presignedData = await presignedRes.json()
-        if (handleAuthorizationFailure(presignedRes)) return
-        if (!presignedRes.ok) {
-          throw new Error(presignedData.error || `Failed to prepare upload for ${item.name}`)
-        }
-
-        // 2. Direct browser -> Cloudflare R2 upload with server fallback
-        let uploadKey = presignedData.key
-        let stagingKey = presignedData.stagingKey || presignedData.key
-        let mediaType = presignedData.mediaType
-
-        try {
-          const uploadRes = await fetch(presignedData.uploadUrl, {
-            method: "PUT",
-            headers: {
-              "Content-Type": presignedData.contentType || item.file.type || "application/octet-stream",
-            },
-            body: item.file,
-          })
-          if (!uploadRes.ok) {
-            throw new Error(`Direct upload returned ${uploadRes.status}`)
-          }
-        } catch (directErr) {
-          console.warn("Direct R2 upload failed (likely CORS preflight), using server upload fallback:", directErr)
-          const formData = new FormData()
-          formData.append("file", item.file)
-          formData.append("folder", "gallery")
-          formData.append("memorialId", memorialId)
-
-          const fallbackRes = await fetch("/api/r2/upload", {
-            method: "POST",
-            body: formData,
-          })
-          const fallbackData = await fallbackRes.json()
-          if (handleAuthorizationFailure(fallbackRes)) return
-          if (!fallbackRes.ok) {
-            throw new Error(fallbackData.error || `Failed to upload ${item.name}`)
-          }
-          uploadKey = fallbackData.key
-          stagingKey = fallbackData.key
-          mediaType = fallbackData.mediaType || mediaType
-        }
-
-        // 3. Save record to Supabase
-        const dbRes = await fetch(`/api/memorials/${memorialId}/media`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            stagingKey,
-            url: uploadKey,
-            media_type: mediaType,
-            caption: null,
-            approx_year: null,
-            album:
-              selectedAlbumFilter !== "all" && selectedAlbumFilter !== "__no_album__"
-                ? selectedAlbumFilter
-                : null,
-          }),
-        })
-
-        const dbData = await dbRes.json()
-        if (handleAuthorizationFailure(dbRes)) return
-        if (!dbRes.ok || !dbData.mediaItem) {
-          throw new Error(dbData.error || `Failed to save ${item.name}`)
-        }
-
-        // 4. Immediately load into dashboard UI!
-        onAddMedia(dbData.mediaItem)
-
-        // Clean up preview object URL
-        try {
-          URL.revokeObjectURL(item.previewUrl)
-        } catch { }
-
-        // Remove from uploading placeholders
-        setUploadingItems((prev) => prev.filter((i) => i.id !== item.id))
-
-        completedCount++
-        if (completedCount < newItems.length) {
-          setUploadProgress(`Uploading ${completedCount + 1} of ${newItems.length}...`)
-        }
-      } catch (err: any) {
-        console.error("Upload error for file", item.name, err)
-        setUploadingItems((prev) =>
-          prev.map((i) =>
-            i.id === item.id
-              ? { ...i, status: "error", error: err.message || "Upload failed" }
-              : i
-          )
-        )
-      }
-    }
-
-    // Process uploads with concurrency limit of 2 for fast, smooth incremental UI updates
-    const executing: Promise<void>[] = []
-    for (const item of newItems) {
-      const p = uploadSingle(item).then(() => {
-        const idx = executing.indexOf(p)
-        if (idx !== -1) executing.splice(idx, 1)
-      })
-      executing.push(p)
-      if (executing.length >= 2) {
-        await Promise.race(executing)
-      }
-    }
-    await Promise.all(executing)
-
-    setIsUploading(false)
-    setUploadProgress(null)
+    await uploads.addFiles(allowedFiles)
   }
 
   const [itemToDelete, setItemToDelete] = useState<EditorMediaItem | null>(null)
@@ -362,7 +212,7 @@ export function GalleryTab({
             <div className="sm:hidden">
               {isPaid ? (
                 <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 text-[10px] font-medium border border-emerald-200">
-                  <Sparkles className="size-2.5" /> Pro Plan · Unlimited
+                  <Sparkles className="size-2.5" /> Complete · 10 GB archive
                 </span>
               ) : (
                 <span
@@ -371,7 +221,7 @@ export function GalleryTab({
                     : "bg-neutral-100 text-[#555] border-black/[0.06]"
                     }`}
                 >
-                  {photoCount} / 5 Photos Used
+                   {photoCount} / {mediaCapabilities.maxImageItems} Photos Used
                 </span>
               )}
             </div>
@@ -390,7 +240,7 @@ export function GalleryTab({
                   }`}
               >
                 <Volume2 className="size-3 text-primary" /> Audio Notes{" "}
-                {!isPaid && <Lock className="size-2.5 text-amber-700" />}
+                {!mediaCapabilities.nativeAudio && <Lock className="size-2.5 text-amber-700" />}
               </span>
               <span
                 className={`inline-flex items-center gap-1 text-[11px] px-2.5 py-0.5 sm:py-1 rounded-full border font-medium ${isPaid
@@ -399,7 +249,7 @@ export function GalleryTab({
                   }`}
               >
                 <Video className="size-3 text-primary" /> Video Clips{" "}
-                {!isPaid && <Lock className="size-2.5 text-amber-700" />}
+                {!mediaCapabilities.nativeVideo && <Lock className="size-2.5 text-amber-700" />}
               </span>
             </div>
 
@@ -407,7 +257,7 @@ export function GalleryTab({
             <div className="hidden sm:block shrink-0">
               {isPaid ? (
                 <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-emerald-50 text-emerald-700 text-xs font-medium border border-emerald-200">
-                  <Sparkles className="size-3" /> Pro Plan · Unlimited
+                   <Sparkles className="size-3" /> Complete · 10 GB archive
                 </span>
               ) : (
                 <span
@@ -416,7 +266,7 @@ export function GalleryTab({
                     : "bg-neutral-100 text-[#555] border-black/[0.06]"
                     }`}
                 >
-                  {photoCount} / 5 Free Photos Used
+                   {photoCount} / {mediaCapabilities.maxImageItems} Free Photos Used
                 </span>
               )}
             </div>
@@ -454,8 +304,8 @@ export function GalleryTab({
 
           <div className="flex flex-col gap-1">
             <span className="text-xs sm:text-sm font-medium text-[#181925]">
-              {isUploading
-                ? uploadProgress || "Uploading files..."
+              {uploads.isUploading
+                ? "Uploading securely — each file shows its own progress below"
                 : isPhotoQuotaReached
                   ? "Free 5-photo limit reached · Drop more files after upgrading"
                   : "Drop photographs, voice notes, or home videos here"}
@@ -466,21 +316,29 @@ export function GalleryTab({
           </div>
 
           <input
+            ref={fileInputRef}
             type="file"
             multiple
-            accept="image/*,video/*,audio/*"
-            disabled={isUploading}
+            accept={MEDIA_ACCEPT_ATTRIBUTE}
             onChange={handleFileUpload}
             className="hidden"
           />
         </label>
+
+        <MediaUploadList
+          items={uploads.items}
+          online={uploads.isOnline}
+          onRetry={(id) => void uploads.retry(id)}
+          onCancel={(id) => void uploads.cancel(id)}
+          onChooseFiles={(files) => void uploads.addFiles(files)}
+        />
 
         {/* Uploaded Media Grid & Album Filter Bar */}
         <div className="flex flex-col gap-3">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 px-1 text-xs text-[#71717a]">
             <span>
               {mediaItems.length} media item{mediaItems.length === 1 ? "" : "s"} preserved
-              {uploadingItems.length > 0 && ` · ${uploadingItems.length} uploading...`}
+              {uploads.items.some((item) => item.status !== "complete") && ` · ${uploads.items.filter((item) => item.status !== "complete").length} in upload queue`}
             </span>
 
             {selectedAlbumFilter !== "all" && (
@@ -547,7 +405,7 @@ export function GalleryTab({
             </div>
           )}
 
-          {displayedMediaItems.length === 0 && uploadingItems.length === 0 ? (
+          {displayedMediaItems.length === 0 ? (
             <div className="p-8 rounded-2xl bg-white border border-black/[0.05] text-center text-xs text-[#888]">
               {selectedAlbumFilter !== "all"
                 ? `No media in "${selectedAlbumFilter === "__no_album__" ? "Untagged" : selectedAlbumFilter}". Drop files above to add to this album.`
@@ -555,79 +413,6 @@ export function GalleryTab({
             </div>
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              {/* Optimistic Uploading Cards (Live thumbnail + Preserving status) */}
-              {uploadingItems.map((item) => (
-                <div
-                  key={item.id}
-                  className="p-3 rounded-2xl bg-white border border-primary/30 flex flex-col gap-2.5 shadow-2xs relative overflow-hidden"
-                >
-                  <div className="aspect-4/3 rounded-xl overflow-hidden bg-neutral-100 relative">
-                    {item.mediaType === "video" ? (
-                      <div className="size-full bg-neutral-900 flex items-center justify-center text-white">
-                        <Film className="size-8 opacity-80" />
-                      </div>
-                    ) : item.mediaType === "audio" ? (
-                      <div className="size-full bg-primary/10 flex items-center justify-center text-primary">
-                        <Volume2 className="size-8" />
-                      </div>
-                    ) : (
-                      <img
-                        src={item.previewUrl}
-                        alt={item.name}
-                        className="size-full object-cover"
-                      />
-                    )}
-
-                    {/* Frosted Status Overlay */}
-                    <div
-                      className={`absolute inset-0 flex flex-col items-center justify-center gap-1.5 p-3 text-center ${item.status === "error"
-                        ? "bg-rose-950/85 text-white"
-                        : "bg-black/50 backdrop-blur-[2px] text-white"
-                        }`}
-                    >
-                      {item.status === "error" ? (
-                        <>
-                          <AlertCircle className="size-5 text-rose-300" />
-                          <span className="text-[11px] font-medium text-rose-200 line-clamp-2">
-                            {item.error || "Upload failed"}
-                          </span>
-                          <button
-                            type="button"
-                            onClick={() => {
-                              try {
-                                URL.revokeObjectURL(item.previewUrl)
-                              } catch { }
-                              setUploadingItems((prev) => prev.filter((i) => i.id !== item.id))
-                            }}
-                            className="mt-1 px-2.5 py-0.5 rounded-full bg-white/20 hover:bg-white/30 text-[10px] text-white transition-colors cursor-pointer"
-                          >
-                            Dismiss
-                          </button>
-                        </>
-                      ) : (
-                        <>
-                          <Loader2 className="size-5 animate-spin text-white" />
-                          <span className="text-xs font-medium tracking-tight">Preserving...</span>
-                          <span className="text-[10px] text-white/70 truncate max-w-full px-2 font-mono">
-                            {item.name}
-                          </span>
-                        </>
-                      )}
-                    </div>
-                  </div>
-
-                  {/* Subtle Skeleton placeholders for metadata fields */}
-                  <div className="flex flex-col gap-2 opacity-40 pointer-events-none">
-                    <div className="h-7 rounded-lg bg-neutral-100 animate-pulse" />
-                    <div className="h-7 rounded-lg bg-neutral-100 animate-pulse" />
-                    <div className="flex items-center gap-2">
-                      <div className="flex-1 h-7 rounded-lg bg-neutral-100 animate-pulse" />
-                      <div className="w-24 h-7 rounded-lg bg-neutral-100 animate-pulse" />
-                    </div>
-                  </div>
-                </div>
-              ))}
-
               {/* Permanent Media Items */}
               {displayedMediaItems.map((item, index) => (
                 <div

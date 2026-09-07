@@ -18,24 +18,16 @@ In the Cloudflare Dashboard:
       "https://theirs.page",
       "https://www.theirs.page",
       "http://localhost:3000",
-      "http://127.0.0.1:3000",
-      "http://localhost:8787",
-      "http://127.0.0.1:8787"
+      "http://127.0.0.1:3000"
     ],
     "AllowedMethods": [
-      "GET",
-      "PUT",
-      "HEAD"
+      "PUT"
     ],
     "AllowedHeaders": [
-      "Content-Type",
-      "Content-Length",
-      "x-amz-*"
+      "Content-Type"
     ],
     "ExposeHeaders": [
-      "ETag",
-      "Content-Type",
-      "Content-Length"
+      "ETag"
     ],
     "MaxAgeSeconds": 3600
   }
@@ -45,8 +37,21 @@ In the Cloudflare Dashboard:
 Or using `wrangler r2 bucket cors set`:
 
 ```bash
-npx wrangler r2 bucket cors set <R2_BUCKET_NAME> --file r2-cors.json
+npm run r2:cors:apply
+npm run r2:cors:check
 ```
+
+The scripts target the production `theirs` bucket declared in `wrangler.jsonc`.
+They require either an authenticated `wrangler login` session or a Cloudflare API
+token with R2 bucket configuration access. The check must show the same origins,
+`PUT` method, `Content-Type` request header, and exposed `ETag` response header as
+[`r2-cors.json`](../r2-cors.json).
+
+After applying the policy, complete one single-part image upload and one multipart
+audio or video upload from the production origin. In browser developer tools,
+confirm that each R2 `OPTIONS` request succeeds, each `PUT` succeeds, and multipart
+part responses expose a non-empty `ETag`. A policy listing alone does not prove the
+browser-to-R2 data path.
 
 ---
 
@@ -55,7 +60,8 @@ npx wrangler r2 bucket cors set <R2_BUCKET_NAME> --file r2-cors.json
 1. **Bucket Remains Completely Private**:
    - Do **NOT** enable public bucket access or public `r2.dev` bucket endpoints.
    - Uploads are authorized individually using short-lived S3 HMAC-SHA256 presigned PUT URLs signed by the backend.
-   - Presigned upload URLs expire after 10 minutes (600 seconds) and can only be used for the exact authorized S3 key and MIME type.
+   - Presigned single-upload and part URLs expire after 15 minutes and can only be used for the exact authorized R2 operation.
+   - Multipart create, list, complete, and abort operations pass through authenticated Theirs routes. Only file bytes use browser-to-R2 `PUT` requests.
 
 2. **Keys vs URLs**:
    - The database stores only the relative storage key (e.g. `memorials/{id}/gallery/{timestamp}_{uuid}_{filename}`).

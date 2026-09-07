@@ -3,12 +3,16 @@
 import { useMemorialActions } from "./memorial-shell"
 import { MemorialGallery, type GalleryItem } from "./memorial-gallery"
 import type { GalleryFilter, PagedCollection } from "@/types/memorial-view"
+import type { ContributionSettings } from "@/types/theirs"
+import type { MemorialAccessRole } from "@/lib/memorial-auth"
 
 interface GalleryPageViewProps {
   slug: string
   fullName: string
   isDemo: boolean
   isPaid: boolean
+  accessRole?: MemorialAccessRole | null
+  contributionSettings?: ContributionSettings | null
   initial: PagedCollection<GalleryItem>
   initialFilter: GalleryFilter
   initialAlbum: string
@@ -21,6 +25,8 @@ export function GalleryPageView({
   fullName,
   isDemo,
   isPaid,
+  accessRole,
+  contributionSettings,
   initial,
   initialFilter,
   initialAlbum,
@@ -34,6 +40,8 @@ export function GalleryPageView({
       items={initial.items}
       isDemo={isDemo}
       isPaid={isPaid}
+      accessRole={accessRole}
+      contributionSettings={contributionSettings}
       onOpenContribute={openContribute}
       browseSlug={slug}
       initialPage={initial}

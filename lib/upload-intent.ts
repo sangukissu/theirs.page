@@ -42,7 +42,7 @@ export interface UploadedMediaReferencePayload {
   exp: number
 }
 
-export type GuestContributionType = "photo" | "memory" | "voice" | "video"
+export type GuestContributionType = "photo" | "memory" | "voice"
 
 export const ALLOWED_GUEST_IMAGE_MIME_TYPES = new Set([
   "image/jpeg",
@@ -59,29 +59,21 @@ export const ALLOWED_GUEST_AUDIO_MIME_TYPES = new Set([
   "audio/m4a",
 ])
 
-export const ALLOWED_GUEST_VIDEO_MIME_TYPES = new Set([
-  "video/mp4",
-  "video/webm",
-  "video/quicktime",
-])
-
 export const ALLOWED_GUEST_MIME_TYPES = new Set([
   ...ALLOWED_GUEST_IMAGE_MIME_TYPES,
   ...ALLOWED_GUEST_AUDIO_MIME_TYPES,
-  ...ALLOWED_GUEST_VIDEO_MIME_TYPES,
 ])
 
 export const MAX_GUEST_IMAGE_BYTES = 15 * 1024 * 1024
-export const MAX_GUEST_AUDIO_BYTES = 50 * 1024 * 1024
-export const MAX_GUEST_VIDEO_BYTES = 100 * 1024 * 1024
-export const MAX_GUEST_UPLOAD_BYTES = MAX_GUEST_VIDEO_BYTES
+export const MAX_GUEST_AUDIO_BYTES = 25 * 1024 * 1024
+export const MAX_GUEST_UPLOAD_BYTES = MAX_GUEST_AUDIO_BYTES
 
 export interface GuestMediaRule {
-  allowedMime: "image/*" | "audio/*" | "video/*"
+  allowedMime: "image/*" | "audio/*"
   allowedMimeTypes: Set<string>
   maxBytes: number
   mediaType: "image" | "audio" | "video"
-  setting: "photos" | "memories" | "voice" | "videos"
+  setting: "photos" | "memories" | "voice"
   label: string
 }
 
@@ -101,16 +93,6 @@ export function getGuestMediaRule(type: GuestContributionType): GuestMediaRule {
       mediaType: "audio",
       setting: "voice",
       label: "voice recording",
-    }
-  }
-  if (type === "video") {
-    return {
-      allowedMime: "video/*",
-      allowedMimeTypes: ALLOWED_GUEST_VIDEO_MIME_TYPES,
-      maxBytes: MAX_GUEST_VIDEO_BYTES,
-      mediaType: "video",
-      setting: "videos",
-      label: "video clip",
     }
   }
   return {
@@ -181,7 +163,7 @@ export function verifyUploadIntent(token: string): UploadIntentPayload | null {
 
   const now = Date.now()
   const contributionType = String(payload.contributionType) as GuestContributionType
-  if (!["photo", "memory", "voice", "video"].includes(contributionType)) return null
+  if (!["photo", "memory", "voice"].includes(contributionType)) return null
   const rule = getGuestMediaRule(contributionType)
   if (
     payload.v !== TOKEN_VERSION ||
@@ -200,7 +182,7 @@ export function verifyUploadIntent(token: string): UploadIntentPayload | null {
     payload.exp > now + UPLOAD_INTENT_MAX_AGE_MS + 60_000
   ) return null
 
-  if (contributionType === "voice" || contributionType === "video") {
+  if (contributionType === "voice") {
     const expectedPrefix = `contribution-staging/${payload.memorialId}/${payload.nonce}/original/`
     if (
       typeof payload.directUploadKey !== "string" ||
@@ -235,7 +217,7 @@ export function verifyUploadedMediaReference(
 
   const now = Date.now()
   const contributionType = String(payload.contributionType) as GuestContributionType
-  if (!["photo", "memory", "voice", "video"].includes(contributionType)) return null
+  if (!["photo", "memory", "voice"].includes(contributionType)) return null
   const rule = getGuestMediaRule(contributionType)
   if (
     payload.v !== TOKEN_VERSION ||

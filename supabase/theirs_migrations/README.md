@@ -67,6 +67,18 @@ Run these SQL scripts in numerical order in your new Supabase project's **SQL Ed
     - Adds nullable `birth_month`, `birth_day`, `death_month`, and `death_day` to `memorials` for progressive date precision while preserving forgiving year-only defaults.
     - Adds `relationship` to `collaborators` for co-admin / family steward attribution.
 
+11. **`21_resumable_media_upload_sessions.sql`**
+    - Adds service-role-only durable upload sessions, lifecycle indexes, and transaction-safe Studio/member finalization RPCs.
+    - Reuses the existing atomic 10 GiB storage ledger through `upload-session:{id}` reservations.
+
+12. **`22_external_video_sources.sql`**
+    - Models YouTube references explicitly on pending contributions and published gallery media without counting them as uploaded originals.
+
+13. **`23_resumable_upload_hardening.sql`**
+    - Keeps upload-session quota reservations atomically aligned with the six-hour session lifecycle.
+    - Restores still-active legacy reservations after rechecking the 10 GiB quota boundary.
+    - Removes gallery projections transactionally when an approved contribution is unpublished.
+
 ---
 
 ## Environment Variables Mapping

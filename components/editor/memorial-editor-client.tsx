@@ -71,6 +71,8 @@ interface InitialMemorialData {
 }
 
 interface MemorialEditorClientProps {
+  currentUserId: string
+  accessRole: "owner" | "co_admin"
   initialMemorial: InitialMemorialData
   initialMediaItems: EditorMediaItem[]
   initialTimelineEvents: EditorTimelineEvent[]
@@ -81,6 +83,8 @@ interface MemorialEditorClientProps {
 type SaveStatus = "saved" | "saving" | "local-saved"
 
 export function MemorialEditorClient({
+  currentUserId,
+  accessRole,
   initialMemorial,
   initialMediaItems,
   initialTimelineEvents,
@@ -691,6 +695,8 @@ export function MemorialEditorClient({
               fullName={form.full_name}
               mediaItems={mediaItems}
               isPaid={isPaid}
+              currentUserId={currentUserId}
+              accessRole={accessRole}
               onUpgrade={handleUpgradeComplete}
               onAddMedia={(item) =>
                 setMediaItems((prev) => [item, ...prev.filter((m) => m.id !== item.id)])

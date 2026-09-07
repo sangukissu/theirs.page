@@ -28,7 +28,11 @@ import {
 } from "lucide-react"
 import { ContributionType } from "./contribute-modal"
 import type { GalleryFacets, GalleryFilter, PagedCollection } from "@/types/memorial-view"
+import type { ContributionSettings } from "@/types/theirs"
+import type { MemorialAccessRole } from "@/lib/memorial-auth"
 import { useOptimisticReceipts } from "@/lib/memorial/optimistic-receipts"
+import { YouTubeEmbed } from "@/components/consent/youtube-embed"
+import { resolveMediaCapabilities } from "@/lib/uploads/capabilities"
 
 export type GalleryMediaType = "photo" | "audio" | "video"
 
@@ -51,6 +55,7 @@ export interface GalleryItem {
   addedBy?: string
   sourceMemoryId?: string
   isOptimistic?: boolean
+  externalVideoId?: string
 }
 
 interface MemorialGalleryProps {
@@ -58,6 +63,8 @@ interface MemorialGalleryProps {
   items?: GalleryItem[]
   isDemo?: boolean
   isPaid?: boolean
+  accessRole?: MemorialAccessRole | null
+  contributionSettings?: ContributionSettings | null
   onOpenContribute: (
     type?: ContributionType,
     initialPhotoUrl?: string,
@@ -71,6 +78,8 @@ interface MemorialGalleryProps {
   initialAlbum?: string
   initialMediaId?: string
   initialSelectedItem?: GalleryItem | null
+  hideAllTab?: boolean
+  pageSize?: number
 }
 
 export function MemorialGallery({
@@ -78,6 +87,8 @@ export function MemorialGallery({
   items,
   isDemo = false,
   isPaid = false,
+  accessRole = null,
+  contributionSettings = null,
   onOpenContribute,
   browseSlug,
   slug,
@@ -86,12 +97,15 @@ export function MemorialGallery({
   initialAlbum = "all",
   initialMediaId,
   initialSelectedItem,
+  hideAllTab = false,
+  pageSize,
 }: MemorialGalleryProps) {
   const router = useRouter()
   const pathname = usePathname()
   const fallbackItems = items || []
   const [galleryItems, setGalleryItems] = useState<GalleryItem[]>(initialPage?.items || fallbackItems)
-  const [filter, setFilter] = useState<GalleryFilter>(initialFilter)
+  const effectiveInitialFilter: GalleryFilter = hideAllTab && initialFilter === "all" ? "photo" : initialFilter
+  const [filter, setFilter] = useState<GalleryFilter>(effectiveInitialFilter)
   const [selectedAlbum, setSelectedAlbum] = useState<string>(initialAlbum)
   const [facets, setFacets] = useState<GalleryFacets | undefined>(initialPage?.facets)
   const [nextCursor, setNextCursor] = useState<string | null>(initialPage?.nextCursor || null)
@@ -120,6 +134,7 @@ export function MemorialGallery({
         location: r.location || undefined,
         album: "Family contributions",
         mediaUrl: r.photo_url || (r.photo_urls && r.photo_urls[0]) || "",
+        externalVideoId: r.external_provider === "youtube" ? r.external_id || undefined : undefined,
         aspectRatio: "portrait",
         story: r.story,
         addedBy: r.author_name,
@@ -149,27 +164,32 @@ export function MemorialGallery({
   ) as string[]
 
   const filteredItems = useMemo(() => {
-    if (!browseSlug) {
-      return allGalleryItems.filter((item) => {
-        const matchesType = filter === "all" || item.mediaType === filter
-        const matchesAlbum = selectedAlbum === "all" || item.album?.trim() === selectedAlbum
-        return matchesType && matchesAlbum
-      })
-    }
     const matchingOptimistic = optimisticMediaItems.filter((item) => {
       const matchesType = filter === "all" || item.mediaType === filter
       const matchesAlbum = selectedAlbum === "all" || item.album?.trim() === selectedAlbum
       return matchesType && matchesAlbum
     })
-    const existingIds = new Set(galleryItems.map((i) => i.id))
+    const matchingGallery = galleryItems.filter((item) => {
+      const matchesType = filter === "all" || item.mediaType === filter
+      const matchesAlbum = selectedAlbum === "all" || item.album?.trim() === selectedAlbum
+      return matchesType && matchesAlbum
+    })
+    const existingIds = new Set(matchingGallery.map((i) => i.id))
     const deduped = matchingOptimistic.filter((i) => !existingIds.has(i.id))
-    return [...deduped, ...galleryItems]
-  }, [browseSlug, allGalleryItems, optimisticMediaItems, galleryItems, filter, selectedAlbum])
+    return [...deduped, ...matchingGallery]
+  }, [optimisticMediaItems, galleryItems, filter, selectedAlbum])
 
   const photoCount = facets?.photo ?? allGalleryItems.filter((i) => i.mediaType === "photo").length
   const audioCount = facets?.audio ?? allGalleryItems.filter((i) => i.mediaType === "audio").length
   const videoCount = facets?.video ?? allGalleryItems.filter((i) => i.mediaType === "video").length
   const allCount = facets?.all ?? allGalleryItems.length
+  const mediaCapabilities = useMemo(() => resolveMediaCapabilities({
+    context: accessRole ? "member_contribution" : "guest_contribution",
+    isPaid,
+    accessRole,
+    contributionSettings,
+    existingMediaCounts: { image: photoCount },
+  }), [accessRole, contributionSettings, isPaid, photoCount])
 
   useEffect(() => {
     if (!initialPage) return
@@ -181,16 +201,17 @@ export function MemorialGallery({
   }, [initialPage])
 
   const fetchGalleryPage = useCallback(async (nextFilter: GalleryFilter, nextAlbum: string, cursor?: string | null, append = false) => {
-    if (!browseSlug || isLoadingPage) return
+    if (!activeSlug || isLoadingPage) return
     setIsLoadingPage(true)
     setPageError(null)
     failedRequestRef.current = { filter: nextFilter, album: nextAlbum, cursor: cursor || null, append }
     try {
       const params = new URLSearchParams({ collection: "gallery", type: nextFilter })
       if (nextAlbum !== "all") params.set("album", nextAlbum)
+      if (pageSize) params.set("pageSize", String(pageSize))
       if (cursor) params.set("cursor", cursor)
       else params.set("includeFacets", "true")
-      const response = await fetch(`/api/memorials/${browseSlug}/browse?${params.toString()}`, { cache: "no-store" })
+      const response = await fetch(`/api/memorials/${activeSlug}/browse?${params.toString()}`, { cache: "no-store" })
       if (!response.ok) throw new Error("We couldn't load the gallery right now.")
       const page = await response.json() as PagedCollection<GalleryItem>
       setGalleryItems((current) => append ? [...current, ...page.items.filter((item) => !current.some((existing) => existing.id === item.id))] : page.items)
@@ -204,17 +225,19 @@ export function MemorialGallery({
     } finally {
       setIsLoadingPage(false)
     }
-  }, [browseSlug, isLoadingPage])
+  }, [activeSlug, isLoadingPage, pageSize])
 
   const changeFilters = (nextFilter: GalleryFilter, nextAlbum: string) => {
     setFilter(nextFilter)
     setSelectedAlbum(nextAlbum)
     setDidLoadMore(false)
-    const params = new URLSearchParams()
-    if (new URL(window.location.href).searchParams.get("preview") === "visitor") params.set("preview", "visitor")
-    if (nextFilter !== "all") params.set("type", nextFilter)
-    if (nextAlbum !== "all") params.set("album", nextAlbum)
-    window.history.replaceState(window.history.state, "", `${pathname}${params.size ? `?${params.toString()}` : ""}`)
+    if (browseSlug) {
+      const params = new URLSearchParams()
+      if (new URL(window.location.href).searchParams.get("preview") === "visitor") params.set("preview", "visitor")
+      if (nextFilter !== "all") params.set("type", nextFilter)
+      if (nextAlbum !== "all") params.set("album", nextAlbum)
+      window.history.replaceState(window.history.state, "", `${pathname}${params.size ? `?${params.toString()}` : ""}`)
+    }
     void fetchGalleryPage(nextFilter, nextAlbum)
   }
 
@@ -558,7 +581,7 @@ export function MemorialGallery({
           </h2>
         </div>
 
-        {!isPaid && photoCount >= 5 ? null : (
+        {mediaCapabilities.nativePhoto ? (
           <button
             type="button"
             onClick={() => onOpenContribute("photo")}
@@ -567,13 +590,13 @@ export function MemorialGallery({
             <Plus className="size-3.5" />
             <span>Add photos</span>
           </button>
-        )}
+        ) : null}
       </div>
 
       {/* Format Filter Chips */}
       <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar py-0.5 select-none">
         {[
-          { key: "all", label: `All (${allCount})`, show: true },
+          { key: "all", label: `All (${allCount})`, show: !hideAllTab },
           { key: "photo", label: `Photos (${photoCount})`, icon: ImageIcon, show: true },
           { key: "audio", label: `Voice & Audio (${audioCount})`, icon: Volume2, show: Boolean(isPaid || audioCount > 0) },
           { key: "video", label: `Home Video (${videoCount})`, icon: Film, show: Boolean(isPaid || videoCount > 0) },
@@ -636,7 +659,7 @@ export function MemorialGallery({
       {filteredItems.length === 0 ? (
         <div className="py-16 text-center text-sm text-[#71717a] rounded-3xl bg-[#fafafb] border border-black/[0.06] flex flex-col items-center justify-center gap-3">
           <p>No photographs, voice notes, or videos added to the gallery yet.</p>
-          {!isPaid && photoCount >= 5 ? null : (
+          {mediaCapabilities.nativePhoto ? (
             <button
               type="button"
               onClick={() => onOpenContribute("photo")}
@@ -645,7 +668,7 @@ export function MemorialGallery({
               <Plus className="size-3.5" />
               <span>Add the first memory</span>
             </button>
-          )}
+          ) : null}
         </div>
       ) : (
         /* FLUID MASONRY GRID (Left-to-right distributed, no empty leading slots, natural dimensions) */
@@ -758,6 +781,23 @@ export function MemorialGallery({
 
                 // 2. REAL VIDEO CARD (Uncropped in Masonry Grid with Play Glyph)
                 if (item.mediaType === "video") {
+                  if (item.externalVideoId) {
+                    return (
+                      <div key={item.id} className="w-full overflow-hidden rounded-2xl bg-neutral-900 shadow-xs">
+                        <YouTubeEmbed videoId={item.externalVideoId} title={item.title} />
+                        {(item.title || item.year || item.location) && (
+                          <div className="flex items-start justify-between gap-3 px-3.5 py-3 text-white">
+                            <span className="min-w-0 truncate text-xs font-medium">{item.title || "Shared video"}</span>
+                            {(item.year || item.location) && (
+                              <span className="shrink-0 text-[10px] font-mono text-white/65">
+                                {[item.year, item.location].filter(Boolean).join(" · ")}
+                              </span>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    )
+                  }
                   const videoDuration =
                     videoDurations[item.id] ||
                     (item.duration && item.duration !== "undefined" ? item.duration : "")
@@ -1048,7 +1088,11 @@ export function MemorialGallery({
               onClick={(e) => e.stopPropagation()}
               className="relative flex items-center justify-center max-w-full max-h-full"
             >
-              {selectedItem.mediaType === "video" ? (
+              {selectedItem.mediaType === "video" && selectedItem.externalVideoId ? (
+                <div className="w-[92vw] max-w-4xl sm:w-[80vw]">
+                  <YouTubeEmbed videoId={selectedItem.externalVideoId} title={selectedItem.title} />
+                </div>
+              ) : selectedItem.mediaType === "video" ? (
                 <video
                   controls
                   autoPlay

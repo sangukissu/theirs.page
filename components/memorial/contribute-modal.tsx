@@ -26,6 +26,12 @@ import { saveLocalReceipt } from "@/lib/memorial/optimistic-receipts"
 import type { ContributionSettings } from "@/types/theirs"
 import { useContributionDraft } from "@/hooks/use-contribution-draft"
 import { TEXT_LIMITS } from "@/lib/validation/text-limits"
+import type { MemorialAccessRole } from "@/lib/memorial-auth"
+import { useResumableMediaUpload } from "@/hooks/use-resumable-media-upload"
+import { MediaUploadList } from "@/components/uploads/media-upload-list"
+import { parseYouTubeUrl } from "@/lib/uploads/youtube"
+import { resolveMediaCapabilities } from "@/lib/uploads/capabilities"
+import { detectMediaType, mediaAcceptAttribute, resolveMediaMime } from "@/lib/uploads/constants"
 
 export type ContributionType = "tribute" | "memory" | "photo" | "voice" | "video" | "message"
 export type TributeRitual = "flower" | "candle" | "note"
@@ -41,6 +47,8 @@ interface ContributeModalProps {
   slug: string
   memorialId?: string
   isPaid?: boolean
+  accessRole?: MemorialAccessRole | null
+  currentUserId?: string | null
   photoCount?: number
   contributionSettings?: ContributionSettings | null
   initialType?: ContributionType | null
@@ -57,6 +65,8 @@ export function ContributeModal({
   slug,
   memorialId,
   isPaid = false,
+  accessRole = null,
+  currentUserId = null,
   photoCount,
   contributionSettings,
   initialType = null,
@@ -65,6 +75,7 @@ export function ContributeModal({
   initialMediaId = null,
   onSubmitted,
 }: ContributeModalProps) {
+  const isAuthenticatedMember = Boolean(accessRole && currentUserId)
   const [selectedType, setSelectedType] = useState<ContributionType | null>(initialType)
   const [tributeRitual, setTributeRitual] = useState<TributeRitual>("flower")
   const [authorName, setAuthorName] = useState("")
@@ -93,11 +104,31 @@ export function ContributeModal({
   const [uploadedFileUrl, setUploadedFileUrl] = useState<string | null>(null)
   const [uploadedMediaRef, setUploadedMediaRef] = useState<string | null>(null)
   const [uploadedFileName, setUploadedFileName] = useState<string | null>(null)
-  const [memoryPhotos, setMemoryPhotos] = useState<{ url: string; name: string; mediaRef?: string }[]>([])
+  const [memoryPhotos, setMemoryPhotos] = useState<{ url: string; name: string; mediaRef?: string; uploadItemId?: string }[]>([])
   const [selectedExistingMediaId, setSelectedExistingMediaId] = useState<string | null>(null)
   const [uploadAuthorization, setUploadAuthorization] = useState<string | null>(null)
   const [isUploadingMedia, setIsUploadingMedia] = useState(false)
   const [mediaUploadError, setMediaUploadError] = useState<string | null>(null)
+  const [youtubeUrl, setYoutubeUrl] = useState("")
+  const [selectedUploadItemIds, setSelectedUploadItemIds] = useState<string[]>([])
+  const memberUploads = useResumableMediaUpload({
+    memorialId: memorialId || "",
+    userId: currentUserId || undefined,
+    purpose: "member_contribution",
+    enabled: isAuthenticatedMember && Boolean(memorialId) && Boolean(currentUserId),
+  })
+  const selectedMemberUploads = useMemo(
+    () => memberUploads.items.filter((item) =>
+      selectedUploadItemIds.includes(item.id) || item.status === "preparing"
+    ),
+    [memberUploads.items, selectedUploadItemIds],
+  )
+  const selectedSessionIds = selectedMemberUploads
+    .filter((item) => item.status === "complete" && item.sessionId)
+    .map((item) => item.sessionId)
+  const isMemberUploadBusy = selectedMemberUploads.some((item) =>
+    ["preparing", "uploading", "paused", "verifying", "finalizing"].includes(item.status)
+  )
   const restoredMemoryDraftRef = useRef(false)
   const memoryDraftValue = useMemo(() => ({
     name: authorName,
@@ -122,6 +153,46 @@ export function ContributeModal({
     setExtraField(restoredMemoryDraft.year || "")
     setLocation(restoredMemoryDraft.location || "")
   }, [restoredMemoryDraft, selectedType])
+
+  useEffect(() => {
+    const completed = selectedMemberUploads.filter((item) => item.status === "complete")
+    if (selectedType === "memory") {
+      setMemoryPhotos((current) => [
+        ...current.filter((photo) => !photo.uploadItemId),
+        ...completed.map((item) => ({
+          url: item.previewUrl || "",
+          name: item.filename,
+          uploadItemId: item.id,
+        })),
+      ])
+      return
+    }
+    const first = completed[0]
+    if (first) {
+      setUploadedFileUrl(first.previewUrl || null)
+      setUploadedFileName(first.filename)
+    }
+  }, [selectedMemberUploads, selectedType])
+
+  useEffect(() => {
+    if (!isOpen || !isAuthenticatedMember || !selectedType || isSubmitted) return
+    const expectedMediaType = selectedType === "voice"
+      ? "audio"
+      : selectedType === "video"
+        ? "video"
+        : selectedType === "photo" || selectedType === "memory"
+          ? "image"
+          : null
+    if (!expectedMediaType) return
+    const recoverableIds = memberUploads.items
+      .filter((item) => item.sessionId && item.mediaType === expectedMediaType)
+      .slice(0, selectedType === "memory" ? 3 : 1)
+      .map((item) => item.id)
+    if (recoverableIds.length === 0) return
+    setSelectedUploadItemIds((current) => selectedType === "memory"
+      ? [...new Set([...current, ...recoverableIds])].slice(0, 3)
+      : current.length > 0 ? current : recoverableIds)
+  }, [isAuthenticatedMember, isOpen, isSubmitted, memberUploads.items, selectedType])
 
   const [lazyLimits, setLazyLimits] = useState<{
     photoCount: number
@@ -152,13 +223,19 @@ export function ContributeModal({
   }, [isOpen, isPaid, photoCount, memorialId, slug])
 
   const effectivePhotoCount = lazyLimits ? lazyLimits.photoCount : photoCount
-  // If Free tier and photo count is unknown/loading, treat as not available until confirmed
-  const isPhotosFull = !isPaid && (effectivePhotoCount === undefined || effectivePhotoCount >= 5)
-  const remainingNewPhotoSlots = isPaid
-    ? 3
-    : effectivePhotoCount !== undefined
-    ? Math.max(0, 5 - effectivePhotoCount)
-    : 0
+  const mediaCapabilities = useMemo(() => resolveMediaCapabilities({
+    context: isAuthenticatedMember ? "member_contribution" : "guest_contribution",
+    isPaid,
+    accessRole,
+    contributionSettings,
+    existingMediaCounts: { image: effectivePhotoCount ?? null },
+  }), [accessRole, contributionSettings, effectivePhotoCount, isAuthenticatedMember, isPaid])
+  // Unknown Free-tier counts fail closed until contribution-limits resolves.
+  const isPhotosFull = mediaCapabilities.imageQuotaReached
+  const remainingNewPhotoSlots = Math.min(
+    3,
+    mediaCapabilities.remainingImageItems ?? (isPaid ? 3 : 0),
+  )
   const newMemoryPhotoCount = memoryPhotos.filter((photo) => Boolean(photo.mediaRef)).length
   const canAddMemoryPhoto = memoryPhotos.length < 3 && newMemoryPhotoCount < remainingNewPhotoSlots
   const firstName = memorialName.split(" ")[0] || memorialName
@@ -188,7 +265,7 @@ export function ContributeModal({
       title: "Share a photograph",
       desc: "Photographs the family and friends may cherish.",
       color: "text-primary bg-primary/5",
-      available: !allContributionsDisabled && !isPhotosFull && contributionSettings?.photos !== false,
+      available: !allContributionsDisabled && !isPhotosFull && mediaCapabilities.nativePhoto,
     },
     {
       type: "voice" as const,
@@ -196,15 +273,17 @@ export function ContributeModal({
       title: "Share a voice note",
       desc: "A voicemail or spoken story worth keeping forever.",
       color: "text-primary bg-primary/5",
-      available: !allContributionsDisabled && isPaid && contributionSettings?.voice === true,
+      available: !allContributionsDisabled && mediaCapabilities.nativeAudio,
     },
     {
       type: "video" as const,
       icon: Film,
-      title: "Share a video clip",
-      desc: "Home movies, celebrations, or recorded messages.",
+      title: "Share a video",
+      desc: mediaCapabilities.nativeVideo
+        ? "Paste a YouTube link, or preserve the original file from your family workspace."
+        : "Paste a YouTube link to share a video with the family.",
       color: "text-primary bg-primary/5",
-      available: !allContributionsDisabled && isPaid && contributionSettings?.videos === true,
+      available: !allContributionsDisabled && mediaCapabilities.youtubeVideo,
     },
   ]
 
@@ -240,6 +319,8 @@ export function ContributeModal({
       }
 
       setUploadAuthorization(null)
+      setYoutubeUrl("")
+      setSelectedUploadItemIds([])
       setIsSubmitted(false)
       setSubmissionResult(null)
       setError(null)
@@ -251,7 +332,7 @@ export function ContributeModal({
     token: string
     directUpload?: { uploadUrl: string; key: string; contentType: string }
   }> => {
-    if (uploadAuthorization && selectedType !== "voice" && selectedType !== "video") {
+    if (uploadAuthorization && selectedType !== "voice") {
       return { token: uploadAuthorization }
     }
     if (siteKey && !turnstileToken) {
@@ -268,7 +349,7 @@ export function ContributeModal({
           mime_type: file.type || "application/octet-stream",
           file_size: file.size,
           contribution_type:
-            selectedType === "photo" || selectedType === "voice" || selectedType === "video"
+            selectedType === "photo" || selectedType === "voice"
               ? selectedType
               : "memory",
         }),
@@ -287,6 +368,12 @@ export function ContributeModal({
   }
 
   const uploadContributionFile = async (file: File) => {
+    if (isAuthenticatedMember) {
+      const ids = await memberUploads.addFiles([file])
+      if (selectedType === "memory") setSelectedUploadItemIds((current) => [...current, ...ids])
+      else setSelectedUploadItemIds(ids)
+      return { previewUrl: "", mediaRef: "" }
+    }
     const authorization = await getUploadAuthorization(file)
     if (authorization.directUpload) {
       const directResponse = await fetch(authorization.directUpload.uploadUrl, {
@@ -324,11 +411,16 @@ export function ContributeModal({
 
   const handleFileSelect = async (file: File) => {
     if (!file) return
+    const expectedMediaType = selectedType === "video" ? "video" : selectedType === "voice" ? "audio" : "image"
+    if (detectMediaType(resolveMediaMime(file.type, file.name)) !== expectedMediaType) {
+      setMediaUploadError(`Choose a supported ${expectedMediaType === "image" ? "photograph" : expectedMediaType} file.`)
+      return
+    }
     const maximumBytes = selectedType === "video"
-      ? 100 * 1024 * 1024
+      ? mediaCapabilities.maxVideoBytes || 0
       : selectedType === "voice"
-        ? 50 * 1024 * 1024
-        : 15 * 1024 * 1024
+        ? mediaCapabilities.maxAudioBytes
+        : mediaCapabilities.maxImageBytes
     if (file.size < 1 || file.size > maximumBytes) {
       setMediaUploadError(`This ${selectedType === "video" ? "video" : selectedType === "voice" ? "audio file" : "photograph"} must be ${maximumBytes / 1024 / 1024}MB or smaller.`)
       return
@@ -337,43 +429,55 @@ export function ContributeModal({
       setMediaUploadError("This memorial has reached its 5-photograph limit on the free plan.")
       return
     }
-    setIsUploadingMedia(true)
+    if (selectedType === "video" && !mediaCapabilities.nativeVideo) {
+      setMediaUploadError("Public video contributions use a YouTube link. Raw video uploads are available only to accepted family members.")
+      return
+    }
+    setIsUploadingMedia(!isAuthenticatedMember)
     setMediaUploadError(null)
 
     try {
       const data = await uploadContributionFile(file)
-      setUploadedFileUrl(data.previewUrl)
-      setUploadedMediaRef(data.mediaRef)
+      if (!isAuthenticatedMember) {
+        setUploadedFileUrl(data.previewUrl)
+        setUploadedMediaRef(data.mediaRef)
+      }
       setUploadedFileName(file.name)
     } catch (err: any) {
       console.error("Media upload error:", err)
       setMediaUploadError(err.message || "Failed to upload file. Please try again.")
     } finally {
-      setIsUploadingMedia(false)
+      if (!isAuthenticatedMember) setIsUploadingMedia(false)
     }
   }
 
   const handleMemoryPhotoSelect = async (file: File) => {
     if (!file) return
+    if (detectMediaType(resolveMediaMime(file.type, file.name)) !== "image") {
+      setMediaUploadError("Choose a supported photograph file.")
+      return
+    }
     if (!canAddMemoryPhoto) {
       setMediaUploadError("This memorial has no remaining photograph space for this story.")
       return
     }
 
-    setIsUploadingMedia(true)
+    setIsUploadingMedia(!isAuthenticatedMember)
     setMediaUploadError(null)
 
     try {
       const data = await uploadContributionFile(file)
-      setMemoryPhotos((prev) => [
-        ...prev,
-        { url: data.previewUrl, name: file.name, mediaRef: data.mediaRef },
-      ])
+      if (!isAuthenticatedMember) {
+        setMemoryPhotos((prev) => [
+          ...prev,
+          { url: data.previewUrl, name: file.name, mediaRef: data.mediaRef },
+        ])
+      }
     } catch (err: any) {
       console.error("Photo upload error:", err)
       setMediaUploadError(err.message || "Failed to upload photo. Please try again.")
     } finally {
-      setIsUploadingMedia(false)
+      if (!isAuthenticatedMember) setIsUploadingMedia(false)
     }
   }
 
@@ -401,7 +505,7 @@ export function ContributeModal({
         effectiveContent = `Photograph shared by ${authorName.trim()}`
       } else if (selectedType === "voice" && uploadedFileUrl) {
         effectiveContent = `Voice recording shared by ${authorName.trim()}`
-      } else if (selectedType === "video" && uploadedFileUrl) {
+      } else if (selectedType === "video" && (uploadedFileUrl || parseYouTubeUrl(youtubeUrl))) {
         effectiveContent = `Video clip shared by ${authorName.trim()}`
       }
     }
@@ -424,23 +528,38 @@ export function ContributeModal({
         safeTributeType = tributeRitual
       }
 
-      const res = await fetch(`/api/memorials/${targetIdentifier}/contribute`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          type: selectedType === "message" ? "tribute" : selectedType,
-          author_name: authorName.trim(),
-          author_relationship: relationship.trim() || null,
-          content: effectiveContent,
-          approx_year: isNaN(approxYearNum as number) ? null : approxYearNum,
-          location: location.trim() || null,
-          media_refs: mediaRefs,
-          existing_media_id: selectedExistingMediaId,
-          upload_authorization: uploadAuthorization,
-          tribute_type: safeTributeType,
-          turnstile_token: turnstileToken,
-        }),
-      })
+      const usesMemberUpload = isAuthenticatedMember && selectedSessionIds.length > 0
+      const res = usesMemberUpload
+        ? await fetch(`/api/memorials/${targetIdentifier}/uploads/sessions/${selectedSessionIds[0]}/finalize`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              sessionIds: selectedSessionIds,
+              authorName: authorName.trim(),
+              authorRelationship: relationship.trim() || null,
+              content: effectiveContent,
+              approxYear: isNaN(approxYearNum as number) ? null : approxYearNum,
+              location: location.trim() || null,
+            }),
+          })
+        : await fetch(`/api/memorials/${targetIdentifier}/contribute`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              type: selectedType === "message" ? "tribute" : selectedType,
+              author_name: authorName.trim(),
+              author_relationship: relationship.trim() || null,
+              content: effectiveContent,
+              approx_year: isNaN(approxYearNum as number) ? null : approxYearNum,
+              location: location.trim() || null,
+              media_refs: mediaRefs,
+              existing_media_id: selectedExistingMediaId,
+              upload_authorization: uploadAuthorization,
+              tribute_type: safeTributeType,
+              turnstile_token: turnstileToken,
+              external_url: selectedType === "video" ? youtubeUrl.trim() : null,
+            }),
+          })
 
       const data = await res.json().catch(() => ({}))
       if (!res.ok) {
@@ -468,9 +587,17 @@ export function ContributeModal({
           photo_urls: data.item.photo_urls,
           tribute_type: data.item.tribute_type,
           contribution_type: data.item.contribution_type,
+          external_provider: data.item.external_provider,
+          external_id: data.item.external_id,
+          external_url: data.item.external_url,
           status: data.item.status,
           created_at: data.item.created_at || new Date().toISOString(),
         })
+      }
+
+      if (usesMemberUpload) {
+        await Promise.all(selectedUploadItemIds.map((id) => memberUploads.cancel(id)))
+        setSelectedUploadItemIds([])
       }
 
       setSubmissionResult({
@@ -509,6 +636,8 @@ export function ContributeModal({
     setMemoryPhotos([])
     setSelectedExistingMediaId(null)
     setUploadAuthorization(null)
+    setYoutubeUrl("")
+    setSelectedUploadItemIds([])
     setIsUploadingMedia(false)
     setMediaUploadError(null)
     setError(null)
@@ -517,12 +646,15 @@ export function ContributeModal({
   }
 
   const isMedia = selectedType === "photo" || selectedType === "voice" || selectedType === "video"
-  const hasSecurityProof = Boolean(siteKey && (turnstileToken || uploadAuthorization))
+  const hasSecurityProof = isAuthenticatedMember || Boolean(siteKey && (turnstileToken || uploadAuthorization))
+  const hasMemberMedia = selectedSessionIds.length > 0
+  const hasYouTubeVideo = selectedType === "video" && Boolean(parseYouTubeUrl(youtubeUrl))
 
   // Determine if form is ready to submit
   const canSubmit =
     !isSubmitting &&
     !isUploadingMedia &&
+    !isMemberUploadBusy &&
     hasSecurityProof &&
     Boolean(authorName.trim()) &&
     (isTributeMode
@@ -530,7 +662,9 @@ export function ContributeModal({
       : selectedType === "memory"
         ? Boolean(content.trim())
         : isMedia
-          ? Boolean(uploadedMediaRef)
+          ? selectedType === "video"
+            ? Boolean(uploadedMediaRef) || hasMemberMedia || hasYouTubeVideo
+            : Boolean(uploadedMediaRef) || hasMemberMedia
           : Boolean(content.trim()))
 
   return (
@@ -705,7 +839,9 @@ export function ContributeModal({
                       {selectedType === "memory" && "Tell an anecdote, a story, or a quiet reflection."}
                       {selectedType === "photo" && "Upload original photographs to preserve in the family archive."}
                       {selectedType === "voice" && "Upload an audio file or voice memo from your phone."}
-                      {selectedType === "video" && "Upload a video clip or home movie to preserve in the archive."}
+                      {selectedType === "video" && (mediaCapabilities.nativeVideo
+                        ? "Share a YouTube link, or upload an original family video from your workspace."
+                        : "Paste a YouTube link to share a video with the family.")}
                     </p>
                   </div>
 
@@ -828,18 +964,48 @@ export function ContributeModal({
                   {/* ========================================================= */}
                   {(selectedType === "photo" || selectedType === "voice" || selectedType === "video") && (
                     <div className="flex flex-col gap-2">
+                      {selectedType === "video" && (
+                        <div className="flex flex-col gap-1.5 rounded-2xl border border-black/[0.08] bg-[#faf9f8] p-3.5">
+                          <label className="text-[11px] font-mono uppercase tracking-wider text-[#71717a]">
+                            YouTube link
+                          </label>
+                          <input
+                            type="url"
+                            value={youtubeUrl}
+                            onChange={(event) => setYoutubeUrl(event.target.value)}
+                            placeholder="https://youtube.com/watch?v=..."
+                            className="w-full rounded-xl border border-black/[0.08] bg-white px-3 py-2 text-sm text-[#181925] outline-none placeholder:text-[#aaa] focus:border-primary/50"
+                          />
+                          <span className="text-[10px] leading-relaxed text-[#71717a]">
+                            Paste a YouTube link to share a video with the family. The video remains hosted by YouTube.
+                          </span>
+                        </div>
+                      )}
+
+                      {(selectedType !== "video" || mediaCapabilities.nativeVideo) && <>
+                      {selectedType === "video" && (
+                        <div className="flex items-center gap-2 py-1 text-[11px] font-medium text-[#71717a] before:h-px before:flex-1 before:bg-black/[0.08] after:h-px after:flex-1 after:bg-black/[0.08]">
+                          Have the original file?
+                        </div>
+                      )}
                       <input
                         ref={fileInputRef}
                         type="file"
                         accept={
-                          selectedType === "video"
+                          isAuthenticatedMember && selectedType === "video"
+                            ? mediaAcceptAttribute("video")
+                            : isAuthenticatedMember && selectedType === "voice"
+                              ? mediaAcceptAttribute("audio")
+                              : isAuthenticatedMember
+                                ? mediaAcceptAttribute("image")
+                                : selectedType === "video"
                             ? "video/mp4,video/webm,video/quicktime,.mov"
                             : selectedType === "voice"
                               ? "audio/mpeg,audio/wav,audio/ogg,audio/mp4,audio/m4a,.mp3,.wav,.ogg,.m4a"
                               : "image/jpeg,image/png,image/webp,image/heic,image/heif,.heic,.heif"
                         }
                         className="hidden"
-                        disabled={isUploadingMedia}
+                        disabled={isUploadingMedia || isMemberUploadBusy}
                         onChange={(e) => {
                           if (e.target.files?.[0]) {
                             handleFileSelect(e.target.files[0])
@@ -874,6 +1040,8 @@ export function ContributeModal({
                           <button
                             type="button"
                             onClick={() => {
+                              selectedUploadItemIds.forEach((id) => void memberUploads.cancel(id))
+                              setSelectedUploadItemIds([])
                                setUploadedFileUrl(null)
                                setUploadedMediaRef(null)
                                setUploadedFileName(null)
@@ -920,10 +1088,24 @@ export function ContributeModal({
                                 ? "JPEG, PNG, WebP, or HEIC · up to 15MB"
                                 : selectedType === "video"
                                   ? "MP4, WebM, or MOV · up to 100MB"
-                                  : "MP3, WAV, OGG, or M4A · up to 50MB"}
+                                  : `MP3, WAV, OGG, or M4A · up to ${Math.floor(mediaCapabilities.maxAudioBytes / 1024 / 1024)}MB`}
                             </span>
                           </div>
                         </div>
+                      )}
+                      </>}
+
+                      {isAuthenticatedMember && selectedMemberUploads.length > 0 && (
+                        <MediaUploadList
+                          items={selectedMemberUploads}
+                          online={memberUploads.isOnline}
+                          onRetry={(id) => void memberUploads.retry(id)}
+                          onCancel={(id) => {
+                            void memberUploads.cancel(id)
+                            setSelectedUploadItemIds((current) => current.filter((value) => value !== id))
+                          }}
+                          onChooseFiles={(files) => void memberUploads.addFiles(files).then(setSelectedUploadItemIds)}
+                        />
                       )}
 
                       {mediaUploadError && (
@@ -998,7 +1180,9 @@ export function ContributeModal({
                       <input
                         ref={memoryPhotoInputRef}
                         type="file"
-                        accept="image/jpeg,image/png,image/webp,image/heic,image/heif,.heic,.heif"
+                        accept={isAuthenticatedMember
+                          ? mediaAcceptAttribute("image")
+                          : "image/jpeg,image/png,image/webp,image/heic,image/heif,.heic,.heif"}
                         className="hidden"
                         disabled={isUploadingMedia}
                         onChange={(e) => {
@@ -1008,6 +1192,21 @@ export function ContributeModal({
                           e.target.value = ""
                         }}
                       />
+
+                      {isAuthenticatedMember && selectedMemberUploads.some((item) => item.status !== "complete") && (
+                        <MediaUploadList
+                          items={selectedMemberUploads.filter((item) => item.status !== "complete")}
+                          online={memberUploads.isOnline}
+                          onRetry={(id) => void memberUploads.retry(id)}
+                          onCancel={(id) => {
+                            void memberUploads.cancel(id)
+                            setSelectedUploadItemIds((current) => current.filter((value) => value !== id))
+                          }}
+                          onChooseFiles={(files) => void memberUploads.addFiles(files).then((ids) => {
+                            setSelectedUploadItemIds((current) => [...new Set([...current, ...ids])])
+                          })}
+                        />
+                      )}
 
                       {memoryPhotos.length > 0 ? (
                         <div className="flex flex-col gap-2">
@@ -1030,14 +1229,19 @@ export function ContributeModal({
                           <div className="grid grid-cols-3 gap-2">
                             {memoryPhotos.map((p, idx) => (
                               <div
-                                key={idx}
+                                key={p.uploadItemId || p.mediaRef || `${p.name}-${idx}`}
                                 className="relative rounded-xl overflow-hidden aspect-4/3 bg-neutral-100 border border-black/[0.08] group"
                               >
                                 <img src={p.url} alt="Attached photo" className="size-full object-cover" />
                                 <button
                                   type="button"
                                   onClick={() => {
-                                    if (!p.mediaRef) setSelectedExistingMediaId(null)
+                                    if (p.uploadItemId) {
+                                      void memberUploads.cancel(p.uploadItemId)
+                                      setSelectedUploadItemIds((current) => current.filter((id) => id !== p.uploadItemId))
+                                    } else if (!p.mediaRef) {
+                                      setSelectedExistingMediaId(null)
+                                    }
                                     setMemoryPhotos(memoryPhotos.filter((_, i) => i !== idx))
                                   }}
                                   className="absolute top-1 right-1 size-6 rounded-full bg-black/60 hover:bg-rose-600 text-white flex items-center justify-center transition-colors cursor-pointer shadow-xs"
@@ -1096,7 +1300,11 @@ export function ContributeModal({
                     </div>
                   )}
 
-                  {siteKey ? (
+                  {isAuthenticatedMember ? (
+                    <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-2.5 text-xs text-emerald-800">
+                      Signed in as an accepted family member. Your contribution will use the family workspace upload and moderation rules.
+                    </div>
+                  ) : siteKey ? (
                     <div className="flex justify-center empty:hidden">
                       <Turnstile
                         ref={turnstileRef}

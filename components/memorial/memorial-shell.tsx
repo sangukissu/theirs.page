@@ -92,6 +92,8 @@ export function MemorialShell({ identity, children }: { identity: MemorialIdenti
           slug={identity.slug}
           memorialId={identity.id}
           isPaid={identity.isPaid}
+          currentUserId={identity.viewerUserId}
+          accessRole={identity.accessRole}
           photoCount={identity.photoCount}
           contributionSettings={identity.contributionSettings}
           initialType={type}

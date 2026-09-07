@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server"
 import { createClient } from "@/utils/supabase/server"
 import { getSupabaseAdminSafe } from "@/utils/supabase/admin"
+import { resolveMediaCapabilities } from "@/lib/uploads/capabilities"
+import type { ContributionSettings } from "@/types/theirs"
 
 interface RouteContext {
   params: Promise<{ id: string }>
@@ -33,23 +35,26 @@ export async function GET(req: NextRequest, context: RouteContext) {
       .eq("memorial_id", memorial.id)
       .eq("media_type", "image")
 
+    if (countErr || typeof count !== "number") {
+      return NextResponse.json({ error: "Media quota is temporarily unavailable." }, { status: 503 })
+    }
     const isPaid = Boolean(memorial.is_paid)
-    const photoCount = !countErr && typeof count === "number" ? count : 0
-    const canAddPhoto = isPaid || photoCount < 5
-    const remainingPhotoSlots = isPaid ? 3 : Math.max(0, 5 - photoCount)
-
-    const settings = (memorial.contribution_settings as Record<string, boolean> | null) || {}
-    const voiceEnabled = isPaid && Boolean(settings.voice)
-    const videoEnabled = isPaid && Boolean(settings.videos)
+    const photoCount = count
+    const capabilities = resolveMediaCapabilities({
+      context: "guest_contribution",
+      isPaid,
+      contributionSettings: memorial.contribution_settings as ContributionSettings | null,
+      existingMediaCounts: { image: photoCount },
+    })
 
     return NextResponse.json(
       {
         is_paid: isPaid,
         photo_count: photoCount,
-        can_add_photo: canAddPhoto,
-        remaining_photo_slots: remainingPhotoSlots,
-        voice_enabled: voiceEnabled,
-        video_enabled: videoEnabled,
+        can_add_photo: capabilities.nativePhoto,
+        remaining_photo_slots: Math.min(3, capabilities.remainingImageItems ?? 3),
+        voice_enabled: capabilities.nativeAudio,
+        video_enabled: capabilities.youtubeVideo,
       },
       {
         headers: {

@@ -1,4 +1,16 @@
-import { CopyObjectCommand, DeleteObjectCommand, S3Client, GetObjectCommand, HeadObjectCommand, PutObjectCommand } from "@aws-sdk/client-s3";
+import {
+  AbortMultipartUploadCommand,
+  CompleteMultipartUploadCommand,
+  CopyObjectCommand,
+  CreateMultipartUploadCommand,
+  DeleteObjectCommand,
+  GetObjectCommand,
+  HeadObjectCommand,
+  ListPartsCommand,
+  PutObjectCommand,
+  S3Client,
+  UploadPartCommand,
+} from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 
 function getR2BucketName() {
@@ -275,6 +287,102 @@ export async function getR2PresignedUploadUrl(
   }
 }
 
+export async function createR2MultipartUpload(
+  key: string,
+  contentType: string,
+): Promise<{ uploadId: string; key: string }> {
+  const client = getR2Client()
+  const result = await client.send(new CreateMultipartUploadCommand({
+    Bucket: getR2BucketName(),
+    Key: key,
+    ContentType: contentType,
+    CacheControl: "private, no-store",
+  }))
+  if (!result.UploadId) throw new Error("R2 did not return a multipart upload ID")
+  return { uploadId: result.UploadId, key }
+}
+
+export async function getR2PresignedPartUrl(
+  key: string,
+  uploadId: string,
+  partNumber: number,
+  expiresInSeconds = 900,
+): Promise<string> {
+  if (!Number.isSafeInteger(partNumber) || partNumber < 1 || partNumber > 10_000) {
+    throw new Error("Invalid multipart part number")
+  }
+  return getSignedUrl(
+    getR2Client(),
+    new UploadPartCommand({
+      Bucket: getR2BucketName(),
+      Key: key,
+      UploadId: uploadId,
+      PartNumber: partNumber,
+    }),
+    { expiresIn: expiresInSeconds },
+  )
+}
+
+export async function listR2MultipartParts(
+  key: string,
+  uploadId: string,
+): Promise<Array<{ partNumber: number; etag: string; size: number }>> {
+  const client = getR2Client()
+  const parts: Array<{ partNumber: number; etag: string; size: number }> = []
+  let marker: string | undefined
+  do {
+    const result = await client.send(new ListPartsCommand({
+      Bucket: getR2BucketName(),
+      Key: key,
+      UploadId: uploadId,
+      PartNumberMarker: marker,
+    }))
+    for (const part of result.Parts || []) {
+      if (part.PartNumber && part.ETag) {
+        parts.push({
+          partNumber: part.PartNumber,
+          etag: part.ETag.replace(/^"|"$/g, ""),
+          size: Number(part.Size || 0),
+        })
+      }
+    }
+    marker = result.IsTruncated && result.NextPartNumberMarker
+      ? String(result.NextPartNumberMarker)
+      : undefined
+  } while (marker)
+  return parts
+}
+
+export async function completeR2MultipartUpload(
+  key: string,
+  uploadId: string,
+  parts: Array<{ partNumber: number; etag: string }>,
+): Promise<{ key: string; etag?: string; location: string }> {
+  const result = await getR2Client().send(new CompleteMultipartUploadCommand({
+    Bucket: getR2BucketName(),
+    Key: key,
+    UploadId: uploadId,
+    MultipartUpload: {
+      Parts: [...parts]
+        .sort((a, b) => a.partNumber - b.partNumber)
+        .map((part) => ({ PartNumber: part.partNumber, ETag: part.etag })),
+    },
+  }))
+  return {
+    key,
+    etag: result.ETag?.replace(/^"|"$/g, ""),
+    location: result.Location || `/api/media?key=${encodeURIComponent(key)}`,
+  }
+}
+
+export async function abortR2MultipartUpload(key: string, uploadId: string): Promise<void> {
+  await getR2Client().send(new AbortMultipartUploadCommand({
+    Bucket: getR2BucketName(),
+    Key: key,
+    UploadId: uploadId,
+  }))
+}
+
 export async function copyR2Object(sourceKey: string, destinationKey: string, contentType?: string) {
   const client = getR2Client();
   const bucket = getR2BucketName();
@@ -317,7 +425,8 @@ export async function deleteR2Object(key: string): Promise<void> {
  */
 export async function deleteR2PrefixOlderThan(
   prefix: string,
-  olderThanMs: number
+  olderThanMs: number,
+  protectedKeys: ReadonlySet<string> = new Set(),
 ): Promise<{ scanned: number; deleted: number; skipped: number; errors: string[] }> {
   const client = getR2Client();
   const { ListObjectsV2Command, DeleteObjectsCommand } = await import("@aws-sdk/client-s3");
@@ -343,6 +452,10 @@ export async function deleteR2PrefixOlderThan(
     const staleKeys: string[] = [];
     for (const obj of objects) {
       scanned++;
+      if (obj.Key && protectedKeys.has(obj.Key)) {
+        skipped++;
+        continue;
+      }
       const lastModified = obj.LastModified ? obj.LastModified.getTime() : 0;
       if (lastModified <= cutoff && obj.Key) {
         staleKeys.push(obj.Key);

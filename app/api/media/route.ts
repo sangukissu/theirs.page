@@ -32,6 +32,12 @@ function getAccurateContentType(key: string, detectedType?: string): string {
       return "audio/flac"
     case "aac":
       return "audio/aac"
+    case "opus":
+      return "audio/opus"
+    case "mkv":
+      return "video/x-matroska"
+    case "ogv":
+      return "video/ogg"
     case "jpg":
     case "jpeg":
       return "image/jpeg"
@@ -197,6 +203,23 @@ async function handleMediaRequest(req: NextRequest, isHead: boolean) {
 
     if (!memorial) {
       return NextResponse.json({ error: "Media not found" }, { status: 404 })
+    }
+
+    // Objects are uploaded directly into this permanent prefix, but are not
+    // publishable until an exact finalized gallery record exists. Knowing a
+    // session key is never enough to read unfinished bytes from a public page.
+    const canonicalMemorialPrefix = `memorials/${memorial.id}/`
+    const memorialKey = key.startsWith(canonicalMemorialPrefix)
+      ? key.slice(canonicalMemorialPrefix.length)
+      : ""
+    const isSessionDerivedPublicKey = memorialKey.startsWith("uploads/") ||
+      /^(?:community|gallery)\/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\.[a-z0-9]+$/i.test(memorialKey)
+    if (isSessionDerivedPublicKey) {
+      const reference = await admin.from("media_items").select("id")
+        .eq("memorial_id", memorial.id).eq("url", key).limit(1).maybeSingle()
+      if (reference.error || !reference.data) {
+        return NextResponse.json({ error: "Media not found" }, { status: 404 })
+      }
     }
 
     // Access Control: private and unpublished memorial media requires a valid

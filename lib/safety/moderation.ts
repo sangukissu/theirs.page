@@ -358,7 +358,7 @@ export function validateMagicBytes(
     for (let offset = 8; offset + 4 <= Math.min(buffer.length, 64); offset += 4) {
       brands.add(buffer.toString("ascii", offset, offset + 4))
     }
-    const heicBrands = ["heic", "heix", "hevc", "hevx"]
+    const heicBrands = ["heic", "heix", "heim", "heis", "hevc", "hevx", "hevm", "hevs"]
     if (heicBrands.some((brand) => brands.has(brand))) {
       return { valid: true, detectedMime: "image/heic", mediaType: "image" }
     }
@@ -373,19 +373,54 @@ export function validateMagicBytes(
     return { valid: true, detectedMime: "audio/wav", mediaType: "audio" }
   }
 
-  // 7. Audio: MP3 (ID3 or frame sync FF FB / FF F3 / FF F2)
+  // 7. Audio: AAC (ADIF or an ADTS frame). Check this before MPEG audio;
+  // both formats begin with an FF sync byte, but AAC ADTS uses layer bits 00.
+  const isAacAdif = buffer.toString("ascii", 0, 4) === "ADIF"
+  const isAacAdts = buffer[0] === 0xff &&
+    (buffer[1] & 0xf6) === 0xf0 &&
+    ((buffer[2] >> 2) & 0x0f) <= 0x0c
+  if (isAacAdif || isAacAdts) {
+    return { valid: true, detectedMime: "audio/aac", mediaType: "audio" }
+  }
+
+  // 8. Audio: MP3 (ID3 or a structurally valid MPEG audio frame header).
   const isId3 = buffer.toString("ascii", 0, 3) === "ID3"
-  const isMp3Sync = buffer[0] === 0xff && (buffer[1] & 0xe0) === 0xe0
+  const mpegVersion = (buffer[1] >> 3) & 0x03
+  const mpegLayer = (buffer[1] >> 1) & 0x03
+  const bitrateIndex = (buffer[2] >> 4) & 0x0f
+  const sampleRateIndex = (buffer[2] >> 2) & 0x03
+  const isMp3Sync = buffer[0] === 0xff &&
+    (buffer[1] & 0xe0) === 0xe0 &&
+    mpegVersion !== 0x01 &&
+    mpegLayer !== 0x00 &&
+    bitrateIndex !== 0x00 && bitrateIndex !== 0x0f &&
+    sampleRateIndex !== 0x03
   if (isId3 || isMp3Sync) {
     return { valid: true, detectedMime: "audio/mpeg", mediaType: "audio" }
   }
 
-  // 8. Audio: OGG (OggS)
+  // 9. Native FLAC stream.
+  if (buffer.toString("ascii", 0, 4) === "fLaC") {
+    return { valid: true, detectedMime: "audio/flac", mediaType: "audio" }
+  }
+
+  // 10. Ogg container. Inspect the beginning of the first packets so Opus,
+  // FLAC, Vorbis audio, and Theora video retain the correct media category.
   if (buffer.toString("ascii", 0, 4) === "OggS") {
+    const oggHeader = buffer.subarray(0, Math.min(buffer.length, 8192)).toString("latin1")
+    if (oggHeader.includes("OpusHead")) {
+      return { valid: true, detectedMime: "audio/opus", mediaType: "audio" }
+    }
+    if (oggHeader.includes("fLaC")) {
+      return { valid: true, detectedMime: "audio/flac", mediaType: "audio" }
+    }
+    if (oggHeader.includes("theora")) {
+      return { valid: true, detectedMime: "video/ogg", mediaType: "video" }
+    }
     return { valid: true, detectedMime: "audio/ogg", mediaType: "audio" }
   }
 
-  // 9. MP4 / M4A / MOV (ISO Base Media file: ftyp box at offset 4)
+  // 11. MP4 / M4A / MOV (ISO Base Media file: ftyp box at offset 4)
   if (ftypTag === "ftyp") {
     const majorBrand = buffer.toString("ascii", 8, 12)
     if (majorBrand.startsWith("M4A") || majorBrand.startsWith("M4B")) {
@@ -397,16 +432,20 @@ export function validateMagicBytes(
     return { valid: true, detectedMime: "video/mp4", mediaType: "video" }
   }
 
-  // 10. WebM (EBML header: 1A 45 DF A3)
+  // 12. WebM / Matroska (EBML header: 1A 45 DF A3). The DocType is
+  // authoritative for differentiating the two accepted containers.
   if (
     buffer[0] === 0x1a &&
     buffer[1] === 0x45 &&
     buffer[2] === 0xdf &&
     buffer[3] === 0xa3
   ) {
-    const headerStr = buffer.toString("ascii", 0, 64)
+    const headerStr = buffer.subarray(0, Math.min(buffer.length, 512)).toString("latin1").toLowerCase()
     if (headerStr.includes("webm")) {
       return { valid: true, detectedMime: "video/webm", mediaType: "video" }
+    }
+    if (headerStr.includes("matroska")) {
+      return { valid: true, detectedMime: "video/x-matroska", mediaType: "video" }
     }
   }
 

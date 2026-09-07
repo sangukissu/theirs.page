@@ -10,7 +10,10 @@
     "cf-typegen": "wrangler types --env-interface CloudflareEnv cloudflare-env.d.ts",
     "dev": "next dev",
     "lint": "next lint",
-    "start": "next start"
+    "start": "next start",
+    "test:uploads": "tsx --test tests/uploads/*.test.ts",
+    "r2:cors:check": "wrangler r2 bucket cors list theirs",
+    "r2:cors:apply": "wrangler r2 bucket cors set theirs --file r2-cors.json --force"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.948.0",
@@ -52,6 +55,9 @@
     "@tabler/icons-react": "^3.34.1",
     "@tsparticles/react": "^3.0.0",
     "@tsparticles/slim": "^3.9.1",
+    "@uppy/aws-s3": "^6.0.0",
+    "@uppy/core": "^6.0.0",
+    "@uppy/golden-retriever": "^6.0.0",
     "@vercel/blob": "^1.1.1",
     "autoprefixer": "^10.4.20",
     "class-variance-authority": "^0.7.1",
@@ -98,6 +104,7 @@
     "postcss": "^8.5",
     "supabase": "^2.70.5",
     "tailwindcss": "^4.1.9",
+    "tsx": "^4.23.13",
     "tw-animate-css": "1.3.3",
     "typescript": "^5",
     "wrangler": "^4.128.0"

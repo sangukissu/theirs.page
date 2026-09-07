@@ -9,6 +9,7 @@ import {
 } from "@/lib/r2"
 import { finalizeMemorialStorage, releaseMemorialStorage } from "@/lib/storage-quota"
 import { sanitizeContributionHtml } from "@/lib/safety/contribution-html"
+import { isManagedMediaFilename } from "@/lib/uploads/constants"
 
 interface RouteContext {
   params: Promise<{ id: string }>
@@ -169,7 +170,7 @@ function mediaRecords(details: unknown, memorialId: string): ContributionMediaRe
 
 function filenameFromKey(key: string): string {
   const filename = key.split("/").pop() || ""
-  if (!/^[a-f0-9-]+\.(?:jpg|png|webp|heic|heif|mp3|wav|ogg|m4a|mp4|webm|mov)$/i.test(filename)) {
+  if (!isManagedMediaFilename(filename)) {
     throw new Error("Invalid contribution media key")
   }
   return filename
@@ -210,15 +211,13 @@ async function removeManagedContributionMedia(
   const keys = [...new Set([...records.flatMap((item) => [item.original_key, item.display_key]), ...legacyQuarantineKeys])]
   await Promise.allSettled(keys.map(deleteR2Object))
   await Promise.allSettled(records.map((item) => releaseMemorialStorage(db, memorialId, item.original_key)))
-  const publicKeys = records
-    .map((item) => item.display_key)
-    .filter((key) => key.startsWith(`memorials/${memorialId}/community/`))
-  if (publicKeys.length > 0) {
-    await db.from("media_items")
-      .delete()
-      .eq("memorial_id", memorialId)
-      .eq("source_memory_id", sourceMemoryId)
-  }
+  // A gallery item is a projection of the contribution regardless of whether
+  // its source is an R2 object or an external YouTube reference.
+  const projectionDelete = await db.from("media_items")
+    .delete()
+    .eq("memorial_id", memorialId)
+    .eq("source_memory_id", sourceMemoryId)
+  if (projectionDelete.error) throw projectionDelete.error
 }
 
 export async function PATCH(req: NextRequest, context: RouteContext) {
@@ -473,6 +472,35 @@ export async function PATCH(req: NextRequest, context: RouteContext) {
         }
       }
 
+      if (
+        !mediaInsertError &&
+        memory.media_source_type === "youtube" &&
+        memory.external_provider === "youtube" &&
+        typeof memory.external_id === "string" &&
+        /^[A-Za-z0-9_-]{11}$/.test(memory.external_id)
+      ) {
+        const canonicalUrl = `https://www.youtube.com/watch?v=${memory.external_id}`
+        const { data: existingExternal } = await db.from("media_items")
+          .select("id").eq("memorial_id", memorialId).eq("source_memory_id", targetId).maybeSingle()
+        if (!existingExternal) {
+          const { data: inserted, error: insertErr } = await db.from("media_items").insert({
+            memorial_id: memorialId,
+            media_type: "video",
+            url: canonicalUrl,
+            caption: `Shared by ${memory.author_name}`,
+            approx_year: memory.approx_year || null,
+            album: "Community Memories",
+            source_memory_id: targetId,
+            source_type: "youtube",
+            external_provider: "youtube",
+            external_id: memory.external_id,
+            external_url: canonicalUrl,
+          }).select("id").single()
+          if (insertErr) mediaInsertError = insertErr
+          else if (inserted?.id) insertedMediaIds.push(inserted.id)
+        }
+      }
+
       // If ANY media_item insert failed (e.g. concurrent race condition tripped 5-photo quota trigger):
       if (mediaInsertError) {
         console.error("Media insert error on approval:", mediaInsertError)
@@ -611,9 +639,12 @@ export async function PATCH(req: NextRequest, context: RouteContext) {
         return NextResponse.json({ error: "Failed to unpublish contribution." }, { status: 500 })
       }
 
+      const projectionDelete = await db.from("media_items").delete()
+        .eq("memorial_id", memorialId).eq("source_memory_id", targetId)
+      if (projectionDelete.error) {
+        return NextResponse.json({ error: "The contribution was unpublished, but its gallery entry could not be removed. Please retry." }, { status: 503 })
+      }
       if (publicSources.length > 0) {
-        await db.from("media_items").delete()
-          .eq("memorial_id", memorialId).eq("source_memory_id", targetId)
         await Promise.allSettled(publicSources.map(deleteR2Object))
       }
       return NextResponse.json({ success: true, status: "pending_approval" })

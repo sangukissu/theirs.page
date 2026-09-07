@@ -36,6 +36,9 @@ import type {
 } from "@/types/theirs"
 import { finalizeMemorialStorage, releaseMemorialStorage } from "@/lib/storage-quota"
 import { getMemorialAccess } from "@/lib/memorial-auth"
+import { parseYouTubeUrl } from "@/lib/uploads/youtube"
+import { resolveMediaCapabilities } from "@/lib/uploads/capabilities"
+import { isManagedMediaFilename } from "@/lib/uploads/constants"
 import {
   MAX_CONTRIBUTION_BODY_BYTES,
   MAX_RICH_TEXT_HTML_BYTES,
@@ -98,7 +101,7 @@ function defaultContent(input: ContributionInput): string {
 
 function destinationForMedia(memorialId: string, displayKey: string): string {
   const filename = displayKey.split("/").pop()
-  if (!filename || !/^[a-f0-9-]+\.(?:jpg|png|webp|heic|heif|mp3|wav|ogg|m4a|mp4|webm|mov)$/i.test(filename)) {
+  if (!filename || !isManagedMediaFilename(filename)) {
     throw new Error("Invalid quarantined media key")
   }
   return `memorials/${memorialId}/community/${filename}`
@@ -106,7 +109,7 @@ function destinationForMedia(memorialId: string, displayKey: string): string {
 
 function destinationForOriginal(memorialId: string, originalKey: string): string {
   const filename = originalKey.split("/").pop()
-  if (!filename || !/^[a-f0-9-]+\.(?:jpg|png|webp|heic|heif|mp3|wav|ogg|m4a|mp4|webm|mov)$/i.test(filename)) {
+  if (!filename || !isManagedMediaFilename(filename)) {
     throw new Error("Invalid original media key")
   }
   return `originals/${memorialId}/community/${filename}`
@@ -114,7 +117,7 @@ function destinationForOriginal(memorialId: string, originalKey: string): string
 
 function filenameFromStagedKey(key: string): string {
   const filename = key.split("/").pop()
-  if (!filename || !/^[a-f0-9-]+\.(?:jpg|png|webp|heic|heif|mp3|wav|ogg|m4a|mp4|webm|mov)$/i.test(filename)) {
+  if (!filename || !isManagedMediaFilename(filename)) {
     throw new Error("Invalid staged media key")
   }
   return filename
@@ -173,12 +176,19 @@ export async function POST(req: NextRequest, context: RouteContext) {
     if (!effectiveContent) {
       return NextResponse.json({ error: "Please write a memory or message to share." }, { status: 400 })
     }
-    const requiresUploadedMedia = input.type === "voice" || input.type === "video"
+    const requiresUploadedMedia = input.type === "voice"
+    const youtube = input.type === "video" ? parseYouTubeUrl(input.external_url || "") : null
     if (
       (input.type === "photo" && input.media_refs.length === 0 && !input.existing_media_id) ||
       (requiresUploadedMedia && input.media_refs.length === 0)
     ) {
       return NextResponse.json({ error: "Please choose a media file to share." }, { status: 400 })
+    }
+    if (input.type === "video" && !youtube) {
+      return NextResponse.json({ error: "Please paste a valid YouTube video link." }, { status: 400 })
+    }
+    if (input.type !== "video" && input.external_url) {
+      return NextResponse.json({ error: "External video links are only accepted for video contributions." }, { status: 400 })
     }
     if (input.existing_media_id && input.type !== "photo" && input.type !== "memory") {
       return NextResponse.json({ error: "Existing gallery media can only be attached to photo stories." }, { status: 400 })
@@ -211,7 +221,7 @@ export async function POST(req: NextRequest, context: RouteContext) {
     const isUuid = UUID_REGEX.test(id)
     let memorialQuery = admin
       .from("memorials")
-      .select("id, slug, status, privacy, full_name, owner_id, access_pin_hash, contribution_settings")
+      .select("id, slug, status, privacy, full_name, owner_id, access_pin_hash, contribution_settings, is_paid")
     memorialQuery = isUuid ? memorialQuery.eq("id", id) : memorialQuery.eq("slug", id)
     const { data: memorial } = await memorialQuery.maybeSingle()
 
@@ -244,6 +254,38 @@ export async function POST(req: NextRequest, context: RouteContext) {
         { status: 403 }
       )
     }
+    const needsPhotoCapability = input.type === "photo" ||
+      ((input.type === "memory" || input.type === "story") && input.media_refs.length > 0)
+    let existingImageCount = 0
+    if (needsPhotoCapability) {
+      const imageCountResult = await admin.from("media_items")
+        .select("id", { count: "exact", head: true })
+        .eq("memorial_id", memorial.id)
+        .eq("media_type", "image")
+      if (imageCountResult.error || typeof imageCountResult.count !== "number") {
+        return NextResponse.json({ error: "Media quota is temporarily unavailable." }, { status: 503 })
+      }
+      existingImageCount = imageCountResult.count
+    }
+    const capabilities = resolveMediaCapabilities({
+      context: access ? "member_contribution" : "guest_contribution",
+      isPaid: Boolean(memorial.is_paid),
+      accessRole: access?.role,
+      contributionSettings: settings,
+      existingMediaCounts: { image: existingImageCount },
+    })
+    if (input.type === "video" && !capabilities.youtubeVideo) {
+      return NextResponse.json({ error: "The family is not currently accepting video contributions." }, { status: 403 })
+    }
+    if (input.type === "voice" && !capabilities.nativeAudio) {
+      return NextResponse.json({ error: memorial.is_paid ? "The family is not currently accepting voice notes." : "Voice notes require the Pro Plan." }, { status: 403 })
+    }
+    if (
+      needsPhotoCapability &&
+      !capabilities.nativePhoto
+    ) {
+      return NextResponse.json({ error: "The family is not currently accepting photograph contributions." }, { status: 403 })
+    }
 
     const uploadAuthorization = input.upload_authorization
       ? verifyUploadIntent(input.upload_authorization)
@@ -258,7 +300,7 @@ export async function POST(req: NextRequest, context: RouteContext) {
       uploadAuthorization &&
       (
         uploadAuthorization.contributionType !== (
-          input.type === "photo" || input.type === "voice" || input.type === "video"
+          input.type === "photo" || input.type === "voice"
             ? input.type
             : "memory"
         ) ||
@@ -290,7 +332,7 @@ export async function POST(req: NextRequest, context: RouteContext) {
       return NextResponse.json({ error: "The same media file was attached more than once." }, { status: 400 })
     }
 
-    if (!uploadAuthorization) {
+    if (!uploadAuthorization && !access) {
       const captchaValid = await verifyTurnstileToken(
         input.turnstile_token,
         clientIp,
@@ -431,6 +473,10 @@ export async function POST(req: NextRequest, context: RouteContext) {
         contributor_role: contributorRole,
         receipt_token: receiptHash,
         is_quarantined: status !== "approved" && verifiedMedia.length > 0,
+        media_source_type: youtube ? "youtube" : verifiedMedia.length > 0 ? "uploaded" : "none",
+        external_provider: youtube?.provider || null,
+        external_id: youtube?.id || null,
+        external_url: youtube?.url || null,
         visibility: "everyone",
         approved_at: status === "approved" ? new Date().toISOString() : null,
       })
@@ -477,6 +523,23 @@ export async function POST(req: NextRequest, context: RouteContext) {
       }))
       const { error: galleryError } = await admin.from("media_items").insert(rows)
       if (galleryError) console.error("Approved contribution gallery sync failed:", galleryError)
+    }
+
+    if (status === "approved" && youtube) {
+      const { error: galleryError } = await admin.from("media_items").insert({
+        memorial_id: memorial.id,
+        media_type: "video",
+        url: youtube.url,
+        caption: `Shared by ${input.author_name}`,
+        approx_year: approxYear,
+        album: "Community Memories",
+        source_memory_id: insertedMemory.id,
+        source_type: "youtube",
+        external_provider: youtube.provider,
+        external_id: youtube.id,
+        external_url: youtube.url,
+      })
+      if (galleryError) console.error("Approved YouTube contribution gallery sync failed:", galleryError)
     }
 
     if (status === "pending_approval") {
@@ -528,6 +591,9 @@ export async function POST(req: NextRequest, context: RouteContext) {
         location: insertedMemory.location,
         photo_url: optimisticUrls[0] || null,
         photo_urls: optimisticUrls,
+        external_provider: youtube?.provider || null,
+        external_id: youtube?.id || null,
+        external_url: youtube?.url || null,
         tribute_type: insertedMemory.tribute_type,
         contribution_type: input.type === "message" ? "tribute" : input.type,
         status: status === "approved" ? "approved" : "pending_approval",

@@ -56,6 +56,8 @@ export default async function MemorialEditorPage({ params }: PageProps) {
 
   return (
     <MemorialEditorClient
+      currentUserId={user.id}
+      accessRole={access.role === "co_admin" ? "co_admin" : "owner"}
       initialMemorial={{
         ...safeMemorial,
         portrait_photo_url: resolveMediaUrl(safeMemorial.portrait_photo_url),

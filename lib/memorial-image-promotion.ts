@@ -35,6 +35,7 @@ export async function promoteStagedMemorialImage(
   stagingKey: string,
   memorialId: string,
   folder: MemorialImageFolder,
+  stableAssetId?: string,
 ): Promise<{ displayKey: string; originalKey: string; isDerivative: boolean }> {
   if (!stagingKey.startsWith(`dashboard-staging/${memorialId}/`)) {
     throw new Error("Invalid staged memorial image")
@@ -50,7 +51,9 @@ export async function promoteStagedMemorialImage(
     throw new Error("Uploaded object is not a supported image")
   }
 
-  const assetId = crypto.randomUUID()
+  const assetId = stableAssetId && /^[a-f0-9-]{36}$/i.test(stableAssetId)
+    ? stableAssetId
+    : crypto.randomUUID()
   const isHeic = validation.detectedMime === "image/heic" || validation.detectedMime === "image/heif"
   if (!isHeic) {
     const displayKey = `memorials/${memorialId}/${folder}/${assetId}.${extensionForImageMime(validation.detectedMime)}`

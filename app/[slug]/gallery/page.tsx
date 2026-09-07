@@ -27,7 +27,7 @@ export default async function GalleryPage({ params, searchParams }: { params: Pr
   ])
   return (
     <div className="pt-16 sm:pt-20 pb-10">
-      <GalleryPageView slug={slug} fullName={context.identity.fullName} isDemo={context.identity.isDemo} isPaid={context.identity.isPaid} initial={page} initialFilter={filter} initialAlbum={album} initialMediaId={query.media} initialSelectedItem={selectedItem} />
+      <GalleryPageView slug={slug} fullName={context.identity.fullName} isDemo={context.identity.isDemo} isPaid={context.identity.isPaid} accessRole={context.identity.accessRole} contributionSettings={context.identity.contributionSettings} initial={page} initialFilter={filter} initialAlbum={album} initialMediaId={query.media} initialSelectedItem={selectedItem} />
     </div>
   )
 }

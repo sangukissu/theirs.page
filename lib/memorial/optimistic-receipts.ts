@@ -17,6 +17,9 @@ export interface OptimisticReceiptItem {
   photo_urls?: string[] | null
   tribute_type?: "flower" | "note" | "photo" | "candle"
   contribution_type?: "tribute" | "story" | "photo" | "voice" | "video"
+  external_provider?: "youtube" | null
+  external_id?: string | null
+  external_url?: string | null
   status: "pending_approval" | "approved" | "blocked"
   created_at: string
   expires_at?: number

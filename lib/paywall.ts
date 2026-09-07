@@ -8,6 +8,9 @@
  *   and complete archive ZIP export.
  */
 
+import { resolveMediaCapabilities } from "@/lib/uploads/capabilities"
+import { FREE_PHOTO_LIMIT } from "@/lib/uploads/constants"
+
 export type MemorialFeature =
   | "timeline"
   | "video_audio"
@@ -16,7 +19,7 @@ export type MemorialFeature =
   | "export"
   | "media_upload"
 
-export const FREE_PHOTO_LIMIT = 5
+export { FREE_PHOTO_LIMIT } from "@/lib/uploads/constants"
 
 export interface FeatureAccessResult {
   allowed: boolean
@@ -91,13 +94,17 @@ export function assertMediaQuota(
   mediaType: "image" | "audio" | "video"
 ): FeatureAccessResult {
   const isPaid = Boolean(memorial?.is_paid)
+  const capabilities = resolveMediaCapabilities({
+    context: "studio",
+    isPaid,
+    accessRole: "owner",
+    existingMediaCounts: { image: currentPhotoCount },
+  })
 
-  if (isPaid) {
-    return { allowed: true }
-  }
-
-  // Free tier only permits photos (images)
-  if (mediaType === "audio" || mediaType === "video") {
+  if (
+    (mediaType === "audio" && !capabilities.nativeAudio) ||
+    (mediaType === "video" && !capabilities.nativeVideo)
+  ) {
     return {
       allowed: false,
       status: 402,
@@ -107,7 +114,7 @@ export function assertMediaQuota(
   }
 
   // Free tier photo quota: exactly 5 photos
-  if (currentPhotoCount >= FREE_PHOTO_LIMIT) {
+  if (mediaType === "image" && !capabilities.nativePhoto) {
     return {
       allowed: false,
       status: 402,
