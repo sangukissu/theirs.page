@@ -72,17 +72,20 @@ async function finalizeStudio(
   body: z.infer<typeof finalizeSchema>,
   startedAt: number,
 ) {
-  if (session.status === "complete" && session.result_media_item_id) {
-    const existing = await db.from("media_items").select("*").eq("id", session.result_media_item_id).single()
-    if (existing.error) throw existing.error
-    return NextResponse.json({
-      success: true,
-      alreadyComplete: true,
-      mediaItem: { ...existing.data, url: resolveMediaUrl(existing.data.url) },
-    })
+  if (session.result_media_item_id) {
+    const existing = await db.from("media_items").select("*").eq("id", session.result_media_item_id).maybeSingle()
+    if (existing.data) {
+      return NextResponse.json({
+        success: true,
+        alreadyComplete: true,
+        mediaItem: { ...existing.data, url: resolveMediaUrl(existing.data.url) },
+      })
+    }
   }
 
-  await verifyUploadedSessionObject(db, session)
+  if (session.status !== "finalizing" && session.status !== "complete") {
+    await verifyUploadedSessionObject(db, session)
+  }
   let displayKey = session.r2_key
   let originalKey = session.r2_key
   if (session.media_type === "image") {

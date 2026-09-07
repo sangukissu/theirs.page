@@ -55,7 +55,7 @@ export function MediaUploadItem({
               Choose the same file to continue
             </button>
           )}
-          {item.status === "error" && !item.needsFile && item.canRetry !== false && (
+          {["paused", "error"].includes(item.status) && !item.needsFile && item.canRetry !== false && (
             <button type="button" onClick={onRetry} className="inline-flex items-center gap-1 text-xs font-semibold text-primary hover:underline">
               <RotateCcw className="size-3" /> Resume
             </button>

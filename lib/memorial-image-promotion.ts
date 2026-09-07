@@ -41,6 +41,32 @@ export async function promoteStagedMemorialImage(
     throw new Error("Invalid staged memorial image")
   }
 
+  const assetId = stableAssetId && /^[a-f0-9-]{36}$/i.test(stableAssetId)
+    ? stableAssetId
+    : crypto.randomUUID()
+
+  // Idempotent recovery: check if a promoted destination object already exists for this stable asset ID
+  if (stableAssetId) {
+    const candidateExtensions = ["jpg", "png", "webp", "gif"]
+    for (const ext of candidateExtensions) {
+      const candidateKey = `memorials/${memorialId}/${folder}/${assetId}.${ext}`
+      try {
+        const existing = await inspectR2Object(candidateKey)
+        if (existing.contentLength > 0) {
+          const originalCandidate = `originals/${memorialId}/${folder}/${assetId}.heic`
+          const hasOriginal = ext === "webp" && await inspectR2Object(originalCandidate).then(() => true).catch(() => false)
+          return {
+            displayKey: candidateKey,
+            originalKey: hasOriginal ? originalCandidate : candidateKey,
+            isDerivative: hasOriginal,
+          }
+        }
+      } catch {
+        // Not found, continue checking or proceed to normal promotion
+      }
+    }
+  }
+
   const object = await inspectR2Object(stagingKey)
   if (object.contentLength < 1 || object.contentLength > MAX_MEMORIAL_IMAGE_BYTES) {
     throw new Error("Invalid memorial image size")
@@ -51,9 +77,6 @@ export async function promoteStagedMemorialImage(
     throw new Error("Uploaded object is not a supported image")
   }
 
-  const assetId = stableAssetId && /^[a-f0-9-]{36}$/i.test(stableAssetId)
-    ? stableAssetId
-    : crypto.randomUUID()
   const isHeic = validation.detectedMime === "image/heic" || validation.detectedMime === "image/heif"
   if (!isHeic) {
     const displayKey = `memorials/${memorialId}/${folder}/${assetId}.${extensionForImageMime(validation.detectedMime)}`

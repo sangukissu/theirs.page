@@ -217,13 +217,23 @@ export async function GET(req: NextRequest, context: RouteContext) {
       return NextResponse.json({ error: "Invalid upload purpose." }, { status: 400 })
     }
     const access = await authorizeUploadPurpose(id, user.id, purpose)
-    const result = await db.from("media_upload_sessions").select("*")
-      .eq("memorial_id", access.memorial.id).eq("user_id", user.id).eq("purpose", purpose)
-      .in("status", ["created", "uploading", "uploaded", "verifying", "finalizing"])
-      .gt("expires_at", new Date().toISOString()).order("updated_at", { ascending: false }).limit(20)
-    if (result.error) throw result.error
+    const recentCompletedThreshold = new Date(Date.now() - 5 * 60 * 1000).toISOString()
+    const [activeResult, completedResult] = await Promise.all([
+      db.from("media_upload_sessions").select("*")
+        .eq("memorial_id", access.memorial.id).eq("user_id", user.id).eq("purpose", purpose)
+        .in("status", ["created", "uploading", "uploaded", "verifying", "finalizing"])
+        .gt("expires_at", new Date().toISOString()).order("updated_at", { ascending: false }).limit(20),
+      db.from("media_upload_sessions").select("*")
+        .eq("memorial_id", access.memorial.id).eq("user_id", user.id).eq("purpose", purpose)
+        .eq("status", "complete")
+        .gt("completed_at", recentCompletedThreshold)
+        .order("completed_at", { ascending: false }).limit(10),
+    ])
+    if (activeResult.error) throw activeResult.error
+    if (completedResult.error) throw completedResult.error
+    const rows = [...(activeResult.data || []), ...(completedResult.data || [])]
     const sessionsWithProgress = await Promise.all(
-      (result.data || []).map(async (row) => {
+      rows.map(async (row) => {
         const session = row as MediaUploadSession
         if (
           session.upload_mode === "multipart" &&

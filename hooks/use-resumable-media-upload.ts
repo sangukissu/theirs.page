@@ -95,16 +95,48 @@ async function readJson(response: Response) {
   return response.json().catch(() => ({})) as Promise<Record<string, any>>
 }
 
-async function apiRequest(url: string, init?: RequestInit) {
-  const response = await fetch(url, init)
-  const data = await readJson(response)
-  if (!response.ok) {
-    const error = new Error(data.error || "Upload request failed.") as Error & { status?: number; code?: string }
-    error.status = response.status
-    error.code = data.code
-    throw error
+function matchesItemId(
+  item: { id: string; sessionId?: string; meta?: Record<string, unknown> } | null | undefined,
+  targetId: string,
+): boolean {
+  if (!item) return false
+  if (item.id === targetId) return true
+  const sessionVal = item.sessionId || (item.meta?.sessionId as string | undefined)
+  if (sessionVal) {
+    if (sessionVal === targetId) return true
+    if (`session:${sessionVal}` === targetId) return true
+    if (targetId.startsWith("session:") && sessionVal === targetId.slice(8)) return true
   }
-  return data
+  return false
+}
+
+async function apiRequest(url: string, init?: RequestInit) {
+  const controller = new AbortController()
+  const timeoutId = setTimeout(() => controller.abort(), 60_000)
+  try {
+    const signal = init?.signal
+      ? (typeof AbortSignal.any === "function" ? AbortSignal.any([init.signal, controller.signal]) : init.signal)
+      : controller.signal
+    const response = await fetch(url, { ...init, signal })
+    const data = await readJson(response)
+    if (!response.ok) {
+      const error = new Error(data.error || "Upload request failed.") as Error & { status?: number; code?: string }
+      error.status = response.status
+      error.code = data.code
+      throw error
+    }
+    return data
+  } catch (err: any) {
+    if (err.name === "AbortError" && !init?.signal?.aborted) {
+      const error = new Error("The request timed out. Please try again.") as Error & { status?: number; code?: string }
+      error.status = 504
+      error.code = "request_timeout"
+      throw error
+    }
+    throw err
+  } finally {
+    clearTimeout(timeoutId)
+  }
 }
 
 function sendUploadTelemetry(
@@ -167,7 +199,7 @@ function getManager(userId: string, memorialId: string, purpose: UploadPurpose) 
 
 function initialItem(session: SessionContract, id = `session:${session.id}`): ResumableUploadItem {
   const bytesUploaded = session.bytesUploaded || 0
-  const isComplete = ["uploaded", "verifying", "finalizing", "complete"].includes(session.status)
+  const isComplete = session.status === "complete"
   const percentage = session.fileSize
     ? (isComplete ? 100 : Math.min(99, Math.round((bytesUploaded / session.fileSize) * 100)))
     : 0
@@ -182,7 +214,7 @@ function initialItem(session: SessionContract, id = `session:${session.id}`): Re
     percentage,
     bytesPerSecond: 0,
     etaSeconds: null,
-    status: session.status === "uploaded" || session.status === "finalizing" ? "verifying" : "paused",
+    status: isComplete ? "complete" : ["uploaded", "verifying", "finalizing"].includes(session.status) ? "verifying" : "paused",
     resumable: session.uploadMode === "multipart",
     error: null,
     needsFile: !isComplete,
@@ -217,7 +249,7 @@ export function useResumableMediaUpload(options: HookOptions) {
 
   const patchItem = useCallback((id: string, patch: Partial<ResumableUploadItem>) => {
     setItems((current) => dedupeUploadItems(
-      current.map((item) => item.id === id ? { ...item, ...patch } : item),
+      current.map((item) => matchesItemId(item, id) ? { ...item, ...patch } : item),
     ))
   }, [])
 
@@ -269,8 +301,9 @@ export function useResumableMediaUpload(options: HookOptions) {
         completeCallback.current?.(finalized.mediaItem)
         setTimeout(() => {
           const manager = managerRef.current
-          if (manager?.getFile(itemId)) manager.removeFile(itemId)
-          setItems((current) => current.filter((item) => item.id !== itemId))
+          const file = manager?.getFiles().find((f) => matchesItemId(f as any, itemId))
+          if (file) manager?.removeFile(file.id)
+          setItems((current) => current.filter((item) => !matchesItemId(item, itemId)))
         }, 8_000)
       } else {
         patchItem(itemId, {
@@ -283,7 +316,7 @@ export function useResumableMediaUpload(options: HookOptions) {
     } catch (error) {
       const typed = error as Error & { code?: string }
       if (typed.code === "upload_not_complete") {
-        const file = managerRef.current?.getFile(itemId)
+        const file = managerRef.current?.getFiles().find((f) => matchesItemId(f as any, itemId))
         const hasRecoverableFile = hasUsableFileData(file)
         patchItem(itemId, {
           status: hasRecoverableFile ? "error" : "paused",
@@ -294,7 +327,10 @@ export function useResumableMediaUpload(options: HookOptions) {
         })
       } else {
         const unrecoverable = ["invalid_uploaded_bytes", "failed", "expired", "aborted"].includes(typed.code || "")
-        if (unrecoverable && managerRef.current?.getFile(itemId)) managerRef.current.removeFile(itemId)
+        if (unrecoverable) {
+          const file = managerRef.current?.getFiles().find((f) => matchesItemId(f as any, itemId))
+          if (file) managerRef.current?.removeFile(file.id)
+        }
         patchItem(itemId, {
           status: "error",
           error: friendlyUploadError(typed),
@@ -329,8 +365,9 @@ export function useResumableMediaUpload(options: HookOptions) {
           status: !isUsable ? "paused" : "created",
           targetAlbum: file.meta.targetAlbum || null,
         }, file.id)
-        next.status = !isUsable ? "paused" : file.progress.uploadComplete ? "verifying" : "uploading"
         next.needsFile = !isUsable
+        // Restored files start as "paused" (or "verifying" if complete), never fake "uploading" while idle
+        next.status = !isUsable ? "paused" : file.progress.uploadComplete ? "verifying" : "paused"
         if (file.error) {
           next.status = "error"
           next.error = typeof file.error === "string" ? file.error : "Upload interrupted. Choose Resume to continue."
@@ -343,12 +380,12 @@ export function useResumableMediaUpload(options: HookOptions) {
         if (!isUsable && next.percentage === 100) {
           next.percentage = 99
         }
-        const existingItem = current.find((item) => item.id === next.id || item.sessionId === next.sessionId)
+        const existingItem = current.find((item) => matchesItemId(item, next.id))
         if (existingItem && existingItem.bytesUploaded > next.bytesUploaded) {
           next.bytesUploaded = existingItem.bytesUploaded
           next.percentage = existingItem.percentage
         }
-        const withoutPlaceholder = current.filter((item) => item.id !== next.id && item.sessionId !== next.sessionId)
+        const withoutPlaceholder = current.filter((item) => !matchesItemId(item, next.id))
         return dedupeUploadItems([next, ...withoutPlaceholder])
       })
     }
@@ -439,7 +476,15 @@ export function useResumableMediaUpload(options: HookOptions) {
         void finishUploadedSession(file.id, file.meta.sessionId, file.meta.targetAlbum)
       })
       const resumable = restored.filter((file) => hasUsableFileData(file) && !file.error && !file.progress.uploadComplete)
-      if (resumable.length > 0 && navigator.onLine) void uppy.upload().catch(() => {})
+      if (resumable.length > 0 && navigator.onLine) {
+        for (const file of resumable) {
+          patchItem(file.id, { status: "uploading", error: null })
+          void uppy.retryUpload(file.id).catch((err) => {
+            console.error("Auto-resume failed:", err)
+            patchItem(file.id, { status: "paused", error: "Upload paused. Choose Resume to continue." })
+          })
+        }
+      }
     }
 
     uppy.on("file-added", onAdded)
@@ -463,7 +508,15 @@ export function useResumableMediaUpload(options: HookOptions) {
           const updated = current.map((item) => {
             const serverSession = serverSessions.get(item.sessionId)
             if (!serverSession) return item
-            const localFile = uppy.getFile(item.id)
+            if (serverSession.status === "complete") {
+              return {
+                ...item,
+                status: "complete" as const,
+                percentage: 100,
+                bytesUploaded: item.totalBytes,
+              }
+            }
+            const localFile = uppy.getFiles().find((f) => matchesItemId(f as any, item.id))
             if (hasUsableFileData(localFile) && item.status === "uploading") {
               return item
             }
@@ -478,11 +531,15 @@ export function useResumableMediaUpload(options: HookOptions) {
           })
           const known = new Set(updated.map((item) => item.sessionId))
           const missing = (data.sessions || [])
-            .filter((session: SessionContract) => !known.has(session.id))
+            .filter((session: SessionContract) => !known.has(session.id) && session.status !== "complete")
             .map((session: SessionContract) => initialItem(session))
           return dedupeUploadItems([...updated, ...missing])
         })
         for (const session of (data.sessions || []) as SessionContract[]) {
+          if (session.status === "complete") {
+            patchItem(session.id, { status: "complete", percentage: 100 })
+            continue
+          }
           const localFile = uppy.getFiles().find((file) => file.meta.sessionId === session.id)
           if (["uploaded", "verifying", "finalizing"].includes(session.status)) {
             void finishUploadedSession(localFile?.id || `session:${session.id}`, session.id, session.targetAlbum)
@@ -500,7 +557,10 @@ export function useResumableMediaUpload(options: HookOptions) {
           if (localFile.progress.uploadComplete) {
             void finishUploadedSession(localFile.id, session.id, session.targetAlbum)
           } else if (!localFile.error && navigator.onLine) {
-            void uppy.upload().catch(() => {})
+            patchItem(localFile.id, { status: "uploading", error: null })
+            void uppy.retryUpload(localFile.id).catch(() => {
+              patchItem(localFile.id, { status: "paused" })
+            })
           }
         }
       })
@@ -635,7 +695,7 @@ export function useResumableMediaUpload(options: HookOptions) {
 
   const retry = useCallback(async (id: string) => {
     const uppy = managerRef.current
-    const item = items.find((candidate) => candidate.id === id)
+    const item = items.find((candidate) => matchesItemId(candidate, id))
     if (!item) return
     if (!item.sessionId) {
       const file = preparationFiles.current.get(id)
@@ -644,12 +704,13 @@ export function useResumableMediaUpload(options: HookOptions) {
         return
       }
       preparationFiles.current.delete(id)
-      setItems((current) => current.filter((candidate) => candidate.id !== id))
+      setItems((current) => current.filter((candidate) => !matchesItemId(candidate, id)))
       await addFiles([file])
       return
     }
     if (!uppy) return
-    const localFile = uppy.getFile(id)
+    const localFile = uppy.getFiles().find((f) => matchesItemId(f as any, id))
+    const uppyFileId = localFile?.id || id
     if (!hasUsableFileData(localFile)) {
       patchItem(id, {
         status: "paused",
@@ -660,7 +721,7 @@ export function useResumableMediaUpload(options: HookOptions) {
       return
     }
     if (localFile?.progress.uploadComplete) {
-      await finishUploadedSession(id, item.sessionId, item.targetAlbum)
+      await finishUploadedSession(uppyFileId, item.sessionId, item.targetAlbum)
       return
     }
     try {
@@ -668,7 +729,7 @@ export function useResumableMediaUpload(options: HookOptions) {
         `/api/memorials/${encodeURIComponent(options.memorialId)}/uploads/sessions/${encodeURIComponent(item.sessionId)}/verify`,
         { method: "POST" },
       )
-      await finishUploadedSession(id, item.sessionId, item.targetAlbum)
+      await finishUploadedSession(uppyFileId, item.sessionId, item.targetAlbum)
       return
     } catch (error) {
       const typed = error as Error & { code?: string }
@@ -677,23 +738,23 @@ export function useResumableMediaUpload(options: HookOptions) {
         return
       }
     }
-    const retryCount = (retryCounts.current.get(id) || 0) + 1
-    retryCounts.current.set(id, retryCount)
+    const retryCount = (retryCounts.current.get(uppyFileId) || 0) + 1
+    retryCounts.current.set(uppyFileId, retryCount)
     sendUploadTelemetry(options.memorialId, item.sessionId, "upload_resumed", {
       retry_count: retryCount,
       resume_count: retryCount,
     })
     patchItem(id, { status: "uploading", error: null })
-    await uppy.retryUpload(id)
+    await uppy.retryUpload(uppyFileId)
   }, [addFiles, finishUploadedSession, items, options.memorialId, patchItem])
 
   const cancel = useCallback(async (id: string) => {
     if (preparations.current.cancel(id)) {
       preparationFiles.current.delete(id)
-      setItems((current) => current.filter((candidate) => candidate.id !== id))
+      setItems((current) => current.filter((candidate) => !matchesItemId(candidate, id)))
       return
     }
-    const item = items.find((candidate) => candidate.id === id)
+    const item = items.find((candidate) => matchesItemId(candidate, id))
     if (!item) return
     if (item.sessionId) {
       try {
@@ -713,14 +774,15 @@ export function useResumableMediaUpload(options: HookOptions) {
       }
     }
     const uppy = managerRef.current
-    if (uppy?.getFile(id)) uppy.removeFile(id)
+    const localFile = uppy?.getFiles().find((f) => matchesItemId(f as any, id))
+    if (localFile) uppy?.removeFile(localFile.id)
     preparationFiles.current.delete(id)
-    setItems((current) => current.filter((candidate) => candidate.id !== id))
+    setItems((current) => current.filter((candidate) => !matchesItemId(candidate, id)))
   }, [items, options.memorialId, patchItem])
 
   const dismiss = useCallback((id: string) => {
     preparationFiles.current.delete(id)
-    setItems((current) => current.filter((item) => item.id !== id))
+    setItems((current) => current.filter((item) => !matchesItemId(item, id)))
   }, [])
 
   return {

@@ -386,9 +386,10 @@ export async function abortR2MultipartUpload(key: string, uploadId: string): Pro
 export async function copyR2Object(sourceKey: string, destinationKey: string, contentType?: string) {
   const client = getR2Client();
   const bucket = getR2BucketName();
+  const encodedSourceKey = sourceKey.split("/").map(encodeURIComponent).join("/");
   const command = new CopyObjectCommand({
     Bucket: bucket,
-    CopySource: `${bucket}/${sourceKey}`,
+    CopySource: `${bucket}/${encodedSourceKey}`,
     Key: destinationKey,
     ContentType: contentType,
     MetadataDirective: contentType ? "REPLACE" : "COPY",
@@ -622,11 +623,12 @@ export async function promoteQuarantinedMedia(
 ): Promise<string> {
   const client = getR2Client()
   const bucket = getR2BucketName()
+  const encodedSourceKey = sourceKey.split("/").map(encodeURIComponent).join("/")
 
   await client.send(
     new CopyObjectCommand({
       Bucket: bucket,
-      CopySource: `${bucket}/${sourceKey}`,
+      CopySource: `${bucket}/${encodedSourceKey}`,
       Key: destKey,
       MetadataDirective: "COPY",
     })
