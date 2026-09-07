@@ -16,6 +16,7 @@ import { ContributionType } from "./contribute-modal"
 import { QuillFeatherEmblem } from "./tribute-emblems"
 import { useOptimisticReceipts } from "@/lib/memorial/optimistic-receipts"
 import { MemoryComposer } from "./memory-composer"
+import { SectionEyebrow } from "./section-eyebrow"
 
 export interface StoryItem {
   id: string
@@ -116,20 +117,22 @@ export function LifeStories({
       className="py-12 px-4 max-w-4xl mx-auto flex flex-col gap-8 scroll-mt-24"
     >
       {/* Section Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-black/[0.06] pb-6">
-        <div className="flex flex-col gap-1">
-          <h2 className="text-2xl sm:text-3xl font-medium tracking-tight text-[var(--theme-text-primary)]">
-            Stories & Memories of {firstName}
+      <div className="flex items-end justify-between gap-3 border-b border-[var(--theme-border)] pb-3.5 sm:pb-5">
+        <div className="flex flex-col gap-0.5 min-w-0 pr-1">
+          <SectionEyebrow kind="memories" />
+          <h2 className="text-xl sm:text-2xl md:text-3xl font-medium tracking-tight text-[var(--theme-text-primary)] truncate leading-tight">
+            Stories & Memories <span className="hidden sm:inline">of {firstName}</span>
           </h2>
         </div>
 
         <button
           type="button"
           onClick={() => showComposer ? document.getElementById("share-memory")?.scrollIntoView({ behavior: "smooth" }) : onOpenContribute("memory")}
-          className="inline-flex items-center gap-1.5 px-5 py-2.5 rounded-full bg-[var(--theme-accent)] hover:brightness-105 text-[var(--theme-accent-foreground)] text-xs font-medium transition-all cursor-pointer shadow-xs active:scale-95 shrink-0 self-start sm:self-auto"
+          className="inline-flex items-center gap-1 sm:gap-1.5 px-3 sm:px-4 py-1.5 sm:py-2 rounded-full bg-[var(--theme-accent)] hover:brightness-105 text-[var(--theme-accent-foreground)] text-xs font-medium transition-all cursor-pointer shadow-xs active:scale-95 shrink-0 whitespace-nowrap"
         >
-          <Plus className="size-3.5" />
-          <span>Share a memory</span>
+          <Plus className="size-3.5 shrink-0" />
+          <span className="hidden sm:inline">Share a memory</span>
+          <span className="sm:hidden">Share</span>
         </button>
       </div>
 
@@ -332,7 +335,8 @@ export function LifeStories({
         .memory-rich-text > * + * { margin-top: 0.85rem; }
         .memory-rich-text h2 { font-family: var(--font-serif, Georgia, serif); font-size: 1.3rem; font-weight: 600; color: var(--theme-text-primary, #181925); }
         .memory-rich-text h3 { font-family: var(--font-serif, Georgia, serif); font-size: 1.12rem; font-weight: 600; color: var(--theme-text-primary, #181925); }
-        .memory-rich-text blockquote { border-left: 3px solid var(--theme-accent, var(--primary)); padding: 0.65rem 1rem; color: var(--theme-text-body, #4b4b52); font-style: italic; }
+        .memory-rich-text blockquote { position: relative; margin: 1.25rem 0; padding: 0.2rem 0 0.2rem 2.25rem; border: none; background: transparent; color: var(--theme-text-primary, #181925); font-style: italic; }
+        .memory-rich-text blockquote::before { content: ""; position: absolute; left: 0; top: 0.25rem; width: 1.25rem; height: 1.25rem; background-color: var(--theme-accent, #8b5a45); opacity: 0.45; mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='currentColor'%3E%3Cpath d='M4.583 17.321C3.553 16.227 3 15 3 13.011c0-3.5 2.457-6.637 6.03-8.188l.893 1.378c-3.335 1.804-3.987 4.145-4.247 5.621.537-.278 1.24-.375 1.929-.311 1.804.167 3.226 1.648 3.226 3.489a3.5 3.5 0 01-3.5 3.5c-1.073 0-2.099-.49-2.748-1.179zm10 0C13.553 16.227 13 15 13 13.011c0-3.5 2.457-6.637 6.03-8.188l.893 1.378c-3.335 1.804-3.987 4.145-4.247 5.621.537-.278 1.24-.375 1.929-.311 1.804.167 3.226 1.648 3.226 3.489a3.5 3.5 0 01-3.5 3.5c-1.073 0-2.099-.49-2.748-1.179z'/%3E%3C/svg%3E"); -webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='currentColor'%3E%3Cpath d='M4.583 17.321C3.553 16.227 3 15 3 13.011c0-3.5 2.457-6.637 6.03-8.188l.893 1.378c-3.335 1.804-3.987 4.145-4.247 5.621.537-.278 1.24-.375 1.929-.311 1.804.167 3.226 1.648 3.226 3.489a3.5 3.5 0 01-3.5 3.5c-1.073 0-2.099-.49-2.748-1.179zm10 0C13.553 16.227 13 15 13 13.011c0-3.5 2.457-6.637 6.03-8.188l.893 1.378c-3.335 1.804-3.987 4.145-4.247 5.621.537-.278 1.24-.375 1.929-.311 1.804.167 3.226 1.648 3.226 3.489a3.5 3.5 0 01-3.5 3.5c-1.073 0-2.099-.49-2.748-1.179z'/%3E%3C/svg%3E"); mask-size: contain; -webkit-mask-size: contain; mask-repeat: no-repeat; -webkit-mask-repeat: no-repeat; }
         .memory-rich-text ul { list-style: disc; padding-left: 1.4rem; }
         .memory-rich-text ol { list-style: decimal; padding-left: 1.4rem; }
         .memory-rich-text a { color: var(--theme-accent, var(--primary)); text-decoration: underline; text-underline-offset: 3px; }

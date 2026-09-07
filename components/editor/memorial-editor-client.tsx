@@ -487,34 +487,34 @@ export function MemorialEditorClient({
     count?: number
     isCompleteOnly?: boolean
   }[] = [
-    { id: "identity", label: "About", icon: User },
-    { id: "appearance", label: "Appearance", icon: Palette },
-    {
-      id: "story",
-      label: "Story",
-      icon: BookOpen,
-    },
-    {
-      id: "gallery",
-      label: "Photos",
-      icon: ImageIcon,
-    },
-    {
-      id: "timeline",
-      label: "Timeline",
-      icon: Calendar,
-      isCompleteOnly: true,
-    },
-    {
-      id: "moderation",
-      label: "Inbox",
-      icon: MessageSquare,
-      count: pendingContributions,
-    },
-    ...(initialMemorial.can_manage_owner_settings
-      ? [{ id: "settings" as const, label: "Manage", icon: Settings }]
-      : []),
-  ]
+      { id: "identity", label: "About", icon: User },
+      { id: "appearance", label: "Appearance", icon: Palette },
+      {
+        id: "story",
+        label: "Story",
+        icon: BookOpen,
+      },
+      {
+        id: "gallery",
+        label: "Gallery",
+        icon: ImageIcon,
+      },
+      {
+        id: "timeline",
+        label: "Timeline",
+        icon: Calendar,
+        isCompleteOnly: true,
+      },
+      {
+        id: "moderation",
+        label: "Inbox",
+        icon: MessageSquare,
+        count: pendingContributions,
+      },
+      ...(initialMemorial.can_manage_owner_settings
+        ? [{ id: "settings" as const, label: "Manage", icon: Settings }]
+        : []),
+    ]
 
   const currentIndex = tabs.findIndex((t) => t.id === activeTab)
   const prevTab = currentIndex > 0 ? tabs[currentIndex - 1] : null
@@ -550,8 +550,8 @@ export function MemorialEditorClient({
 
             <span
               className={`px-2.5 py-0.5 rounded-full text-[10px] font-mono uppercase font-semibold shrink-0 ${form.status === "published"
-                  ? "bg-emerald-50 text-emerald-700 border border-emerald-200"
-                  : "bg-amber-50 text-amber-700 border border-amber-200"
+                ? "bg-emerald-50 text-emerald-700 border border-emerald-200"
+                : "bg-amber-50 text-amber-700 border border-amber-200"
                 }`}
             >
               {form.status}
@@ -633,8 +633,8 @@ export function MemorialEditorClient({
                   type="button"
                   onClick={() => goToTab(tab.id)}
                   className={`flex items-center justify-between gap-2.5 px-3.5 py-2 rounded-xl text-xs font-medium whitespace-nowrap transition-all cursor-pointer ${isActive
-                      ? "bg-[#181925] text-white shadow-2xs"
-                      : "text-[#666] hover:text-[#181925] hover:bg-white/80"
+                    ? "bg-[#181925] text-white shadow-2xs"
+                    : "text-[#666] hover:text-[#181925] hover:bg-white/80"
                     }`}
                 >
                   <div className="flex items-center gap-2">
@@ -789,7 +789,7 @@ export function MemorialEditorClient({
           {/* Previous & Next Tab Navigation Bar */}
           <nav
             aria-label="Editor sections navigation"
-            className="flex items-center justify-between gap-4 pt-8 mt-12 pb-10 border-t border-black/[0.08] select-none"
+            className="flex items-center justify-between gap-4 pt-8 pb-10 border-t border-black/[0.08] select-none"
           >
             {prevTab ? (
               <button

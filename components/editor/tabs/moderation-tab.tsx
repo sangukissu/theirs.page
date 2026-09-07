@@ -80,6 +80,53 @@ function primaryMediaMime(memory: EditorMemory): string | undefined {
   return typeof media[0].mime === "string" ? media[0].mime : undefined
 }
 
+function resolveSubmissionUrls(memory: EditorMemory): string[] {
+  const list: string[] = []
+  if (Array.isArray(memory.photo_urls) && memory.photo_urls.length > 0) {
+    for (const item of memory.photo_urls) {
+      if (typeof item === "string" && item.trim()) {
+        const resolved = mediaPreviewUrl(item.trim())
+        if (!list.includes(resolved)) list.push(resolved)
+      }
+    }
+  } else if (memory.photo_url) {
+    list.push(mediaPreviewUrl(memory.photo_url))
+  }
+  return list
+}
+
+function resolveSubmissionType(memory: EditorMemory): string | undefined {
+  if (memory.media_source_type === "youtube" || memory.external_id) return "video"
+  if (typeof memory.safety_details?.submission_type === "string") {
+    return memory.safety_details.submission_type
+  }
+  if (memory.tribute_type === "voice" || memory.tribute_type === "audio") return "audio"
+  if (memory.tribute_type === "video") return "video"
+  return undefined
+}
+
+function formatFilterReason(safetyDetails: Record<string, any>): string {
+  const reason = typeof safetyDetails.reason === "string" ? safetyDetails.reason.trim() : ""
+  const isContradictory =
+    !reason ||
+    reason.toLowerCase().includes("respectful remembrance") ||
+    reason.toLowerCase().includes("no safety violations") ||
+    reason.toLowerCase().includes("genuine condolences") ||
+    reason.toLowerCase().includes("bittersweet stories")
+
+  if (isContradictory || !reason) {
+    if (safetyDetails.sexual) return "Explicit or sexually inappropriate imagery/content detected."
+    if (safetyDetails.threat) return "Threatening language or violence detected."
+    if (safetyDetails.hate) return "Hate speech or abusive content detected."
+    if (safetyDetails.harassment) return "Targeted harassment or personal attack detected."
+    if (safetyDetails.spam || safetyDetails.scam) return "Commercial spam or deceptive link detected."
+    if (safetyDetails.garbage) return "Automated bot spam or gibberish detected."
+    return "The submission violates platform safety policies and was quarantined."
+  }
+
+  return reason
+}
+
 function ContributionTypeBadge({ memory }: { memory: EditorMemory }) {
   const isVideo = memory.media_source_type === "youtube" || Boolean(memory.external_id) || memory.safety_details?.submission_type === "video"
   if (isVideo) {
@@ -191,8 +238,8 @@ export function ModerationTab({
           action === "approve"
             ? "approved"
             : action === "unpublish"
-            ? "pending_approval"
-            : "rejected"
+              ? "pending_approval"
+              : "rejected"
         onUpdateMemoryStatus(targetId, nextStatus)
         setDisplayedMemories((current) => current.filter((item) => item.id !== targetId))
         void loadModerationPage(false)
@@ -265,7 +312,7 @@ export function ModerationTab({
   const unreadMessagesCount = caretakerMessages.filter((message) => message.status === "unread").length
 
   return (
-    <div className="flex flex-col gap-6 max-w-2xl">
+    <div className="flex flex-col gap-6 max-w-2xl mb-6">
       <div className="flex flex-col gap-1 border-b border-black/[0.06] pb-4">
         <h2 className="text-lg sm:text-xl font-medium text-[#181925]">
           Contributions & Moderation
@@ -281,11 +328,10 @@ export function ModerationTab({
           <button
             type="button"
             onClick={() => setSubTab("memories")}
-            className={`px-3.5 py-1.5 rounded-full text-xs font-medium transition-colors cursor-pointer flex items-center gap-1.5 ${
-              subTab === "memories"
-                ? "bg-[#181925] text-white"
-                : "bg-[#f4f4f6] text-[#666] hover:text-[#181925]"
-            }`}
+            className={`px-3.5 py-1.5 rounded-full text-xs font-medium transition-colors cursor-pointer flex items-center gap-1.5 ${subTab === "memories"
+              ? "bg-[#181925] text-white"
+              : "bg-[#f4f4f6] text-[#666] hover:text-[#181925]"
+              }`}
           >
             <span>Contributions ({counts.all})</span>
             {counts.pending > 0 && (
@@ -298,11 +344,10 @@ export function ModerationTab({
           <button
             type="button"
             onClick={() => setSubTab("messages")}
-            className={`px-3.5 py-1.5 rounded-full text-xs font-medium transition-colors cursor-pointer flex items-center gap-1.5 ${
-              subTab === "messages"
-                ? "bg-[#181925] text-white"
-                : "bg-[#f4f4f6] text-[#666] hover:text-[#181925]"
-            }`}
+            className={`px-3.5 py-1.5 rounded-full text-xs font-medium transition-colors cursor-pointer flex items-center gap-1.5 ${subTab === "messages"
+              ? "bg-[#181925] text-white"
+              : "bg-[#f4f4f6] text-[#666] hover:text-[#181925]"
+              }`}
           >
             <Mail className="size-3.5" />
             <span>Private messages ({caretakerMessages.length})</span>
@@ -323,11 +368,10 @@ export function ModerationTab({
             <button
               type="button"
               onClick={() => setActiveBucket("pending")}
-              className={`flex-1 py-1.5 px-3 rounded-xl text-xs font-medium transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
-                activeBucket === "pending"
-                  ? "bg-white text-[#181925] shadow-xs"
-                  : "text-[#71717a] hover:text-[#181925]"
-              }`}
+              className={`flex-1 py-1.5 px-3 rounded-xl text-xs font-medium transition-all cursor-pointer flex items-center justify-center gap-1.5 ${activeBucket === "pending"
+                ? "bg-white text-[#181925] shadow-xs"
+                : "text-[#71717a] hover:text-[#181925]"
+                }`}
             >
               <span>Waiting for approval</span>
               {counts.pending > 0 && (
@@ -340,11 +384,10 @@ export function ModerationTab({
             <button
               type="button"
               onClick={() => setActiveBucket("published")}
-              className={`flex-1 py-1.5 px-3 rounded-xl text-xs font-medium transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
-                activeBucket === "published"
-                  ? "bg-white text-[#181925] shadow-xs"
-                  : "text-[#71717a] hover:text-[#181925]"
-              }`}
+              className={`flex-1 py-1.5 px-3 rounded-xl text-xs font-medium transition-all cursor-pointer flex items-center justify-center gap-1.5 ${activeBucket === "published"
+                ? "bg-white text-[#181925] shadow-xs"
+                : "text-[#71717a] hover:text-[#181925]"
+                }`}
             >
               <span>Published</span>
               <span className="text-[11px] text-[#aaa]">({counts.published})</span>
@@ -354,11 +397,10 @@ export function ModerationTab({
               <button
                 type="button"
                 onClick={() => setActiveBucket("blocked")}
-                className={`flex-1 py-1.5 px-3 rounded-xl text-xs font-medium transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
-                  activeBucket === "blocked"
-                    ? "bg-rose-50 text-rose-900 shadow-xs"
-                    : "text-rose-600 hover:text-rose-800"
-                }`}
+                className={`flex-1 py-1.5 px-3 rounded-xl text-xs font-medium transition-all cursor-pointer flex items-center justify-center gap-1.5 ${activeBucket === "blocked"
+                  ? "bg-rose-50 text-rose-900 shadow-xs"
+                  : "text-rose-600 hover:text-rose-800"
+                  }`}
               >
                 <ShieldAlert className="size-3" />
                 <span>Blocked</span>
@@ -409,9 +451,8 @@ export function ModerationTab({
                   return (
                     <div
                       key={mem.id}
-                      className={`p-5 rounded-2xl bg-white border flex flex-col gap-3.5 shadow-2xs transition-all ${
-                        isReview ? "border-amber-300 bg-amber-50/20" : "border-black/[0.07]"
-                      }`}
+                      className={`p-5 rounded-2xl bg-white border flex flex-col gap-3.5 shadow-2xs transition-all ${isReview ? "border-amber-300 bg-amber-50/20" : "border-black/[0.07]"
+                        }`}
                     >
                       {/* Header */}
                       <div className="flex items-start justify-between gap-3">
@@ -464,13 +505,16 @@ export function ModerationTab({
                       <ContributionBody memory={mem} className="text-xs sm:text-sm text-[#333] leading-relaxed" />
 
                       {/* Private attachment preview for caretaker review */}
-                      {(mem.photo_url || mem.external_id) && (
+                      {(mem.photo_url || (mem.photo_urls && mem.photo_urls.length > 0) || mem.external_id) && (
                         <div className="pt-1">
                           <ContributionMediaPreview
                             src={mem.photo_url ? mediaPreviewUrl(mem.photo_url) : null}
+                            photoUrls={resolveSubmissionUrls(mem)}
                             mime={primaryMediaMime(mem)}
+                            submissionType={resolveSubmissionType(mem)}
                             externalVideoId={mem.external_id}
                             externalUrl={mem.external_url}
+                            title={`Contributed by ${mem.author_name}`}
                           />
                         </div>
                       )}
@@ -555,13 +599,16 @@ export function ModerationTab({
 
                     <ContributionBody memory={mem} className="text-xs text-[#444] leading-relaxed" />
 
-                    {(mem.photo_url || mem.external_id) && (
+                    {(mem.photo_url || (mem.photo_urls && mem.photo_urls.length > 0) || mem.external_id) && (
                       <ContributionMediaPreview
                         src={mem.photo_url ? mediaPreviewUrl(mem.photo_url) : null}
+                        photoUrls={resolveSubmissionUrls(mem)}
                         mime={primaryMediaMime(mem)}
+                        submissionType={resolveSubmissionType(mem)}
                         externalVideoId={mem.external_id}
                         externalUrl={mem.external_url}
                         compact
+                        title={`Shared by ${mem.author_name}`}
                       />
                     )}
 
@@ -681,11 +728,9 @@ export function ModerationTab({
                         </div>
 
                         {/* Safety Reason explanation */}
-                        {safetyDetails.reason && (
-                          <div className="p-2.5 rounded-xl bg-neutral-50 text-[11px] text-[#555]">
-                            <strong>Filter reason:</strong> {safetyDetails.reason}
-                          </div>
-                        )}
+                        <div className="p-2.5 rounded-xl bg-neutral-50 text-[11px] text-[#555]">
+                          <strong>Filter reason:</strong> {formatFilterReason(safetyDetails)}
+                        </div>
 
                         {/* Blurred text/media with explicit reveal toggle */}
                         <div className="relative p-3 rounded-xl bg-neutral-100 border border-black/[0.05]">
@@ -695,14 +740,17 @@ export function ModerationTab({
                             {isRevealed ? mem.story.replace(/<[^>]*>/g, " ").replace(/\s+/g, " ").trim() : "Content is hidden to protect the family."}
                           </p>
 
-                          {isRevealed && (mem.photo_url || mem.external_id) && (
+                          {isRevealed && (mem.photo_url || (mem.photo_urls && mem.photo_urls.length > 0) || mem.external_id) && (
                             <div className="mt-2">
                               <ContributionMediaPreview
                                 src={mem.photo_url ? mediaPreviewUrl(mem.photo_url) : null}
+                                photoUrls={resolveSubmissionUrls(mem)}
                                 mime={primaryMediaMime(mem)}
+                                submissionType={resolveSubmissionType(mem)}
                                 externalVideoId={mem.external_id}
                                 externalUrl={mem.external_url}
                                 compact
+                                title={`Quarantined media by ${mem.author_name}`}
                               />
                             </div>
                           )}
@@ -770,9 +818,8 @@ export function ModerationTab({
               caretakerMessages.map((item) => (
                 <div
                   key={item.id}
-                  className={`relative overflow-hidden p-5 rounded-2xl bg-white border flex flex-col gap-3 shadow-2xs ${
-                    item.status === "unread" ? "border-primary/25" : "border-black/[0.07]"
-                  } ${item.status === "archived" ? "opacity-60" : ""}`}
+                  className={`relative overflow-hidden p-5 rounded-2xl bg-white border flex flex-col gap-3 shadow-2xs ${item.status === "unread" ? "border-primary/25" : "border-black/[0.07]"
+                    } ${item.status === "archived" ? "opacity-60" : ""}`}
                 >
                   <div className="flex items-baseline justify-between gap-2">
                     <div className="flex items-baseline gap-2 flex-wrap">
@@ -781,13 +828,12 @@ export function ModerationTab({
                     </div>
 
                     <span
-                      className={`px-2 py-0.5 rounded-full text-[10px] font-mono uppercase font-semibold ${
-                        item.status === "unread"
-                          ? "bg-primary/10 text-primary"
-                          : item.status === "read"
+                      className={`px-2 py-0.5 rounded-full text-[10px] font-mono uppercase font-semibold ${item.status === "unread"
+                        ? "bg-primary/10 text-primary"
+                        : item.status === "read"
                           ? "bg-neutral-100 text-[#666]"
                           : "bg-neutral-100 text-[#aaa]"
-                      }`}
+                        }`}
                     >
                       {item.status}
                     </span>

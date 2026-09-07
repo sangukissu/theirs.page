@@ -55,7 +55,7 @@ Rules:
 7. Do not wrap in markdown code blocks (\`\`\`html). Output only the HTML content.`
 
     const response = await genAI.models.generateContent({
-      model: "gemini-2.5-flash",
+      model: "gemini-3.5-flash-lite",
       contents: [{ text: prompt }],
     })
 

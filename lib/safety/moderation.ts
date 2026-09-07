@@ -47,7 +47,7 @@ function getSafetyModel(): string {
   const configured = process.env.GEMINI_SAFETY_MODEL?.trim()
   return configured && /^[a-z0-9._-]{1,80}$/i.test(configured)
     ? configured
-    : "gemini-2.5-flash-lite"
+    : "gemini-3.5-flash-lite"
 }
 
 async function withSafetyTimeout<T>(operation: Promise<T>): Promise<T> {
@@ -114,62 +114,97 @@ export function combineSafetyResults(
   results: SafetyScreeningResult[]
 ): SafetyScreeningResult {
   if (results.length === 0) return REVIEW_REQUIRED_RESULT
-  const combined = results.reduce<SafetyScreeningResult>((current, result) => ({
-    decision:
-      current.decision === "blocked" || result.decision === "blocked"
-        ? "blocked"
-        : current.decision === "review" || result.decision === "review"
-          ? "review"
-          : "safe",
-    sexual: current.sexual || result.sexual,
-    threat: current.threat || result.threat,
-    hate: current.hate || result.hate,
-    harassment: current.harassment || result.harassment,
-    spam: current.spam || result.spam,
-    scam: current.scam || result.scam,
-    personal_data: current.personal_data || result.personal_data,
-    garbage: current.garbage || result.garbage,
-    reason: current.reason === DEFAULT_SAFE_RESULT.reason ? result.reason : current.reason,
-  }), DEFAULT_SAFE_RESULT)
-  return normalizeSafetyResult(combined)
+
+  const blockedResults = results.filter((r) => r.decision === "blocked")
+  const reviewResults = results.filter((r) => r.decision === "review")
+
+  const decision: SafetyScreeningResult["decision"] =
+    blockedResults.length > 0 ? "blocked" : reviewResults.length > 0 ? "review" : "safe"
+
+  const sexual = results.some((r) => r.sexual)
+  const threat = results.some((r) => r.threat)
+  const hate = results.some((r) => r.hate)
+  const harassment = results.some((r) => r.harassment)
+  const spam = results.some((r) => r.spam)
+  const scam = results.some((r) => r.scam)
+  const personal_data = results.some((r) => r.personal_data)
+  const garbage = results.some((r) => r.garbage)
+
+  let reason = DEFAULT_SAFE_RESULT.reason
+  if (decision === "blocked") {
+    const relevantBlocked = blockedResults.find(
+      (r) =>
+        r.reason &&
+        r.reason !== DEFAULT_SAFE_RESULT.reason &&
+        !r.reason.toLowerCase().includes("respectful remembrance") &&
+        !r.reason.toLowerCase().includes("no safety violations")
+    )
+    if (relevantBlocked?.reason) {
+      reason = relevantBlocked.reason
+    } else if (sexual) {
+      reason = "Explicit or sexually inappropriate imagery/content detected."
+    } else if (threat) {
+      reason = "Threatening language or violence detected."
+    } else if (hate) {
+      reason = "Hate speech or abusive content detected."
+    } else if (harassment) {
+      reason = "Targeted harassment or personal attack detected."
+    } else if (spam || scam) {
+      reason = "Commercial spam or deceptive link detected."
+    } else if (garbage) {
+      reason = "Automated bot spam or gibberish detected."
+    } else {
+      reason = "The submission violates platform safety policies and was quarantined."
+    }
+  } else if (decision === "review") {
+    const relevantReview = reviewResults.find(
+      (r) => r.reason && r.reason !== DEFAULT_SAFE_RESULT.reason
+    )
+    reason = relevantReview?.reason || "Human caretaker review is required before publishing."
+  } else {
+    const safeReason = results.find(
+      (r) => r.reason && r.reason !== DEFAULT_SAFE_RESULT.reason
+    )?.reason
+    reason = safeReason || DEFAULT_SAFE_RESULT.reason
+  }
+
+  return normalizeSafetyResult({
+    decision,
+    sexual,
+    threat,
+    hate,
+    harassment,
+    spam,
+    scam,
+    personal_data,
+    garbage,
+    reason,
+  })
 }
 
 // ------------------------------------------------------------------------------
 // 1. Text Screening with Gemini Flash Lite
 // ------------------------------------------------------------------------------
 
-const TEXT_SAFETY_SYSTEM_PROMPT = `You are the automated safety screening engine for Theirs (theirs.page), a respectful digital memorial dedicated to human lives.
-Your job is to analyze visitor-submitted tributes, memories, condolences, or stories about a deceased person.
+const TEXT_SAFETY_SYSTEM_PROMPT = `Role: Automated safety screener for digital memorial tributes and stories.
 
-Analyze the submission for platform safety risks:
-1. "sexual": explicit pornography, erotic content, nudity, sexualized text.
-2. "threat": threats of violence, encouragement of suicide/self-harm, terroristic threats.
-3. "hate": slurs, hate speech, racist/homophobic/sectarian abuse, dehumanizing language.
-4. "harassment": targeted bullying, hostile character attacks on the deceased or family, vindictive stalking.
-5. "spam": commercial advertising, repeated robotic spam, unrelated promotional text.
-6. "scam": phishing links, cryptocurrency schemes, financial fraud, impersonation scam.
-7. "personal_data": doxxing (social security numbers, private phone numbers, home addresses, bank account numbers).
-8. "garbage": repeated meaningless keysmashing, bot test strings, gibberish (e.g. "asdfasdfasdf").
+1. CHILD SAFETY (ZERO TOLERANCE):
+- Set "sexual": true and "decision": "blocked" for any child sexual abuse material (CSAM), grooming, exploitation, or harm to minors.
 
-DECISION RULES:
-- Return "blocked" if: sexual, threat, hate, harassment, scam, or clear spam is TRUE.
-- Return "review" if: the content is emotionally contentious, contains ambiguous family conflict, borderline language, strange links, or mentions a dispute that might require caretaker review.
-- Return "safe" if: genuine condolences, heartfelt memories, nostalgic anecdotes, bittersweet stories, or respectful remembrance.
-NOTE: Expressions of natural sadness, mild family quirks, or imperfect life recollections are SAFE, not harmful. Do not block someone merely for recalling a sad or human moment.
+2. CLASSIFICATION MATRIX:
+- "safe": Genuine condolences, heartfelt memories, nostalgic anecdotes, sadness, or mild family quirks.
+- "review": Contentious family disputes, ambiguous allegations, unverified personal contact details, or emotionally sensitive language requiring caretaker discretion.
+- "blocked":
+  * "sexual": CSAM, explicit pornography, erotic text, or sexual solicitation.
+  * "threat": Violence, incitement of self-harm/suicide, or terroristic threats.
+  * "hate": Slurs, dehumanizing rhetoric, or racial/religious hatred.
+  * "harassment": Defamation, hostile attacks on the deceased/family, or vindictive stalking.
+  * "scam" / "spam": Commercial advertising, cryptocurrency schemes, phishing links, or bulk bot spam.
+  * "personal_data": Doxxing (SSNs, phone numbers, home addresses, financial accounts).
+  * "garbage": Gibberish, bot test strings, or keysmashing.
 
-Return ONLY a JSON object with this exact structure:
-{
-  "decision": "safe" | "review" | "blocked",
-  "sexual": boolean,
-  "threat": boolean,
-  "hate": boolean,
-  "harassment": boolean,
-  "spam": boolean,
-  "scam": boolean,
-  "personal_data": boolean,
-  "garbage": boolean,
-  "reason": "Brief 1-sentence explanation"
-}`
+3. INSTRUCTIONS:
+- Return a factual 1-sentence reason without conversational preamble.`
 
 export async function screenTextWithGemini(
   text: string,
@@ -524,116 +559,116 @@ export function getImageDimensions(
 export function stripExifAndGps(buffer: Buffer, mime: string): Buffer {
   if (!buffer || buffer.length < 16) throw new Error("Image is truncated")
 
-    // 1. JPEG: Strip APP1 (0xFFE1: EXIF / GPS / XMP), APP13 (0xFFED: Photoshop), and COM (0xFFFE)
-    if (mime === "image/jpeg" && buffer[0] === 0xff && buffer[1] === 0xd8) {
-      const chunks: Buffer[] = [buffer.subarray(0, 2)] // include SOI (FF D8)
-      let offset = 2
+  // 1. JPEG: Strip APP1 (0xFFE1: EXIF / GPS / XMP), APP13 (0xFFED: Photoshop), and COM (0xFFFE)
+  if (mime === "image/jpeg" && buffer[0] === 0xff && buffer[1] === 0xd8) {
+    const chunks: Buffer[] = [buffer.subarray(0, 2)] // include SOI (FF D8)
+    let offset = 2
 
-      while (offset < buffer.length - 4) {
-        if (buffer[offset] !== 0xff) {
-          // Reached raw image data or unaligned marker
-          chunks.push(buffer.subarray(offset))
-          break
-        }
-
-        const marker = buffer[offset + 1]
-
-        // End of image
-        if (marker === 0xd9) {
-          chunks.push(buffer.subarray(offset, offset + 2))
-          break
-        }
-
-        // Start of scan (image stream follows immediately until EOI)
-        if (marker === 0xda) {
-          chunks.push(buffer.subarray(offset))
-          break
-        }
-
-        // Variable-length marker segments have 2-byte length (big-endian)
-        const length = (buffer[offset + 2] << 8) | buffer[offset + 3]
-        const nextOffset = offset + 2 + length
-
-        if (nextOffset > buffer.length) {
-          throw new Error("Malformed JPEG segment")
-        }
-
-        // APP1 (EXIF / GPS / XMP: 0xE1) -> STRIP!
-        // APP13 (Photoshop metadata: 0xED) -> STRIP!
-        // COM (Comment: 0xFE) -> STRIP!
-        const shouldStrip = marker === 0xe1 || marker === 0xed || marker === 0xfe
-
-        if (!shouldStrip) {
-          chunks.push(buffer.subarray(offset, nextOffset))
-        }
-
-        offset = nextOffset
+    while (offset < buffer.length - 4) {
+      if (buffer[offset] !== 0xff) {
+        // Reached raw image data or unaligned marker
+        chunks.push(buffer.subarray(offset))
+        break
       }
 
-      return Buffer.concat(chunks)
-    }
+      const marker = buffer[offset + 1]
 
-    // 2. PNG: Strip eXIf, tEXt, zTXt, iTXt metadata chunks
-    if (
-      mime === "image/png" &&
-      buffer[0] === 0x89 &&
-      buffer[1] === 0x50 &&
-      buffer[2] === 0x4e &&
-      buffer[3] === 0x47
-    ) {
-      const chunks: Buffer[] = [buffer.subarray(0, 8)] // PNG header
-      let offset = 8
-
-      while (offset < buffer.length - 12) {
-        const length = buffer.readUInt32BE(offset)
-
-        const type = buffer.toString("ascii", offset + 4, offset + 8)
-        const totalChunkLength = 4 + 4 + length + 4 // length (4) + type (4) + data (len) + crc (4)
-
-        if (offset + totalChunkLength > buffer.length) {
-          throw new Error("Malformed PNG chunk")
-        }
-
-        // Strip metadata chunks
-        const isMetadata = ["eXIf", "tEXt", "zTXt", "iTXt"].includes(type)
-        if (!isMetadata) {
-          chunks.push(buffer.subarray(offset, offset + totalChunkLength))
-        }
-
-        offset += totalChunkLength
-        if (type === "IEND") break
+      // End of image
+      if (marker === 0xd9) {
+        chunks.push(buffer.subarray(offset, offset + 2))
+        break
       }
 
-      return Buffer.concat(chunks)
-    }
-
-    // 3. WebP: remove EXIF and XMP chunks, and clear their VP8X flags.
-    if (
-      mime === "image/webp" &&
-      buffer.toString("ascii", 0, 4) === "RIFF" &&
-      buffer.toString("ascii", 8, 12) === "WEBP"
-    ) {
-      const chunks: Buffer[] = [Buffer.from(buffer.subarray(0, 12))]
-      let offset = 12
-      while (offset + 8 <= buffer.length) {
-        const type = buffer.toString("ascii", offset, offset + 4)
-        const length = buffer.readUInt32LE(offset + 4)
-        const paddedLength = length + (length % 2)
-        const end = offset + 8 + paddedLength
-        if (end > buffer.length) throw new Error("Malformed WebP chunk")
-
-        if (type !== "EXIF" && type !== "XMP ") {
-          const chunk = Buffer.from(buffer.subarray(offset, end))
-          if (type === "VP8X" && length >= 1) chunk[8] &= ~(0x08 | 0x04)
-          chunks.push(chunk)
-        }
-        offset = end
+      // Start of scan (image stream follows immediately until EOI)
+      if (marker === 0xda) {
+        chunks.push(buffer.subarray(offset))
+        break
       }
-      if (offset !== buffer.length) throw new Error("Malformed WebP padding")
-      const sanitized = Buffer.concat(chunks)
-      sanitized.writeUInt32LE(sanitized.length - 8, 4)
-      return sanitized
+
+      // Variable-length marker segments have 2-byte length (big-endian)
+      const length = (buffer[offset + 2] << 8) | buffer[offset + 3]
+      const nextOffset = offset + 2 + length
+
+      if (nextOffset > buffer.length) {
+        throw new Error("Malformed JPEG segment")
+      }
+
+      // APP1 (EXIF / GPS / XMP: 0xE1) -> STRIP!
+      // APP13 (Photoshop metadata: 0xED) -> STRIP!
+      // COM (Comment: 0xFE) -> STRIP!
+      const shouldStrip = marker === 0xe1 || marker === 0xed || marker === 0xfe
+
+      if (!shouldStrip) {
+        chunks.push(buffer.subarray(offset, nextOffset))
+      }
+
+      offset = nextOffset
     }
+
+    return Buffer.concat(chunks)
+  }
+
+  // 2. PNG: Strip eXIf, tEXt, zTXt, iTXt metadata chunks
+  if (
+    mime === "image/png" &&
+    buffer[0] === 0x89 &&
+    buffer[1] === 0x50 &&
+    buffer[2] === 0x4e &&
+    buffer[3] === 0x47
+  ) {
+    const chunks: Buffer[] = [buffer.subarray(0, 8)] // PNG header
+    let offset = 8
+
+    while (offset < buffer.length - 12) {
+      const length = buffer.readUInt32BE(offset)
+
+      const type = buffer.toString("ascii", offset + 4, offset + 8)
+      const totalChunkLength = 4 + 4 + length + 4 // length (4) + type (4) + data (len) + crc (4)
+
+      if (offset + totalChunkLength > buffer.length) {
+        throw new Error("Malformed PNG chunk")
+      }
+
+      // Strip metadata chunks
+      const isMetadata = ["eXIf", "tEXt", "zTXt", "iTXt"].includes(type)
+      if (!isMetadata) {
+        chunks.push(buffer.subarray(offset, offset + totalChunkLength))
+      }
+
+      offset += totalChunkLength
+      if (type === "IEND") break
+    }
+
+    return Buffer.concat(chunks)
+  }
+
+  // 3. WebP: remove EXIF and XMP chunks, and clear their VP8X flags.
+  if (
+    mime === "image/webp" &&
+    buffer.toString("ascii", 0, 4) === "RIFF" &&
+    buffer.toString("ascii", 8, 12) === "WEBP"
+  ) {
+    const chunks: Buffer[] = [Buffer.from(buffer.subarray(0, 12))]
+    let offset = 12
+    while (offset + 8 <= buffer.length) {
+      const type = buffer.toString("ascii", offset, offset + 4)
+      const length = buffer.readUInt32LE(offset + 4)
+      const paddedLength = length + (length % 2)
+      const end = offset + 8 + paddedLength
+      if (end > buffer.length) throw new Error("Malformed WebP chunk")
+
+      if (type !== "EXIF" && type !== "XMP ") {
+        const chunk = Buffer.from(buffer.subarray(offset, end))
+        if (type === "VP8X" && length >= 1) chunk[8] &= ~(0x08 | 0x04)
+        chunks.push(chunk)
+      }
+      offset = end
+    }
+    if (offset !== buffer.length) throw new Error("Malformed WebP padding")
+    const sanitized = Buffer.concat(chunks)
+    sanitized.writeUInt32LE(sanitized.length - 8, 4)
+    return sanitized
+  }
 
   throw new Error("Unsupported image format for metadata removal")
 }
@@ -642,29 +677,22 @@ export function stripExifAndGps(buffer: Buffer, mime: string): Buffer {
 // 4. Multimodal Image Safety Screening with Gemini
 // ------------------------------------------------------------------------------
 
-const IMAGE_SAFETY_SYSTEM_PROMPT = `You are an automated visual safety screener for Theirs (theirs.page), a digital memorial platform.
-Analyze this submitted photograph or graphic for platform safety risks:
+const IMAGE_SAFETY_SYSTEM_PROMPT = `Role: Automated visual safety classifier for digital memorial photographs.
 
-RISKS TO FLAG:
-- "sexual": nudity, pornographic material, explicit genitalia or sexual acts.
-- "threat": extreme gore, decapitation, real violence, self-harm, weapons held threateningly.
-- "hate": hate symbols (swastikas, KKK insignia), racist imagery, dehumanizing graphics.
-- "scam": scam flyers, crypto ads, fraudulent solicitation flyers, commercial spam banners.
+1. CHILD SAFETY (ZERO TOLERANCE):
+- Set "sexual": true and "decision": "blocked" for any child sexual abuse material (CSAM), sexualization of minors, or minor nudity. No exceptions.
 
-DECISION RULES:
-- Return "blocked" if: sexual, threat, hate, or scam is TRUE.
-- Return "review" if: ambiguous, graphic medical photo, suggestive or potentially offensive.
-- Return "safe" if: typical family photograph, portrait, group photo, pet, landscape, memorial ceremony, flower, or celebration.
+2. CLASSIFICATION MATRIX:
+- "safe": Wholesome family memories, portraits, milestones, celebrations, sports/athletic attire, and adult swimwear/beachwear (bikinis, swimsuits, swim trunks at beaches/pools). Set "sexual": false.
+- "review": Ambiguous, intimate, or suggestive adult photos (e.g. boudoir, lingerie, artistic nudes) requiring caretaker discretion. Set "sexual": false, "decision": "review".
+- "blocked":
+  * "sexual": CSAM, minor nudity, adult visible genitalia (penis, vulva, exposed anus), explicit sexual acts, or masturbation.
+  * "threat": Graphic gore, severe bodily trauma, suicide, self-harm, or brandished weapons.
+  * "hate": Hate symbols, swastikas, slurs, or extremist insignia.
+  * "scam": Commercial spam banners, crypto promotions, or fraudulent flyers.
 
-Return ONLY a JSON object:
-{
-  "decision": "safe" | "review" | "blocked",
-  "sexual": boolean,
-  "threat": boolean,
-  "hate": boolean,
-  "scam": boolean,
-  "reason": "1-sentence explanation"
-}`
+3. INSTRUCTIONS:
+- Return a factual 1-sentence reason without conversational preamble.`
 
 export async function screenImageWithGemini(
   imageBuffer: Buffer,

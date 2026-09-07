@@ -1095,9 +1095,9 @@ export function ContributeModal({
                         )}
                       </>}
 
-                      {isAuthenticatedMember && selectedMemberUploads.length > 0 && (
+                      {isAuthenticatedMember && !uploadedFileUrl && selectedMemberUploads.some((item) => item.status !== "complete") && (
                         <MediaUploadList
-                          items={selectedMemberUploads}
+                          items={selectedMemberUploads.filter((item) => item.status !== "complete")}
                           online={memberUploads.isOnline}
                           onRetry={(id) => void memberUploads.retry(id)}
                           onCancel={(id) => {

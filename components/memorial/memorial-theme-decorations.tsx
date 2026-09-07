@@ -11,12 +11,14 @@ interface ThemeDividerProps {
 export function ThemeDivider({ themeId = "quiet", className = "" }: ThemeDividerProps) {
   if (themeId === "garden") {
     return (
-      <div className={`flex items-center justify-center gap-3 py-6 my-2 text-[var(--theme-accent)] opacity-70 select-none ${className}`} aria-hidden="true">
+      <div className={`flex items-center justify-center gap-3 py-3 text-[var(--theme-accent)] select-none ${className}`} aria-hidden="true">
         <span className="h-px w-12 sm:w-20 bg-gradient-to-r from-transparent to-[var(--theme-accent)]" />
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="size-4">
-          <path d="M12 21a9 9 0 0 0 9-9c0-4.97-4.03-9-9-9-4.97 0-9 4.03-9 9 0 5 4 9 9 9Z" stroke="none" />
-          <path d="M12 3c-4.5 4.5-3 11 0 16 3-5 4.5-11.5 0-16Z" fill="currentColor" fillOpacity="0.15" />
-          <path d="M12 7c-2 2-2 5 0 8" />
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="size-3.5 opacity-85">
+          <circle cx="12" cy="12" r="2" fill="currentColor" />
+          <path d="M12 5c-1.2 2-1.2 4.5 0 7 1.2-2.5 1.2-5 0-7Z" fill="currentColor" fillOpacity="0.25" />
+          <path d="M12 12c-1.2 2-1.2 4.5 0 7 1.2-2.5 1.2-5 0-7Z" fill="currentColor" fillOpacity="0.25" />
+          <path d="M5 12c2-1.2 4.5-1.2 7 0-2.5 1.2-5 1.2-7 0Z" fill="currentColor" fillOpacity="0.25" />
+          <path d="M12 12c2-1.2 4.5-1.2 7 0-2.5 1.2-5 1.2-7 0Z" fill="currentColor" fillOpacity="0.25" />
         </svg>
         <span className="h-px w-12 sm:w-20 bg-gradient-to-l from-transparent to-[var(--theme-accent)]" />
       </div>
@@ -25,13 +27,12 @@ export function ThemeDivider({ themeId = "quiet", className = "" }: ThemeDivider
 
   if (themeId === "warm") {
     return (
-      <div className={`flex items-center justify-center gap-3 py-6 my-2 text-[var(--theme-accent)] opacity-75 select-none ${className}`} aria-hidden="true">
+      <div className={`flex items-center justify-center gap-3 py-3 text-[var(--theme-accent)] select-none ${className}`} aria-hidden="true">
         <span className="h-px w-12 sm:w-20 bg-gradient-to-r from-transparent to-[var(--theme-accent)]" />
-        <svg viewBox="0 0 24 24" fill="currentColor" className="size-3.5 opacity-80">
+        <svg viewBox="0 0 24 24" fill="currentColor" className="size-3.5 opacity-85">
           <circle cx="12" cy="12" r="3" />
           <path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.93 4.93l2.12 2.12M16.95 16.95l2.12 2.12M4.93 19.07l2.12-2.12M16.95 7.05l2.12-2.12" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" fill="none" />
         </svg>
-
         <span className="h-px w-12 sm:w-20 bg-gradient-to-l from-transparent to-[var(--theme-accent)]" />
       </div>
     )
@@ -39,40 +40,55 @@ export function ThemeDivider({ themeId = "quiet", className = "" }: ThemeDivider
 
   if (themeId === "classic") {
     return (
-      <div className={`flex items-center justify-center gap-2.5 py-6 my-2 text-[var(--theme-accent)] opacity-65 select-none ${className}`} aria-hidden="true">
-        <span className="h-px w-14 sm:w-24 bg-gradient-to-r from-transparent via-[var(--theme-border)] to-[var(--theme-accent)]" />
-        <span className="text-[9px] font-serif">{"\u2726"}</span>
-        <span className="h-px w-14 sm:w-24 bg-gradient-to-l from-transparent via-[var(--theme-border)] to-[var(--theme-accent)]" />
+      <div className={`flex items-center justify-center gap-3 py-3 text-[var(--theme-accent)] select-none ${className}`} aria-hidden="true">
+        <span className="h-px w-12 sm:w-20 bg-gradient-to-r from-transparent to-[var(--theme-accent)]" />
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="size-3.5 opacity-85">
+          <path d="M12 3.5 L17 12 L12 20.5 L7 12 Z" fill="currentColor" fillOpacity="0.2" />
+          <circle cx="12" cy="12" r="1.75" fill="currentColor" />
+          <circle cx="3.5" cy="12" r="0.75" fill="currentColor" />
+          <circle cx="20.5" cy="12" r="0.75" fill="currentColor" />
+        </svg>
+        <span className="h-px w-12 sm:w-20 bg-gradient-to-l from-transparent to-[var(--theme-accent)]" />
       </div>
     )
   }
 
   if (themeId === "dusk") {
     return (
-      <div className={`flex items-center justify-center gap-3 py-6 my-2 text-[var(--theme-accent)] opacity-80 select-none ${className}`} aria-hidden="true">
-        <span className="h-px w-12 sm:w-20 bg-gradient-to-r from-transparent to-[var(--theme-accent)]/60" />
-        <span className="text-xs">{"\u2727"}</span>
-        <span className="h-px w-12 sm:w-20 bg-gradient-to-l from-transparent to-[var(--theme-accent)]/60" />
+      <div className={`flex items-center justify-center gap-3 py-3 text-[var(--theme-accent)] select-none ${className}`} aria-hidden="true">
+        <span className="h-px w-12 sm:w-20 bg-gradient-to-r from-transparent to-[var(--theme-accent)]" />
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="size-3.5 opacity-90">
+          <path d="M12 2 L13.8 9.2 L21 12 L13.8 14.8 L12 22 L10.2 14.8 L3 12 L10.2 9.2 Z" fill="currentColor" fillOpacity="0.25" />
+          <circle cx="12" cy="12" r="1.5" fill="currentColor" />
+        </svg>
+        <span className="h-px w-12 sm:w-20 bg-gradient-to-l from-transparent to-[var(--theme-accent)]" />
       </div>
     )
   }
 
   if (themeId === "light") {
     return (
-      <div className={`flex items-center justify-center gap-3 py-6 my-2 text-[var(--theme-accent)] opacity-60 select-none ${className}`} aria-hidden="true">
-        <span className="h-px w-12 sm:w-20 border-t border-dashed border-[var(--theme-accent)]" />
-        <span className="size-1 rounded-full bg-[var(--theme-accent)]" />
-        <span className="h-px w-12 sm:w-20 border-t border-dashed border-[var(--theme-accent)]" />
+      <div className={`flex items-center justify-center gap-3 py-3 text-[var(--theme-accent)] select-none ${className}`} aria-hidden="true">
+        <span className="h-px w-12 sm:w-20 bg-gradient-to-r from-transparent to-[var(--theme-accent)]" />
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="size-3.5 opacity-85">
+          <circle cx="12" cy="12" r="2.5" fill="currentColor" />
+          <path d="M5.5 12a6.5 6.5 0 0 1 13 0" />
+          <path d="M12 4v2.5M6 6.5l1.8 1.8M18 6.5l-1.8 1.8" />
+        </svg>
+        <span className="h-px w-12 sm:w-20 bg-gradient-to-l from-transparent to-[var(--theme-accent)]" />
       </div>
     )
   }
 
-  // Quiet default
+  // Quiet default: Minimalist dual-ring balance mark
   return (
-    <div className={`flex items-center justify-center gap-3 py-6 my-2 text-[#aaa] select-none ${className}`} aria-hidden="true">
-      <span className="h-px w-12 sm:w-16 bg-black/[0.08]" />
-      <span className="size-1 rounded-full bg-black/[0.25]" />
-      <span className="h-px w-12 sm:w-16 bg-black/[0.08]" />
+    <div className={`flex items-center justify-center gap-3 py-3 text-[var(--theme-accent)] select-none ${className}`} aria-hidden="true">
+      <span className="h-px w-12 sm:w-20 bg-gradient-to-r from-transparent to-[var(--theme-accent)]" />
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="size-3.5 opacity-80">
+        <circle cx="12" cy="12" r="3" fill="currentColor" />
+        <circle cx="12" cy="12" r="7" stroke="currentColor" strokeDasharray="1.5 2.5" />
+      </svg>
+      <span className="h-px w-12 sm:w-20 bg-gradient-to-l from-transparent to-[var(--theme-accent)]" />
     </div>
   )
 }

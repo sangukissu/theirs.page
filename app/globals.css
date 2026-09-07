@@ -111,4 +111,23 @@ html {
     letter-spacing: -0.025em;
     color: #454545;
   }
+
+  /* Global cursor-pointer for all buttons, tabs, links, and interactive triggers */
+  button,
+  [role="button"],
+  a,
+  [role="tab"],
+  [role="link"],
+  summary,
+  input[type="submit"],
+  input[type="button"],
+  input[type="reset"] {
+    cursor: pointer;
+  }
+
+  button:disabled,
+  [disabled],
+  [aria-disabled="true"] {
+    cursor: not-allowed;
+  }
 }

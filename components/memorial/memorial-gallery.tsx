@@ -27,6 +27,7 @@ import {
   ChevronRight,
 } from "lucide-react"
 import { ContributionType } from "./contribute-modal"
+import { SectionEyebrow } from "./section-eyebrow"
 import type { GalleryFacets, GalleryFilter, PagedCollection } from "@/types/memorial-view"
 import type { ContributionSettings } from "@/types/theirs"
 import type { MemorialAccessRole } from "@/lib/memorial-auth"
@@ -574,10 +575,11 @@ export function MemorialGallery({
     <section id="gallery" className="py-12 px-4 max-w-4xl mx-auto flex flex-col gap-4 scroll-mt-24">
 
       {/* Section Header */}
-      <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 border-b border-[var(--theme-border)] pb-4">
-        <div className="flex flex-col gap-1">
-          <h2 className="text-2xl sm:text-3xl font-medium tracking-tight text-[var(--theme-text-primary)]">
-            Gallery
+      <div className="flex items-end justify-between gap-3 border-b border-[var(--theme-border)] pb-3.5 sm:pb-4">
+        <div className="flex flex-col gap-0.5 min-w-0 pr-1">
+          <SectionEyebrow kind="gallery" />
+          <h2 className="text-xl sm:text-2xl md:text-3xl font-medium tracking-tight text-[var(--theme-text-primary)] truncate leading-tight">
+            Life Gallery
           </h2>
         </div>
 
@@ -585,75 +587,81 @@ export function MemorialGallery({
           <button
             type="button"
             onClick={() => onOpenContribute("photo")}
-            className="inline-flex items-center gap-1.5 px-4 py-2 rounded-full bg-[var(--theme-accent)] hover:brightness-105 text-[var(--theme-accent-foreground)] text-xs font-medium transition-all self-start sm:self-auto cursor-pointer shadow-xs active:scale-95"
+            className="inline-flex items-center gap-1 sm:gap-1.5 px-3 sm:px-4 py-1.5 sm:py-2 rounded-full bg-[var(--theme-accent)] hover:brightness-105 text-[var(--theme-accent-foreground)] text-xs font-medium transition-all cursor-pointer shadow-xs active:scale-95 shrink-0 whitespace-nowrap"
           >
-            <Plus className="size-3.5" />
+            <Plus className="size-3.5 shrink-0" />
             <span>Add photos</span>
           </button>
         ) : null}
       </div>
 
-      {/* Format Filter Chips */}
-      <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar py-0.5 select-none">
-        {[
-          { key: "all", label: `All (${allCount})`, show: !hideAllTab },
-          { key: "photo", label: `Photos (${photoCount})`, icon: ImageIcon, show: true },
-          { key: "audio", label: `Voice & Audio (${audioCount})`, icon: Volume2, show: Boolean(isPaid || audioCount > 0) },
-          { key: "video", label: `Home Video (${videoCount})`, icon: Film, show: Boolean(isPaid || videoCount > 0) },
-        ]
-          .filter((tab) => tab.show)
-          .map((tab) => {
-            const Icon = tab.icon
-            const isActive = filter === tab.key
-            return (
-              <button
-                key={tab.key}
-                type="button"
-                onClick={() => changeFilters(tab.key as GalleryFilter, selectedAlbum)}
-                disabled={isLoadingPage}
-                className={`inline-flex items-center gap-1.5 text-xs px-3.5 py-1.5 rounded-full font-medium transition-all cursor-pointer ${isActive
-                  ? "bg-[var(--theme-accent)] text-[var(--theme-accent-foreground)] shadow-2xs"
-                  : "bg-[var(--theme-bg-surface-subtle)] border border-[var(--theme-border)] text-[var(--theme-text-muted)] hover:text-[var(--theme-text-primary)]"
-                  }`}
-              >
-                {Icon && <Icon className="size-3 shrink-0" />}
-                <span>{tab.label}</span>
-              </button>
-            )
-          })}
-      </div>
+      {/* Filters Container (Format pills & Album pills) */}
+      <div className="flex flex-col gap-2 pt-1">
+        {/* Format Filter Chips */}
+        <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar scroll-smooth py-0.5 select-none -mx-4 px-4 sm:mx-0 sm:px-0">
+          {[
+            { key: "all", label: `All (${allCount})`, shortLabel: `All (${allCount})`, show: !hideAllTab },
+            { key: "photo", label: `Photos (${photoCount})`, shortLabel: `Photos (${photoCount})`, icon: ImageIcon, show: true },
+            { key: "audio", label: `Voice & Audio (${audioCount})`, shortLabel: `Audio (${audioCount})`, icon: Volume2, show: Boolean(isPaid || audioCount > 0) },
+            { key: "video", label: `Home Video (${videoCount})`, shortLabel: `Video (${videoCount})`, icon: Film, show: Boolean(isPaid || videoCount > 0) },
+          ]
+            .filter((tab) => tab.show)
+            .map((tab) => {
+              const Icon = tab.icon
+              const isActive = filter === tab.key
+              return (
+                <button
+                  key={tab.key}
+                  type="button"
+                  onClick={() => changeFilters(tab.key as GalleryFilter, selectedAlbum)}
+                  disabled={isLoadingPage}
+                  className={`inline-flex items-center gap-1.5 text-xs px-3 sm:px-3.5 py-1.5 rounded-full font-medium transition-all cursor-pointer shrink-0 whitespace-nowrap active:scale-95 ${isActive
+                    ? "bg-[var(--theme-accent)] text-[var(--theme-accent-foreground)] shadow-xs border border-transparent"
+                    : "bg-[var(--theme-bg-surface-subtle)] border border-[var(--theme-border)] text-[var(--theme-text-muted)] hover:text-[var(--theme-text-primary)] hover:border-[var(--theme-accent)]/30"
+                    }`}
+                >
+                  {Icon && <Icon className="size-3 shrink-0" />}
+                  <span className="hidden sm:inline">{tab.label}</span>
+                  <span className="sm:hidden">{tab.shortLabel}</span>
+                </button>
+              )
+            })}
+        </div>
 
-      {/* Album Filter Bar (Only visible when items have albums) */}
-      {uniqueAlbums.length > 0 && (
-        <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar py-0.5 select-none -mt-4">
-          <span className="text-xs font-medium text-[var(--theme-text-muted)] pr-1 shrink-0">Album:</span>
-          <button
-            type="button"
-            onClick={() => changeFilters(filter, "all")}
-            disabled={isLoadingPage}
-            className={`text-xs px-3 py-1 rounded-full font-medium transition-all cursor-pointer shrink-0 ${selectedAlbum === "all"
-              ? "bg-[var(--theme-accent)] text-[var(--theme-accent-foreground)] shadow-2xs"
-              : "bg-[var(--theme-bg-surface-subtle)] border border-[var(--theme-border)] text-[var(--theme-text-muted)] hover:text-[var(--theme-text-primary)]"
-              }`}
-          >
-            All Albums
-          </button>
-          {uniqueAlbums.map((alb) => (
+        {/* Album Filter Bar (Only visible when items have albums) */}
+        {uniqueAlbums.length > 0 && (
+          <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar scroll-smooth py-0.5 select-none -mx-4 px-4 sm:mx-0 sm:px-0">
+            <span className="text-[11px] font-medium uppercase tracking-wider text-[var(--theme-text-muted)] pr-1 shrink-0 select-none">
+              Album:
+            </span>
             <button
-              key={alb}
               type="button"
-              onClick={() => changeFilters(filter, alb)}
+              onClick={() => changeFilters(filter, "all")}
               disabled={isLoadingPage}
-              className={`text-xs px-3 py-1 rounded-full font-medium transition-all cursor-pointer shrink-0 ${selectedAlbum === alb
-                ? "bg-[var(--theme-accent)] text-[var(--theme-accent-foreground)] shadow-2xs"
-                : "bg-[var(--theme-bg-surface-subtle)] border border-[var(--theme-border)] text-[var(--theme-text-muted)] hover:text-[var(--theme-text-primary)]"
+              className={`text-[11px] px-2.5 py-1 rounded-full font-medium transition-all cursor-pointer shrink-0 whitespace-nowrap active:scale-95 ${selectedAlbum === "all"
+                ? "bg-[var(--theme-accent)] text-[var(--theme-accent-foreground)] shadow-2xs border border-transparent"
+                : "bg-[var(--theme-bg-surface-subtle)] border border-[var(--theme-border)] text-[var(--theme-text-muted)] hover:text-[var(--theme-text-primary)] hover:border-[var(--theme-accent)]/30"
                 }`}
             >
-              {alb}
+              All Albums
             </button>
-          ))}
-        </div>
-      )}
+            {uniqueAlbums.map((alb) => (
+              <button
+                key={alb}
+                type="button"
+                onClick={() => changeFilters(filter, alb)}
+                disabled={isLoadingPage}
+                className={`text-[11px] px-2.5 py-1 rounded-full font-medium transition-all cursor-pointer shrink-0 whitespace-nowrap active:scale-95 ${selectedAlbum === alb
+                  ? "bg-[var(--theme-accent)] text-[var(--theme-accent-foreground)] shadow-2xs border border-transparent"
+                  : "bg-[var(--theme-bg-surface-subtle)] border border-[var(--theme-border)] text-[var(--theme-text-muted)] hover:text-[var(--theme-text-primary)] hover:border-[var(--theme-accent)]/30"
+                  }`}
+              >
+                {alb}
+              </button>
+            ))}
+          </div>
+        )}
+      </div>
 
       {/* Unified Media Grid / Empty State */}
       {filteredItems.length === 0 ? (

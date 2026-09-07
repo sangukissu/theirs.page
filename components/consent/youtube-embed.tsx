@@ -24,7 +24,7 @@ export function YouTubeEmbed({
   const [playing, setPlaying] = useState(false)
 
   const thumb = `https://i.ytimg.com/vi/${videoId}/hqdefault.jpg`
-  const src = `https://www.youtube.com/embed/${videoId}?rel=0&modestbranding=1${
+  const src = `https://www.youtube-nocookie.com/embed/${videoId}?rel=0&modestbranding=1${
     autoplay ? "&autoplay=1" : ""
   }`
 
@@ -62,6 +62,7 @@ export function YouTubeEmbed({
         allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
         allowFullScreen
         loading="lazy"
+        referrerPolicy="strict-origin-when-cross-origin"
       />
     </div>
   )

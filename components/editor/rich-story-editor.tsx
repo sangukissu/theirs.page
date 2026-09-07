@@ -841,13 +841,43 @@ export function RichStoryEditor({
           color: #2b2b30;
         }
         .story-content-editable blockquote {
-          margin: 1rem 0;
-          padding: 0.75rem 1.25rem;
-          border-left: 3px solid #7c3aed;
-          background: #fafafb;
-          border-radius: 0.75rem;
+          position: relative;
+          margin: 1.5rem 0;
+          padding: 0.25rem 0 0.25rem 2.25rem;
+          border: none;
+          background: transparent;
+          border-radius: 0;
+          font-family: var(--font-serif, Georgia, serif);
           font-style: italic;
           color: #181925;
+          font-size: 1.1rem;
+          line-height: 1.75;
+        }
+        .story-content-editable blockquote::before {
+          content: "";
+          position: absolute;
+          left: 0;
+          top: 0.25rem;
+          width: 1.35rem;
+          height: 1.35rem;
+          background-color: #8b5a45;
+          opacity: 0.45;
+          mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='currentColor'%3E%3Cpath d='M4.583 17.321C3.553 16.227 3 15 3 13.011c0-3.5 2.457-6.637 6.03-8.188l.893 1.378c-3.335 1.804-3.987 4.145-4.247 5.621.537-.278 1.24-.375 1.929-.311 1.804.167 3.226 1.648 3.226 3.489a3.5 3.5 0 01-3.5 3.5c-1.073 0-2.099-.49-2.748-1.179zm10 0C13.553 16.227 13 15 13 13.011c0-3.5 2.457-6.637 6.03-8.188l.893 1.378c-3.335 1.804-3.987 4.145-4.247 5.621.537-.278 1.24-.375 1.929-.311 1.804.167 3.226 1.648 3.226 3.489a3.5 3.5 0 01-3.5 3.5c-1.073 0-2.099-.49-2.748-1.179z'/%3E%3C/svg%3E");
+          -webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='currentColor'%3E%3Cpath d='M4.583 17.321C3.553 16.227 3 15 3 13.011c0-3.5 2.457-6.637 6.03-8.188l.893 1.378c-3.335 1.804-3.987 4.145-4.247 5.621.537-.278 1.24-.375 1.929-.311 1.804.167 3.226 1.648 3.226 3.489a3.5 3.5 0 01-3.5 3.5c-1.073 0-2.099-.49-2.748-1.179zm10 0C13.553 16.227 13 15 13 13.011c0-3.5 2.457-6.637 6.03-8.188l.893 1.378c-3.335 1.804-3.987 4.145-4.247 5.621.537-.278 1.24-.375 1.929-.311 1.804.167 3.226 1.648 3.226 3.489a3.5 3.5 0 01-3.5 3.5c-1.073 0-2.099-.49-2.748-1.179z'/%3E%3C/svg%3E");
+          mask-size: contain;
+          -webkit-mask-size: contain;
+          mask-repeat: no-repeat;
+          -webkit-mask-repeat: no-repeat;
+        }
+        .story-content-editable blockquote p {
+          margin-bottom: 0.5rem;
+          color: inherit;
+          font-family: inherit;
+          font-style: inherit;
+          line-height: inherit;
+        }
+        .story-content-editable blockquote p:last-child {
+          margin-bottom: 0;
         }
         .story-content-editable ul {
           list-style-type: disc;

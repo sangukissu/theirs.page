@@ -233,7 +233,7 @@ async function polishCopy(job: MemoryBookJob) {
   ].join("\n")
 
   const response = await genAI.models.generateContent({
-    model: "gemini-flash-lite-latest",
+    model: "gemini-3.5-flash-lite",
     contents: [{ text: prompt }],
   })
   const responseText =

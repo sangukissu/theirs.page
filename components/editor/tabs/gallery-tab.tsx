@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useRef, useMemo } from "react"
+import { useState, useRef, useMemo, useEffect, useCallback } from "react"
 import {
   Upload,
   Image as ImageIcon,
@@ -19,7 +19,14 @@ import {
   Folder,
   MapPin,
   Calendar,
+  Maximize2,
+  ChevronLeft,
+  ChevronRight,
+  X,
+  Download,
 } from "lucide-react"
+import { YouTubeEmbed } from "@/components/consent/youtube-embed"
+import { parseYouTubeUrl } from "@/lib/uploads/youtube"
 import { UpgradeBanner } from "../upgrade-banner"
 import { ConfirmDeleteModal } from "../confirm-delete-modal"
 import { TEXT_LIMITS } from "@/lib/validation/text-limits"
@@ -102,6 +109,36 @@ export function GalleryTab({
       return item.album?.trim() === selectedAlbumFilter
     })
   }, [mediaItems, selectedAlbumFilter])
+
+  const [previewMediaItem, setPreviewMediaItem] = useState<EditorMediaItem | null>(null)
+
+  const activePreviewIndex = useMemo(() => {
+    if (!previewMediaItem) return -1
+    return displayedMediaItems.findIndex((m) => m.id === previewMediaItem.id)
+  }, [previewMediaItem, displayedMediaItems])
+
+  const handlePreviewPrev = useCallback(() => {
+    if (activePreviewIndex < 0 || displayedMediaItems.length <= 1) return
+    const prevIndex = activePreviewIndex > 0 ? activePreviewIndex - 1 : displayedMediaItems.length - 1
+    setPreviewMediaItem(displayedMediaItems[prevIndex])
+  }, [activePreviewIndex, displayedMediaItems])
+
+  const handlePreviewNext = useCallback(() => {
+    if (activePreviewIndex < 0 || displayedMediaItems.length <= 1) return
+    const nextIndex = activePreviewIndex < displayedMediaItems.length - 1 ? activePreviewIndex + 1 : 0
+    setPreviewMediaItem(displayedMediaItems[nextIndex])
+  }, [activePreviewIndex, displayedMediaItems])
+
+  useEffect(() => {
+    if (!previewMediaItem) return
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setPreviewMediaItem(null)
+      else if (e.key === "ArrowLeft") handlePreviewPrev()
+      else if (e.key === "ArrowRight") handlePreviewNext()
+    }
+    window.addEventListener("keydown", onKeyDown)
+    return () => window.removeEventListener("keydown", onKeyDown)
+  }, [previewMediaItem, handlePreviewPrev, handlePreviewNext])
 
   const photoCount = mediaItems.filter((m) => m.media_type === "image" || !m.media_type).length
   const mediaCapabilities = useMemo(() => resolveMediaCapabilities({
@@ -186,7 +223,7 @@ export function GalleryTab({
   }
 
   return (
-    <div className="flex flex-col gap-6 max-w-2xl">
+    <div className="flex flex-col gap-6 max-w-2xl mb-6">
       {/* Header with Small Toggle */}
       <div className="flex flex-col gap-1 border-b border-black/[0.06] pb-4">
         <div className="flex items-center justify-between gap-4">
@@ -221,7 +258,7 @@ export function GalleryTab({
                     : "bg-neutral-100 text-[#555] border-black/[0.06]"
                     }`}
                 >
-                   {photoCount} / {mediaCapabilities.maxImageItems} Photos Used
+                  {photoCount} / {mediaCapabilities.maxImageItems} Photos Used
                 </span>
               )}
             </div>
@@ -257,7 +294,7 @@ export function GalleryTab({
             <div className="hidden sm:block shrink-0">
               {isPaid ? (
                 <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-emerald-50 text-emerald-700 text-xs font-medium border border-emerald-200">
-                   <Sparkles className="size-3" /> Complete · 10 GB archive
+                  <Sparkles className="size-3" /> Complete · 10 GB archive
                 </span>
               ) : (
                 <span
@@ -266,7 +303,7 @@ export function GalleryTab({
                     : "bg-neutral-100 text-[#555] border-black/[0.06]"
                     }`}
                 >
-                   {photoCount} / {mediaCapabilities.maxImageItems} Free Photos Used
+                  {photoCount} / {mediaCapabilities.maxImageItems} Free Photos Used
                 </span>
               )}
             </div>
@@ -421,27 +458,88 @@ export function GalleryTab({
                     }`}
                 >
                   <div className="aspect-4/3 rounded-xl overflow-hidden bg-neutral-100 relative">
-                    {item.media_type === "video" ? (
-                      <div className="size-full bg-neutral-900 flex items-center justify-center text-white">
-                        <Film className="size-8 opacity-80" />
-                        <span className="absolute bottom-2 right-2 text-[10px] font-mono bg-black/70 px-1.5 py-0.5 rounded text-white">
-                          Video
-                        </span>
-                      </div>
-                    ) : item.media_type === "audio" ? (
-                      <div className="size-full bg-primary/10 flex items-center justify-center text-primary">
-                        <Volume2 className="size-8" />
-                        <span className="absolute bottom-2 right-2 text-[10px] font-mono bg-primary/20 px-1.5 py-0.5 rounded text-primary">
-                          Audio
-                        </span>
-                      </div>
-                    ) : (
-                      <img
-                        src={item.url}
-                        alt={item.caption || "Gallery item"}
-                        className="size-full object-cover"
-                      />
-                    )}
+                    {(() => {
+                      const yt = parseYouTubeUrl(item.url)
+                      if (yt) {
+                        return (
+                          <div className="size-full bg-black relative flex items-center justify-center">
+                            <YouTubeEmbed videoId={yt.id} title={item.caption || "YouTube video"} />
+                          </div>
+                        )
+                      }
+                      if (item.media_type === "video") {
+                        return (
+                          <div className="size-full bg-black relative flex items-center justify-center group/video">
+                            <video
+                              src={item.url}
+                              controls
+                              preload="metadata"
+                              playsInline
+                              className="size-full object-contain bg-black"
+                            />
+                            <button
+                              type="button"
+                              onClick={() => setPreviewMediaItem(item)}
+                              className="absolute top-2 right-10 size-7 rounded-full bg-black/65 hover:bg-black/90 text-white flex items-center justify-center opacity-0 group-hover/video:opacity-100 transition-all cursor-pointer shadow-xs z-10"
+                              title="Inspect full screen"
+                            >
+                              <Maximize2 className="size-3.5" />
+                            </button>
+                          </div>
+                        )
+                      }
+                      if (item.media_type === "audio") {
+                        return (
+                          <div className="size-full bg-gradient-to-br from-[#1c1917] via-[#292524] to-[#0c0a09] flex flex-col items-center justify-center p-3 text-white gap-2 relative">
+                            <div className="size-10 rounded-full bg-amber-500/20 border border-amber-500/30 flex items-center justify-center text-amber-400">
+                              <Volume2 className="size-5" />
+                            </div>
+                            <div className="text-center w-full px-2">
+                              <p className="text-[11px] font-medium text-amber-100 truncate">
+                                {item.caption || "Audio Recording"}
+                              </p>
+                              {item.approx_year && (
+                                <span className="text-[10px] text-neutral-400 font-mono">c. {item.approx_year}</span>
+                              )}
+                            </div>
+                            <audio
+                              src={item.url}
+                              controls
+                              preload="metadata"
+                              className="w-full h-8 max-w-[95%] accent-amber-500"
+                            />
+                            <button
+                              type="button"
+                              onClick={() => setPreviewMediaItem(item)}
+                              className="absolute top-2 right-10 size-7 rounded-full bg-black/60 hover:bg-black/80 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all cursor-pointer shadow-xs z-10"
+                              title="Inspect"
+                            >
+                              <Maximize2 className="size-3.5" />
+                            </button>
+                          </div>
+                        )
+                      }
+                      return (
+                        <div className="relative size-full group/photo overflow-hidden">
+                          <img
+                            src={item.url}
+                            alt={item.caption || "Gallery item"}
+                            className="size-full object-cover transition-transform duration-300 group-hover/photo:scale-105"
+                            loading="lazy"
+                          />
+                          <button
+                            type="button"
+                            onClick={() => setPreviewMediaItem(item)}
+                            className="absolute inset-0 bg-black/30 opacity-0 group-hover/photo:opacity-100 transition-opacity flex items-center justify-center cursor-pointer"
+                            title="Click to view full size"
+                          >
+                            <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-black/70 text-white text-xs font-medium backdrop-blur-xs shadow-md">
+                              <Maximize2 className="size-3.5" /> Inspect
+                            </span>
+                          </button>
+                        </div>
+                      )
+                    })()}
 
                     {/* Pin to Top Button (Top Left) */}
                     <button
@@ -597,6 +695,167 @@ export function GalleryTab({
         onConfirm={handleConfirmDelete}
         onClose={() => !isDeleting && setItemToDelete(null)}
       />
+
+      {/* FULLSCREEN GALLERY LIGHTBOX VIEWER */}
+      {previewMediaItem && (
+        <div
+          onClick={() => setPreviewMediaItem(null)}
+          className="fixed inset-0 z-50 bg-black/90 backdrop-blur-md flex flex-col justify-between text-white select-none p-4 cursor-pointer animate-in fade-in duration-200"
+        >
+          {/* Top Bar */}
+          <div
+            onClick={(e) => e.stopPropagation()}
+            className="w-full max-w-5xl mx-auto flex items-center justify-between pb-3 border-b border-white/10"
+          >
+            <div className="flex items-center gap-2.5">
+              <span className="text-xs font-semibold text-white/95 truncate max-w-xs sm:max-w-md">
+                {previewMediaItem.caption ||
+                  (previewMediaItem.media_type === "video"
+                    ? "Video recording"
+                    : previewMediaItem.media_type === "audio"
+                      ? "Audio note"
+                      : "Photograph")}
+              </span>
+              {displayedMediaItems.length > 1 && activePreviewIndex >= 0 && (
+                <span className="text-[11px] font-mono px-2 py-0.5 rounded-full bg-white/15 text-white/90">
+                  {activePreviewIndex + 1} of {displayedMediaItems.length}
+                </span>
+              )}
+            </div>
+
+            <div className="flex items-center gap-2">
+              <a
+                href={previewMediaItem.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                download
+                className="p-1.5 rounded-full bg-white/10 hover:bg-white/20 text-white transition-colors cursor-pointer"
+                title="Download / Open original file"
+              >
+                <Download className="size-4" />
+              </a>
+              <button
+                type="button"
+                onClick={() => setPreviewMediaItem(null)}
+                className="p-1.5 rounded-full bg-white/10 hover:bg-white/20 text-white transition-colors cursor-pointer"
+                title="Close viewer (Esc)"
+              >
+                <X className="size-4" />
+              </button>
+            </div>
+          </div>
+
+          {/* Center Viewport */}
+          <div
+            onClick={(e) => e.stopPropagation()}
+            className="flex-1 relative flex items-center justify-center py-4 max-w-5xl mx-auto w-full"
+          >
+            {/* Prev Button */}
+            {displayedMediaItems.length > 1 && (
+              <button
+                type="button"
+                onClick={handlePreviewPrev}
+                className="absolute left-2 z-10 p-2.5 rounded-full bg-black/60 hover:bg-black/80 text-white transition-all cursor-pointer shadow-lg"
+                title="Previous media"
+              >
+                <ChevronLeft className="size-6" />
+              </button>
+            )}
+
+            {/* Media Stage */}
+            {(() => {
+              const yt = parseYouTubeUrl(previewMediaItem.url)
+              if (yt) {
+                return (
+                  <div className="w-[90vw] max-w-3xl aspect-video rounded-2xl overflow-hidden shadow-2xl">
+                    <YouTubeEmbed videoId={yt.id} title={previewMediaItem.caption || "YouTube video"} />
+                  </div>
+                )
+              }
+              if (previewMediaItem.media_type === "video") {
+                return (
+                  <video
+                    src={previewMediaItem.url}
+                    controls
+                    autoPlay
+                    playsInline
+                    className="max-h-[78vh] max-w-[90vw] object-contain rounded-2xl shadow-2xl bg-black"
+                  />
+                )
+              }
+              if (previewMediaItem.media_type === "audio") {
+                return (
+                  <div className="flex flex-col items-center gap-4 bg-[#181925] border border-white/10 p-8 rounded-3xl max-w-md w-full shadow-2xl">
+                    <div className="flex size-16 items-center justify-center rounded-full bg-amber-500/20 text-amber-400">
+                      <Volume2 className="size-8" />
+                    </div>
+                    <div className="text-center">
+                      <h3 className="text-base font-medium text-white">
+                        {previewMediaItem.caption || "Audio Recording"}
+                      </h3>
+                      {previewMediaItem.album && (
+                        <p className="text-xs text-neutral-400 mt-1 font-mono">Album: {previewMediaItem.album}</p>
+                      )}
+                    </div>
+                    <audio
+                      src={previewMediaItem.url}
+                      controls
+                      autoPlay
+                      className="w-full mt-2 accent-amber-500"
+                    />
+                  </div>
+                )
+              }
+              return (
+                <img
+                  src={previewMediaItem.url}
+                  alt={previewMediaItem.caption || "Enlarged photograph"}
+                  className="max-h-[78vh] max-w-[90vw] object-contain rounded-2xl shadow-2xl border border-white/10"
+                />
+              )
+            })()}
+
+            {/* Next Button */}
+            {displayedMediaItems.length > 1 && (
+              <button
+                type="button"
+                onClick={handlePreviewNext}
+                className="absolute right-2 z-10 p-2.5 rounded-full bg-black/60 hover:bg-black/80 text-white transition-all cursor-pointer shadow-lg"
+                title="Next media"
+              >
+                <ChevronRight className="size-6" />
+              </button>
+            )}
+          </div>
+
+          {/* Bottom Bar: Details */}
+          <div
+            onClick={(e) => e.stopPropagation()}
+            className="w-full max-w-5xl mx-auto flex flex-col sm:flex-row items-center justify-between text-xs text-neutral-300 pt-2 border-t border-white/10 gap-2"
+          >
+            <div className="flex items-center gap-3 flex-wrap">
+              {previewMediaItem.approx_year && (
+                <span className="font-mono bg-white/10 px-2 py-0.5 rounded text-[11px]">
+                  Year: {previewMediaItem.approx_year}
+                </span>
+              )}
+              {previewMediaItem.location && (
+                <span className="text-[11px] text-neutral-300">
+                  Location: {previewMediaItem.location}
+                </span>
+              )}
+              {previewMediaItem.album && (
+                <span className="text-[11px] text-neutral-300">
+                  Album: {previewMediaItem.album}
+                </span>
+              )}
+            </div>
+            <div className="text-[11px] text-white/50">
+              Use \u2190 \u2192 arrow keys to navigate \u00b7 Esc to close
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

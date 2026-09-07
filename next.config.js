@@ -31,7 +31,7 @@ const nextConfig = {
       // Control referrer information
       {
         key: 'Referrer-Policy',
-        value: 'origin-when-cross-origin'
+        value: 'strict-origin-when-cross-origin'
       },
       // Restrict browser features
       {
@@ -46,11 +46,11 @@ const nextConfig = {
           `script-src 'self'${isProduction ? '' : " 'unsafe-eval'"} 'unsafe-inline' https://www.googletagmanager.com https://www.google-analytics.com https://challenges.cloudflare.com https://static.cloudflareinsights.com https://*.cloudflareinsights.com https://www.clarity.ms https://*.clarity.ms https://client.crisp.chat https://settings.crisp.chat`,
           "script-src-elem 'self' 'unsafe-inline' https://www.googletagmanager.com https://www.google-analytics.com https://challenges.cloudflare.com https://*.cloudflare.com https://static.cloudflareinsights.com https://*.cloudflareinsights.com https://www.clarity.ms https://*.clarity.ms https://client.crisp.chat https://settings.crisp.chat",
           "style-src 'self' 'unsafe-inline' https://client.crisp.chat",
-          "img-src 'self' data: https: blob: https://www.google-analytics.com https://www.clarity.ms https://*.clarity.ms https://*.crisp.chat",
+          "img-src 'self' data: https: blob: https://www.google-analytics.com https://www.clarity.ms https://*.clarity.ms https://*.crisp.chat https://i.ytimg.com https://*.ytimg.com",
           "font-src 'self' data: https://client.crisp.chat",
           "connect-src 'self' https://api.supabase.co https://*.supabase.co wss://*.supabase.co https://fal.ai https://*.fal.ai https://*.fal.media wss://*.fal.ai https://dodopayments.com https://*.dodopayments.com https://*.r2.cloudflarestorage.com https://www.google-analytics.com https://www.googletagmanager.com https://region1.google-analytics.com https://challenges.cloudflare.com https://*.cloudflare.com https://cloudflareinsights.com https://*.cloudflareinsights.com https://www.clarity.ms https://*.clarity.ms https://client.crisp.chat https://storage.crisp.chat wss://client.relay.crisp.chat wss://stream.relay.crisp.chat",
           "media-src 'self' blob: https://media.theirs.page https://*.fal.media",
-          "frame-src 'self' https://www.youtube.com https://youtube.com https://challenges.cloudflare.com https://*.crisp.chat",
+          "frame-src 'self' https://www.youtube.com https://youtube.com https://www.youtube-nocookie.com https://youtube-nocookie.com https://challenges.cloudflare.com https://*.crisp.chat",
           "object-src 'none'",
           "base-uri 'self'",
           "form-action 'self'",

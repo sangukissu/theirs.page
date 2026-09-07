@@ -1,6 +1,7 @@
 "use client"
 
 import { MapPin, Calendar, Image as ImageIcon } from "lucide-react"
+import { SectionEyebrow } from "./section-eyebrow"
 
 export interface TimelineMilestone {
   year: number
@@ -24,8 +25,9 @@ export function LifeTimeline({ milestones, isDemo = false }: LifeTimelineProps) 
       <div className="flex flex-col gap-4">
 
         {/* Section Heading */}
-        <div className="flex flex-col gap-1.5 border-b border-[var(--theme-border)] pb-4">
-          <h2 className="text-2xl sm:text-3xl font-medium tracking-tight text-[var(--theme-text-primary)]">
+        <div className="flex flex-col gap-0.5 border-b border-[var(--theme-border)] pb-3.5 sm:pb-4">
+          <SectionEyebrow kind="timeline" />
+          <h2 className="text-xl sm:text-2xl md:text-3xl font-medium tracking-tight text-[var(--theme-text-primary)] leading-tight">
             Life Timeline & Milestones
           </h2>
         </div>

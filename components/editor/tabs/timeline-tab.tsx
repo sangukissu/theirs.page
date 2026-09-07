@@ -221,7 +221,7 @@ export function TimelineTab({
   const sortedEvents = [...events].sort((a, b) => a.year - b.year)
 
   return (
-    <div className="flex flex-col gap-6 max-w-2xl">
+    <div className="flex flex-col gap-6 max-w-2xl mb-6">
       <div className="flex flex-col gap-1 border-b border-black/[0.06] pb-4">
         <div className="flex items-center justify-between gap-4">
           <h2 className="text-lg sm:text-xl font-medium text-[#181925]">

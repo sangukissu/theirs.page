@@ -20,6 +20,7 @@ import { TributeShareMenu } from "./tribute-share-menu"
 import { ContactCaretakerModal } from "./contact-caretaker-modal"
 import { useOptimisticReceipts, saveLocalReceipt } from "@/lib/memorial/optimistic-receipts"
 import { useContributionDraft } from "@/hooks/use-contribution-draft"
+import { SectionEyebrow } from "./section-eyebrow"
 
 export interface MemoryItem {
   id: string
@@ -264,10 +265,11 @@ export function MemoriesStream({
   return (
     <section id="tributes" className="py-12 px-4 max-w-4xl mx-auto flex flex-col gap-4 scroll-mt-24">
       {/* Header with single clear CTA */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-[var(--theme-border)] pb-6">
-        <div className="flex flex-col gap-1">
-          <h2 className="text-2xl sm:text-3xl font-medium tracking-tight text-[var(--theme-text-primary)]">
-            Tributes to {firstName}
+      <div className="flex items-end justify-between gap-3 border-b border-[var(--theme-border)] pb-3.5 sm:pb-5">
+        <div className="flex flex-col gap-0.5 min-w-0 pr-1">
+          <SectionEyebrow kind="tributes" />
+          <h2 className="text-xl sm:text-2xl md:text-3xl font-medium tracking-tight text-[var(--theme-text-primary)] truncate leading-tight">
+            Tributes <span className="hidden sm:inline">to {firstName}</span>
           </h2>
         </div>
 
@@ -275,30 +277,33 @@ export function MemoriesStream({
           <button
             type="button"
             onClick={handleScrollToForm}
-            className="inline-flex items-center gap-1.5 px-5 py-2.5 rounded-full bg-[var(--theme-accent)] hover:brightness-105 text-[var(--theme-accent-foreground)] text-xs font-medium transition-all cursor-pointer shadow-xs active:scale-95 shrink-0 self-start sm:self-auto"
+            className="inline-flex items-center gap-1 sm:gap-1.5 px-3 sm:px-4 py-1.5 sm:py-2 rounded-full bg-[var(--theme-accent)] hover:brightness-105 text-[var(--theme-accent-foreground)] text-xs font-medium transition-all cursor-pointer shadow-xs active:scale-95 shrink-0 whitespace-nowrap"
           >
-            <Plus className="size-3.5" />
-            <span>Leave a Tribute</span>
+            <Plus className="size-3.5 shrink-0" />
+            <span className="hidden sm:inline">Leave a Tribute</span>
+            <span className="sm:hidden">Tribute</span>
           </button>
         ) : (
-          <div className="flex flex-wrap items-center gap-2">
+          <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
             {(memorialId || slug) && (
-            <button
-              type="button"
-              onClick={() => setIsContactOpen(true)}
-              className="inline-flex min-h-10 items-center gap-2 rounded-full border border-[var(--theme-border)] bg-[var(--theme-bg-surface-subtle)] px-4 text-xs font-semibold text-[var(--theme-text-primary)] transition-colors hover:border-[var(--theme-accent)]/40 hover:bg-[var(--theme-bg-surface)]"
-            >
-              <Mail className="size-3.5" />
-              <span>Contact caretaker</span>
-            </button>
+              <button
+                type="button"
+                onClick={() => setIsContactOpen(true)}
+                className="inline-flex h-7.5 sm:h-9 items-center gap-1.5 rounded-full border border-[var(--theme-border)] bg-[var(--theme-bg-surface-subtle)] px-2.5 sm:px-3.5 text-xs font-medium text-[var(--theme-text-primary)] transition-colors hover:border-[var(--theme-accent)]/40 hover:bg-[var(--theme-bg-surface)] shrink-0 cursor-pointer"
+                title="Contact caretaker"
+              >
+                <Mail className="size-3.5 shrink-0" />
+                <span className="hidden md:inline">Contact caretaker</span>
+              </button>
             )}
             <button
               type="button"
               onClick={handleScrollToForm}
-              className="inline-flex items-center gap-1.5 px-5 py-2.5 rounded-full bg-[var(--theme-accent)] hover:brightness-105 text-[var(--theme-accent-foreground)] text-xs font-medium transition-all cursor-pointer shadow-xs active:scale-95 shrink-0 self-start sm:self-auto"
+              className="inline-flex items-center gap-1 sm:gap-1.5 px-3 sm:px-4 py-1.5 sm:py-2 rounded-full bg-[var(--theme-accent)] hover:brightness-105 text-[var(--theme-accent-foreground)] text-xs font-medium transition-all cursor-pointer shadow-xs active:scale-95 shrink-0 whitespace-nowrap"
             >
-              <Plus className="size-3.5" />
-              <span>Leave a Tribute</span>
+              <Plus className="size-3.5 shrink-0" />
+              <span className="hidden sm:inline">Leave a Tribute</span>
+              <span className="sm:hidden">Tribute</span>
             </button>
           </div>
         )}

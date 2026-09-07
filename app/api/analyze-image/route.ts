@@ -66,7 +66,7 @@ Guidance:\n
         { text: prompt },
         imagePart,
       ],
-      model: 'gemini-flash-lite-latest',
+      model: 'gemini-3.5-flash-lite',
     });
     const genMs = Date.now() - genStart
 
@@ -100,7 +100,7 @@ Guidance:\n
     const damage_categories = Array.isArray(parsed.damage_categories) ? parsed.damage_categories : [];
 
     // Thresholding & gating (focus strictly on structural damages)
-    const structuralKeywords = ['tear','scratch','rip','crease','fold','stain','water','mold','mildew','spot','blotch','discoloration','color bleed','burn','hole','crack'];
+    const structuralKeywords = ['tear', 'scratch', 'rip', 'crease', 'fold', 'stain', 'water', 'mold', 'mildew', 'spot', 'blotch', 'discoloration', 'color bleed', 'burn', 'hole', 'crack'];
     const structuralFindings = damage_categories.filter((c: any) => {
       const name = (c?.name ?? '').toString().toLowerCase();
       const isStructural = structuralKeywords.some(k => name.includes(k));
