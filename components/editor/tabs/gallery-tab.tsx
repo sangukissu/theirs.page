@@ -29,7 +29,7 @@ import { YouTubeEmbed } from "@/components/consent/youtube-embed"
 import { parseYouTubeUrl } from "@/lib/uploads/youtube"
 import { UpgradeBanner } from "../upgrade-banner"
 import { ConfirmDeleteModal } from "../confirm-delete-modal"
-import { TEXT_LIMITS } from "@/lib/validation/text-limits"
+import { TEXT_LIMITS, countWords, clampWords } from "@/lib/validation/text-limits"
 import { useEditorAuthorization } from "../use-editor-authorization"
 import { useResumableMediaUpload } from "@/hooks/use-resumable-media-upload"
 import { MediaUploadList } from "@/components/uploads/media-upload-list"
@@ -65,6 +65,156 @@ interface GalleryTabProps {
     value: any
   ) => void
   onReorderMedia?: (reordered: EditorMediaItem[]) => void
+}
+
+function handleWordKeyDown(
+  e: React.KeyboardEvent<HTMLInputElement>,
+  maxWords: number
+) {
+  if (
+    e.key === "Backspace" ||
+    e.key === "Delete" ||
+    e.key === "ArrowLeft" ||
+    e.key === "ArrowRight" ||
+    e.key === "ArrowUp" ||
+    e.key === "ArrowDown" ||
+    e.key === "Tab" ||
+    e.key === "Enter" ||
+    e.key === "Escape" ||
+    e.ctrlKey ||
+    e.metaKey ||
+    e.altKey
+  ) {
+    return
+  }
+
+  if (e.key.length !== 1) return
+
+  const input = e.currentTarget
+  const val = input.value
+  const start = input.selectionStart ?? val.length
+  const end = input.selectionEnd ?? val.length
+
+  if (e.key === " ") {
+    // If text is selected, replacing selection with space might reduce or preserve word count
+    if (start !== end) {
+      const nextVal = val.slice(0, start) + " " + val.slice(end)
+      if (countWords(nextVal) > maxWords) {
+        e.preventDefault()
+      }
+      return
+    }
+
+    // No selection: block space if the text before cursor already has maxWords or more words
+    const wordsBefore = countWords(val.slice(0, start))
+    if (wordsBefore >= maxWords) {
+      e.preventDefault()
+      return
+    }
+
+    // Check if inserting space in middle splits an existing word and exceeds limit
+    const nextVal = val.slice(0, start) + " " + val.slice(end)
+    if (countWords(nextVal) > maxWords) {
+      e.preventDefault()
+      return
+    }
+    return
+  }
+
+  // Any other printable character:
+  const nextVal = val.slice(0, start) + e.key + val.slice(end)
+  if (countWords(nextVal) > maxWords) {
+    e.preventDefault()
+  }
+}
+
+function handleWordInput(
+  e: React.FormEvent<HTMLInputElement>,
+  maxWords: number,
+  maxChars?: number
+) {
+  const input = e.currentTarget
+  const val = input.value
+  const words = countWords(val)
+  if (words > maxWords || (maxChars && val.length > maxChars)) {
+    const start = input.selectionStart ?? val.length
+    let clamped = clampWords(val, maxWords)
+    if (maxChars && clamped.length > maxChars) {
+      clamped = clamped.slice(0, maxChars)
+    }
+    input.value = clamped
+    const newPos = Math.min(start, clamped.length)
+    input.setSelectionRange(newPos, newPos)
+  }
+}
+
+function handleWordPaste(
+  e: React.ClipboardEvent<HTMLInputElement>,
+  maxWords: number,
+  maxChars?: number
+) {
+  e.preventDefault()
+  const pasted = e.clipboardData.getData("text")
+  if (!pasted) return
+
+  const input = e.currentTarget
+  const val = input.value
+  const start = input.selectionStart ?? val.length
+  const end = input.selectionEnd ?? val.length
+
+  const proposed = val.slice(0, start) + pasted + val.slice(end)
+  let clamped = clampWords(proposed, maxWords)
+  if (maxChars && clamped.length > maxChars) {
+    clamped = clamped.slice(0, maxChars)
+  }
+
+  input.value = clamped
+  const newPos = Math.min(start + pasted.length, clamped.length)
+  input.setSelectionRange(newPos, newPos)
+}
+
+function handleYearKeyDown(e: React.KeyboardEvent<HTMLInputElement>) {
+  if (
+    e.key === "Backspace" ||
+    e.key === "Delete" ||
+    e.key === "ArrowLeft" ||
+    e.key === "ArrowRight" ||
+    e.key === "Tab" ||
+    e.key === "Enter" ||
+    e.key === "Escape" ||
+    e.ctrlKey ||
+    e.metaKey ||
+    e.altKey
+  ) {
+    return
+  }
+  if (!/^\d$/.test(e.key)) {
+    e.preventDefault()
+  }
+}
+
+function handleYearInput(e: React.FormEvent<HTMLInputElement>) {
+  const target = e.currentTarget
+  const digits = target.value.replace(/\D/g, "").slice(0, 4)
+  if (target.value !== digits) {
+    const start = target.selectionStart ?? target.value.length
+    target.value = digits
+    const newPos = Math.min(start, digits.length)
+    target.setSelectionRange(newPos, newPos)
+  }
+}
+
+function handleYearPaste(e: React.ClipboardEvent<HTMLInputElement>) {
+  e.preventDefault()
+  const text = e.clipboardData.getData("text")
+  const digits = text.replace(/\D/g, "").slice(0, 4)
+  const target = e.currentTarget
+  const start = target.selectionStart ?? target.value.length
+  const end = target.selectionEnd ?? target.value.length
+  const next = (target.value.slice(0, start) + digits + target.value.slice(end)).replace(/\D/g, "").slice(0, 4)
+  target.value = next
+  const newPos = Math.min(start + digits.length, next.length)
+  target.setSelectionRange(newPos, newPos)
 }
 
 export function GalleryTab({
@@ -240,7 +390,7 @@ export function GalleryTab({
 
 
         {/* Quota & Feature Indicator Bar */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 sm:gap-4 rounded-2xl bg-white p-3.5 sm:p-4.5 border border-black/[0.06] shadow-2xs">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 sm:gap-4 rounded-2xl bg-white p-3.5 sm:p-4.5 border border-black/[0.06]">
           {/* Top row on mobile: Header label + Quota badge */}
           <div className="flex items-center justify-between sm:justify-start gap-2">
             <span className="text-xs font-medium text-[#181925] shrink-0">Accepted Media</span>
@@ -372,22 +522,7 @@ export function GalleryTab({
 
         {/* Uploaded Media Grid & Album Filter Bar */}
         <div className="flex flex-col gap-3">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 px-1 text-xs text-[#71717a]">
-            <span>
-              {mediaItems.length} media item{mediaItems.length === 1 ? "" : "s"} preserved
-              {uploads.items.some((item) => item.status !== "complete") && ` · ${uploads.items.filter((item) => item.status !== "complete").length} in upload queue`}
-            </span>
 
-            {selectedAlbumFilter !== "all" && (
-              <button
-                type="button"
-                onClick={() => setSelectedAlbumFilter("all")}
-                className="text-primary hover:underline text-xs font-medium cursor-pointer self-start sm:self-auto"
-              >
-                Show all ({mediaItems.length}) · filtered by &ldquo;{selectedAlbumFilter === "__no_album__" ? "Untagged" : selectedAlbumFilter}&rdquo;
-              </button>
-            )}
-          </div>
 
           {/* Album Filter Chips in Editor */}
           {existingAlbums.length > 0 && (
@@ -454,7 +589,7 @@ export function GalleryTab({
               {displayedMediaItems.map((item, index) => (
                 <div
                   key={item.id}
-                  className={`p-3 rounded-2xl bg-white border flex flex-col gap-2.5 shadow-2xs group relative transition-all ${item.is_pinned ? "border-[#8b5a45]/40 bg-[#faf8f5]/40" : "border-black/[0.07]"
+                  className={`p-3 rounded-2xl bg-white border flex flex-col gap-2.5 group relative transition-all ${item.is_pinned ? "border-[#8b5a45]/40 bg-[#faf8f5]/40" : "border-black/[0.07]"
                     }`}
                 >
                   <div className="aspect-4/3 rounded-xl overflow-hidden bg-neutral-100 relative">
@@ -611,17 +746,34 @@ export function GalleryTab({
 
                   {/* Inline Metadata Form */}
                   <div className="flex flex-col gap-2">
-                    {/* Row 1: Caption */}
+                    {/* Row 1: Caption (15 words limit) */}
                     <input
                       type="text"
                       maxLength={TEXT_LIMITS.photoCaption}
                       defaultValue={item.caption || ""}
-                      onBlur={(e) => onUpdateMedia(item.id, "caption", e.target.value)}
+                      onKeyDown={(e) => handleWordKeyDown(e, TEXT_LIMITS.galleryCaptionMaxWords)}
+                      onInput={(e) => handleWordInput(e, TEXT_LIMITS.galleryCaptionMaxWords, TEXT_LIMITS.photoCaption)}
+                      onPaste={(e) => handleWordPaste(e, TEXT_LIMITS.galleryCaptionMaxWords, TEXT_LIMITS.photoCaption)}
+                      onBlur={(e) => {
+                        let val = e.target.value.trim()
+                        if (countWords(val) > TEXT_LIMITS.galleryCaptionMaxWords) {
+                          val = clampWords(val, TEXT_LIMITS.galleryCaptionMaxWords).trim()
+                        }
+                        if (val.length > TEXT_LIMITS.photoCaption) {
+                          val = val.slice(0, TEXT_LIMITS.photoCaption).trim()
+                        }
+                        e.target.value = val
+                        const finalVal = val || null
+                        const prevVal = (item.caption || "").trim() || null
+                        if (finalVal !== prevVal) {
+                          onUpdateMedia(item.id, "caption", finalVal)
+                        }
+                      }}
                       placeholder="Add caption (optional)"
                       className="w-full px-3 py-1.5 rounded-lg bg-[#fafafb] border border-black/[0.06] text-xs text-[#181925] placeholder:text-[#aaa] outline-none focus:border-primary/50"
                     />
 
-                    {/* Row 2: Album (With Folder Icon + Datalist Suggestions) */}
+                    {/* Row 2: Album (4 words limit) */}
                     <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#fafafb] border border-black/[0.06] focus-within:border-primary/50 transition-colors">
                       <Folder className="size-3.5 text-primary/70 shrink-0" />
                       <input
@@ -629,7 +781,24 @@ export function GalleryTab({
                         maxLength={TEXT_LIMITS.albumName}
                         list={`album-list-${item.id}`}
                         defaultValue={item.album || ""}
-                        onBlur={(e) => onUpdateMedia(item.id, "album", e.target.value)}
+                        onKeyDown={(e) => handleWordKeyDown(e, TEXT_LIMITS.galleryAlbumMaxWords)}
+                        onInput={(e) => handleWordInput(e, TEXT_LIMITS.galleryAlbumMaxWords, TEXT_LIMITS.albumName)}
+                        onPaste={(e) => handleWordPaste(e, TEXT_LIMITS.galleryAlbumMaxWords, TEXT_LIMITS.albumName)}
+                        onBlur={(e) => {
+                          let val = e.target.value.trim()
+                          if (countWords(val) > TEXT_LIMITS.galleryAlbumMaxWords) {
+                            val = clampWords(val, TEXT_LIMITS.galleryAlbumMaxWords).trim()
+                          }
+                          if (val.length > TEXT_LIMITS.albumName) {
+                            val = val.slice(0, TEXT_LIMITS.albumName).trim()
+                          }
+                          e.target.value = val
+                          const finalVal = val || null
+                          const prevVal = (item.album || "").trim() || null
+                          if (finalVal !== prevVal) {
+                            onUpdateMedia(item.id, "album", finalVal)
+                          }
+                        }}
                         placeholder="Album (e.g. Family, Travels, Leh)"
                         className="w-full min-w-0 bg-transparent text-xs text-[#181925] placeholder:text-[#aaa] outline-none"
                       />
@@ -640,7 +809,7 @@ export function GalleryTab({
                       </datalist>
                     </div>
 
-                    {/* Row 3: Location and Year */}
+                    {/* Row 3: Location (3 words limit) and Year (max 4 digits) */}
                     <div className="flex items-center gap-2">
                       <div className="flex-1 min-w-0 flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#fafafb] border border-black/[0.06] focus-within:border-primary/50 transition-colors">
                         <MapPin className="size-3 text-[#888] shrink-0" />
@@ -648,7 +817,24 @@ export function GalleryTab({
                           type="text"
                           maxLength={TEXT_LIMITS.location}
                           defaultValue={item.location || ""}
-                          onBlur={(e) => onUpdateMedia(item.id, "location", e.target.value)}
+                          onKeyDown={(e) => handleWordKeyDown(e, TEXT_LIMITS.galleryLocationMaxWords)}
+                          onInput={(e) => handleWordInput(e, TEXT_LIMITS.galleryLocationMaxWords, TEXT_LIMITS.location)}
+                          onPaste={(e) => handleWordPaste(e, TEXT_LIMITS.galleryLocationMaxWords, TEXT_LIMITS.location)}
+                          onBlur={(e) => {
+                            let val = e.target.value.trim()
+                            if (countWords(val) > TEXT_LIMITS.galleryLocationMaxWords) {
+                              val = clampWords(val, TEXT_LIMITS.galleryLocationMaxWords).trim()
+                            }
+                            if (val.length > TEXT_LIMITS.location) {
+                              val = val.slice(0, TEXT_LIMITS.location).trim()
+                            }
+                            e.target.value = val
+                            const finalVal = val || null
+                            const prevVal = (item.location || "").trim() || null
+                            if (finalVal !== prevVal) {
+                              onUpdateMedia(item.id, "location", finalVal)
+                            }
+                          }}
                           placeholder="Location"
                           className="w-full min-w-0 bg-transparent text-xs text-[#181925] placeholder:text-[#aaa] outline-none"
                         />
@@ -657,11 +843,25 @@ export function GalleryTab({
                       <div className="w-24 shrink-0 flex items-center gap-1 px-2 py-1.5 rounded-lg bg-[#fafafb] border border-black/[0.06] focus-within:border-primary/50 transition-colors">
                         <Calendar className="size-3 text-[#888] shrink-0" />
                         <input
-                          type="number"
+                          type="text"
+                          inputMode="numeric"
+                          pattern="[0-9]*"
+                          maxLength={4}
                           defaultValue={item.approx_year || ""}
-                          onBlur={(e) => onUpdateMedia(item.id, "approx_year", e.target.value ? Number(e.target.value) : null)}
-                          placeholder="Year"
-                          className="w-full min-w-0 bg-transparent text-xs text-[#181925] font-mono text-center placeholder:text-[#aaa] outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                          onKeyDown={handleYearKeyDown}
+                          onInput={handleYearInput}
+                          onPaste={handleYearPaste}
+                          onBlur={(e) => {
+                            const digits = e.target.value.replace(/\D/g, "").slice(0, 4)
+                            e.target.value = digits
+                            const finalYear = digits ? Number(digits) : null
+                            const prevYear = item.approx_year ?? null
+                            if (finalYear !== prevYear) {
+                              onUpdateMedia(item.id, "approx_year", finalYear)
+                            }
+                          }}
+                          placeholder="YYYY"
+                          className="w-full min-w-0 bg-transparent text-xs text-[#181925] font-mono text-center placeholder:text-[#aaa] outline-none"
                         />
                       </div>
                     </div>

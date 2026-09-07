@@ -92,14 +92,7 @@ export function TheirsPricing() {
                 </span>
                 Up to 5 essential photos
               </li>
-              <li className="flex items-start gap-2.5 text-sm leading-6 tracking-tight text-[#181925]">
-                <span aria-hidden="true" className="mt-2.5 block size-2 shrink-0 text-muted-foreground/50">
-                  <svg fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 8 8">
-                    <path d="M4 0v8M0 4h8" />
-                  </svg>
-                </span>
-                Guestbook for messages
-              </li>
+
               <li className="flex items-start gap-2.5 text-sm leading-6 tracking-tight text-[#181925]">
                 <span aria-hidden="true" className="mt-2.5 block size-2 shrink-0 text-muted-foreground/50">
                   <svg fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 8 8">

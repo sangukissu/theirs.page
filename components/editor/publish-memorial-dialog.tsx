@@ -147,7 +147,7 @@ export function PublishMemorialDialog({
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.97, y: 8 }}
             transition={{ duration: 0.2, ease: [0.16, 1, 0.3, 1] }}
-            className="relative w-full max-w-lg overflow-hidden rounded-3xl border border-black/[0.08] bg-white shadow-2xl p-6 sm:p-8 flex flex-col z-10"
+            className="relative w-full max-w-lg max-h-[calc(100dvh-2rem)] overflow-y-auto rounded-3xl border border-black/[0.08] bg-white shadow-2xl p-6 sm:p-8 flex flex-col z-10"
           >
             {/* Close Button */}
             <button
@@ -202,43 +202,26 @@ export function PublishMemorialDialog({
                   </button>
                 </div>
 
-                {/* Pre-written WhatsApp / Message copy helper */}
-                <div className="mt-2.5 flex items-center justify-between px-1">
-                  <span className="text-[11px] text-[#71717a]">
-                    Sharing with family or group chats?
-                  </span>
-                  <button
-                    type="button"
-                    onClick={copyInviteMessage}
-                    className="text-[11px] font-medium text-primary hover:underline flex items-center gap-1 cursor-pointer shrink-0"
-                  >
-                    {copiedInvite ? (
-                      <Check className="size-3 text-emerald-600" />
-                    ) : (
-                      <MessageSquare className="size-3" />
-                    )}
-                    <span>{copiedInvite ? "Copied invite message!" : "Copy invite message"}</span>
-                  </button>
-                </div>
+
 
                 {/* Primary Action Buttons */}
-                <div className="mt-5 flex flex-col sm:flex-row gap-2.5">
+                <div className="mt-5 flex flex-col sm:flex-row gap-2.5 w-full">
                   <button
                     type="button"
                     onClick={share}
-                    className="inline-flex h-10 flex-1 items-center justify-center gap-2 rounded-full bg-primary hover:bg-primary/90 text-primary-foreground text-xs font-medium transition-all active:scale-[0.98] cursor-pointer shadow-xs"
+                    className="flex w-full sm:flex-1 h-11 min-h-[44px] sm:h-10 sm:min-h-[40px] shrink-0 items-center justify-center gap-2 rounded-full bg-primary hover:bg-primary/90 text-primary-foreground text-xs sm:text-xs font-medium transition-all active:scale-[0.98] cursor-pointer shadow-xs px-4"
                   >
-                    <Share2 className="size-3.5" />
+                    <Share2 className="size-3.5 shrink-0" />
                     <span>Share memorial</span>
                   </button>
                   <a
                     href={`/${slug}`}
                     target="_blank"
                     rel="noreferrer"
-                    className="inline-flex h-10 flex-1 items-center justify-center gap-2 rounded-full border border-black/[0.09] bg-white hover:bg-neutral-50 text-xs font-medium text-[#181925] transition-all cursor-pointer"
+                    className="flex w-full sm:flex-1 h-11 min-h-[44px] sm:h-10 sm:min-h-[40px] shrink-0 items-center justify-center gap-2 rounded-full border border-black/[0.09] bg-white hover:bg-neutral-50 text-xs sm:text-xs font-medium text-[#181925] transition-all cursor-pointer px-4"
                   >
                     <span>Visit live page</span>
-                    <ExternalLink className="size-3 text-[#71717a]" />
+                    <ExternalLink className="size-3 shrink-0 text-[#71717a]" />
                   </a>
                 </div>
 
@@ -297,11 +280,10 @@ export function PublishMemorialDialog({
                       className="flex flex-col items-center gap-1 rounded-xl bg-white p-2.5 text-center border border-black/[0.04]"
                     >
                       <span
-                        className={`flex size-5 items-center justify-center rounded-full text-xs ${
-                          item.done
-                            ? "bg-emerald-50 text-emerald-700 border border-emerald-200"
-                            : "bg-neutral-100 text-neutral-400"
-                        }`}
+                        className={`flex size-5 items-center justify-center rounded-full text-xs ${item.done
+                          ? "bg-emerald-50 text-emerald-700 border border-emerald-200"
+                          : "bg-neutral-100 text-neutral-400"
+                          }`}
                       >
                         {item.done ? <Check className="size-3" /> : "·"}
                       </span>
@@ -316,18 +298,16 @@ export function PublishMemorialDialog({
                     Who can find this page?
                   </legend>
                   <div
-                    className={`grid gap-2 ${
-                      privacy === "private" ? "sm:grid-cols-3" : "sm:grid-cols-2"
-                    }`}
+                    className={`grid gap-2 ${privacy === "private" ? "sm:grid-cols-3" : "sm:grid-cols-2"
+                      }`}
                   >
                     <button
                       type="button"
                       onClick={() => setSelectedPrivacy("unlisted")}
-                      className={`flex items-start gap-2.5 rounded-2xl border p-3.5 text-left transition-all cursor-pointer ${
-                        selectedPrivacy === "unlisted"
-                          ? "border-primary bg-primary/[0.04] ring-1 ring-primary/20"
-                          : "border-black/[0.08] bg-white hover:border-black/20"
-                      }`}
+                      className={`flex items-start gap-2.5 rounded-2xl border p-3.5 text-left transition-all cursor-pointer ${selectedPrivacy === "unlisted"
+                        ? "border-primary bg-primary/[0.04] ring-1 ring-primary/20"
+                        : "border-black/[0.08] bg-white hover:border-black/20"
+                        }`}
                     >
                       <Link2 className="mt-0.5 size-4 shrink-0 text-primary" />
                       <div>
@@ -341,11 +321,10 @@ export function PublishMemorialDialog({
                     <button
                       type="button"
                       onClick={() => setSelectedPrivacy("public")}
-                      className={`flex items-start gap-2.5 rounded-2xl border p-3.5 text-left transition-all cursor-pointer ${
-                        selectedPrivacy === "public"
-                          ? "border-primary bg-primary/[0.04] ring-1 ring-primary/20"
-                          : "border-black/[0.08] bg-white hover:border-black/20"
-                      }`}
+                      className={`flex items-start gap-2.5 rounded-2xl border p-3.5 text-left transition-all cursor-pointer ${selectedPrivacy === "public"
+                        ? "border-primary bg-primary/[0.04] ring-1 ring-primary/20"
+                        : "border-black/[0.08] bg-white hover:border-black/20"
+                        }`}
                     >
                       <Globe2 className="mt-0.5 size-4 shrink-0 text-primary" />
                       <div>
@@ -360,11 +339,10 @@ export function PublishMemorialDialog({
                       <button
                         type="button"
                         onClick={() => setSelectedPrivacy("private")}
-                        className={`flex items-start gap-2.5 rounded-2xl border p-3.5 text-left transition-all cursor-pointer ${
-                          selectedPrivacy === "private"
-                            ? "border-primary bg-primary/[0.04] ring-1 ring-primary/20"
-                            : "border-black/[0.08] bg-white hover:border-black/20"
-                        }`}
+                        className={`flex items-start gap-2.5 rounded-2xl border p-3.5 text-left transition-all cursor-pointer ${selectedPrivacy === "private"
+                          ? "border-primary bg-primary/[0.04] ring-1 ring-primary/20"
+                          : "border-black/[0.08] bg-white hover:border-black/20"
+                          }`}
                       >
                         <LockKeyhole className="mt-0.5 size-4 shrink-0 text-primary" />
                         <div>
@@ -381,11 +359,11 @@ export function PublishMemorialDialog({
                 {error && <p className="mt-3 text-xs font-medium text-rose-700">{error}</p>}
 
                 {/* Footer Buttons */}
-                <div className="mt-6 flex flex-col-reverse sm:flex-row sm:items-center sm:justify-end gap-2">
+                <div className="mt-6 flex flex-col-reverse sm:flex-row sm:items-center sm:justify-end gap-2 w-full">
                   <button
                     type="button"
                     onClick={onClose}
-                    className="h-10 rounded-full px-5 text-xs font-medium text-[#666] hover:bg-black/[0.04] transition-colors cursor-pointer"
+                    className="flex w-full sm:w-auto h-11 sm:h-10 min-h-[44px] sm:min-h-[40px] shrink-0 items-center justify-center rounded-full px-5 text-xs font-medium text-[#666] hover:bg-black/[0.04] transition-colors cursor-pointer"
                   >
                     Keep editing
                   </button>
@@ -393,7 +371,7 @@ export function PublishMemorialDialog({
                     type="button"
                     onClick={publish}
                     disabled={phase === "publishing"}
-                    className="inline-flex h-10 items-center justify-center gap-2 rounded-full bg-primary px-6 text-xs font-semibold text-white shadow-xs transition-all hover:bg-primary/90 active:scale-[0.98] disabled:opacity-60 cursor-pointer"
+                    className="flex w-full sm:w-auto h-11 sm:h-10 min-h-[44px] sm:min-h-[40px] shrink-0 items-center justify-center gap-2 rounded-full bg-primary px-6 text-xs font-semibold text-white shadow-xs transition-all hover:bg-primary/90 active:scale-[0.98] disabled:opacity-60 cursor-pointer"
                   >
                     {phase === "publishing" ? (
                       <Loader2 className="size-3.5 animate-spin" />

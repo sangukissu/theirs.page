@@ -5,6 +5,10 @@ export const TEXT_LIMITS = {
   relationship: 80,
   location: 60,
   locationMaxWords: 5,
+  galleryLocationMaxWords: 3,
+  galleryAlbumMaxWords: 4,
+  galleryCaptionMaxWords: 15,
+  approxYearDigits: 4,
   headline: 240,
   tribute: 3_000,
   memory: 30_000,
@@ -25,6 +29,21 @@ export const MAX_CONTRIBUTION_BODY_BYTES = 128 * 1024
 
 export function utf8ByteLength(value: string): number {
   return new TextEncoder().encode(value).byteLength
+}
+
+export function countWords(text: string): number {
+  if (!text) return 0
+  const matches = text.trim().match(/\S+/g)
+  return matches ? matches.length : 0
+}
+
+export function clampWords(text: string, maxWords: number): string {
+  if (!text || maxWords <= 0) return ""
+  const matches = Array.from(text.matchAll(/\S+/g))
+  if (matches.length <= maxWords) return text
+  const lastMatch = matches[maxWords - 1]
+  const endIndex = (lastMatch.index ?? 0) + lastMatch[0].length
+  return text.slice(0, endIndex)
 }
 
 export function isWithinTextLimit(value: unknown, max: number): boolean {

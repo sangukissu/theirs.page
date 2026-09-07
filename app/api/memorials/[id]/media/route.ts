@@ -6,7 +6,7 @@ import { assertMemorialAdmin } from "@/lib/memorial-auth"
 import { assertMediaQuota } from "@/lib/paywall"
 import { copyR2Object, deleteR2Object, extractManagedR2Key, resolveMediaUrl } from "@/lib/r2"
 import { finalizeMemorialStorage, releaseMemorialStorage } from "@/lib/storage-quota"
-import { TEXT_LIMITS } from "@/lib/validation/text-limits"
+import { TEXT_LIMITS, clampWords } from "@/lib/validation/text-limits"
 import { validateTextFields } from "@/lib/validation/server-text"
 import { archivalHeicKeyForDisplay, promoteStagedMemorialImage } from "@/lib/memorial-image-promotion"
 
@@ -114,10 +114,10 @@ export async function POST(req: NextRequest, context: RouteContext) {
         memorial_id: memorialId,
         url: finalKey,
         media_type: media_type || "image",
-        caption: caption?.trim() || null,
-        approx_year: approx_year ? Number(approx_year) : null,
-        location: location?.trim() || null,
-        album: album?.trim() || null,
+        caption: caption ? clampWords(caption.trim(), TEXT_LIMITS.galleryCaptionMaxWords).slice(0, TEXT_LIMITS.photoCaption) : null,
+        approx_year: approx_year ? Number(String(approx_year).replace(/\D/g, "").slice(0, TEXT_LIMITS.approxYearDigits)) || null : null,
+        location: location ? clampWords(location.trim(), TEXT_LIMITS.galleryLocationMaxWords).slice(0, TEXT_LIMITS.location) : null,
+        album: album ? clampWords(album.trim(), TEXT_LIMITS.galleryAlbumMaxWords).slice(0, TEXT_LIMITS.albumName) : null,
         is_pinned: Boolean(is_pinned),
         order_index: order_index !== undefined ? Number(order_index) : 0,
       })
@@ -202,10 +202,13 @@ export async function PATCH(req: NextRequest, context: RouteContext) {
     }
 
     const updates: Record<string, any> = {}
-    if (caption !== undefined) updates.caption = caption?.trim() || null
-    if (approx_year !== undefined) updates.approx_year = approx_year ? Number(approx_year) : null
-    if (location !== undefined) updates.location = location?.trim() || null
-    if (album !== undefined) updates.album = album?.trim() || null
+    if (caption !== undefined) updates.caption = caption ? clampWords(caption.trim(), TEXT_LIMITS.galleryCaptionMaxWords).slice(0, TEXT_LIMITS.photoCaption) : null
+    if (approx_year !== undefined) {
+      const parsed = approx_year ? Number(String(approx_year).replace(/\D/g, "").slice(0, TEXT_LIMITS.approxYearDigits)) : null
+      updates.approx_year = parsed && Number.isFinite(parsed) && parsed > 0 ? parsed : null
+    }
+    if (location !== undefined) updates.location = location ? clampWords(location.trim(), TEXT_LIMITS.galleryLocationMaxWords).slice(0, TEXT_LIMITS.location) : null
+    if (album !== undefined) updates.album = album ? clampWords(album.trim(), TEXT_LIMITS.galleryAlbumMaxWords).slice(0, TEXT_LIMITS.albumName) : null
     if (is_pinned !== undefined) updates.is_pinned = Boolean(is_pinned)
     if (order_index !== undefined) updates.order_index = Number(order_index)
 

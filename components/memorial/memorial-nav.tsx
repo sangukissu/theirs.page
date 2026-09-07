@@ -108,7 +108,7 @@ export function MemorialNav({
   return (
     <>
       <nav className={`fixed ${hasTopBanner ? "top-11 sm:top-12" : "top-3"} inset-x-0 z-40 flex justify-center px-2.5 sm:px-4 pointer-events-none transition-all`}>
-        <div className="pointer-events-auto flex items-center justify-between gap-1 sm:gap-3 px-2.5 py-1.5 rounded-full bg-[var(--theme-bg-surface-elevated)] backdrop-blur-md border border-[var(--theme-border)] shadow-[inset_0_1px_2px_rgba(0,0,0,0.05),0_4px_16px_rgba(0,0,0,0.04)] max-w-xl w-full transition-all">
+        <div className="pointer-events-auto flex items-center justify-between gap-1 sm:gap-3 px-2.5 py-1.5 rounded-full bg-[var(--theme-bg-surface-elevated)] backdrop-blur-md border border-[var(--theme-border)] max-w-xl w-full transition-all">
           <Link
             href={withPreview(rootPath)}
             prefetch

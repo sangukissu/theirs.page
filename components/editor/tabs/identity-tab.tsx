@@ -518,14 +518,14 @@ export function IdentityTab({
           className="px-3.5 py-2.5 rounded-xl bg-white border border-black/[0.08] text-xs sm:text-sm text-[#181925] outline-none focus:border-primary/60 transition-colors resize-none leading-relaxed"
         />
         <span className="text-[11px] text-[#888]">
-          Appears in large serif text below their name on the live memorial.
+          Appears in large quote below their name on the live memorial.
         </span>
       </div>
 
       {/* 5. Connection to them */}
       <div className="flex flex-col gap-1.5 pt-3 border-t border-black/[0.06]">
         <label className="text-xs font-medium text-[#181925]">
-          Your connection to {fullName.trim().split(/\s+/)[0] || "them"}
+          Your connection to {fullName || "them"}
         </label>
         <Select
           value={creatorRelationship || undefined}

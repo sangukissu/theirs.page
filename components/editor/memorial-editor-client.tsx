@@ -614,7 +614,7 @@ export function MemorialEditorClient({
             <button
               type="button"
               onClick={() => setPublishDialogOpen(true)}
-              className={`inline-flex h-9 items-center justify-center gap-1.5 rounded-full px-4 text-xs font-semibold shadow-sm transition-all active:scale-[0.98] ${form.status === "published" ? "border border-black/[0.08] bg-[#181925] text-white hover:bg-black" : "bg-primary text-white hover:bg-primary/90"}`}
+              className={`inline-flex h-9 items-center justify-center gap-1.5 rounded-full px-4 text-xs font-normal shadow-sm transition-all active:scale-[0.98] ${form.status === "published" ? "border border-black/[0.08] bg-[#181925] text-white hover:bg-black" : "bg-primary text-white hover:bg-primary/90"}`}
             >
               {form.status === "published" ? <Share2 className="size-3.5" /> : <Sparkles className="size-3.5" />}
               <span>{form.status === "published" ? "Share" : "Publish"}</span>

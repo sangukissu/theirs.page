@@ -302,8 +302,7 @@ export function MemoriesStream({
               className="inline-flex items-center gap-1 sm:gap-1.5 px-3 sm:px-4 py-1.5 sm:py-2 rounded-full bg-[var(--theme-accent)] hover:brightness-105 text-[var(--theme-accent-foreground)] text-xs font-medium transition-all cursor-pointer shadow-xs active:scale-95 shrink-0 whitespace-nowrap"
             >
               <Plus className="size-3.5 shrink-0" />
-              <span className="hidden sm:inline">Leave a Tribute</span>
-              <span className="sm:hidden">Tribute</span>
+              <span className="sm:inline">Leave a Tribute</span>
             </button>
           </div>
         )}

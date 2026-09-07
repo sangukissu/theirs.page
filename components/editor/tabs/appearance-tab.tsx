@@ -325,7 +325,7 @@ export function AppearanceTab({
               >
                 {/* Miniature Editorial Page Canvas */}
                 <div
-                  className="h-44 sm:h-48 w-full rounded-xl relative p-3 flex flex-col justify-between overflow-hidden border select-none transition-colors"
+                  className="h-32 sm:h-36 w-full rounded-xl relative p-3 flex flex-col justify-between overflow-hidden border select-none transition-colors"
                   style={{
                     backgroundColor: t.colors.bgPage,
                     borderColor: t.colors.border,
@@ -333,16 +333,7 @@ export function AppearanceTab({
                 >
                   {/* Canvas Top Bar: Font Tag + Selection Indicator */}
                   <div className="flex items-center justify-between gap-2">
-                    <span
-                      className="text-[9px] font-medium tracking-tight px-2 py-0.5 rounded-full"
-                      style={{
-                        backgroundColor: t.colors.bgSurface,
-                        color: t.colors.textMuted,
-                        border: `1px solid ${t.colors.border}`,
-                      }}
-                    >
-                      {t.typography.fontHeadingName}
-                    </span>
+
 
                     {isSelected ? (
                       <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-[#181925] text-white text-[9px] font-semibold tracking-tight shadow-2xs">
@@ -401,33 +392,7 @@ export function AppearanceTab({
                     </div>
                   </div>
 
-                  {/* Canvas Bottom Snippet: Minimalist Tribute Surface */}
-                  <div
-                    className="w-full px-2.5 py-1.5 rounded-lg border flex items-center justify-between gap-2 shadow-2xs"
-                    style={{
-                      backgroundColor: t.colors.bgSurface,
-                      borderColor: t.colors.border,
-                    }}
-                  >
-                    <div className="flex items-center gap-1.5 min-w-0">
-                      <span
-                        className="size-1.5 rounded-full shrink-0"
-                        style={{ backgroundColor: t.colors.accent }}
-                      />
-                      <span
-                        className="text-[10px] tracking-tight truncate max-w-[130px] italic"
-                        style={{ color: t.colors.textPrimary }}
-                      >
-                        \u201cA life deeply cherished\u2026\u201d
-                      </span>
-                    </div>
-                    <span
-                      className="text-[9px] font-mono shrink-0"
-                      style={{ color: t.colors.accent }}
-                    >
-                      {t.divider.symbol}
-                    </span>
-                  </div>
+
                 </div>
 
                 {/* Card Footer Info Row */}

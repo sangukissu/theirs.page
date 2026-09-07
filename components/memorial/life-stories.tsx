@@ -132,7 +132,7 @@ export function LifeStories({
         >
           <Plus className="size-3.5 shrink-0" />
           <span className="hidden sm:inline">Share a memory</span>
-          <span className="sm:hidden">Share</span>
+          <span className="sm:hidden">Add Memories</span>
         </button>
       </div>
 

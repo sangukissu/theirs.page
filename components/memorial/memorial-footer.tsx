@@ -23,7 +23,7 @@ export function MemorialFooter({
       <Link
         href="/"
         title="theirs.page — dedicated to a human life"
-        className="group inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-[var(--theme-bg-surface-elevated)] hover:brightness-105 backdrop-blur-md border border-[var(--theme-border)] shadow-[0_2px_10px_rgba(0,0,0,0.05),0_1px_2px_rgba(0,0,0,0.02)] transition-all duration-200 active:scale-95 cursor-pointer"
+        className="group inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-[var(--theme-bg-surface-elevated)] hover:brightness-105 backdrop-blur-md border border-[var(--theme-border)] transition-all duration-200 active:scale-95 cursor-pointer"
       >
         <svg
           viewBox="0 0 512 512"
@@ -56,7 +56,7 @@ export function MemorialFooter({
         </span>
       </Link>
       {caretakerName && (
-        <span className="max-w-[min(70vw,24rem)] truncate rounded-full border border-[var(--theme-border)] bg-[var(--theme-bg-surface-elevated)] px-3 py-1.5 text-[11px] text-[var(--theme-text-muted)] shadow-[0_2px_10px_rgba(0,0,0,0.05)] backdrop-blur-md sm:text-xs">
+        <span className="max-w-[min(70vw,24rem)] truncate rounded-full border border-[var(--theme-border)] bg-[var(--theme-bg-surface-elevated)] px-3 py-1.5 text-[11px] text-[var(--theme-text-muted)] sm:text-xs">
           Created by <strong className="font-medium text-[var(--theme-text-primary)]">{caretakerName}</strong>
           {caretakerRelationship ? (
             <> &middot; {firstName ? `${firstName}’s ` : ""}{caretakerRelationship.toLowerCase()}</>
