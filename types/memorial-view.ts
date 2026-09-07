@@ -2,7 +2,7 @@ import type { GalleryItem } from "@/components/memorial/memorial-gallery"
 import type { TimelineMilestone } from "@/components/memorial/life-timeline"
 import type { StoryItem } from "@/components/memorial/life-stories"
 import type { MemoryItem } from "@/components/memorial/memories-stream"
-import type { SectionSettings, ContributionSettings } from "@/types/theirs"
+import type { SectionSettings, ContributionSettings, MemorialTheme } from "@/types/theirs"
 import type { MemorialAccessRole } from "@/lib/memorial-auth"
 
 export type MemorialView = "home" | "timeline" | "memories" | "gallery" | "tributes"
@@ -36,6 +36,7 @@ export interface MemorialIdentity {
   sectionSettings: SectionSettings
   contributionSettings?: ContributionSettings | null
   photoCount?: number
+  theme?: MemorialTheme
 }
 
 export interface GalleryFacets {

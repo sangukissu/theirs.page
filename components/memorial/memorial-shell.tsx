@@ -7,6 +7,7 @@ import { MemorialNav } from "./memorial-nav"
 import { MemorialFooter } from "./memorial-footer"
 import { ContributeModal, type ContributionType } from "./contribute-modal"
 import type { MemorialIdentity } from "@/types/memorial-view"
+import { isValidThemeId, type MemorialThemeId } from "@/lib/memorial/themes"
 
 interface MemorialActions {
   openContribute: (
@@ -43,6 +44,9 @@ export function MemorialShell({ identity, children }: { identity: MemorialIdenti
   const visitorPreview = identity.isOwner && searchParams.get("preview") === "visitor"
   const draftPreview = identity.status === "draft" && identity.isOwner && !visitorPreview
 
+  const themeQueryParam = searchParams.get("theme")
+  const activeTheme: MemorialThemeId = (isValidThemeId(themeQueryParam) ? themeQueryParam : identity.theme) || "quiet"
+
   useEffect(() => {
     const refreshPublishedReceipt = () => router.refresh()
     window.addEventListener("theirs_receipt_published", refreshPublishedReceipt)
@@ -51,7 +55,10 @@ export function MemorialShell({ identity, children }: { identity: MemorialIdenti
 
   return (
     <MemorialActionsContext.Provider value={{ openContribute }}>
-      <main className="min-h-screen bg-white text-[#555] selection:bg-primary/10 selection:text-primary relative pb-10 sm:pb-16">
+      <main
+        data-memorial-theme={activeTheme}
+        className="theirs-theme-root min-h-screen bg-[var(--theme-bg-page)] text-[var(--theme-text-body)] selection:bg-[var(--theme-accent)]/15 selection:text-[var(--theme-accent)] relative pb-10 sm:pb-16 transition-colors duration-200"
+      >
         {draftPreview && (
           <div className="bg-amber-500 text-black px-4 py-2 text-xs font-medium text-center sticky top-0 z-50 shadow-xs flex items-center justify-center gap-2">
             <span>⚠️ <strong>Draft Preview Mode</strong> — This memorial is private and not yet published to visitors.</span>

@@ -1,0 +1,151 @@
+/* ==========================================================================
+   THEIRS - MEMORIAL APPEARANCE & ATMOSPHERE DESIGN TOKENS
+   6 Curated Visual Moods: Quiet, Warm, Garden, Classic, Dusk, Light
+   ========================================================================== */
+
+/* 1. QUIET (Default: Calm, Minimalist White & Cobalt) */
+[data-memorial-theme="quiet"] {
+  --theme-bg-page: #ffffff;
+  --theme-bg-surface: #f7f7f8;
+  --theme-bg-surface-subtle: #efeff1;
+  --theme-bg-surface-elevated: rgba(247, 247, 248, 0.95);
+  --theme-text-primary: #181925;
+  --theme-text-body: #3a3a40;
+  --theme-text-muted: #71717a;
+  --theme-accent: #305dde;
+  --theme-accent-hover: #2548b8;
+  --theme-accent-foreground: #ffffff;
+  --theme-accent-subtle: rgba(48, 93, 222, 0.08);
+  --theme-border: rgba(0, 0, 0, 0.06);
+  --theme-border-subtle: rgba(0, 0, 0, 0.04);
+  --theme-quote-border: rgba(48, 93, 222, 0.4);
+  --theme-hero-ring: rgba(0, 0, 0, 0.06);
+  --font-theme-heading: var(--font-heading), -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  --font-theme-serif: var(--font-serif, Georgia, serif);
+  color-scheme: light;
+}
+
+/* 2. WARM (Ivory, Roasted Espresso & Glowing Terracotta Amber) */
+[data-memorial-theme="warm"] {
+  --theme-bg-page: #fcf9f5;
+  --theme-bg-surface: #f5eee4;
+  --theme-bg-surface-subtle: #ede2d3;
+  --theme-bg-surface-elevated: rgba(245, 238, 228, 0.95);
+  --theme-text-primary: #2c231d;
+  --theme-text-body: #4d3f34;
+  --theme-text-muted: #887566;
+  --theme-accent: #b85d2a;
+  --theme-accent-hover: #9c4d20;
+  --theme-accent-foreground: #ffffff;
+  --theme-accent-subtle: rgba(184, 93, 42, 0.10);
+  --theme-border: rgba(110, 80, 50, 0.08);
+  --theme-border-subtle: rgba(110, 80, 50, 0.05);
+  --theme-quote-border: rgba(184, 93, 42, 0.4);
+  --theme-hero-ring: rgba(184, 93, 42, 0.15);
+  --font-theme-heading: var(--font-serif, Georgia, serif);
+  --font-theme-serif: var(--font-serif, Georgia, serif);
+  color-scheme: light;
+}
+
+/* 3. GARDEN (Morning Dew, Laurel Sage & Restrained Botanical Grace) */
+[data-memorial-theme="garden"] {
+  --theme-bg-page: #f3f6f2;
+  --theme-bg-surface: #eaf0e8;
+  --theme-bg-surface-subtle: #dfe8dc;
+  --theme-bg-surface-elevated: rgba(234, 240, 232, 0.95);
+  --theme-text-primary: #1b281e;
+  --theme-text-body: #344538;
+  --theme-text-muted: #6b8070;
+  --theme-accent: #3d6c4a;
+  --theme-accent-hover: #30563b;
+  --theme-accent-foreground: #ffffff;
+  --theme-accent-subtle: rgba(61, 108, 74, 0.10);
+  --theme-border: rgba(40, 70, 48, 0.08);
+  --theme-border-subtle: rgba(40, 70, 48, 0.05);
+  --theme-quote-border: rgba(61, 108, 74, 0.4);
+  --theme-hero-ring: rgba(61, 108, 74, 0.16);
+  --font-theme-heading: var(--font-serif, Georgia, serif);
+  --font-theme-serif: var(--font-serif, Georgia, serif);
+  color-scheme: light;
+}
+
+/* 4. CLASSIC (Fine Archival Vellum, Oxford Black & Heritage Wine) */
+[data-memorial-theme="classic"] {
+  --theme-bg-page: #f7f5f0;
+  --theme-bg-surface: #efeae0;
+  --theme-bg-surface-subtle: #e2dacf;
+  --theme-bg-surface-elevated: rgba(239, 234, 224, 0.95);
+  --theme-text-primary: #1a1a1d;
+  --theme-text-body: #39383f;
+  --theme-text-muted: #75736d;
+  --theme-accent: #6e2836;
+  --theme-accent-hover: #571f2a;
+  --theme-accent-foreground: #ffffff;
+  --theme-accent-subtle: rgba(110, 40, 54, 0.10);
+  --theme-border: rgba(60, 50, 40, 0.09);
+  --theme-border-subtle: rgba(60, 50, 40, 0.05);
+  --theme-quote-border: rgba(110, 40, 54, 0.4);
+  --theme-hero-ring: rgba(110, 40, 54, 0.18);
+  --font-theme-heading: var(--font-serif, "Times New Roman", Georgia, serif);
+  --font-theme-serif: var(--font-serif, "Times New Roman", Georgia, serif);
+  color-scheme: light;
+}
+
+/* 5. DUSK (Deep Midnight Slate, Elevated Night & Celestial Gold) */
+[data-memorial-theme="dusk"] {
+  --theme-bg-page: #0f1218;
+  --theme-bg-surface: #181c24;
+  --theme-bg-surface-subtle: #222734;
+  --theme-bg-surface-elevated: rgba(24, 28, 36, 0.96);
+  --theme-text-primary: #f0f3f8;
+  --theme-text-body: #b3bccb;
+  --theme-text-muted: #6e7889;
+  --theme-accent: #d4af37;
+  --theme-accent-hover: #b89528;
+  --theme-accent-foreground: #0f1218;
+  --theme-accent-subtle: rgba(212, 175, 55, 0.14);
+  --theme-border: rgba(255, 255, 255, 0.08);
+  --theme-border-subtle: rgba(255, 255, 255, 0.05);
+  --theme-quote-border: rgba(212, 175, 55, 0.5);
+  --theme-hero-ring: rgba(212, 175, 55, 0.25);
+  --font-theme-heading: var(--font-serif, Georgia, serif);
+  --font-theme-serif: var(--font-serif, Georgia, serif);
+  color-scheme: dark;
+}
+
+/* 6. LIGHT (Crisp Morning Air, Radiant Cloud & Ethereal Cerulean) */
+[data-memorial-theme="light"] {
+  --theme-bg-page: #f8fafd;
+  --theme-bg-surface: #eef3f8;
+  --theme-bg-surface-subtle: #e0ebf5;
+  --theme-bg-surface-elevated: rgba(238, 243, 248, 0.95);
+  --theme-text-primary: #1b222c;
+  --theme-text-body: #404a58;
+  --theme-text-muted: #758396;
+  --theme-accent: #2c78b8;
+  --theme-accent-hover: #226196;
+  --theme-accent-foreground: #ffffff;
+  --theme-accent-subtle: rgba(44, 120, 184, 0.09);
+  --theme-border: rgba(30, 60, 90, 0.08);
+  --theme-border-subtle: rgba(30, 60, 90, 0.04);
+  --theme-quote-border: rgba(44, 120, 184, 0.4);
+  --theme-hero-ring: rgba(44, 120, 184, 0.15);
+  --font-theme-heading: var(--font-heading), -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  --font-theme-serif: var(--font-serif, Georgia, serif);
+  color-scheme: light;
+}
+
+/* Base cascading container rules */
+.theirs-theme-root {
+  background-color: var(--theme-bg-page);
+  color: var(--theme-text-body);
+  transition: background-color 200ms ease, color 200ms ease;
+}
+
+/* Headings inherit theme display font */
+.theirs-theme-root h1,
+.theirs-theme-root h2,
+.theirs-theme-root h3 {
+  font-family: var(--font-theme-heading);
+  color: var(--theme-text-primary);
+}

@@ -123,7 +123,7 @@ export function MemorialPinGate({ fullName, portraitUrl, slug }: MemorialPinGate
         </div>
 
         <div className="flex flex-col gap-1.5">
-          <div className="inline-flex items-center justify-center gap-1.5 text-[11px] font-mono font-medium text-primary uppercase tracking-wider bg-primary/10 px-2.5 py-0.5 rounded-full mx-auto">
+          <div className="inline-flex items-center justify-center gap-1.5 text-[11px] font-mono font-medium text-[var(--theme-accent,var(--primary))] uppercase tracking-wider bg-[var(--theme-accent,var(--primary))]/10 px-2.5 py-0.5 rounded-full mx-auto">
             <Lock className="size-3" />
             <span>Private Family Memorial</span>
           </div>
@@ -156,7 +156,7 @@ export function MemorialPinGate({ fullName, portraitUrl, slug }: MemorialPinGate
                 onChange={(e) => handleChange(idx, e.target.value)}
                 onKeyDown={(e) => handleKeyDown(idx, e)}
                 onPaste={handlePaste}
-                className="size-12 rounded-xl bg-[#fafafb] border border-black/[0.12] text-center text-lg font-mono font-bold text-[#181925] outline-none focus:border-primary focus:bg-white focus:ring-2 focus:ring-primary/15 transition-all"
+                className="size-12 rounded-xl bg-[#fafafb] border border-black/[0.12] text-center text-lg font-mono font-bold text-[#181925] outline-none focus:border-[var(--theme-accent,var(--primary))] focus:bg-white focus:ring-2 focus:ring-[var(--theme-accent,var(--primary))]/15 transition-all"
                 disabled={loading}
               />
             ))}
@@ -172,7 +172,7 @@ export function MemorialPinGate({ fullName, portraitUrl, slug }: MemorialPinGate
           <button
             type="submit"
             disabled={loading || pinDigits.some((d) => d === "")}
-            className="w-full mt-2 py-2.5 rounded-full bg-primary hover:bg-primary/90 disabled:opacity-40 disabled:cursor-not-allowed text-primary-foreground text-xs font-medium transition-all cursor-pointer flex items-center justify-center gap-1.5"
+            className="w-full mt-2 py-2.5 rounded-full bg-[var(--theme-accent,var(--primary))] hover:brightness-105 disabled:opacity-40 disabled:cursor-not-allowed text-[var(--theme-accent-foreground,#ffffff)] text-xs font-medium transition-all cursor-pointer flex items-center justify-center gap-1.5 shadow-xs"
           >
             {loading ? (
               <Loader2 className="size-3.5 animate-spin" />

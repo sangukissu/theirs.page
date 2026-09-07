@@ -126,7 +126,7 @@ function mapMedia(row: MemorialRow, publicDelivery = false): GalleryItem {
 }
 
 const MEMORIAL_PUBLIC_COLUMNS =
-  "id, slug, owner_id, full_name, preferred_name, creator_relationship, birth_year, birth_month, birth_day, death_year, death_month, death_day, location, headline, biography, portrait_photo_url, status, privacy, is_paid, section_settings, contribution_settings, access_pin_hash"
+  "id, slug, owner_id, full_name, preferred_name, creator_relationship, birth_year, birth_month, birth_day, death_year, death_month, death_day, location, headline, biography, portrait_photo_url, status, privacy, is_paid, section_settings, contribution_settings, access_pin_hash, theme"
 
 const MEDIA_COLUMNS =
   "id, caption, media_type, approx_year, location, album, is_pinned, url, order_index, created_at, source_memory_id, source_type, external_provider, external_id, external_url"
@@ -306,6 +306,7 @@ export const getMemorialViewContext = cache(async (slug: string): Promise<Memori
       privacy: memorial?.privacy,
       sectionSettings: sections,
       contributionSettings: memorial?.contribution_settings || null,
+      theme: (memorial?.theme as MemorialIdentity["theme"]) || "quiet",
     },
   }
 })
@@ -483,9 +484,9 @@ export async function loadMemorialHome(context: MemorialViewContext): Promise<Me
   const empty = <T,>(): PagedCollection<T> => ({ items: [], total: 0, hasMore: false, nextCursor: null })
   const [media, memories, timeline, tributes] = await Promise.all([
     sections.gallery === false ? empty<GalleryItem>() : loadBrowsePage<GalleryItem>(context, "gallery", { pageSize: 6, includeFacets: true, filter: "photo" }),
-    sections.stories === false ? empty<StoryItem>() : loadBrowsePage<StoryItem>(context, "memories", { pageSize: 2 }),
-    sections.timeline === false ? empty<TimelineMilestone>() : loadBrowsePage<TimelineMilestone>(context, "timeline", { pageSize: context.identity.isDemo ? 3 : 5 }),
-    sections.tributes === false ? empty<MemoryItem>() : loadBrowsePage<MemoryItem>(context, "tributes", { pageSize: 2 }),
+    sections.stories === false ? empty<StoryItem>() : loadBrowsePage<StoryItem>(context, "memories", { pageSize: 5 }),
+    sections.timeline === false ? empty<TimelineMilestone>() : loadBrowsePage<TimelineMilestone>(context, "timeline", { pageSize: context.identity.isDemo ? 3 : 6 }),
+    sections.tributes === false ? empty<MemoryItem>() : loadBrowsePage<MemoryItem>(context, "tributes", { pageSize: 6 }),
   ])
   if (context.identity.photoCount === undefined) {
     context.identity.photoCount = media.facets?.photo ?? 0

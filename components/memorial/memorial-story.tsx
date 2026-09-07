@@ -55,21 +55,21 @@ export function MemorialStory({ fullName, biography }: MemorialStoryProps) {
       <div className="flex flex-col gap-4">
 
         {/* Section Heading */}
-        <div className="flex flex-col gap-2 border-b border-black/[0.06] pb-4">
-          <h2 className="text-2xl sm:text-3xl font-medium tracking-tight text-[#181925]">
+        <div className="flex flex-col gap-2 border-b border-[var(--theme-border)] pb-4">
+          <h2 className="text-2xl sm:text-3xl font-medium tracking-tight text-[var(--theme-text-primary)]">
             The Story of {firstName}
           </h2>
         </div>
 
         {/* Narrative Body with Generous Editorial Leading */}
-        <div className="story-editorial-body text-[16px] sm:text-[18px] leading-8 sm:leading-9 text-[#3a3a40]">
+        <div className="story-editorial-body text-[16px] sm:text-[18px] leading-8 sm:leading-9 text-[var(--theme-text-body)]">
           {formattedBiography ? (
             <div
               dangerouslySetInnerHTML={{ __html: formattedBiography }}
               className="flex flex-col"
             />
           ) : (
-            <div className="p-8 rounded-3xl bg-[#fafafb] border border-black/[0.06] text-center text-sm text-[#71717a]">
+            <div className="p-8 rounded-3xl bg-[var(--theme-bg-surface-subtle)] border border-[var(--theme-border)] text-center text-sm text-[var(--theme-text-muted)]">
               A life story has not been written yet. Stories and memories contributed by family will appear here.
             </div>
           )}
@@ -79,37 +79,37 @@ export function MemorialStory({ fullName, biography }: MemorialStoryProps) {
 
       <style jsx global>{`
         .story-editorial-body h2 {
-          font-family: var(--font-serif, Georgia, serif);
+          font-family: var(--font-theme-heading, var(--font-serif, Georgia, serif));
           font-size: 1.5rem;
           font-weight: 500;
-          color: #181925;
+          color: var(--theme-text-primary);
           margin-top: 2rem;
           margin-bottom: 0.75rem;
           letter-spacing: -0.015em;
-          border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+          border-bottom: 1px solid var(--theme-border);
           padding-bottom: 0.5rem;
         }
         .story-editorial-body h3 {
-          font-family: var(--font-serif, Georgia, serif);
+          font-family: var(--font-theme-heading, var(--font-serif, Georgia, serif));
           font-size: 1.25rem;
           font-weight: 500;
-          color: #181925;
+          color: var(--theme-text-primary);
           margin-top: 1.5rem;
           margin-bottom: 0.5rem;
         }
         .story-editorial-body p {
           margin-bottom: 1.25rem;
-          color: #3a3a40;
-          line-height: 1.5;
+          color: var(--theme-text-body);
+          line-height: 1.6;
         }
         .story-editorial-body blockquote {
           margin: 1.5rem 0;
           padding: 1rem 1.5rem;
-          border-left: 3px solid #7c3aed;
-          background: #fafafb;
+          border-left: 3px solid var(--theme-accent);
+          background: var(--theme-bg-surface-subtle);
           border-radius: 1rem;
           font-style: italic;
-          color: #181925;
+          color: var(--theme-text-primary);
           font-size: 1.05rem;
           line-height: 1.75;
         }
@@ -122,7 +122,7 @@ export function MemorialStory({ fullName, biography }: MemorialStoryProps) {
           margin-bottom: 0.35rem;
         }
         .story-editorial-body a {
-          color: #7c3aed;
+          color: var(--theme-accent);
           text-decoration: underline;
           text-underline-offset: 4px;
           font-weight: 500;
@@ -133,7 +133,7 @@ export function MemorialStory({ fullName, biography }: MemorialStoryProps) {
         .story-editorial-body hr {
           margin: 2rem 0;
           border: none;
-          border-top: 1px solid rgba(0, 0, 0, 0.08);
+          border-top: 1px solid var(--theme-border);
         }
       `}</style>
     </section>

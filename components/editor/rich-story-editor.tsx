@@ -536,7 +536,7 @@ export function RichStoryEditor({
   }
 
   return (
-    <div className="flex flex-col rounded-3xl bg-white border border-black/[0.08] shadow-xs overflow-hidden transition-colors focus-within:border-primary/50 focus-within:ring-2 focus-within:ring-primary/10">
+    <div className="flex flex-col rounded-3xl bg-white border border-black/[0.08] shadow-xs overflow-hidden transition-colors focus-within:border-[var(--theme-accent,var(--primary))]/50 focus-within:ring-2 focus-within:ring-[var(--theme-accent,var(--primary))]/10">
       {/* 1. DISTRACTION-FREE EDITORIAL TOOLBAR */}
       <div className="flex items-center flex-wrap gap-1 px-3 py-2 bg-[#fafafb] border-b border-black/[0.06] select-none">
         {/* Paragraph / Body Button */}
@@ -548,7 +548,7 @@ export function RichStoryEditor({
           }}
           className={`inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-medium transition-colors cursor-pointer ${
             !activeFormats.h2 && !activeFormats.h3 && !activeFormats.quote
-              ? "bg-primary text-white shadow-xs"
+              ? "bg-[var(--theme-accent,var(--primary))] text-[var(--theme-accent-foreground,#ffffff)] shadow-xs"
               : "text-[#555] hover:text-[#181925] hover:bg-black/[0.05]"
           }`}
           title="Normal Paragraph Text"
@@ -566,7 +566,7 @@ export function RichStoryEditor({
           }}
           className={`inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-medium transition-colors cursor-pointer ${
             activeFormats.h2
-              ? "bg-primary text-white shadow-xs"
+              ? "bg-[var(--theme-accent,var(--primary))] text-[var(--theme-accent-foreground,#ffffff)] shadow-xs"
               : "text-[#555] hover:text-[#181925] hover:bg-black/[0.05]"
           }`}
           title="Section Heading (H2)"
@@ -583,7 +583,7 @@ export function RichStoryEditor({
           }}
           className={`inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-medium transition-colors cursor-pointer ${
             activeFormats.h3
-              ? "bg-primary text-white shadow-xs"
+              ? "bg-[var(--theme-accent,var(--primary))] text-[var(--theme-accent-foreground,#ffffff)] shadow-xs"
               : "text-[#555] hover:text-[#181925] hover:bg-black/[0.05]"
           }`}
           title="Subheading (H3)"
@@ -603,7 +603,7 @@ export function RichStoryEditor({
           }}
           className={`size-7 rounded-lg flex items-center justify-center transition-colors cursor-pointer ${
             activeFormats.bold
-              ? "bg-primary text-white shadow-xs"
+              ? "bg-[var(--theme-accent,var(--primary))] text-[var(--theme-accent-foreground,#ffffff)] shadow-xs"
               : "text-[#555] hover:text-[#181925] hover:bg-black/[0.05]"
           }`}
           title="Bold (Ctrl+B)"
@@ -619,7 +619,7 @@ export function RichStoryEditor({
           }}
           className={`size-7 rounded-lg flex items-center justify-center transition-colors cursor-pointer ${
             activeFormats.italic
-              ? "bg-primary text-white shadow-xs"
+              ? "bg-[var(--theme-accent,var(--primary))] text-[var(--theme-accent-foreground,#ffffff)] shadow-xs"
               : "text-[#555] hover:text-[#181925] hover:bg-black/[0.05]"
           }`}
           title="Italic (Ctrl+I)"
@@ -638,7 +638,7 @@ export function RichStoryEditor({
           }}
           className={`size-7 rounded-lg flex items-center justify-center transition-colors cursor-pointer ${
             activeFormats.quote
-              ? "bg-primary text-white shadow-xs"
+              ? "bg-[var(--theme-accent,var(--primary))] text-[var(--theme-accent-foreground,#ffffff)] shadow-xs"
               : "text-[#555] hover:text-[#181925] hover:bg-black/[0.05]"
           }`}
           title="Pull Quote / Favorite Saying"
@@ -654,7 +654,7 @@ export function RichStoryEditor({
           }}
           className={`size-7 rounded-lg flex items-center justify-center transition-colors cursor-pointer ${
             activeFormats.list
-              ? "bg-primary text-white shadow-xs"
+              ? "bg-[var(--theme-accent,var(--primary))] text-[var(--theme-accent-foreground,#ffffff)] shadow-xs"
               : "text-[#555] hover:text-[#181925] hover:bg-black/[0.05]"
           }`}
           title="Bullet List"
@@ -670,7 +670,7 @@ export function RichStoryEditor({
           }}
           className={`size-7 rounded-lg flex items-center justify-center transition-colors cursor-pointer ${
             activeFormats.link
-              ? "bg-primary text-white shadow-xs"
+              ? "bg-[var(--theme-accent,var(--primary))] text-[var(--theme-accent-foreground,#ffffff)] shadow-xs"
               : "text-[#555] hover:text-[#181925] hover:bg-black/[0.05]"
           }`}
           title="Insert Link"
@@ -751,7 +751,7 @@ export function RichStoryEditor({
           <div className="w-full max-w-sm rounded-2xl bg-white p-5 shadow-2xl border border-black/[0.08] flex flex-col gap-4 animate-in zoom-in-95 duration-150">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <Link2 className="size-4 text-primary" />
+                <Link2 className="size-4 text-[var(--theme-accent,var(--primary))]" />
                 <h4 className="text-sm font-medium text-[#181925]">Insert or Edit Link</h4>
               </div>
               <button
@@ -779,7 +779,7 @@ export function RichStoryEditor({
                   }
                 }}
                 placeholder="https://example.com or tribute page..."
-                className="w-full px-3 py-2 rounded-xl bg-[#fafafb] border border-black/[0.08] text-xs text-[#181925] outline-none focus:border-primary/50"
+                className="w-full px-3 py-2 rounded-xl bg-[#fafafb] border border-black/[0.08] text-xs text-[#181925] outline-none focus:border-[var(--theme-accent,var(--primary))]/50"
               />
             </div>
 
@@ -808,7 +808,7 @@ export function RichStoryEditor({
                 <button
                   type="button"
                   onClick={handleApplyLink}
-                  className="px-4 py-1.5 rounded-full bg-primary hover:bg-primary/90 text-white text-xs font-medium cursor-pointer shadow-xs"
+                  className="px-4 py-1.5 rounded-full bg-[var(--theme-accent,var(--primary))] hover:brightness-105 text-[var(--theme-accent-foreground,#ffffff)] text-xs font-medium cursor-pointer shadow-xs"
                 >
                   Apply
                 </button>

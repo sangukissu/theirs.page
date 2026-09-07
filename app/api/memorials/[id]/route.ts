@@ -126,6 +126,9 @@ export async function PATCH(req: NextRequest, context: RouteContext) {
     if (body.privacy !== undefined && !["public", "unlisted", "private"].includes(body.privacy)) {
       return NextResponse.json({ error: "Invalid privacy level." }, { status: 400 })
     }
+    if (body.theme !== undefined && !["quiet", "warm", "garden", "classic", "dusk", "light"].includes(body.theme)) {
+      return NextResponse.json({ error: "Invalid appearance atmosphere theme." }, { status: 400 })
+    }
 
     // 1. Permissions Split: Owner-Only Settings vs Co-Admin Editorial Content
     const ownerOnlyFields = [
@@ -180,6 +183,7 @@ export async function PATCH(req: NextRequest, context: RouteContext) {
       "biography",
       "section_settings",
       "contribution_settings",
+      "theme",
     ]
 
     for (const f of editorialFields) {

@@ -12,6 +12,8 @@
 
 export type PrivacyMode = 'public' | 'unlisted' | 'private'
 
+export type MemorialTheme = 'quiet' | 'warm' | 'garden' | 'classic' | 'dusk' | 'light'
+
 export type MemorialStatus = 'draft' | 'published' | 'archived'
 
 export type CollaboratorRole = 'co_admin' | 'contributor'
@@ -91,6 +93,7 @@ export interface Memorial {
   paid_at: string | null
   section_settings?: SectionSettings | null
   contribution_settings?: ContributionSettings | null
+  theme?: MemorialTheme | null
   created_at: string
   updated_at: string
 }

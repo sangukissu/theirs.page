@@ -118,7 +118,7 @@ export function LifeStories({
       {/* Section Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-black/[0.06] pb-6">
         <div className="flex flex-col gap-1">
-          <h2 className="text-2xl sm:text-3xl font-medium tracking-tight text-[#181925]">
+          <h2 className="text-2xl sm:text-3xl font-medium tracking-tight text-[var(--theme-text-primary)]">
             Stories & Memories of {firstName}
           </h2>
         </div>
@@ -126,7 +126,7 @@ export function LifeStories({
         <button
           type="button"
           onClick={() => showComposer ? document.getElementById("share-memory")?.scrollIntoView({ behavior: "smooth" }) : onOpenContribute("memory")}
-          className="inline-flex items-center gap-1.5 px-5 py-2.5 rounded-full bg-primary hover:bg-primary/90 text-primary-foreground text-xs font-medium transition-all cursor-pointer shadow-xs active:scale-95 shrink-0 self-start sm:self-auto"
+          className="inline-flex items-center gap-1.5 px-5 py-2.5 rounded-full bg-[var(--theme-accent)] hover:brightness-105 text-[var(--theme-accent-foreground)] text-xs font-medium transition-all cursor-pointer shadow-xs active:scale-95 shrink-0 self-start sm:self-auto"
         >
           <Plus className="size-3.5" />
           <span>Share a memory</span>
@@ -135,8 +135,8 @@ export function LifeStories({
 
       {/* Stories Reading Feed */}
       {sorted.length === 0 ? (
-        <div className="py-16 text-center text-sm text-[#71717a] rounded-3xl bg-[#f7f7f8] border border-black/[0.06] flex flex-col items-center justify-center gap-3">
-          <div className="size-12 rounded-2xl bg-white border border-black/[0.06] text-primary flex items-center justify-center">
+        <div className="py-16 text-center text-sm text-[var(--theme-text-muted)] rounded-3xl bg-[var(--theme-bg-surface-subtle)] border border-[var(--theme-border)] flex flex-col items-center justify-center gap-3">
+          <div className="size-12 rounded-2xl bg-[var(--theme-bg-surface)] border border-[var(--theme-border)] text-[var(--theme-accent)] flex items-center justify-center">
             <QuillFeatherEmblem size={28} />
           </div>
           <p className="max-w-md text-xs sm:text-sm">
@@ -145,7 +145,7 @@ export function LifeStories({
           <button
             type="button"
             onClick={() => showComposer ? document.getElementById("share-memory")?.scrollIntoView({ behavior: "smooth" }) : onOpenContribute("memory")}
-            className="inline-flex items-center gap-1.5 px-5 py-2.5 rounded-full bg-primary text-primary-foreground text-xs font-medium hover:bg-primary/90 transition-all cursor-pointer shadow-xs active:scale-95 mt-1"
+            className="inline-flex items-center gap-1.5 px-5 py-2.5 rounded-full bg-[var(--theme-accent)] text-[var(--theme-accent-foreground)] text-xs font-medium hover:brightness-105 transition-all cursor-pointer shadow-xs active:scale-95 mt-1"
           >
             <Plus className="size-3.5" />
             <span>Share a memory</span>
@@ -162,24 +162,24 @@ export function LifeStories({
               <article
                 key={item.id}
                 id={`story-${item.id}`}
-                className="p-6 sm:p-8 rounded-3xl bg-[#f7f7f8] border border-black/[0.06] flex flex-col gap-4 transition-all hover:border-black/[0.12] relative group shadow-none scroll-mt-28"
+                className="p-6 sm:p-8 rounded-3xl bg-[var(--theme-bg-surface)] border border-[var(--theme-border)] flex flex-col gap-4 transition-all hover:border-[var(--theme-accent)]/30 relative group shadow-none scroll-mt-28"
               >
                 {/* Author & Context Header */}
                 <div className="flex items-start justify-between gap-3">
                   <div className="flex items-center gap-3">
-                    <div className="size-10 rounded-2xl bg-white border border-black/[0.06] text-primary flex items-center justify-center shrink-0">
+                    <div className="size-10 rounded-2xl bg-white dark:bg-white/10 border border-[var(--theme-border)] text-[var(--theme-accent)] flex items-center justify-center shrink-0 shadow-2xs">
                       <QuillFeatherEmblem size={24} />
                     </div>
 
                     <div className="flex flex-col">
                       <div className="flex items-center gap-2 flex-wrap">
-                        <span className="text-sm sm:text-base font-semibold text-[#181925] tracking-tight">
+                        <span className="text-sm sm:text-base font-semibold text-[var(--theme-text-primary)] tracking-tight">
                           {item.authorName}
                         </span>
                         {item.authorRelationship && (
                           <>
-                            <span className="text-black/[0.2]">·</span>
-                            <span className="text-xs text-[#71717a] font-normal">
+                            <span className="opacity-40">·</span>
+                            <span className="text-xs text-[var(--theme-text-muted)] font-normal">
                               {item.authorRelationship}
                             </span>
                           </>
@@ -192,7 +192,7 @@ export function LifeStories({
                         )}
                       </div>
 
-                      <div className="flex items-center gap-2 text-[11px] text-[#888] mt-0.5 font-mono flex-wrap">
+                      <div className="flex items-center gap-2 text-[11px] text-[var(--theme-text-muted)] mt-0.5 font-mono flex-wrap">
                         {item.dateOrYear && <span>{item.dateOrYear}</span>}
                         {item.chronologicalYear && item.chronologicalYear !== Number(item.dateOrYear) && (
                           <span className="inline-flex items-center gap-1 font-mono">
@@ -204,7 +204,7 @@ export function LifeStories({
                           <>
                             <span>·</span>
                             <span className="inline-flex items-center gap-1 font-sans">
-                              <MapPin className="size-3 text-[#aaa]" />
+                              <MapPin className="size-3 opacity-70" />
                               {item.location}
                             </span>
                           </>
@@ -218,28 +218,28 @@ export function LifeStories({
                     <button
                       type="button"
                       onClick={() => setActiveMenuId(isMenuOpen ? null : item.id)}
-                      className="size-7 rounded-full hover:bg-black/[0.05] text-[#888] hover:text-[#181925] flex items-center justify-center transition-colors cursor-pointer"
+                      className="size-7 rounded-full hover:bg-black/[0.05] text-[var(--theme-text-muted)] hover:text-[var(--theme-text-primary)] flex items-center justify-center transition-colors cursor-pointer"
                       title="Options"
                     >
                       <MoreVertical className="size-4" />
                     </button>
 
                     {isMenuOpen && (
-                      <div className="absolute right-0 top-8 z-30 w-44 rounded-2xl bg-white border border-black/[0.08] shadow-lg py-1.5 flex flex-col text-xs text-[#333] animate-in fade-in zoom-in-95">
+                      <div className="absolute right-0 top-8 z-30 w-44 rounded-2xl bg-[var(--theme-bg-surface)] border border-[var(--theme-border)] shadow-lg py-1.5 flex flex-col text-xs text-[var(--theme-text-body)] animate-in fade-in zoom-in-95">
                         <button
                           type="button"
                           onClick={() => handleShare(item)}
-                          className="w-full px-3.5 py-2 text-left hover:bg-neutral-50 flex items-center gap-2 cursor-pointer"
+                          className="w-full px-3.5 py-2 text-left hover:bg-[var(--theme-bg-surface-subtle)] flex items-center gap-2 cursor-pointer"
                         >
-                          <Share2 className="size-3.5 text-[#666]" />
+                          <Share2 className="size-3.5 opacity-70" />
                           <span>{copiedId === item.id ? "Link copied!" : "Share this story"}</span>
                         </button>
                         {item.authorEmail && (
                           <a
                             href={`mailto:${item.authorEmail}?subject=Regarding your story about ${fullName}`}
-                            className="w-full px-3.5 py-2 text-left hover:bg-neutral-50 flex items-center gap-2 cursor-pointer"
+                            className="w-full px-3.5 py-2 text-left hover:bg-[var(--theme-bg-surface-subtle)] flex items-center gap-2 cursor-pointer"
                           >
-                            <Mail className="size-3.5 text-[#666]" />
+                            <Mail className="size-3.5 opacity-70" />
                             <span>Contact author</span>
                           </a>
                         )}
@@ -249,7 +249,7 @@ export function LifeStories({
                 </div>
 
                 {/* The Written Story Body */}
-                <div className="text-[15px] sm:text-base leading-relaxed sm:leading-7 text-[#2c2d30] font-normal pt-1">
+                <div className="text-[15px] sm:text-base leading-relaxed sm:leading-7 text-[var(--theme-text-body)] font-normal pt-1">
                   {item.contentFormat === "html" && (!shouldTruncate || isExpanded) ? (
                     <div className="memory-rich-text" dangerouslySetInnerHTML={{ __html: item.story }} />
                   ) : (
@@ -261,7 +261,7 @@ export function LifeStories({
                     <button
                       type="button"
                       onClick={() => toggleExpand(item.id)}
-                      className="text-xs font-semibold text-primary hover:underline cursor-pointer mt-2 inline-block select-none"
+                      className="text-xs font-semibold text-[var(--theme-accent)] hover:underline cursor-pointer mt-2 inline-block select-none"
                     >
                       {isExpanded ? "read less" : "read full story"}
                     </button>
@@ -330,13 +330,13 @@ export function LifeStories({
 
       <style jsx global>{`
         .memory-rich-text > * + * { margin-top: 0.85rem; }
-        .memory-rich-text h2 { font-family: var(--font-serif, Georgia, serif); font-size: 1.3rem; font-weight: 600; color: #181925; }
-        .memory-rich-text h3 { font-family: var(--font-serif, Georgia, serif); font-size: 1.12rem; font-weight: 600; color: #181925; }
-        .memory-rich-text blockquote { border-left: 3px solid var(--primary); padding: 0.65rem 1rem; color: #4b4b52; font-style: italic; }
+        .memory-rich-text h2 { font-family: var(--font-serif, Georgia, serif); font-size: 1.3rem; font-weight: 600; color: var(--theme-text-primary, #181925); }
+        .memory-rich-text h3 { font-family: var(--font-serif, Georgia, serif); font-size: 1.12rem; font-weight: 600; color: var(--theme-text-primary, #181925); }
+        .memory-rich-text blockquote { border-left: 3px solid var(--theme-accent, var(--primary)); padding: 0.65rem 1rem; color: var(--theme-text-body, #4b4b52); font-style: italic; }
         .memory-rich-text ul { list-style: disc; padding-left: 1.4rem; }
         .memory-rich-text ol { list-style: decimal; padding-left: 1.4rem; }
-        .memory-rich-text a { color: var(--primary); text-decoration: underline; text-underline-offset: 3px; }
-        .memory-rich-text hr { border: 0; border-top: 1px solid rgba(0,0,0,.09); margin: 1.25rem 0; }
+        .memory-rich-text a { color: var(--theme-accent, var(--primary)); text-decoration: underline; text-underline-offset: 3px; }
+        .memory-rich-text hr { border: 0; border-top: 1px solid var(--theme-border, rgba(0,0,0,.09)); margin: 1.25rem 0; }
       `}</style>
 
       {/* Lightbox Modal */}

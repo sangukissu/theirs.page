@@ -306,7 +306,7 @@ export function VintageQuillEmblem({ className = "", size = 44 }: EmblemProps) {
  */
 export function TributeEmblem({
   type = "flower",
-  className = "text-primary",
+  className = "text-[var(--theme-accent,var(--primary))]",
   size = 46,
   variant = "classic",
 }: {

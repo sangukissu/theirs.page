@@ -130,26 +130,26 @@ export function MemoryComposer({ memorialId, slug, fullName, onSubmitted }: Memo
   }
 
   return (
-    <form id="share-memory" onSubmit={handleSubmit} className="scroll-mt-28 rounded-3xl border border-black/[0.08] bg-[#faf9f7] p-4 sm:p-6">
+    <form id="share-memory" onSubmit={handleSubmit} className="scroll-mt-28 rounded-3xl border border-[var(--theme-border)] bg-[var(--theme-bg-surface)] p-4 sm:p-6">
       <div className="mb-5">
-        <h3 className="font-serif text-xl text-[#181925] sm:text-2xl">Share a memory</h3>
-        <p className="mt-1 text-sm leading-6 text-[#666]">Tell the story in your own words. A draft stays on this device for seven days.</p>
+        <h3 className="font-serif text-xl text-[var(--theme-text-primary)] sm:text-2xl">Share a memory</h3>
+        <p className="mt-1 text-sm leading-6 text-[var(--theme-text-secondary)]">Tell the story in your own words. A draft stays on this device for seven days.</p>
       </div>
       <div className="mb-4 grid gap-3 sm:grid-cols-2">
-        <label className="text-sm font-medium text-[#333]">Your name
-          <input required maxLength={TEXT_LIMITS.contributorName} value={authorName} onChange={(e) => setAuthorName(e.target.value)} className="mt-1.5 w-full rounded-xl border border-black/[0.1] bg-white px-3 py-2.5 text-base font-normal outline-none focus:border-primary/50" />
+        <label className="text-sm font-medium text-[var(--theme-text-primary)]">Your name
+          <input required maxLength={TEXT_LIMITS.contributorName} value={authorName} onChange={(e) => setAuthorName(e.target.value)} className="mt-1.5 w-full rounded-xl border border-[var(--theme-border)] bg-[var(--theme-bg-surface)] px-3 py-2.5 text-base font-normal text-[var(--theme-text-primary)] placeholder:text-[var(--theme-text-secondary)]/50 outline-none focus:border-[var(--theme-accent)]/60 focus:ring-1 focus:ring-[var(--theme-accent)]/20" />
         </label>
-        <label className="text-sm font-medium text-[#333]">Relationship to {firstName}
-          <input maxLength={TEXT_LIMITS.relationship} value={relationship} onChange={(e) => setRelationship(e.target.value)} className="mt-1.5 w-full rounded-xl border border-black/[0.1] bg-white px-3 py-2.5 text-base font-normal outline-none focus:border-primary/50" />
+        <label className="text-sm font-medium text-[var(--theme-text-primary)]">Relationship to {firstName}
+          <input maxLength={TEXT_LIMITS.relationship} value={relationship} onChange={(e) => setRelationship(e.target.value)} className="mt-1.5 w-full rounded-xl border border-[var(--theme-border)] bg-[var(--theme-bg-surface)] px-3 py-2.5 text-base font-normal text-[var(--theme-text-primary)] placeholder:text-[var(--theme-text-secondary)]/50 outline-none focus:border-[var(--theme-accent)]/60 focus:ring-1 focus:ring-[var(--theme-accent)]/20" />
         </label>
-        <label className="text-sm font-medium text-[#333]">Approximate year
-          <input inputMode="numeric" maxLength={4} placeholder="e.g. 1998" value={year} onChange={(e) => setYear(e.target.value.replace(/\D/g, "").slice(0, 4))} className="mt-1.5 w-full rounded-xl border border-black/[0.1] bg-white px-3 py-2.5 text-base font-normal outline-none focus:border-primary/50" />
+        <label className="text-sm font-medium text-[var(--theme-text-primary)]">Approximate year
+          <input inputMode="numeric" maxLength={4} placeholder="e.g. 1998" value={year} onChange={(e) => setYear(e.target.value.replace(/\D/g, "").slice(0, 4))} className="mt-1.5 w-full rounded-xl border border-[var(--theme-border)] bg-[var(--theme-bg-surface)] px-3 py-2.5 text-base font-normal text-[var(--theme-text-primary)] placeholder:text-[var(--theme-text-secondary)]/50 outline-none focus:border-[var(--theme-accent)]/60 focus:ring-1 focus:ring-[var(--theme-accent)]/20" />
         </label>
-        <label className="text-sm font-medium text-[#333]">Location
-          <input maxLength={TEXT_LIMITS.location} value={location} onChange={(e) => setLocation(e.target.value)} className="mt-1.5 w-full rounded-xl border border-black/[0.1] bg-white px-3 py-2.5 text-base font-normal outline-none focus:border-primary/50" />
+        <label className="text-sm font-medium text-[var(--theme-text-primary)]">Location
+          <input maxLength={TEXT_LIMITS.location} value={location} onChange={(e) => setLocation(e.target.value)} className="mt-1.5 w-full rounded-xl border border-[var(--theme-border)] bg-[var(--theme-bg-surface)] px-3 py-2.5 text-base font-normal text-[var(--theme-text-primary)] placeholder:text-[var(--theme-text-secondary)]/50 outline-none focus:border-[var(--theme-accent)]/60 focus:ring-1 focus:ring-[var(--theme-accent)]/20" />
         </label>
       </div>
-      <RichStoryEditor value={content} onChange={setContent} maxPlainTextLength={TEXT_LIMITS.memory} placeholder={`I remember when ${firstName}…`} />
+      <RichStoryEditor value={content} onChange={setContent} maxPlainTextLength={TEXT_LIMITS.memory} placeholder={`I remember when ${firstName}\u2026`} />
       {error && <p role="alert" className="mt-3 flex items-center gap-2 text-sm text-rose-700"><AlertCircle className="size-4" />{error}</p>}
       <div className="mt-4 flex flex-col items-center justify-between gap-4 sm:flex-row">
         {siteKey ? (
@@ -157,9 +157,9 @@ export function MemoryComposer({ memorialId, slug, fullName, onSubmitted }: Memo
         ) : (
           <p className="text-sm text-amber-800">Contributions are temporarily unavailable while the security check is configured.</p>
         )}
-        <button type="submit" disabled={isSubmitting || !siteKey || !turnstileToken || !authorName.trim() || !plainContent} className="inline-flex min-h-11 items-center gap-2 rounded-full bg-primary px-5 text-sm font-semibold text-primary-foreground disabled:cursor-not-allowed disabled:opacity-50">
+        <button type="submit" disabled={isSubmitting || !siteKey || !turnstileToken || !authorName.trim() || !plainContent} className="inline-flex min-h-11 items-center gap-2 rounded-full bg-[var(--theme-accent)] px-5 text-sm font-semibold text-[var(--theme-accent-foreground)] shadow-xs transition-all hover:brightness-105 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50">
           {isSubmitting ? <Loader2 className="size-4 animate-spin" /> : <Send className="size-4" />}
-          {isSubmitting ? "Sending…" : "Share memory"}
+          {isSubmitting ? "Sending\u2026" : "Share memory"}
         </button>
       </div>
     </form>

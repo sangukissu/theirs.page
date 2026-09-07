@@ -264,9 +264,9 @@ export function MemoriesStream({
   return (
     <section id="tributes" className="py-12 px-4 max-w-4xl mx-auto flex flex-col gap-4 scroll-mt-24">
       {/* Header with single clear CTA */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-black/[0.06] pb-6">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-[var(--theme-border)] pb-6">
         <div className="flex flex-col gap-1">
-          <h2 className="text-2xl sm:text-3xl font-medium tracking-tight text-[#181925]">
+          <h2 className="text-2xl sm:text-3xl font-medium tracking-tight text-[var(--theme-text-primary)]">
             Tributes to {firstName}
           </h2>
         </div>
@@ -275,7 +275,7 @@ export function MemoriesStream({
           <button
             type="button"
             onClick={handleScrollToForm}
-            className="inline-flex items-center gap-1.5 px-5 py-2.5 rounded-full bg-primary hover:bg-primary/90 text-primary-foreground text-xs font-medium transition-all cursor-pointer shadow-xs active:scale-95 shrink-0 self-start sm:self-auto"
+            className="inline-flex items-center gap-1.5 px-5 py-2.5 rounded-full bg-[var(--theme-accent)] hover:brightness-105 text-[var(--theme-accent-foreground)] text-xs font-medium transition-all cursor-pointer shadow-xs active:scale-95 shrink-0 self-start sm:self-auto"
           >
             <Plus className="size-3.5" />
             <span>Leave a Tribute</span>
@@ -286,7 +286,7 @@ export function MemoriesStream({
             <button
               type="button"
               onClick={() => setIsContactOpen(true)}
-              className="inline-flex min-h-10 items-center gap-2 rounded-full border border-primary/25 bg-white px-4 text-xs font-semibold text-primary transition-colors hover:border-primary/50 hover:bg-primary/[0.04]"
+              className="inline-flex min-h-10 items-center gap-2 rounded-full border border-[var(--theme-border)] bg-[var(--theme-bg-surface-subtle)] px-4 text-xs font-semibold text-[var(--theme-text-primary)] transition-colors hover:border-[var(--theme-accent)]/40 hover:bg-[var(--theme-bg-surface)]"
             >
               <Mail className="size-3.5" />
               <span>Contact caretaker</span>
@@ -295,7 +295,7 @@ export function MemoriesStream({
             <button
               type="button"
               onClick={handleScrollToForm}
-              className="inline-flex items-center gap-1.5 px-5 py-2.5 rounded-full bg-primary hover:bg-primary/90 text-primary-foreground text-xs font-medium transition-all cursor-pointer shadow-xs active:scale-95 shrink-0 self-start sm:self-auto"
+              className="inline-flex items-center gap-1.5 px-5 py-2.5 rounded-full bg-[var(--theme-accent)] hover:brightness-105 text-[var(--theme-accent-foreground)] text-xs font-medium transition-all cursor-pointer shadow-xs active:scale-95 shrink-0 self-start sm:self-auto"
             >
               <Plus className="size-3.5" />
               <span>Leave a Tribute</span>
@@ -306,12 +306,12 @@ export function MemoriesStream({
 
       {/* Reading Stream of Tributes */}
       {sorted.length === 0 ? (
-        <div className="py-16 text-center text-sm text-[#71717a] rounded-3xl bg-[#f7f7f8] border border-black/[0.06] flex flex-col items-center justify-center gap-3">
+        <div className="py-16 text-center text-sm text-[var(--theme-text-muted)] rounded-3xl bg-[var(--theme-bg-surface-subtle)] border border-[var(--theme-border)] flex flex-col items-center justify-center gap-3">
           <p>No tributes shared yet. Be the first to leave words of remembrance for {firstName}.</p>
           <button
             type="button"
             onClick={handleScrollToForm}
-            className="inline-flex items-center gap-1.5 px-5 py-2.5 rounded-full bg-primary text-primary-foreground text-xs font-medium hover:bg-primary/90 transition-all cursor-pointer shadow-xs active:scale-95"
+            className="inline-flex items-center gap-1.5 px-5 py-2.5 rounded-full bg-[var(--theme-accent)] text-[var(--theme-accent-foreground)] text-xs font-medium hover:brightness-105 transition-all cursor-pointer shadow-xs active:scale-95"
           >
             <Plus className="size-3.5" />
             <span>Leave a Tribute</span>
@@ -335,15 +335,15 @@ export function MemoriesStream({
               <article
                 key={item.id}
                 id={`tribute-${item.id}`}
-                className={`p-6 sm:p-7 rounded-3xl bg-[#f7f7f8] border flex flex-col sm:flex-row items-start gap-4 sm:gap-6 transition-all relative group shadow-none scroll-mt-28 ${isDemo ? "border-black/[0.06] hover:border-black/[0.12]" : "border-[#dedfe1] hover:border-[#c9cbd0]"}`}
+                className="p-6 sm:p-7 rounded-3xl bg-[var(--theme-bg-surface)] border border-[var(--theme-border)] hover:border-[var(--theme-accent)]/30 flex flex-col sm:flex-row items-start gap-4 sm:gap-6 transition-all relative group shadow-none scroll-mt-28"
               >
                 {!isDemo && isNew && (
-                  <span className="absolute -left-px -top-px rounded-br-xl rounded-tl-[23px] bg-primary px-3 py-1 text-[9px] font-bold uppercase tracking-[0.12em] text-white shadow-[inset_0_-1px_0_rgba(0,0,0,0.08)]">
+                  <span className="absolute -left-px -top-px rounded-br-xl rounded-tl-[23px] bg-[var(--theme-accent)] px-3 py-1 text-[9px] font-bold uppercase tracking-[0.12em] text-[var(--theme-accent-foreground)] shadow-[inset_0_-1px_0_rgba(0,0,0,0.08)]">
                     New
                   </span>
                 )}
                 {/* Left Column: Linocut Ritual Emblem in clean white badge */}
-                <div className={`shrink-0 p-2.5 rounded-2xl bg-white border border-black/[0.06] flex items-center justify-center self-start shadow-none ${isDemo ? "text-primary" : "text-[#575b58]"}`}>
+                <div className="shrink-0 p-2.5 rounded-2xl bg-white dark:bg-white/10 border border-[var(--theme-border)] text-[var(--theme-accent)] flex items-center justify-center self-start shadow-2xs">
                   <TributeEmblem
                     type={item.tributeType || (item.photoUrl ? "photo" : "note")}
                     size={40}
@@ -358,13 +358,13 @@ export function MemoriesStream({
                   <div className="flex items-start justify-between gap-3">
                     <div className="flex flex-col">
                       <div className="flex items-center gap-2 flex-wrap">
-                        <span className="text-sm sm:text-base font-semibold text-[#181925] tracking-tight">
+                        <span className="text-sm sm:text-base font-semibold text-[var(--theme-text-primary)] tracking-tight">
                           {item.authorName}
                         </span>
                         {item.authorRelationship && (
                           <>
-                            <span className="text-black/[0.2]">·</span>
-                            <span className="text-xs text-[#71717a] font-normal">
+                            <span className="opacity-40">·</span>
+                            <span className="text-xs text-[var(--theme-text-muted)] font-normal">
                               {item.authorRelationship}
                             </span>
                           </>
@@ -382,13 +382,13 @@ export function MemoriesStream({
                         )}
                       </div>
 
-                      <div className="flex items-center gap-2 text-[11px] text-[#888] mt-0.5 font-mono">
+                      <div className="flex items-center gap-2 text-[11px] text-[var(--theme-text-muted)] mt-0.5 font-mono">
                         {item.dateOrYear && <span>{item.dateOrYear}</span>}
                         {item.location && (
                           <>
                             <span>·</span>
                             <span className="inline-flex items-center gap-1 font-sans">
-                              <MapPin className="size-3 text-[#aaa]" />
+                              <MapPin className="size-3 opacity-70" />
                               {item.location}
                             </span>
                           </>
@@ -401,28 +401,28 @@ export function MemoriesStream({
                       <button
                         type="button"
                         onClick={() => setActiveMenuId(isMenuOpen ? null : item.id)}
-                        className="size-7 rounded-full hover:bg-black/[0.05] text-[#888] hover:text-[#181925] flex items-center justify-center transition-colors cursor-pointer"
+                        className="size-7 rounded-full hover:bg-black/[0.05] text-[var(--theme-text-muted)] hover:text-[var(--theme-text-primary)] flex items-center justify-center transition-colors cursor-pointer"
                         title="Options"
                       >
                         <MoreVertical className="size-4" />
                       </button>
 
                       {isMenuOpen && (
-                        <div className="absolute right-0 top-8 z-30 w-44 rounded-2xl bg-white border border-black/[0.08] shadow-lg py-1.5 flex flex-col text-xs text-[#333] animate-in fade-in zoom-in-95">
+                        <div className="absolute right-0 top-8 z-30 w-44 rounded-2xl bg-[var(--theme-bg-surface)] border border-[var(--theme-border)] shadow-lg py-1.5 flex flex-col text-xs text-[var(--theme-text-body)] animate-in fade-in zoom-in-95">
                           <button
                             type="button"
                             onClick={() => handleShare(item)}
-                            className="w-full px-3.5 py-2 text-left hover:bg-neutral-50 flex items-center gap-2 cursor-pointer"
+                            className="w-full px-3.5 py-2 text-left hover:bg-[var(--theme-bg-surface-subtle)] flex items-center gap-2 cursor-pointer"
                           >
-                            <Share2 className="size-3.5 text-[#666]" />
+                            <Share2 className="size-3.5 opacity-70" />
                             <span>Share this tribute</span>
                           </button>
                           {item.authorEmail && (
                             <a
                               href={`mailto:${item.authorEmail}?subject=Regarding your tribute to ${fullName}`}
-                              className="w-full px-3.5 py-2 text-left hover:bg-neutral-50 flex items-center gap-2 cursor-pointer"
+                              className="w-full px-3.5 py-2 text-left hover:bg-[var(--theme-bg-surface-subtle)] flex items-center gap-2 cursor-pointer"
                             >
-                              <Mail className="size-3.5 text-[#666]" />
+                              <Mail className="size-3.5 opacity-70" />
                               <span>Contact author</span>
                             </a>
                           )}
@@ -432,7 +432,7 @@ export function MemoriesStream({
                   </div>
 
                   {/* Story Narrative with Progressive Disclosure */}
-                  <div className="text-[14.5px] sm:text-[15.5px] leading-relaxed sm:leading-7 text-[#2c2d30] font-normal">
+                  <div className="text-[14.5px] sm:text-[15.5px] leading-relaxed sm:leading-7 text-[var(--theme-text-body)] font-normal">
                     <p className="whitespace-pre-line">
                       {shouldTruncate && !isExpanded
                         ? `${item.story.slice(0, 240)}...`
@@ -442,7 +442,7 @@ export function MemoriesStream({
                       <button
                         type="button"
                         onClick={() => toggleExpand(item.id)}
-                        className="text-xs font-semibold text-primary hover:underline cursor-pointer mt-1.5 inline-block select-none"
+                        className="text-xs font-semibold text-[var(--theme-accent)] hover:underline cursor-pointer mt-1.5 inline-block select-none"
                       >
                         {isExpanded ? "read less" : "read more"}
                       </button>
@@ -452,7 +452,7 @@ export function MemoriesStream({
 
 
                   {/* Bottom Action: Clean Share link */}
-                  <div className="pt-2 border-t border-black/[0.04] flex items-center justify-between text-xs text-[#888]">
+                  <div className="pt-2 border-t border-[var(--theme-border-subtle)] flex items-center justify-between text-xs text-[var(--theme-text-muted)]">
                     {isDemo ? (
                       <>
                         <button
@@ -483,17 +483,17 @@ export function MemoriesStream({
       {/* Embedded Open Tribute Form with all 3 Ritual Options */}
       <div
         id="open-tribute-form"
-        className="rounded-3xl bg-[#f7f7f8] border border-black/[0.08] p-6 sm:p-8 scroll-mt-28 mt-2 shadow-xs transition-all"
+        className="rounded-3xl bg-[var(--theme-bg-surface)] border border-[var(--theme-border)] p-6 sm:p-8 scroll-mt-28 mt-2 shadow-xs transition-all"
       >
         {isSubmitted ? (
           <div className="py-8 text-center flex flex-col items-center justify-center gap-3 animate-in fade-in">
-            <div className="size-14 rounded-2xl bg-primary/5 border border-primary/20 text-primary flex items-center justify-center shadow-xs">
+            <div className="size-14 rounded-2xl bg-[var(--theme-accent)]/10 border border-[var(--theme-accent)]/30 text-[var(--theme-accent)] flex items-center justify-center shadow-xs">
               {ritualEmblem(tributeRitual, 30)}
             </div>
-            <h3 className="text-lg font-medium text-[#181925]">
+            <h3 className="text-lg font-medium text-[var(--theme-text-primary)]">
               Thank you, {authorName}
             </h3>
-            <p className="text-xs sm:text-sm text-[#71717a] max-w-md leading-relaxed">
+            <p className="text-xs sm:text-sm text-[var(--theme-text-muted)] max-w-md leading-relaxed">
               Your tribute to {firstName} has been placed. Thank you for honoring their memory.
             </p>
             <button
@@ -503,7 +503,7 @@ export function MemoriesStream({
                 setIsSubmitted(false)
                 resetTurnstile()
               }}
-              className="mt-2 text-xs font-semibold text-primary hover:underline cursor-pointer"
+              className="mt-2 text-xs font-semibold text-[var(--theme-accent)] hover:underline cursor-pointer"
             >
               Leave another tribute &rarr;
             </button>
@@ -512,7 +512,7 @@ export function MemoriesStream({
           <form onSubmit={handleTributeSubmit} className="flex flex-col gap-5">
             {/* Form Eyebrow & Header */}
             <div className="flex flex-col gap-1">
-              <h3 className="text-lg sm:text-xl font-medium tracking-tight text-[#181925]">
+              <h3 className="text-lg sm:text-xl font-medium tracking-tight text-[var(--theme-text-primary)]">
                 Leave a Tribute to {firstName}
               </h3>
             </div>
@@ -523,8 +523,8 @@ export function MemoriesStream({
                 type="button"
                 onClick={() => setTributeRitual("flower")}
                 className={`flex flex-col items-center justify-center py-3.5 px-2 rounded-2xl border transition-all cursor-pointer text-center ${tributeRitual === "flower"
-                  ? "bg-primary/5 border-primary text-primary ring-1 ring-primary/30 shadow-xs"
-                  : "bg-white border-black/[0.08] text-[#555] hover:bg-neutral-50 hover:text-[#181925]"
+                  ? "bg-[var(--theme-accent)]/10 border-[var(--theme-accent)] text-[var(--theme-accent)] ring-1 ring-[var(--theme-accent)]/30 shadow-xs"
+                  : "bg-[var(--theme-bg-surface-subtle)] border-[var(--theme-border)] text-[var(--theme-text-muted)] hover:text-[var(--theme-text-primary)] hover:border-[var(--theme-accent)]/30"
                   }`}
               >
                 {ritualEmblem("flower", 26, "shrink-0 mb-1")}
@@ -535,8 +535,8 @@ export function MemoriesStream({
                 type="button"
                 onClick={() => setTributeRitual("candle")}
                 className={`flex flex-col items-center justify-center py-3.5 px-2 rounded-2xl border transition-all cursor-pointer text-center ${tributeRitual === "candle"
-                  ? "bg-primary/5 border-primary text-primary ring-1 ring-primary/30 shadow-xs"
-                  : "bg-white border-black/[0.08] text-[#555] hover:bg-neutral-50 hover:text-[#181925]"
+                  ? "bg-[var(--theme-accent)]/10 border-[var(--theme-accent)] text-[var(--theme-accent)] ring-1 ring-[var(--theme-accent)]/30 shadow-xs"
+                  : "bg-[var(--theme-bg-surface-subtle)] border-[var(--theme-border)] text-[var(--theme-text-muted)] hover:text-[var(--theme-text-primary)] hover:border-[var(--theme-accent)]/30"
                   }`}
               >
                 {ritualEmblem("candle", 26, "shrink-0 mb-1")}
@@ -547,8 +547,8 @@ export function MemoriesStream({
                 type="button"
                 onClick={() => setTributeRitual("note")}
                 className={`flex flex-col items-center justify-center py-3.5 px-2 rounded-2xl border transition-all cursor-pointer text-center ${tributeRitual === "note"
-                  ? "bg-primary/5 border-primary text-primary ring-1 ring-primary/30 shadow-xs"
-                  : "bg-white border-black/[0.08] text-[#555] hover:bg-neutral-50 hover:text-[#181925]"
+                  ? "bg-[var(--theme-accent)]/10 border-[var(--theme-accent)] text-[var(--theme-accent)] ring-1 ring-[var(--theme-accent)]/30 shadow-xs"
+                  : "bg-[var(--theme-bg-surface-subtle)] border-[var(--theme-border)] text-[var(--theme-text-muted)] hover:text-[var(--theme-text-primary)] hover:border-[var(--theme-accent)]/30"
                   }`}
               >
                 {ritualEmblem("note", 26, "shrink-0 mb-1")}
@@ -559,7 +559,7 @@ export function MemoriesStream({
             {/* 2. Contributor Name & Relationship */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div className="flex flex-col gap-1">
-                <label className="text-[11px] font-mono text-[#71717a] uppercase tracking-wider">
+                <label className="text-[11px] font-mono text-[var(--theme-text-muted)] uppercase tracking-wider">
                   Your Name *
                 </label>
                 <input
@@ -570,12 +570,12 @@ export function MemoriesStream({
                   value={authorName}
                   onChange={(e) => setAuthorName(e.target.value.slice(0, 60))}
                   placeholder="e.g. David Miller"
-                  className="w-full px-3.5 py-2.5 rounded-xl bg-white border border-black/[0.08] text-sm text-[#181925] placeholder:text-[#aaa] outline-none focus:border-primary/50 transition-colors"
+                  className="w-full px-3.5 py-2.5 rounded-xl bg-[var(--theme-bg-surface-subtle)] border border-[var(--theme-border)] text-sm text-[var(--theme-text-primary)] placeholder:text-[var(--theme-text-muted)]/60 outline-none focus:border-[var(--theme-accent)] focus:ring-1 focus:ring-[var(--theme-accent)]/20 transition-colors"
                 />
               </div>
 
               <div className="flex flex-col gap-1">
-                <label className="text-[11px] font-mono text-[#71717a] uppercase tracking-wider">
+                <label className="text-[11px] font-mono text-[var(--theme-text-muted)] uppercase tracking-wider">
                   Relationship to {firstName}
                 </label>
                 <input
@@ -584,14 +584,14 @@ export function MemoriesStream({
                   value={relationship}
                   onChange={(e) => setRelationship(e.target.value.slice(0, 60))}
                   placeholder="e.g. Daughter, Lifelong friend, Colleague"
-                  className="w-full px-3.5 py-2.5 rounded-xl bg-white border border-black/[0.08] text-sm text-[#181925] placeholder:text-[#aaa] outline-none focus:border-primary/50 transition-colors"
+                  className="w-full px-3.5 py-2.5 rounded-xl bg-[var(--theme-bg-surface-subtle)] border border-[var(--theme-border)] text-sm text-[var(--theme-text-primary)] placeholder:text-[var(--theme-text-muted)]/60 outline-none focus:border-[var(--theme-accent)] focus:ring-1 focus:ring-[var(--theme-accent)]/20 transition-colors"
                 />
               </div>
             </div>
 
             {/* 3. Words of Remembrance */}
             <div className="flex flex-col gap-1">
-              <label className="text-[11px] font-mono text-[#71717a] uppercase tracking-wider">
+              <label className="text-[11px] font-mono text-[var(--theme-text-muted)] uppercase tracking-wider">
                 {tributeRitual === "flower"
                   ? "Words to accompany your flower (optional)"
                   : tributeRitual === "candle"
@@ -604,7 +604,7 @@ export function MemoriesStream({
                 value={content}
                 onChange={(e) => setContent(e.target.value)}
                 placeholder={ritualPlaceholder}
-                className="w-full px-3.5 py-2.5 rounded-xl bg-white border border-black/[0.08] text-sm text-[#181925] placeholder:text-[#aaa] outline-none focus:border-primary/50 transition-colors resize-none leading-relaxed"
+                className="w-full px-3.5 py-2.5 rounded-xl bg-[var(--theme-bg-surface-subtle)] border border-[var(--theme-border)] text-sm text-[var(--theme-text-primary)] placeholder:text-[var(--theme-text-muted)]/60 outline-none focus:border-[var(--theme-accent)] focus:ring-1 focus:ring-[var(--theme-accent)]/20 transition-colors resize-none leading-relaxed"
               />
             </div>
 
@@ -637,7 +637,7 @@ export function MemoriesStream({
               <button
                 type="submit"
                 disabled={isSubmitting || !authorName.trim() || !siteKey || !turnstileToken}
-                className="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-full font-medium transition-all cursor-pointer bg-primary hover:bg-primary/90 text-primary-foreground shadow-xs active:scale-[0.98] h-10 px-6 text-xs select-none disabled:opacity-50 disabled:cursor-not-allowed w-full sm:w-auto"
+                className="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-full font-medium transition-all cursor-pointer bg-[var(--theme-accent)] hover:brightness-105 text-[var(--theme-accent-foreground)] shadow-xs active:scale-[0.98] h-10 px-6 text-xs select-none disabled:opacity-50 disabled:cursor-not-allowed w-full sm:w-auto"
               >
                 {isSubmitting ? (
                   <>

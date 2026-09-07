@@ -1,7 +1,7 @@
 "use client"
 
 import { useState } from "react"
-import { Upload, AlertCircle } from "lucide-react"
+import { Upload, AlertCircle, Palette } from "lucide-react"
 import { PortraitPlaceholder } from "@/components/memorial/portrait-placeholder"
 import { TEXT_LIMITS, formatMemorialLocation } from "@/lib/validation/text-limits"
 import { useEditorAuthorization } from "../use-editor-authorization"
@@ -45,6 +45,7 @@ interface IdentityTabProps {
   headline: string
   portraitUrl: string
   onChange: (field: string, value: string) => void
+  onNavigateToAppearance?: () => void
 }
 
 export function IdentityTab({
@@ -62,6 +63,7 @@ export function IdentityTab({
   headline,
   portraitUrl,
   onChange,
+  onNavigateToAppearance,
 }: IdentityTabProps) {
   const handleAuthorizationFailure = useEditorAuthorization(memorialId)
   const [isUploading, setIsUploading] = useState(false)
@@ -206,6 +208,33 @@ export function IdentityTab({
           )}
         </div>
       </div>
+
+      {/* Atmosphere / Theme shortcut banner */}
+      {onNavigateToAppearance && (
+        <div className="rounded-2xl border border-black/[0.07] bg-gradient-to-r from-amber-50/50 via-stone-50/70 to-emerald-50/40 p-3.5 sm:p-4 flex items-center justify-between gap-3 shadow-xs">
+          <div className="flex items-center gap-3 min-w-0">
+            <div className="size-8 rounded-full bg-white border border-black/[0.08] flex items-center justify-center shrink-0 shadow-2xs">
+              <Palette className="size-4 text-amber-700" />
+            </div>
+            <div className="min-w-0">
+              <p className="text-xs font-serif font-medium text-[#181925] truncate">
+                Make this memorial feel like them
+              </p>
+              <p className="text-[11px] text-[#71717a] truncate">
+                Choose from 6 quiet, respectful atmospheres &amp; palettes
+              </p>
+            </div>
+          </div>
+          <button
+            type="button"
+            onClick={onNavigateToAppearance}
+            className="inline-flex items-center gap-1 px-3 py-1.5 rounded-full text-xs font-medium bg-white hover:bg-stone-50 text-[#181925] border border-black/[0.08] shadow-2xs hover:border-black/20 transition-all shrink-0 cursor-pointer"
+          >
+            <span>Atmospheres</span>
+            <span className="text-[#888]">&rarr;</span>
+          </button>
+        </div>
+      )}
 
       {/* 2. Full Name & Nickname */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">

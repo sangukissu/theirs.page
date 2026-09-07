@@ -87,7 +87,7 @@ export function MemorialAudio({
         {/* Header Ribbon */}
         <div className="flex items-center justify-between border-b border-black/[0.05] pb-3">
           <div className="flex items-center gap-2">
-            <span className="size-2 rounded-full bg-primary" />
+            <span className="size-2 rounded-full bg-[var(--theme-accent)]" />
             <span className="text-xs font-semibold text-[#181925] uppercase tracking-wider">
               Preserved Voice Note
             </span>
@@ -114,10 +114,10 @@ export function MemorialAudio({
             <button
               type="button"
               onClick={togglePlay}
-              className="size-9 rounded-full bg-primary text-white flex items-center justify-center hover:opacity-90 active:scale-95 transition-all cursor-pointer shrink-0 shadow-xs"
+              className="size-9 rounded-full bg-[var(--theme-accent)] text-[var(--theme-accent-foreground)] flex items-center justify-center hover:brightness-105 active:scale-95 transition-all cursor-pointer shrink-0 shadow-xs"
               aria-label={isPlaying ? "Pause voice note" : "Play voice note"}
             >
-              {isPlaying ? <Pause className="size-4 fill-white" /> : <Play className="size-4 ml-0.5 fill-white" />}
+              {isPlaying ? <Pause className="size-4 fill-current" /> : <Play className="size-4 ml-0.5 fill-current" />}
             </button>
 
             {/* 30-Bar Interactive Scrubber Frequency Waveform */}
@@ -135,7 +135,7 @@ export function MemorialAudio({
                     key={i}
                     className={`flex-1 rounded-full transition-all duration-150 ${
                       isFilled
-                        ? "bg-primary"
+                        ? "bg-[var(--theme-accent)]"
                         : "bg-neutral-200"
                     } ${isPlaying && isFilled ? "animate-pulse" : ""}`}
                     style={{ height: `${h}%` }}
@@ -164,7 +164,7 @@ export function MemorialAudio({
 
         {/* Note / Anecdote */}
         <div className="flex items-center gap-2 text-xs text-[#777]">
-          <Mic className="size-3.5 text-primary shrink-0" />
+          <Mic className="size-3.5 text-[var(--theme-accent)] shrink-0" />
           <span>{note}</span>
         </div>
 

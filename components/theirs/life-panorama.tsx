@@ -43,16 +43,16 @@ export function LifePanorama() {
         {/* OUTER ROUNDED GRAY BEZEL STRIP — Rounded top corners, sharp bottom     */}
         {/* ----------------------------------------------------------------------- */}
         <div className="relative w-full h-full p-1.5 sm:p-2.5 lg:p-3 rounded-t-2xl sm:rounded-t-[208px] lg:rounded-t-[268px] rounded-b-none bg-[#ebebed] border-t border-x border-black/[0.08] overflow-hidden">
-          
+
           {/* --------------------------------------------------------------------- */}
           {/* INNER PHOTO MAIN CARD — Entire timeline visible across full width     */}
           {/* --------------------------------------------------------------------- */}
           <div className="relative w-full h-full rounded-t-xl sm:rounded-t-[198px] lg:rounded-t-[258px] rounded-b-none overflow-hidden bg-neutral-950 flex items-stretch border border-black/[0.08]">
-            
+
             {/* CHAPTER 1: 1952 Childhood — B&W Print */}
             <div className="relative w-[28%] h-full shrink-0 [mask-image:linear-gradient(to_right,black_65%,transparent_100%)] z-10">
               <img
-                src="/memorial-family-portrait-son.jpg"
+                src="/landing/robert-hero-image1.png"
                 alt="Robert Carter Childhood 1952"
                 className="size-full object-cover object-top grayscale contrast-120 brightness-95"
               />
@@ -62,7 +62,7 @@ export function LifePanorama() {
             {/* CHAPTER 2: 1974 Young Adult — Warm Faded 1970s Film */}
             <div className="relative w-[28%] -ml-[5%] h-full shrink-0 [mask-image:linear-gradient(to_right,transparent_0%,black_30%,black_70%,transparent_100%)] z-20">
               <img
-                src="/separate-family-portrait-father.jpg"
+                src="/landing/robert-hero-image2.png"
                 alt="Robert Carter Young Adult 1974"
                 className="size-full object-cover object-top sepia-[0.25] saturate-95 contrast-105 brightness-95"
               />
@@ -72,7 +72,7 @@ export function LifePanorama() {
             {/* CHAPTER 3: 1996 Family Reunion — Authentic 1990s 35mm Color */}
             <div className="relative w-[28%] -ml-[5%] h-full shrink-0 [mask-image:linear-gradient(to_right,transparent_0%,black_30%,black_70%,transparent_100%)] z-30">
               <img
-                src="/memorial-family-portrait-combined.jpg"
+                src="/landing/robert-hero-image3.png"
                 alt="Family Gathering 1996"
                 className="size-full object-cover object-center saturate-110 contrast-105"
               />
@@ -82,7 +82,7 @@ export function LifePanorama() {
             {/* CHAPTER 4: 2024 Elder Portrait — Final Dominant Panel */}
             <div className="relative w-[29%] -ml-[5%] h-full shrink-0 [mask-image:linear-gradient(to_right,transparent_0%,black_25%,black_100%)] z-40">
               <img
-                src="/memorial-family-portrait-grandfather.jpg"
+                src="/landing/robert-hero-image4.png"
                 alt="Robert Carter 2024"
                 className="size-full object-cover object-top contrast-110 brightness-100"
               />

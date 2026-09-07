@@ -19,16 +19,21 @@ function LoadMore({ label, loading, error, onClick }: { label: string; loading: 
   return (
     <div className="mx-auto flex max-w-4xl flex-col items-center px-4 pb-12">
       {error && <p role="alert" className="mb-3 text-sm text-red-700">{error}</p>}
-      <button type="button" onClick={onClick} disabled={loading} className="inline-flex min-h-11 items-center gap-2 rounded-full bg-primary px-5 text-sm font-semibold text-primary-foreground shadow-xs hover:bg-primary/90 disabled:opacity-60">
+      <button
+        type="button"
+        onClick={onClick}
+        disabled={loading}
+        className="inline-flex min-h-11 items-center gap-2 rounded-full bg-[var(--theme-accent)] px-5 text-sm font-semibold text-[var(--theme-accent-foreground)] shadow-xs hover:brightness-105 active:scale-[0.98] transition-all disabled:opacity-60 cursor-pointer"
+      >
         {loading ? <Loader2 className="size-4 animate-spin" /> : error ? <RotateCcw className="size-4" /> : null}
-        {loading ? "Loading…" : error ? "Try again" : label}
+        {loading ? "Loading\u2026" : error ? "Try again" : label}
       </button>
     </div>
   )
 }
 
 function EndOfList({ children }: { children: string }) {
-  return <p className="px-4 pb-12 text-center text-sm text-[#777]">{children}</p>
+  return <p className="px-4 pb-12 text-center text-sm text-[var(--theme-text-muted)]">{children}</p>
 }
 
 function usePagedItems<T>(initial: PagedCollection<T>) {

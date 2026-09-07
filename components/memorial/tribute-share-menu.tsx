@@ -79,7 +79,7 @@ export function TributeShareMenu({ tributeId, authorName, memorialName }: Tribut
         aria-haspopup="menu"
         aria-expanded={isOpen}
         onClick={() => setIsOpen((open) => !open)}
-        className="inline-flex min-h-9 items-center gap-2 rounded-lg px-2.5 text-xs font-medium text-[#55585c] transition-colors hover:bg-white hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30"
+        className="inline-flex min-h-9 items-center gap-2 rounded-lg px-2.5 text-xs font-medium text-[#55585c] transition-colors hover:bg-white hover:text-[var(--theme-accent,var(--primary))] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--theme-accent,var(--primary))]/30"
       >
         <Share2 className="size-4" />
         Share
@@ -101,7 +101,7 @@ export function TributeShareMenu({ tributeId, authorName, memorialName }: Tribut
             Email
           </button>
           <button type="button" role="menuitem" onClick={copyLink} className="flex min-h-10 w-full items-center gap-3 rounded-xl px-3 text-left text-sm text-[#303136] hover:bg-[#f5f6f8]">
-            <span className="flex size-7 items-center justify-center rounded-full bg-primary text-white">{copied ? <Check className="size-4" /> : <Link2 className="size-4" />}</span>
+            <span className="flex size-7 items-center justify-center rounded-full bg-[var(--theme-accent,var(--primary))] text-[var(--theme-accent-foreground,#ffffff)]">{copied ? <Check className="size-4" /> : <Link2 className="size-4" />}</span>
             {copied ? "Link copied" : "Copy link"}
           </button>
         </div>

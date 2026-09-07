@@ -83,30 +83,30 @@ export function ContactCaretakerModal({ isOpen, onClose, memorialId, memorialNam
 
         {isSent ? (
           <div className="flex flex-col items-center px-7 py-12 text-center sm:px-10">
-            <span className="mb-5 flex size-14 items-center justify-center rounded-2xl bg-primary/10 text-primary"><Check className="size-7" /></span>
+            <span className="mb-5 flex size-14 items-center justify-center rounded-2xl bg-[var(--theme-accent)]/10 text-[var(--theme-accent)]"><Check className="size-7" /></span>
             <h2 id="contact-caretaker-title" className="font-serif text-2xl text-[#181925]">Your message has been sent</h2>
             <p className="mt-2 max-w-sm text-sm leading-6 text-[#686970]">The caretaker of {memorialName}&apos;s memorial can reply directly to the email address you provided.</p>
-            <button type="button" onClick={onClose} className="mt-7 min-h-10 rounded-full bg-primary px-6 text-sm font-semibold text-white hover:bg-primary/90">Done</button>
+            <button type="button" onClick={onClose} className="mt-7 min-h-10 rounded-full bg-[var(--theme-accent)] px-6 text-sm font-semibold text-[var(--theme-accent-foreground)] hover:brightness-105 transition-all">Done</button>
           </div>
         ) : (
           <form onSubmit={submit} className="p-6 sm:p-8">
-            <span className="mb-4 flex size-11 items-center justify-center rounded-2xl bg-primary/10 text-primary"><Mail className="size-5" /></span>
+            <span className="mb-4 flex size-11 items-center justify-center rounded-2xl bg-[var(--theme-accent)]/10 text-[var(--theme-accent)]"><Mail className="size-5" /></span>
             <h2 id="contact-caretaker-title" className="pr-10 font-serif text-2xl text-[#181925]">Contact the memorial caretaker</h2>
             <p className="mt-2 text-sm leading-6 text-[#686970]">Send a private message about {memorialName}&apos;s memorial. It will never appear publicly.</p>
 
             <div className="mt-6 grid gap-4 sm:grid-cols-2">
               <label className="grid gap-1.5 text-xs font-medium text-[#55585c]">
                 Your name
-                <input ref={nameRef} required maxLength={100} value={senderName} onChange={(event) => setSenderName(event.target.value)} className="min-h-11 rounded-xl border border-black/[0.1] px-3.5 text-sm text-[#181925] outline-none focus:border-primary focus:ring-2 focus:ring-primary/10" />
+                <input ref={nameRef} required maxLength={100} value={senderName} onChange={(event) => setSenderName(event.target.value)} className="min-h-11 rounded-xl border border-black/[0.1] px-3.5 text-sm text-[#181925] outline-none focus:border-[var(--theme-accent)] focus:ring-2 focus:ring-[var(--theme-accent)]/15" />
               </label>
               <label className="grid gap-1.5 text-xs font-medium text-[#55585c]">
                 Your email
-                <input type="email" required maxLength={254} value={senderEmail} onChange={(event) => setSenderEmail(event.target.value)} className="min-h-11 rounded-xl border border-black/[0.1] px-3.5 text-sm text-[#181925] outline-none focus:border-primary focus:ring-2 focus:ring-primary/10" />
+                <input type="email" required maxLength={254} value={senderEmail} onChange={(event) => setSenderEmail(event.target.value)} className="min-h-11 rounded-xl border border-black/[0.1] px-3.5 text-sm text-[#181925] outline-none focus:border-[var(--theme-accent)] focus:ring-2 focus:ring-[var(--theme-accent)]/15" />
               </label>
             </div>
             <label className="mt-4 grid gap-1.5 text-xs font-medium text-[#55585c]">
               Message
-              <textarea required minLength={10} maxLength={4000} rows={6} value={message} onChange={(event) => setMessage(event.target.value)} placeholder="How can the caretaker help?" className="resize-none rounded-xl border border-black/[0.1] px-3.5 py-3 text-sm leading-6 text-[#181925] outline-none placeholder:text-[#a1a1a6] focus:border-primary focus:ring-2 focus:ring-primary/10" />
+              <textarea required minLength={10} maxLength={4000} rows={6} value={message} onChange={(event) => setMessage(event.target.value)} placeholder="How can the caretaker help?" className="resize-none rounded-xl border border-black/[0.1] px-3.5 py-3 text-sm leading-6 text-[#181925] outline-none placeholder:text-[#a1a1a6] focus:border-[var(--theme-accent)] focus:ring-2 focus:ring-[var(--theme-accent)]/15" />
             </label>
 
             {error && <p role="alert" className="mt-4 flex items-center gap-2 rounded-xl border border-rose-200 bg-rose-50 p-3 text-xs text-rose-700"><AlertCircle className="size-4 shrink-0" />{error}</p>}
@@ -132,10 +132,10 @@ export function ContactCaretakerModal({ isOpen, onClose, memorialId, memorialNam
               <button
                 type="submit"
                 disabled={isSending || !siteKey || !turnstileToken || !senderName.trim() || !senderEmail.trim() || message.trim().length < 10}
-                className="inline-flex min-h-11 w-full sm:w-auto items-center justify-center gap-2 rounded-full bg-primary px-6 text-sm font-semibold text-white hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-50 transition-colors cursor-pointer"
+                className="inline-flex min-h-11 w-full sm:w-auto items-center justify-center gap-2 rounded-full bg-[var(--theme-accent)] px-6 text-sm font-semibold text-[var(--theme-accent-foreground)] hover:brightness-105 disabled:cursor-not-allowed disabled:opacity-50 transition-all cursor-pointer shadow-xs"
               >
                 {isSending && <Loader2 className="size-4 animate-spin" />}
-                {isSending ? "Sending…" : "Send privately"}
+                {isSending ? "Sending\u2026" : "Send privately"}
               </button>
             </div>
           </form>

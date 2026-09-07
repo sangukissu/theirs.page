@@ -23,12 +23,12 @@ export function MemorialFooter({
       <Link
         href="/"
         title="theirs.page — dedicated to a human life"
-        className="group inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/90 hover:bg-white backdrop-blur-md border border-black/[0.08] hover:border-black/20 shadow-[0_2px_10px_rgba(0,0,0,0.05),0_1px_2px_rgba(0,0,0,0.02)] hover:shadow-[0_4px_16px_rgba(0,0,0,0.08)] transition-all duration-200 active:scale-95 cursor-pointer"
+        className="group inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-[var(--theme-bg-surface-elevated)] hover:brightness-105 backdrop-blur-md border border-[var(--theme-border)] shadow-[0_2px_10px_rgba(0,0,0,0.05),0_1px_2px_rgba(0,0,0,0.02)] transition-all duration-200 active:scale-95 cursor-pointer"
       >
         <svg
           viewBox="0 0 512 512"
           aria-hidden="true"
-          className="size-3.5 text-primary shrink-0 transition-transform duration-200 group-hover:scale-105"
+          className="size-3.5 text-[var(--theme-accent)] shrink-0 transition-transform duration-200 group-hover:scale-105"
         >
           <clipPath id="theirs-memorial-badge-logo">
             <path
@@ -51,13 +51,13 @@ export function MemorialFooter({
             <rect height="188" width="512" x="0" y="324" />
           </g>
         </svg>
-        <span className="text-[11px] sm:text-xs font-medium tracking-tight text-[#181925] group-hover:text-black">
-          theirs<span className="text-primary font-semibold">.page</span>
+        <span className="text-[11px] sm:text-xs font-medium tracking-tight text-[var(--theme-text-primary)]">
+          theirs<span className="text-[var(--theme-accent)] font-semibold">.page</span>
         </span>
       </Link>
       {caretakerName && (
-        <span className="max-w-[min(70vw,24rem)] truncate rounded-full border border-black/[0.08] bg-white/90 px-3 py-1.5 text-[11px] text-[#666] shadow-[0_2px_10px_rgba(0,0,0,0.05)] backdrop-blur-md sm:text-xs">
-          Created by <strong className="font-medium text-[#181925]">{caretakerName}</strong>
+        <span className="max-w-[min(70vw,24rem)] truncate rounded-full border border-[var(--theme-border)] bg-[var(--theme-bg-surface-elevated)] px-3 py-1.5 text-[11px] text-[var(--theme-text-muted)] shadow-[0_2px_10px_rgba(0,0,0,0.05)] backdrop-blur-md sm:text-xs">
+          Created by <strong className="font-medium text-[var(--theme-text-primary)]">{caretakerName}</strong>
           {caretakerRelationship ? (
             <> &middot; {firstName ? `${firstName}’s ` : ""}{caretakerRelationship.toLowerCase()}</>
           ) : null}

@@ -10,6 +10,7 @@ import { MemorialGallery } from "./memorial-gallery"
 import { LifeStories } from "./life-stories"
 import { LegacyHashRedirect } from "./legacy-hash-redirect"
 import { useMemorialActions } from "./memorial-shell"
+import { ThemeDivider } from "./memorial-theme-decorations"
 import type { MemorialHomeData, MemorialIdentity } from "@/types/memorial-view"
 
 type SectionMarkKind = "tributes" | "timeline" | "gallery" | "memories"
@@ -37,15 +38,15 @@ function ViewFullSection({ href, kind, children }: { href: string; kind: Section
   return (
     <div className="mx-auto -mt-5 max-w-4xl px-4 pb-5 sm:-mt-7">
       <div className="relative flex justify-center pt-2">
-        <div aria-hidden="true" className="absolute inset-x-0 bottom-[13px] border-t border-dashed border-primary/30" />
+        <div aria-hidden="true" className="absolute inset-x-0 bottom-[13px] border-t border-dashed border-[var(--theme-accent)]/30" />
         <Link
           href={href}
           prefetch
-          className="group relative z-10 flex flex-col items-center bg-white px-5 text-primary outline-none focus-visible:ring-2 focus-visible:ring-primary/35 focus-visible:ring-offset-4"
+          className="group relative z-10 flex flex-col items-center bg-[var(--theme-bg-page)] px-5 text-[var(--theme-accent)] outline-none focus-visible:ring-2 focus-visible:ring-[var(--theme-accent)]/35 focus-visible:ring-offset-4 rounded-full transition-colors"
         >
           <span className="mb-1 transition-transform duration-200 group-hover:-translate-y-0.5"><SectionMark kind={kind} /></span>
-          <span className="bg-white px-2 text-xs font-semibold tracking-tight group-hover:underline group-hover:underline-offset-4">
-            {children} <span aria-hidden="true">→</span>
+          <span className="bg-[var(--theme-bg-page)] px-2 text-xs font-semibold tracking-tight group-hover:underline group-hover:underline-offset-4">
+            {children} <span aria-hidden="true">&rarr;</span>
           </span>
         </Link>
       </div>
@@ -60,6 +61,7 @@ export function MemorialHome({ identity, data }: { identity: MemorialIdentity; d
   const viewHref = (view: string, hash = "") => `/${identity.slug}/${view}${preview}${hash}`
   const sections = identity.sectionSettings
   const remaining = (total: number, shown: number) => Math.max(0, total - shown)
+  const currentTheme = identity.theme || "quiet"
 
   return (
     <>
@@ -74,10 +76,15 @@ export function MemorialHome({ identity, data }: { identity: MemorialIdentity; d
         epitaph={identity.epitaph}
         portraitUrl={identity.portraitUrl}
         isDemo={identity.isDemo}
+        themeId={currentTheme}
         onOpenContribute={openContribute}
       />
 
+      <ThemeDivider themeId={currentTheme} />
+
       <MemorialStory fullName={identity.fullName} biography={identity.biography} />
+
+      <ThemeDivider themeId={currentTheme} />
 
       {sections.tributes !== false && (
         <>
@@ -89,10 +96,12 @@ export function MemorialHome({ identity, data }: { identity: MemorialIdentity; d
             isDemo={identity.isDemo}
             onOpenContribute={openContribute}
           />
-          {(identity.isDemo || data.tributes.hasMore) && (
+          {data.tributes.hasMore ? (
             <ViewFullSection href={viewHref("tributes")} kind="tributes">
               {identity.isDemo ? `View all ${data.tributes.total} tributes` : `View ${remaining(data.tributes.total, data.tributes.items.length)} more tributes`}
             </ViewFullSection>
+          ) : (
+            <ThemeDivider themeId={currentTheme} />
           )}
         </>
       )}
@@ -100,10 +109,12 @@ export function MemorialHome({ identity, data }: { identity: MemorialIdentity; d
       {sections.timeline !== false && (
         <>
           <LifeTimeline milestones={data.timeline.items} isDemo={identity.isDemo} />
-          {(identity.isDemo || data.timeline.hasMore) && (
+          {data.timeline.hasMore ? (
             <ViewFullSection href={viewHref("timeline")} kind="timeline">
               {identity.isDemo ? `Explore all ${data.timeline.total} milestones` : `Explore ${remaining(data.timeline.total, data.timeline.items.length)} more milestones`}
             </ViewFullSection>
+          ) : (
+            <ThemeDivider themeId={currentTheme} />
           )}
         </>
       )}
@@ -124,10 +135,12 @@ export function MemorialHome({ identity, data }: { identity: MemorialIdentity; d
             initialFilter="photo"
             pageSize={6}
           />
-          {(identity.isDemo || data.media.hasMore) && (
+          {data.media.hasMore ? (
             <ViewFullSection href={viewHref("gallery")} kind="gallery">
               {identity.isDemo ? `View all ${data.media.total} photos & recordings` : `View ${remaining(data.media.total, data.media.items.length)} more photos & recordings`}
             </ViewFullSection>
+          ) : (
+            <ThemeDivider themeId={currentTheme} />
           )}
         </>
       )}
@@ -142,10 +155,12 @@ export function MemorialHome({ identity, data }: { identity: MemorialIdentity; d
             isDemo={identity.isDemo}
             onOpenContribute={openContribute}
           />
-          {(identity.isDemo || data.memories.hasMore) && (
+          {data.memories.hasMore ? (
             <ViewFullSection href={viewHref("memories")} kind="memories">
               {identity.isDemo ? `View all ${data.memories.total} stories & memories` : `Read ${remaining(data.memories.total, data.memories.items.length)} more stories & memories`}
             </ViewFullSection>
+          ) : (
+            <ThemeDivider themeId={currentTheme} />
           )}
         </>
       )}

@@ -108,11 +108,11 @@ export function MemorialNav({
   return (
     <>
       <nav className={`fixed ${hasTopBanner ? "top-11 sm:top-12" : "top-3"} inset-x-0 z-40 flex justify-center px-2.5 sm:px-4 pointer-events-none transition-all`}>
-        <div className="pointer-events-auto flex items-center justify-between gap-1 sm:gap-3 px-2.5 py-1.5 rounded-full bg-white/95 backdrop-blur-md border border-black/[0.08] shadow-[inset_0_1px_2px_rgba(0,0,0,0.05)] max-w-xl w-full transition-all">
+        <div className="pointer-events-auto flex items-center justify-between gap-1 sm:gap-3 px-2.5 py-1.5 rounded-full bg-[var(--theme-bg-surface-elevated)] backdrop-blur-md border border-[var(--theme-border)] shadow-[inset_0_1px_2px_rgba(0,0,0,0.05),0_4px_16px_rgba(0,0,0,0.04)] max-w-xl w-full transition-all">
           <Link
             href={withPreview(rootPath)}
             prefetch
-            className="flex items-center gap-1.5 text-xs font-semibold tracking-tight text-[#181925] hover:opacity-80 transition-opacity select-none shrink-0 pl-1"
+            className="flex items-center gap-1.5 text-xs font-semibold tracking-tight text-[var(--theme-text-primary)] hover:opacity-80 transition-opacity select-none shrink-0 pl-1"
             title="Return to memorial home"
           >
             <Image src="/theirs-icon.png" alt="Theirs" width={16} height={16} />
@@ -123,8 +123,8 @@ export function MemorialNav({
             {navItems.map((item) => {
               const isActive = activeSection === item.id
               const className = `px-2 sm:px-2.5 py-1 rounded-full text-[11px] sm:text-xs font-medium whitespace-nowrap transition-all select-none cursor-pointer shrink-0 ${isActive
-                ? "text-[#181925] bg-[#f0f0f2] font-semibold"
-                : "text-[#666] hover:text-[#181925] hover:bg-neutral-50"
+                ? "text-[var(--theme-text-primary)] bg-[var(--theme-bg-surface-subtle)] font-semibold shadow-2xs"
+                : "text-[var(--theme-text-muted)] hover:text-[var(--theme-text-primary)] hover:bg-[var(--theme-bg-surface-subtle)]"
                 }`
 
               return isHome ? (
@@ -143,7 +143,7 @@ export function MemorialNav({
             <button
               type="button"
               onClick={handleShare}
-              className="size-7 rounded-full text-[#666] hover:text-[#181925] hover:bg-neutral-100 flex items-center justify-center transition-colors cursor-pointer"
+              className="size-7 rounded-full text-[var(--theme-text-muted)] hover:text-[var(--theme-text-primary)] hover:bg-[var(--theme-bg-surface-subtle)] flex items-center justify-center transition-colors cursor-pointer"
               title="Share memorial link"
               aria-label="Share memorial link"
             >
@@ -153,7 +153,7 @@ export function MemorialNav({
             <button
               type="button"
               onClick={() => onOpenContribute()}
-              className="hidden sm:inline-flex items-center justify-center gap-1 whitespace-nowrap !rounded-full font-medium transition-all cursor-pointer border border-[color-mix(in_srgb,var(--primary)_80%,#3a3480)] bg-[color-mix(in_srgb,var(--primary)_90%,#3a3480)] text-primary-foreground shadow-[inset_0_1px_0_rgba(255,255,255,0.22),inset_0_-1px_0_rgba(58,52,128,0.30)] transform-gpu hover:bg-primary hover:border-[color-mix(in_srgb,var(--primary)_70%,#3a3480)] active:translate-y-px active:scale-[0.98] h-7.5 px-3.5 text-xs select-none"
+              className="hidden sm:inline-flex items-center justify-center gap-1 whitespace-nowrap !rounded-full font-medium transition-all cursor-pointer bg-[var(--theme-accent)] text-[var(--theme-accent-foreground)] shadow-[inset_0_1px_0_rgba(255,255,255,0.25),0_2px_8px_rgba(0,0,0,0.12)] transform-gpu hover:brightness-105 active:translate-y-px active:scale-[0.98] h-7.5 px-3.5 text-xs select-none"
             >
               <Plus className="size-3" />
               <span>Add</span>
@@ -165,7 +165,7 @@ export function MemorialNav({
       <button
         type="button"
         onClick={() => onOpenContribute()}
-        className="sm:hidden fixed bottom-6 right-5 z-50 size-12 rounded-full border border-[color-mix(in_srgb,var(--primary)_80%,#3a3480)] bg-[color-mix(in_srgb,var(--primary)_90%,#3a3480)] text-primary-foreground shadow-[inset_0_1px_0_rgba(255,255,255,0.22),inset_0_-1px_0_rgba(58,52,128,0.30),0_8px_24px_rgba(48,93,222,0.35)] flex items-center justify-center active:scale-90 transition-all cursor-pointer hover:bg-primary"
+        className="sm:hidden fixed bottom-6 right-5 z-50 size-12 rounded-full bg-[var(--theme-accent)] text-[var(--theme-accent-foreground)] shadow-[inset_0_1px_0_rgba(255,255,255,0.25),0_8px_24px_rgba(0,0,0,0.25)] flex items-center justify-center active:scale-90 transition-all cursor-pointer hover:brightness-105"
         aria-label="Add to memorial"
         title="Add to memorial"
       >

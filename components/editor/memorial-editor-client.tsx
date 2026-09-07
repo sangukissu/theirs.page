@@ -20,9 +20,11 @@ import {
   Eye,
   Share2,
   Sparkles,
+  Palette,
 } from "lucide-react"
 
 import { IdentityTab } from "./tabs/identity-tab"
+import { AppearanceTab } from "./tabs/appearance-tab"
 import { StoryTab } from "./tabs/story-tab"
 import { GalleryTab, EditorMediaItem } from "./tabs/gallery-tab"
 import { TimelineTab, EditorTimelineEvent } from "./tabs/timeline-tab"
@@ -30,11 +32,12 @@ import { ModerationTab, EditorMemory, EditorCaretakerMessage } from "./tabs/mode
 import { SettingsTab } from "./tabs/settings-tab"
 import { PublishMemorialDialog } from "./publish-memorial-dialog"
 import { useEditorAuthorization } from "./use-editor-authorization"
-import { SectionSettings, ContributionSettings } from "@/types/theirs"
+import { SectionSettings, ContributionSettings, MemorialTheme } from "@/types/theirs"
 import { toast } from "sonner"
 
 export type EditorSectionTab =
   | "identity"
+  | "appearance"
   | "story"
   | "gallery"
   | "timeline"
@@ -65,6 +68,7 @@ interface InitialMemorialData {
   successor_email?: string | null
   section_settings?: SectionSettings | null
   contribution_settings?: ContributionSettings | null
+  theme?: MemorialTheme | null
   is_paid?: boolean
   paid_at?: string | null
   updated_at?: string
@@ -171,6 +175,7 @@ export function MemorialEditorClient({
     headline: initialMemorial.headline || "",
     biography: initialMemorial.biography || "",
     portrait_photo_url: initialMemorial.portrait_photo_url || "",
+    theme: (initialMemorial.theme as MemorialTheme) || "quiet",
     slug: initialMemorial.slug || "",
     status: initialMemorial.status || "draft",
     privacy: (!isPaid && initialMemorial.privacy === "private") ? "unlisted" : (initialMemorial.privacy || "unlisted"),
@@ -279,6 +284,7 @@ export function MemorialEditorClient({
           headline: currentForm.headline || null,
           biography: currentForm.biography || null,
           portrait_photo_url: currentForm.portrait_photo_url || null,
+          theme: currentForm.theme || "quiet",
           section_settings: currentForm.section_settings || null,
         }
         if (initialMemorial.can_manage_owner_settings) {
@@ -482,6 +488,7 @@ export function MemorialEditorClient({
     isCompleteOnly?: boolean
   }[] = [
     { id: "identity", label: "About", icon: User },
+    { id: "appearance", label: "Appearance", icon: Palette },
     {
       id: "story",
       label: "Story",
@@ -678,6 +685,19 @@ export function MemorialEditorClient({
               headline={form.headline}
               portraitUrl={form.portrait_photo_url}
               onChange={handleFieldChange}
+              onNavigateToAppearance={() => goToTab("appearance")}
+            />
+          )}
+
+          {activeTab === "appearance" && (
+            <AppearanceTab
+              slug={form.slug}
+              theme={form.theme}
+              portraitUrl={form.portrait_photo_url}
+              fullName={form.full_name}
+              birthYear={form.birth_year ? Number(form.birth_year) : null}
+              deathYear={form.death_year ? Number(form.death_year) : null}
+              onChange={(theme) => handleFieldChange("theme", theme)}
             />
           )}
 

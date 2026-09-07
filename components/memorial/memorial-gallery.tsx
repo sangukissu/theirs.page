@@ -574,9 +574,9 @@ export function MemorialGallery({
     <section id="gallery" className="py-12 px-4 max-w-4xl mx-auto flex flex-col gap-4 scroll-mt-24">
 
       {/* Section Header */}
-      <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 border-b border-black/[0.06] pb-4">
+      <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 border-b border-[var(--theme-border)] pb-4">
         <div className="flex flex-col gap-1">
-          <h2 className="text-2xl sm:text-3xl font-medium tracking-tight text-[#181925]">
+          <h2 className="text-2xl sm:text-3xl font-medium tracking-tight text-[var(--theme-text-primary)]">
             Gallery
           </h2>
         </div>
@@ -585,7 +585,7 @@ export function MemorialGallery({
           <button
             type="button"
             onClick={() => onOpenContribute("photo")}
-            className="inline-flex items-center gap-1.5 px-4 py-2 rounded-full bg-primary hover:bg-primary/90 text-primary-foreground text-xs font-medium transition-all self-start sm:self-auto cursor-pointer shadow-xs active:scale-95"
+            className="inline-flex items-center gap-1.5 px-4 py-2 rounded-full bg-[var(--theme-accent)] hover:brightness-105 text-[var(--theme-accent-foreground)] text-xs font-medium transition-all self-start sm:self-auto cursor-pointer shadow-xs active:scale-95"
           >
             <Plus className="size-3.5" />
             <span>Add photos</span>
@@ -612,8 +612,8 @@ export function MemorialGallery({
                 onClick={() => changeFilters(tab.key as GalleryFilter, selectedAlbum)}
                 disabled={isLoadingPage}
                 className={`inline-flex items-center gap-1.5 text-xs px-3.5 py-1.5 rounded-full font-medium transition-all cursor-pointer ${isActive
-                  ? "bg-primary text-primary-foreground shadow-2xs"
-                  : "bg-[#f4f4f6] text-[#666] hover:text-[#181925]"
+                  ? "bg-[var(--theme-accent)] text-[var(--theme-accent-foreground)] shadow-2xs"
+                  : "bg-[var(--theme-bg-surface-subtle)] border border-[var(--theme-border)] text-[var(--theme-text-muted)] hover:text-[var(--theme-text-primary)]"
                   }`}
               >
                 {Icon && <Icon className="size-3 shrink-0" />}
@@ -626,14 +626,14 @@ export function MemorialGallery({
       {/* Album Filter Bar (Only visible when items have albums) */}
       {uniqueAlbums.length > 0 && (
         <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar py-0.5 select-none -mt-4">
-          <span className="text-xs font-medium text-[#71717a] pr-1 shrink-0">Album:</span>
+          <span className="text-xs font-medium text-[var(--theme-text-muted)] pr-1 shrink-0">Album:</span>
           <button
             type="button"
             onClick={() => changeFilters(filter, "all")}
             disabled={isLoadingPage}
             className={`text-xs px-3 py-1 rounded-full font-medium transition-all cursor-pointer shrink-0 ${selectedAlbum === "all"
-              ? "bg-primary text-primary-foreground shadow-2xs"
-              : "bg-[#f4f4f6] text-[#666] hover:text-[#181925]"
+              ? "bg-[var(--theme-accent)] text-[var(--theme-accent-foreground)] shadow-2xs"
+              : "bg-[var(--theme-bg-surface-subtle)] border border-[var(--theme-border)] text-[var(--theme-text-muted)] hover:text-[var(--theme-text-primary)]"
               }`}
           >
             All Albums
@@ -645,8 +645,8 @@ export function MemorialGallery({
               onClick={() => changeFilters(filter, alb)}
               disabled={isLoadingPage}
               className={`text-xs px-3 py-1 rounded-full font-medium transition-all cursor-pointer shrink-0 ${selectedAlbum === alb
-                ? "bg-primary text-primary-foreground shadow-2xs"
-                : "bg-[#f4f4f6] text-[#666] hover:text-[#181925]"
+                ? "bg-[var(--theme-accent)] text-[var(--theme-accent-foreground)] shadow-2xs"
+                : "bg-[var(--theme-bg-surface-subtle)] border border-[var(--theme-border)] text-[var(--theme-text-muted)] hover:text-[var(--theme-text-primary)]"
                 }`}
             >
               {alb}
@@ -657,13 +657,13 @@ export function MemorialGallery({
 
       {/* Unified Media Grid / Empty State */}
       {filteredItems.length === 0 ? (
-        <div className="py-16 text-center text-sm text-[#71717a] rounded-3xl bg-[#fafafb] border border-black/[0.06] flex flex-col items-center justify-center gap-3">
+        <div className="py-16 text-center text-sm text-[var(--theme-text-muted)] rounded-3xl bg-[var(--theme-bg-surface-subtle)] border border-[var(--theme-border)] flex flex-col items-center justify-center gap-3">
           <p>No photographs, voice notes, or videos added to the gallery yet.</p>
           {mediaCapabilities.nativePhoto ? (
             <button
               type="button"
               onClick={() => onOpenContribute("photo")}
-              className="inline-flex items-center gap-1.5 text-xs font-medium text-primary hover:underline cursor-pointer"
+              className="inline-flex items-center gap-1.5 text-xs font-medium text-[var(--theme-accent)] hover:underline cursor-pointer"
             >
               <Plus className="size-3.5" />
               <span>Add the first memory</span>
@@ -692,13 +692,13 @@ export function MemorialGallery({
                       <div className="p-3.5 sm:p-5 rounded-2xl bg-[#f7f7f8] border border-black/[0.06] hover:border-black/[0.12] transition-all flex flex-col justify-between gap-3 sm:gap-4 group">
                         <div className="flex items-center justify-between gap-1 flex-wrap">
                           <div className="flex items-center gap-1.5 flex-wrap">
-                            <span className="inline-flex items-center gap-1 text-[10px] sm:text-[11px] font-mono text-primary bg-primary/10 px-1.5 sm:px-2 py-0.5 rounded-full font-medium">
+                            <span className="inline-flex items-center gap-1 text-[10px] sm:text-[11px] font-mono text-[var(--theme-accent)] bg-[var(--theme-accent)]/10 px-1.5 sm:px-2 py-0.5 rounded-full font-medium">
                               <Volume2 className="size-2.5 sm:size-3" />
                               <span>Voice recording</span>
                             </span>
                             {item.isPinned && (
-                              <span className="inline-flex items-center gap-1 text-[9px] sm:text-[10px] font-mono font-medium text-primary bg-primary/5 border border-primary/30 px-1.5 py-0.5 rounded-full">
-                                <Pin className="size-2 sm:size-2.5 fill-primary" /> Featured
+                              <span className="inline-flex items-center gap-1 text-[9px] sm:text-[10px] font-mono font-medium text-[var(--theme-accent)] bg-[var(--theme-accent)]/8 border border-[var(--theme-accent)]/30 px-1.5 py-0.5 rounded-full">
+                                <Pin className="size-2 sm:size-2.5 fill-[var(--theme-accent)]" /> Featured
                               </span>
                             )}
                             {item.isOptimistic && (
@@ -722,7 +722,7 @@ export function MemorialGallery({
                           role="button"
                           className="flex flex-col gap-1 cursor-pointer"
                         >
-                          <h3 className="text-xs sm:text-sm font-medium text-[#181925] line-clamp-2 hover:text-primary transition-colors">
+                          <h3 className="text-xs sm:text-sm font-medium text-[#181925] line-clamp-2 hover:text-[var(--theme-accent)] transition-colors">
                             {item.title}
                           </h3>
                           {item.story && (
@@ -737,13 +737,13 @@ export function MemorialGallery({
                           <button
                             type="button"
                             onClick={() => handleToggleAudio(item)}
-                            className="size-7 sm:size-9 rounded-full bg-primary text-white flex items-center justify-center shrink-0 hover:bg-primary/95 transition-transform active:scale-95 cursor-pointer shadow-xs"
+                            className="size-7 sm:size-9 rounded-full bg-[var(--theme-accent)] text-[var(--theme-accent-foreground)] flex items-center justify-center shrink-0 hover:brightness-105 transition-transform active:scale-95 cursor-pointer shadow-xs"
                             aria-label={isPlaying ? "Pause audio" : "Play audio"}
                           >
                             {isPlaying ? (
-                              <Pause className="size-3.5 sm:size-4 fill-white" />
+                              <Pause className="size-3.5 sm:size-4 fill-current" />
                             ) : (
-                              <Play className="size-3.5 sm:size-4 ml-0.5 fill-white" />
+                              <Play className="size-3.5 sm:size-4 ml-0.5 fill-current" />
                             )}
                           </button>
 
@@ -760,7 +760,7 @@ export function MemorialGallery({
                               return (
                                 <span
                                   key={i}
-                                  className={`flex-1 rounded-full transition-all duration-150 min-w-[2px] ${isFilled ? "bg-primary" : "bg-neutral-200"
+                                  className={`flex-1 rounded-full transition-all duration-150 min-w-[2px] ${isFilled ? "bg-[var(--theme-accent)]" : "bg-neutral-200"
                                     } ${isPlaying && isFilled ? "animate-pulse" : ""}`}
                                   style={{ height: `${h}%` }}
                                 />
@@ -843,8 +843,8 @@ export function MemorialGallery({
 
                         {/* Pinned Featured Badge */}
                         {item.isPinned && (
-                          <div className="absolute top-2.5 left-2.5 inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-primary text-primary-foreground text-[10px] font-mono shadow-xs backdrop-blur-xs">
-                            <Pin className="size-2.5 fill-white" />
+                          <div className="absolute top-2.5 left-2.5 inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-[var(--theme-accent)] text-[var(--theme-accent-foreground)] text-[10px] font-mono shadow-xs backdrop-blur-xs">
+                            <Pin className="size-2.5 fill-current" />
                             <span>Featured</span>
                           </div>
                         )}
@@ -922,8 +922,8 @@ export function MemorialGallery({
 
                       {/* Pinned Featured Badge */}
                       {item.isPinned && (
-                        <div className="absolute top-2.5 left-2.5 inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-primary text-primary-foreground text-[10px] font-mono shadow-xs backdrop-blur-xs">
-                          <Pin className="size-2.5 fill-white" />
+                        <div className="absolute top-2.5 left-2.5 inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-[var(--theme-accent)] text-[var(--theme-accent-foreground)] text-[10px] font-mono shadow-xs backdrop-blur-xs">
+                          <Pin className="size-2.5 fill-current" />
                           <span>Featured</span>
                         </div>
                       )}
@@ -956,7 +956,7 @@ export function MemorialGallery({
                 ? fetchGalleryPage(failed.filter, failed.album, failed.cursor, failed.append)
                 : fetchGalleryPage(filter, selectedAlbum, nextCursor, true))
             }}
-            className="inline-flex min-h-11 items-center gap-2 rounded-full bg-primary px-5 text-sm font-semibold text-primary-foreground shadow-xs hover:bg-primary/90 disabled:opacity-60"
+            className="inline-flex min-h-11 items-center gap-2 rounded-full bg-[var(--theme-accent)] px-5 text-sm font-semibold text-[var(--theme-accent-foreground)] shadow-xs hover:brightness-105 active:scale-[0.98] transition-all disabled:opacity-60 cursor-pointer"
           >
             {isLoadingPage && <RotateCcw className="size-4 animate-spin" />}
             {isLoadingPage ? "Loading…" : pageError ? "Try again" : "Show more media"}
@@ -965,7 +965,7 @@ export function MemorialGallery({
       )}
 
       {browseSlug && didLoadMore && !hasMore && !pageError && (
-        <p className="pt-2 text-center text-sm text-[#777]">All media are shown.</p>
+        <p className="pt-2 text-center text-sm text-[var(--theme-text-muted)]">All media are shown.</p>
       )}
 
       {/* =================================================================== */}
@@ -1112,7 +1112,7 @@ export function MemorialGallery({
                 />
               ) : selectedItem.mediaType === "audio" ? (
                 <div className="py-10 sm:py-12 px-6 sm:px-10 w-full max-w-md flex flex-col items-center justify-center gap-5 bg-[#181925] text-white rounded-3xl border border-white/10 shadow-2xl">
-                  <div className="size-16 rounded-full bg-primary/20 flex items-center justify-center text-primary">
+                  <div className="size-16 rounded-full bg-[var(--theme-accent)]/20 flex items-center justify-center text-[var(--theme-accent)]">
                     <Volume2 className="size-8" />
                   </div>
                   <div className="text-center">
@@ -1214,7 +1214,7 @@ export function MemorialGallery({
                 {selectedItem.album && (
                   <>
                     <span>·</span>
-                    <span className="text-primary/90">{selectedItem.album}</span>
+                    <span className="text-[var(--theme-accent)]/90">{selectedItem.album}</span>
                   </>
                 )}
               </div>

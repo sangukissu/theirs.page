@@ -215,7 +215,7 @@ export function ContributeModal({
             })
           }
         })
-        .catch(() => {})
+        .catch(() => { })
       return () => {
         isMounted = false
       }
@@ -248,7 +248,7 @@ export function ContributeModal({
       icon: Heart,
       title: "Leave a Tribute",
       desc: "Lay a flower, light a candle, or leave a quiet note of remembrance.",
-      color: "text-primary bg-primary/5",
+      color: "text-[var(--theme-accent)] bg-[var(--theme-accent)]/8",
       available: !allContributionsDisabled && contributionSettings?.tributes !== false,
     },
     {
@@ -256,7 +256,7 @@ export function ContributeModal({
       icon: BookOpen,
       title: "Share a memory",
       desc: `An anecdote, a shared story, or a reflection about ${firstName}.`,
-      color: "text-primary bg-primary/5",
+      color: "text-[var(--theme-accent)] bg-[var(--theme-accent)]/8",
       available: !allContributionsDisabled && contributionSettings?.memories !== false,
     },
     {
@@ -264,7 +264,7 @@ export function ContributeModal({
       icon: Camera,
       title: "Share a photograph",
       desc: "Photographs the family and friends may cherish.",
-      color: "text-primary bg-primary/5",
+      color: "text-[var(--theme-accent)] bg-[var(--theme-accent)]/8",
       available: !allContributionsDisabled && !isPhotosFull && mediaCapabilities.nativePhoto,
     },
     {
@@ -272,7 +272,7 @@ export function ContributeModal({
       icon: Mic,
       title: "Share a voice note",
       desc: "A voicemail or spoken story worth keeping forever.",
-      color: "text-primary bg-primary/5",
+      color: "text-[var(--theme-accent)] bg-[var(--theme-accent)]/8",
       available: !allContributionsDisabled && mediaCapabilities.nativeAudio,
     },
     {
@@ -282,7 +282,7 @@ export function ContributeModal({
       desc: mediaCapabilities.nativeVideo
         ? "Paste a YouTube link, or preserve the original file from your family workspace."
         : "Paste a YouTube link to share a video with the family.",
-      color: "text-primary bg-primary/5",
+      color: "text-[var(--theme-accent)] bg-[var(--theme-accent)]/8",
       available: !allContributionsDisabled && mediaCapabilities.youtubeVideo,
     },
   ]
@@ -531,35 +531,35 @@ export function ContributeModal({
       const usesMemberUpload = isAuthenticatedMember && selectedSessionIds.length > 0
       const res = usesMemberUpload
         ? await fetch(`/api/memorials/${targetIdentifier}/uploads/sessions/${selectedSessionIds[0]}/finalize`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              sessionIds: selectedSessionIds,
-              authorName: authorName.trim(),
-              authorRelationship: relationship.trim() || null,
-              content: effectiveContent,
-              approxYear: isNaN(approxYearNum as number) ? null : approxYearNum,
-              location: location.trim() || null,
-            }),
-          })
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            sessionIds: selectedSessionIds,
+            authorName: authorName.trim(),
+            authorRelationship: relationship.trim() || null,
+            content: effectiveContent,
+            approxYear: isNaN(approxYearNum as number) ? null : approxYearNum,
+            location: location.trim() || null,
+          }),
+        })
         : await fetch(`/api/memorials/${targetIdentifier}/contribute`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              type: selectedType === "message" ? "tribute" : selectedType,
-              author_name: authorName.trim(),
-              author_relationship: relationship.trim() || null,
-              content: effectiveContent,
-              approx_year: isNaN(approxYearNum as number) ? null : approxYearNum,
-              location: location.trim() || null,
-              media_refs: mediaRefs,
-              existing_media_id: selectedExistingMediaId,
-              upload_authorization: uploadAuthorization,
-              tribute_type: safeTributeType,
-              turnstile_token: turnstileToken,
-              external_url: selectedType === "video" ? youtubeUrl.trim() : null,
-            }),
-          })
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            type: selectedType === "message" ? "tribute" : selectedType,
+            author_name: authorName.trim(),
+            author_relationship: relationship.trim() || null,
+            content: effectiveContent,
+            approx_year: isNaN(approxYearNum as number) ? null : approxYearNum,
+            location: location.trim() || null,
+            media_refs: mediaRefs,
+            existing_media_id: selectedExistingMediaId,
+            upload_authorization: uploadAuthorization,
+            tribute_type: safeTributeType,
+            turnstile_token: turnstileToken,
+            external_url: selectedType === "video" ? youtubeUrl.trim() : null,
+          }),
+        })
 
       const data = await res.json().catch(() => ({}))
       if (!res.ok) {
@@ -689,7 +689,7 @@ export function ContributeModal({
             className="relative w-full max-w-lg rounded-3xl bg-white border border-black/[0.08] p-4 sm:p-6 overflow-hidden shadow-2xl z-10 select-none max-h-[90vh] flex flex-col"
           >
             {/* Close / Back Button Bar */}
-            <div className="flex items-center justify-between pb-3">
+            <div className="flex items-center justify-between">
               {selectedType && !isSubmitted ? (
                 <button
                   type="button"
@@ -700,7 +700,7 @@ export function ContributeModal({
                   <span>Choose another</span>
                 </button>
               ) : (
-                <div className="inline-flex items-center gap-1.5 text-xs text-primary font-medium">
+                <div className="inline-flex items-center gap-1.5 text-xs text-[var(--theme-accent)] font-medium">
                   <Sparkles className="size-3" />
                   <span>No account needed</span>
                 </div>
@@ -804,13 +804,13 @@ export function ContributeModal({
                             className={`size-10 rounded-xl flex items-center justify-center shrink-0 ${opt.color} transition-transform group-hover:scale-105`}
                           >
                             {opt.type === "tribute" ? (
-                              <BotanicalFlowerEmblem size={22} className="text-primary" />
+                              <BotanicalFlowerEmblem size={22} className="text-[var(--theme-accent)]" />
                             ) : (
                               <Icon className="size-5" />
                             )}
                           </div>
                           <div className="flex flex-col gap-0.5 min-w-0">
-                            <span className="text-sm font-medium text-[#181925] group-hover:text-primary transition-colors">
+                            <span className="text-sm font-medium text-[#181925] group-hover:text-[var(--theme-accent)] transition-colors">
                               {opt.title}
                             </span>
                             <span className="text-xs text-[#71717a] leading-relaxed">
@@ -858,8 +858,8 @@ export function ContributeModal({
                           type="button"
                           onClick={() => setTributeRitual("flower")}
                           className={`flex flex-col items-center justify-center py-3 px-2 rounded-2xl border transition-all cursor-pointer text-center ${tributeRitual === "flower"
-                              ? "bg-primary/5 border-primary text-primary ring-1 ring-primary/30 shadow-2xs"
-                              : "bg-[#f7f7f8] border-black/[0.06] text-[#666] hover:bg-neutral-100 hover:text-[#181925]"
+                            ? "bg-[var(--theme-accent)]/8 border-[var(--theme-accent)] text-[var(--theme-accent)] ring-1 ring-[var(--theme-accent)]/30 shadow-2xs"
+                            : "bg-[#f7f7f8] border-black/[0.06] text-[#666] hover:bg-neutral-100 hover:text-[#181925]"
                             }`}
                         >
                           <BotanicalFlowerEmblem size={26} className="shrink-0 mb-1" />
@@ -870,8 +870,8 @@ export function ContributeModal({
                           type="button"
                           onClick={() => setTributeRitual("candle")}
                           className={`flex flex-col items-center justify-center py-3 px-2 rounded-2xl border transition-all cursor-pointer text-center ${tributeRitual === "candle"
-                              ? "bg-primary/5 border-primary text-primary ring-1 ring-primary/30 shadow-2xs"
-                              : "bg-[#f7f7f8] border-black/[0.06] text-[#666] hover:bg-neutral-100 hover:text-[#181925]"
+                            ? "bg-[var(--theme-accent)]/8 border-[var(--theme-accent)] text-[var(--theme-accent)] ring-1 ring-[var(--theme-accent)]/30 shadow-2xs"
+                            : "bg-[#f7f7f8] border-black/[0.06] text-[#666] hover:bg-neutral-100 hover:text-[#181925]"
                             }`}
                         >
                           <CandleFlameEmblem size={26} className="shrink-0 mb-1" />
@@ -882,8 +882,8 @@ export function ContributeModal({
                           type="button"
                           onClick={() => setTributeRitual("note")}
                           className={`flex flex-col items-center justify-center py-3 px-2 rounded-2xl border transition-all cursor-pointer text-center ${tributeRitual === "note"
-                              ? "bg-primary/5 border-primary text-primary ring-1 ring-primary/30 shadow-2xs"
-                              : "bg-[#f7f7f8] border-black/[0.06] text-[#666] hover:bg-neutral-100 hover:text-[#181925]"
+                            ? "bg-[var(--theme-accent)]/8 border-[var(--theme-accent)] text-[var(--theme-accent)] ring-1 ring-[var(--theme-accent)]/30 shadow-2xs"
+                            : "bg-[#f7f7f8] border-black/[0.06] text-[#666] hover:bg-neutral-100 hover:text-[#181925]"
                             }`}
                         >
                           <QuillFeatherEmblem size={26} className="shrink-0 mb-1" />
@@ -906,7 +906,7 @@ export function ContributeModal({
                         onChange={(e) => setAuthorName(e.target.value)}
                         maxLength={TEXT_LIMITS.contributorName}
                         placeholder="e.g. David Miller"
-                        className="w-full px-3 py-2 rounded-xl bg-[#f7f7f8] border border-black/[0.08] text-sm text-[#181925] placeholder:text-[#aaa] outline-none focus:border-primary/50 transition-colors"
+                        className="w-full px-3 py-2 rounded-xl bg-[#f7f7f8] border border-black/[0.08] text-sm text-[#181925] placeholder:text-[#aaa] outline-none focus:border-[var(--theme-accent)]/60 focus:ring-1 focus:ring-[var(--theme-accent)]/20 transition-colors"
                       />
                     </div>
 
@@ -920,7 +920,7 @@ export function ContributeModal({
                         onChange={(e) => setRelationship(e.target.value)}
                         maxLength={TEXT_LIMITS.relationship}
                         placeholder="e.g. Daughter, Old neighbour, Colleague"
-                        className="w-full px-3 py-2 rounded-xl bg-[#f7f7f8] border border-black/[0.08] text-sm text-[#181925] placeholder:text-[#aaa] outline-none focus:border-primary/50 transition-colors"
+                        className="w-full px-3 py-2 rounded-xl bg-[#f7f7f8] border border-black/[0.08] text-sm text-[#181925] placeholder:text-[#aaa] outline-none focus:border-[var(--theme-accent)]/60 focus:ring-1 focus:ring-[var(--theme-accent)]/20 transition-colors"
                       />
                     </div>
                   </div>
@@ -938,7 +938,7 @@ export function ContributeModal({
                           onChange={(e) => setExtraField(e.target.value)}
                           maxLength={20}
                           placeholder="e.g. 1984 or Summer 1992"
-                          className="w-full px-3 py-2 rounded-xl bg-[#f7f7f8] border border-black/[0.08] text-sm text-[#181925] placeholder:text-[#aaa] outline-none focus:border-primary/50 transition-colors"
+                          className="w-full px-3 py-2 rounded-xl bg-[#f7f7f8] border border-black/[0.08] text-sm text-[#181925] placeholder:text-[#aaa] outline-none focus:border-[var(--theme-accent)]/60 focus:ring-1 focus:ring-[var(--theme-accent)]/20 transition-colors"
                         />
                       </div>
                       {selectedType === "memory" && (
@@ -952,7 +952,7 @@ export function ContributeModal({
                             onChange={(e) => setLocation(e.target.value)}
                             maxLength={TEXT_LIMITS.location}
                             placeholder="e.g. Grandma’s kitchen"
-                            className="w-full px-3 py-2 rounded-xl bg-[#f7f7f8] border border-black/[0.08] text-sm text-[#181925] placeholder:text-[#aaa] outline-none focus:border-primary/50 transition-colors"
+                            className="w-full px-3 py-2 rounded-xl bg-[#f7f7f8] border border-black/[0.08] text-sm text-[#181925] placeholder:text-[#aaa] outline-none focus:border-[var(--theme-accent)]/60 focus:ring-1 focus:ring-[var(--theme-accent)]/20 transition-colors"
                           />
                         </div>
                       )}
@@ -974,7 +974,7 @@ export function ContributeModal({
                             value={youtubeUrl}
                             onChange={(event) => setYoutubeUrl(event.target.value)}
                             placeholder="https://youtube.com/watch?v=..."
-                            className="w-full rounded-xl border border-black/[0.08] bg-white px-3 py-2 text-sm text-[#181925] outline-none placeholder:text-[#aaa] focus:border-primary/50"
+                            className="w-full rounded-xl border border-black/[0.08] bg-white px-3 py-2 text-sm text-[#181925] outline-none placeholder:text-[#aaa] focus:border-[var(--theme-accent)]/60 focus:ring-1 focus:ring-[var(--theme-accent)]/20 transition-colors"
                           />
                           <span className="text-[10px] leading-relaxed text-[#71717a]">
                             Paste a YouTube link to share a video with the family. The video remains hosted by YouTube.
@@ -983,116 +983,116 @@ export function ContributeModal({
                       )}
 
                       {(selectedType !== "video" || mediaCapabilities.nativeVideo) && <>
-                      {selectedType === "video" && (
-                        <div className="flex items-center gap-2 py-1 text-[11px] font-medium text-[#71717a] before:h-px before:flex-1 before:bg-black/[0.08] after:h-px after:flex-1 after:bg-black/[0.08]">
-                          Have the original file?
-                        </div>
-                      )}
-                      <input
-                        ref={fileInputRef}
-                        type="file"
-                        accept={
-                          isAuthenticatedMember && selectedType === "video"
-                            ? mediaAcceptAttribute("video")
-                            : isAuthenticatedMember && selectedType === "voice"
-                              ? mediaAcceptAttribute("audio")
-                              : isAuthenticatedMember
-                                ? mediaAcceptAttribute("image")
-                                : selectedType === "video"
-                            ? "video/mp4,video/webm,video/quicktime,.mov"
-                            : selectedType === "voice"
-                              ? "audio/mpeg,audio/wav,audio/ogg,audio/mp4,audio/m4a,.mp3,.wav,.ogg,.m4a"
-                              : "image/jpeg,image/png,image/webp,image/heic,image/heif,.heic,.heif"
-                        }
-                        className="hidden"
-                        disabled={isUploadingMedia || isMemberUploadBusy}
-                        onChange={(e) => {
-                          if (e.target.files?.[0]) {
-                            handleFileSelect(e.target.files[0])
+                        {selectedType === "video" && (
+                          <div className="flex items-center gap-2 py-1 text-[11px] font-medium text-[#71717a] before:h-px before:flex-1 before:bg-black/[0.08] after:h-px after:flex-1 after:bg-black/[0.08]">
+                            Have the original file?
+                          </div>
+                        )}
+                        <input
+                          ref={fileInputRef}
+                          type="file"
+                          accept={
+                            isAuthenticatedMember && selectedType === "video"
+                              ? mediaAcceptAttribute("video")
+                              : isAuthenticatedMember && selectedType === "voice"
+                                ? mediaAcceptAttribute("audio")
+                                : isAuthenticatedMember
+                                  ? mediaAcceptAttribute("image")
+                                  : selectedType === "video"
+                                    ? "video/mp4,video/webm,video/quicktime,.mov"
+                                    : selectedType === "voice"
+                                      ? "audio/mpeg,audio/wav,audio/ogg,audio/mp4,audio/m4a,.mp3,.wav,.ogg,.m4a"
+                                      : "image/jpeg,image/png,image/webp,image/heic,image/heif,.heic,.heif"
                           }
-                        }}
-                      />
+                          className="hidden"
+                          disabled={isUploadingMedia || isMemberUploadBusy}
+                          onChange={(e) => {
+                            if (e.target.files?.[0]) {
+                              handleFileSelect(e.target.files[0])
+                            }
+                          }}
+                        />
 
-                      {uploadedFileUrl ? (
-                        <div className="relative rounded-2xl border border-black/[0.1] bg-[#fafafb] p-3 flex items-center gap-3">
-                          {selectedType === "photo" ? (
-                            <div className="size-16 rounded-xl overflow-hidden bg-neutral-100 shrink-0 border border-black/[0.08]">
-                              <img src={uploadedFileUrl} alt="Preview" className="size-full object-cover" />
-                            </div>
-                          ) : selectedType === "video" ? (
-                            <video
-                              src={uploadedFileUrl}
-                              controls
-                              preload="metadata"
-                              className="h-20 w-32 rounded-xl bg-black object-contain shrink-0 border border-black/[0.08]"
-                            />
-                          ) : (
-                            <audio src={uploadedFileUrl} controls preload="metadata" className="h-10 max-w-52 shrink-0" />
-                          )}
-                          <div className="flex flex-col min-w-0 flex-1">
-                            <span className="text-xs font-medium text-[#181925] truncate">
-                              {uploadedFileName || "Uploaded file"}
-                            </span>
-                            <span className="text-[11px] text-emerald-600 font-medium inline-flex items-center gap-1">
-                              <CheckCircle2 className="size-3" /> Ready to submit
-                            </span>
-                          </div>
-                          <button
-                            type="button"
-                            onClick={() => {
-                              selectedUploadItemIds.forEach((id) => void memberUploads.cancel(id))
-                              setSelectedUploadItemIds([])
-                               setUploadedFileUrl(null)
-                               setUploadedMediaRef(null)
-                               setUploadedFileName(null)
-                              if (fileInputRef.current) fileInputRef.current.value = ""
-                            }}
-                            className="size-8 rounded-full hover:bg-rose-50 text-neutral-400 hover:text-rose-600 flex items-center justify-center transition-colors cursor-pointer"
-                            title="Remove attachment"
-                          >
-                            <Trash2 className="size-4" />
-                          </button>
-                        </div>
-                      ) : isUploadingMedia ? (
-                        <div className="border-2 border-dashed border-primary/40 rounded-2xl p-6 flex flex-col items-center justify-center gap-2 bg-primary/5 text-center">
-                          <Loader2 className="size-6 animate-spin text-primary" />
-                          <span className="text-xs font-medium text-[#181925]">Uploading original file...</span>
-                          <span className="text-[10px] text-[#71717a]">Preserving untouched archival quality</span>
-                        </div>
-                      ) : (
-                        <div
-                          onClick={() => fileInputRef.current?.click()}
-                          onDragOver={(e) => e.preventDefault()}
-                          onDrop={handleDrop}
-                          className="border-2 border-dashed border-black/[0.08] hover:border-primary/40 rounded-2xl p-5 flex flex-col items-center justify-center gap-2 bg-[#faf9f8] cursor-pointer transition-colors text-center group"
-                        >
-                          <div className="size-10 rounded-full bg-white flex items-center justify-center shadow-xs border border-black/[0.06] group-hover:scale-105 transition-transform">
+                        {uploadedFileUrl ? (
+                          <div className="relative rounded-2xl border border-black/[0.1] bg-[#fafafb] p-3 flex items-center gap-3">
                             {selectedType === "photo" ? (
-                              <Camera className="size-4 text-primary" />
+                              <div className="size-16 rounded-xl overflow-hidden bg-neutral-100 shrink-0 border border-black/[0.08]">
+                                <img src={uploadedFileUrl} alt="Preview" className="size-full object-cover" />
+                              </div>
                             ) : selectedType === "video" ? (
-                              <Film className="size-4 text-primary" />
+                              <video
+                                src={uploadedFileUrl}
+                                controls
+                                preload="metadata"
+                                className="h-20 w-32 rounded-xl bg-black object-contain shrink-0 border border-black/[0.08]"
+                              />
                             ) : (
-                              <Mic className="size-4 text-primary" />
+                              <audio src={uploadedFileUrl} controls preload="metadata" className="h-10 max-w-52 shrink-0" />
                             )}
+                            <div className="flex flex-col min-w-0 flex-1">
+                              <span className="text-xs font-medium text-[#181925] truncate">
+                                {uploadedFileName || "Uploaded file"}
+                              </span>
+                              <span className="text-[11px] text-emerald-600 font-medium inline-flex items-center gap-1">
+                                <CheckCircle2 className="size-3" /> Ready to submit
+                              </span>
+                            </div>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                selectedUploadItemIds.forEach((id) => void memberUploads.cancel(id))
+                                setSelectedUploadItemIds([])
+                                setUploadedFileUrl(null)
+                                setUploadedMediaRef(null)
+                                setUploadedFileName(null)
+                                if (fileInputRef.current) fileInputRef.current.value = ""
+                              }}
+                              className="size-8 rounded-full hover:bg-rose-50 text-neutral-400 hover:text-rose-600 flex items-center justify-center transition-colors cursor-pointer"
+                              title="Remove attachment"
+                            >
+                              <Trash2 className="size-4" />
+                            </button>
                           </div>
-                          <div className="flex flex-col">
-                            <span className="text-xs font-medium text-[#181925] group-hover:text-primary transition-colors">
-                              {selectedType === "photo"
-                                ? "Choose or drop a photograph"
-                                : selectedType === "video"
-                                  ? "Choose or drop a video clip"
-                                  : "Choose or drop an audio file"}
-                            </span>
-                            <span className="text-[10px] text-[#71717a]">
-                              {selectedType === "photo"
-                                ? "JPEG, PNG, WebP, or HEIC · up to 15MB"
-                                : selectedType === "video"
-                                  ? "MP4, WebM, or MOV · up to 100MB"
-                                  : `MP3, WAV, OGG, or M4A · up to ${Math.floor(mediaCapabilities.maxAudioBytes / 1024 / 1024)}MB`}
-                            </span>
+                        ) : isUploadingMedia ? (
+                          <div className="border-2 border-dashed border-[var(--theme-accent)]/40 rounded-2xl p-6 flex flex-col items-center justify-center gap-2 bg-[var(--theme-accent)]/5 text-center">
+                            <Loader2 className="size-6 animate-spin text-[var(--theme-accent)]" />
+                            <span className="text-xs font-medium text-[#181925]">Uploading original file...</span>
+                            <span className="text-[10px] text-[#71717a]">Preserving untouched archival quality</span>
                           </div>
-                        </div>
-                      )}
+                        ) : (
+                          <div
+                            onClick={() => fileInputRef.current?.click()}
+                            onDragOver={(e) => e.preventDefault()}
+                            onDrop={handleDrop}
+                            className="border-2 border-dashed border-black/[0.08] hover:border-[var(--theme-accent)]/40 rounded-2xl p-5 flex flex-col items-center justify-center gap-2 bg-[#faf9f8] cursor-pointer transition-colors text-center group"
+                          >
+                            <div className="size-10 rounded-full bg-white flex items-center justify-center shadow-xs border border-black/[0.06] group-hover:scale-105 transition-transform">
+                              {selectedType === "photo" ? (
+                                <Camera className="size-4 text-[var(--theme-accent)]" />
+                              ) : selectedType === "video" ? (
+                                <Film className="size-4 text-[var(--theme-accent)]" />
+                              ) : (
+                                <Mic className="size-4 text-[var(--theme-accent)]" />
+                              )}
+                            </div>
+                            <div className="flex flex-col">
+                              <span className="text-xs font-medium text-[#181925] group-hover:text-[var(--theme-accent)] transition-colors">
+                                {selectedType === "photo"
+                                  ? "Choose or drop a photograph"
+                                  : selectedType === "video"
+                                    ? "Choose or drop a video clip"
+                                    : "Choose or drop an audio file"}
+                              </span>
+                              <span className="text-[10px] text-[#71717a]">
+                                {selectedType === "photo"
+                                  ? "JPEG, PNG, WebP, or HEIC · up to 15MB"
+                                  : selectedType === "video"
+                                    ? "MP4, WebM, or MOV · up to 100MB"
+                                    : `MP3, WAV, OGG, or M4A · up to ${Math.floor(mediaCapabilities.maxAudioBytes / 1024 / 1024)}MB`}
+                              </span>
+                            </div>
+                          </div>
+                        )}
                       </>}
 
                       {isAuthenticatedMember && selectedMemberUploads.length > 0 && (
@@ -1168,7 +1168,7 @@ export function ContributeModal({
                                 ? "Where was this recorded? Tell us what was happening in this moment (optional)..."
                                 : `“I remember when ${firstName} spent half of Christmas Day fixing the neighbour’s washer...”`
                       }
-                      className="w-full px-3 py-2.5 rounded-xl bg-[#f7f7f8] border border-black/[0.08] text-sm text-[#181925] placeholder:text-[#aaa] outline-none focus:border-primary/50 transition-colors resize-none leading-relaxed"
+                      className="w-full px-3 py-2.5 rounded-xl bg-[#f7f7f8] border border-black/[0.08] text-sm text-[#181925] placeholder:text-[#aaa] outline-none focus:border-[var(--theme-accent)]/60 focus:ring-1 focus:ring-[var(--theme-accent)]/20 transition-colors resize-none leading-relaxed"
                     />
                   </div>
 
@@ -1219,7 +1219,7 @@ export function ContributeModal({
                                 type="button"
                                 disabled={isUploadingMedia}
                                 onClick={() => memoryPhotoInputRef.current?.click()}
-                                className="text-xs text-primary font-medium hover:underline cursor-pointer disabled:opacity-50"
+                                className="text-xs text-[var(--theme-accent)] font-medium hover:underline cursor-pointer disabled:opacity-50"
                               >
                                 + Add another photo
                               </button>
@@ -1256,17 +1256,17 @@ export function ContributeModal({
                                 type="button"
                                 disabled={isUploadingMedia}
                                 onClick={() => memoryPhotoInputRef.current?.click()}
-                                className="rounded-xl border border-dashed border-black/[0.15] hover:border-primary/50 aspect-4/3 flex flex-col items-center justify-center gap-1 bg-[#fafafb] hover:bg-white text-[#71717a] hover:text-primary transition-all cursor-pointer text-center p-2"
+                                className="rounded-xl border border-dashed border-black/[0.15] hover:border-[var(--theme-accent)]/50 aspect-4/3 flex flex-col items-center justify-center gap-1 bg-[#fafafb] hover:bg-white text-[#71717a] hover:text-[var(--theme-accent)] transition-all cursor-pointer text-center p-2"
                               >
-                                <Camera className="size-4 text-primary" />
+                                <Camera className="size-4 text-[var(--theme-accent)]" />
                                 <span className="text-[10px] font-medium">+ Add photo</span>
                               </button>
                             )}
                           </div>
                         </div>
                       ) : isUploadingMedia ? (
-                        <div className="border border-dashed border-primary/40 rounded-2xl p-3 flex items-center justify-center gap-2 bg-primary/5 text-center">
-                          <Loader2 className="size-4 animate-spin text-primary" />
+                        <div className="border border-dashed border-[var(--theme-accent)]/40 rounded-2xl p-3 flex items-center justify-center gap-2 bg-[var(--theme-accent)]/5 text-center">
+                          <Loader2 className="size-4 animate-spin text-[var(--theme-accent)]" />
                           <span className="text-xs font-medium text-[#181925]">Uploading photograph...</span>
                         </div>
                       ) : !isPhotosFull ? (
@@ -1275,7 +1275,7 @@ export function ContributeModal({
                           onClick={() => memoryPhotoInputRef.current?.click()}
                           className="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl border border-dashed border-black/[0.12] bg-[#f7f7f8] hover:bg-neutral-100 hover:border-black/[0.2] text-xs font-medium text-[#666] hover:text-[#181925] transition-all cursor-pointer self-start"
                         >
-                          <Camera className="size-3.5 text-primary" />
+                          <Camera className="size-3.5 text-[var(--theme-accent)]" />
                           <span>
                             {remainingNewPhotoSlots === 1
                               ? "Attach a photograph"
@@ -1301,9 +1301,9 @@ export function ContributeModal({
                   )}
 
                   {isAuthenticatedMember ? (
-                    <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-2.5 text-xs text-emerald-800">
-                      Signed in as an accepted family member. Your contribution will use the family workspace upload and moderation rules.
-                    </div>
+                    <p className="p-1.5 text-xs text-emerald-800">
+                      * Signed in as an family member.
+                    </p>
                   ) : siteKey ? (
                     <div className="flex justify-center empty:hidden">
                       <Turnstile
@@ -1337,7 +1337,7 @@ export function ContributeModal({
                     <button
                       type="submit"
                       disabled={!canSubmit}
-                      className="inline-flex items-center justify-center gap-1.5 whitespace-nowrap !rounded-full font-medium transition-all cursor-pointer border border-[color-mix(in_srgb,var(--primary)_80%,#3a3480)] bg-[color-mix(in_srgb,var(--primary)_90%,#3a3480)] text-primary-foreground shadow-[inset_0_1px_0_rgba(255,255,255,0.22),inset_0_-1px_0_rgba(58,52,128,0.30)] transform-gpu hover:bg-primary active:scale-[0.98] h-9 px-5 text-xs select-none disabled:opacity-50 disabled:cursor-not-allowed"
+                      className="inline-flex items-center justify-center gap-1.5 whitespace-nowrap !rounded-full font-medium transition-all cursor-pointer bg-[var(--theme-accent)] text-[var(--theme-accent-foreground)] shadow-[inset_0_1px_0_rgba(255,255,255,0.22),0_4px_16px_rgba(0,0,0,0.1)] transform-gpu hover:brightness-105 active:scale-[0.98] h-9 px-5 text-xs select-none disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                       {isSubmitting ? (
                         <>
