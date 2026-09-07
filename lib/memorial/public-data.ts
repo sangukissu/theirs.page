@@ -289,7 +289,7 @@ export const getMemorialViewContext = cache(async (slug: string): Promise<Memori
             publicDelivery: memorial.status === "published" && memorial.privacy !== "private",
           })
         : isDemo
-          ? "/memorial-family-portrait-grandfather.jpg"
+          ? "/landing/robert-hero-image1.png"
           : null,
       isDemo,
       isPaid: isDemo || Boolean(memorial?.is_paid),
