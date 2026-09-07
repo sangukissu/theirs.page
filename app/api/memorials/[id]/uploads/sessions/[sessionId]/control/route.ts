@@ -12,10 +12,13 @@ import { escapeS3Xml, s3XmlResponse } from "@/lib/uploads/s3-control-response"
 import {
   ensureMultipartUpload,
   getAuthorizedUploadSession,
+  type MediaUploadSession,
+  resetMissingMultipartUpload,
   UploadSessionError,
   uploadReservationKey,
   verifyUploadedSessionObject,
 } from "@/lib/uploads/upload-session"
+import { canStartOrSignMultipart, isNoSuchUploadError } from "@/lib/uploads/session-lifecycle"
 
 interface RouteContext { params: Promise<{ id: string; sessionId: string }> }
 
@@ -30,7 +33,17 @@ async function reconcileCompletedObject(
   session: Awaited<ReturnType<typeof getAuthorizedUploadSession>>["session"],
 ) {
   try {
-    await verifyUploadedSessionObject(db, session)
+    // The caller's authorized snapshot can be a few milliseconds older than
+    // another tab's completion transaction. Refresh before extending or
+    // verifying so a just-completed session is recognized as such.
+    const { data, error } = await db.from("media_upload_sessions")
+      .select("*")
+      .eq("id", session.id)
+      .maybeSingle()
+    if (error) throw error
+    const latest = (data || session) as MediaUploadSession
+    if (latest.status === "complete") return true
+    await verifyUploadedSessionObject(db, latest)
     return true
   } catch (error) {
     if (error instanceof UploadSessionError && error.code === "upload_not_complete") return false
@@ -62,6 +75,20 @@ export async function POST(req: NextRequest, context: RouteContext) {
   try {
     const current = await contextFor(context)
     if (operation === "create") {
+      if (await reconcileCompletedObject(current.db, current.session)) {
+        throw new UploadSessionError(
+          "The multipart object is already complete; continue with finalization.",
+          409,
+          "upload_already_completed",
+        )
+      }
+      if (!canStartOrSignMultipart(current.session.status)) {
+        throw new UploadSessionError(
+          "The upload is already completing; continue with verification.",
+          409,
+          "upload_already_completed",
+        )
+      }
       const uploadId = await ensureMultipartUpload(current.db, current.session)
       return s3XmlResponse(`<InitiateMultipartUploadResult><Key>${escapeS3Xml(current.session.r2_key)}</Key><UploadId>${escapeS3Xml(uploadId)}</UploadId></InitiateMultipartUploadResult>`)
     }
@@ -82,8 +109,20 @@ export async function POST(req: NextRequest, context: RouteContext) {
     const completing = await current.db.from("media_upload_sessions").update({
       status: "verifying",
       error_code: "multipart_completion_started",
-    }).eq("id", refreshed.session.id).in("status", ["created", "uploading", "uploaded", "verifying"])
+    }).eq("id", refreshed.session.id).in("status", ["created", "uploading"])
+      .select("id")
     if (completing.error) throw completing.error
+    if (!completing.data?.length) {
+      const latest = await getAuthorizedUploadSession(current.db, refreshed.session.id, current.session.user_id, current.id)
+      if (await reconcileCompletedObject(current.db, latest.session)) {
+        return completedResultXml(latest.session.r2_key)
+      }
+      throw new UploadSessionError(
+        "Another client is completing this upload. Checking its result now.",
+        409,
+        "upload_completion_in_progress",
+      )
+    }
 
     let result: Awaited<ReturnType<typeof completeR2MultipartUpload>>
     try {
@@ -91,6 +130,14 @@ export async function POST(req: NextRequest, context: RouteContext) {
     } catch (completionError) {
       if (await reconcileCompletedObject(current.db, refreshed.session)) {
         return completedResultXml(refreshed.session.r2_key)
+      }
+      if (isNoSuchUploadError(completionError as { code?: string; name?: string; message?: string }) &&
+        await resetMissingMultipartUpload(current.db, refreshed.session, { allowVerifying: true })) {
+        throw new UploadSessionError(
+          "The interrupted multipart transfer is no longer active. It can be restarted safely.",
+          409,
+          "multipart_restart_required",
+        )
       }
       await current.db.from("media_upload_sessions").update({
         status: "uploading",
@@ -123,8 +170,36 @@ export async function GET(req: NextRequest, context: RouteContext) {
         "upload_already_completed",
       )
     }
+    if (!canStartOrSignMultipart(current.session.status)) {
+      throw new UploadSessionError(
+        "The upload is already completing; continue with verification.",
+        409,
+        "upload_already_completed",
+      )
+    }
     if (!current.session.multipart_upload_id) return s3XmlResponse("<ListPartsResult></ListPartsResult>")
-    const parts = await listR2MultipartParts(current.session.r2_key, current.session.multipart_upload_id)
+    let parts: Awaited<ReturnType<typeof listR2MultipartParts>>
+    try {
+      parts = await listR2MultipartParts(current.session.r2_key, current.session.multipart_upload_id)
+    } catch (listError) {
+      if (isNoSuchUploadError(listError as { code?: string; name?: string; message?: string })) {
+        if (await reconcileCompletedObject(current.db, current.session)) {
+          throw new UploadSessionError(
+            "The multipart object is already complete; continue with finalization.",
+            409,
+            "upload_already_completed",
+          )
+        }
+        if (await resetMissingMultipartUpload(current.db, current.session)) {
+          throw new UploadSessionError(
+            "The interrupted multipart transfer is no longer active. It can be restarted safely.",
+            409,
+            "multipart_restart_required",
+          )
+        }
+      }
+      throw listError
+    }
     const entries = parts.map((part) => `<Part><PartNumber>${part.partNumber}</PartNumber><ETag>&quot;${escapeS3Xml(part.etag)}&quot;</ETag><Size>${part.size}</Size></Part>`).join("")
     console.info("[media-upload] upload_resumed", { purpose: current.session.purpose, media_type: current.session.media_type, parts: parts.length })
     return s3XmlResponse(`<ListPartsResult>${entries}</ListPartsResult>`)

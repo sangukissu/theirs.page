@@ -28,6 +28,7 @@ import {
   type MediaCountState,
   type UploadPurpose,
 } from "./capabilities"
+import { canStartOrSignMultipart, hasCompletedMultipartLifecycle } from "./session-lifecycle"
 
 export type UploadSessionStatus =
   | "created" | "uploading" | "uploaded" | "verifying" | "finalizing"
@@ -235,6 +236,16 @@ export async function ensureMultipartUpload(
   if (session.upload_mode !== "multipart") {
     throw new UploadSessionError("This is not a multipart upload.", 409, "not_multipart")
   }
+  if (!canStartOrSignMultipart(session.status)) {
+    if (hasCompletedMultipartLifecycle(session.status)) {
+      throw new UploadSessionError(
+        "The upload has already completed; continue with verification.",
+        409,
+        "upload_already_completed",
+      )
+    }
+    throw new UploadSessionError("This upload can no longer be resumed.", 409, session.status)
+  }
   if (session.multipart_upload_id) return session.multipart_upload_id
   const expiresAt = await extendUploadSession(db, session.id)
   const multipart = await createR2MultipartUpload(session.r2_key, session.mime_type)
@@ -255,6 +266,38 @@ export async function ensureMultipartUpload(
     return refreshed.data.multipart_upload_id
   }
   throw new Error("Failed to persist multipart upload ID")
+}
+
+// R2 invalidates a multipart handle when it has been aborted or otherwise
+// discarded. A completed object is reconciled before this is ever called; this
+// function therefore only releases a genuinely lost, still-active lifecycle
+// so the intact browser File can start one replacement lifecycle.
+export async function resetMissingMultipartUpload(
+  db: SupabaseClient,
+  session: MediaUploadSession,
+  options: { allowVerifying?: boolean } = {},
+): Promise<boolean> {
+  const resettableStatuses = options.allowVerifying
+    ? ["created", "uploading", "verifying"]
+    : ["created", "uploading"]
+  if (
+    session.upload_mode !== "multipart" ||
+    !session.multipart_upload_id ||
+    !resettableStatuses.includes(session.status)
+  ) return false
+
+  const expiresAt = await extendUploadSession(db, session.id)
+  const { data, error } = await db.from("media_upload_sessions").update({
+    multipart_upload_id: null,
+    status: "created",
+    error_code: "multipart_restart_required",
+    expires_at: expiresAt,
+  }).eq("id", session.id)
+    .eq("multipart_upload_id", session.multipart_upload_id)
+    .in("status", resettableStatuses)
+    .select("id")
+  if (error) throw error
+  return Boolean(data?.length)
 }
 
 export async function verifyUploadedSessionObject(

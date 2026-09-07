@@ -22,8 +22,10 @@ import {
   UploadSessionError,
   uploadReservationKey,
   uploadSessionExpiry,
+  verifyUploadedSessionObject,
   validateUploadRequest,
 } from "@/lib/uploads/upload-session"
+import { isNoSuchUploadError } from "@/lib/uploads/session-lifecycle"
 
 interface RouteContext { params: Promise<{ id: string }> }
 
@@ -244,7 +246,23 @@ export async function GET(req: NextRequest, context: RouteContext) {
             const parts = await listR2MultipartParts(session.r2_key, session.multipart_upload_id)
             const bytesUploaded = parts.reduce((sum, part) => sum + part.size, 0)
             return sessionResponse(session, { bytesUploaded, uploadedParts: parts.length })
-          } catch {
+          } catch (error) {
+            // A multipart ID disappears after another tab has completed it.
+            // R2's part listing then returns NoSuchUpload even though the
+            // object itself is durable. Reconcile object truth before
+            // presenting the session as unfinished to a recovering browser.
+            if (isNoSuchUploadError(error as { code?: string; name?: string; message?: string })) {
+              try {
+                const latest = await getAuthorizedUploadSession(db, session.id, user.id, id)
+                if (latest.session.status === "complete") return sessionResponse(latest.session)
+                await verifyUploadedSessionObject(db, latest.session)
+                return sessionResponse({ ...latest.session, status: "uploaded" })
+              } catch (verificationError) {
+                if (!(verificationError instanceof UploadSessionError) || verificationError.code !== "upload_not_complete") {
+                  throw verificationError
+                }
+              }
+            }
             return sessionResponse(session)
           }
         }

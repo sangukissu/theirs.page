@@ -16,11 +16,18 @@ import {
 import { createUploadFingerprint } from "../../lib/uploads/fingerprint"
 import {
   dedupeUploadItems,
+  monotonicUploadBytes,
   UploadPreparationRegistry,
+  UploadStartRegistry,
   hasUsableFileData,
   uploadIndexedDbName,
   uploadManagerKey,
 } from "../../lib/uploads/client-scope"
+import {
+  canStartOrSignMultipart,
+  isNoSuchUploadError,
+} from "../../lib/uploads/session-lifecycle"
+import { resolveUploadRecoveryAction } from "../../lib/uploads/recovery-state"
 import { escapeS3Xml, s3XmlResponse } from "../../lib/uploads/s3-control-response"
 import { parseYouTubeUrl } from "../../lib/uploads/youtube"
 import { validateMagicBytes } from "../../lib/safety/moderation"
@@ -381,3 +388,57 @@ test("mid-upload refresh progress preserves ground-truth bytes and never shows 1
   assert.equal(boundaryPercentage, 99)
 })
 
+test("upload coordinator starts each durable session exactly once", async () => {
+  const registry = new UploadStartRegistry()
+  let starts = 0
+  let release: (() => void) | undefined
+  const gate = new Promise<void>((resolve) => { release = resolve })
+
+  const requests = Array.from({ length: 10 }, () => registry.run("session-a", async () => {
+    starts += 1
+    await gate
+    return "started"
+  }))
+  await Promise.resolve()
+  assert.equal(starts, 1)
+  assert.equal(registry.has("session-a"), true)
+  release?.()
+  assert.deepEqual(await Promise.all(requests), Array(10).fill("started"))
+  assert.equal(registry.has("session-a"), false)
+})
+
+test("displayed multipart progress is monotonic until server finalization", () => {
+  const total = 100
+  const atForty = monotonicUploadBytes(0, 40, total)
+  const restoredFour = monotonicUploadBytes(atForty, 4, total)
+  const resumedFortyTwo = monotonicUploadBytes(restoredFour, 42, total)
+
+  assert.deepEqual([atForty, restoredFour, resumedFortyTwo], [40, 40, 42])
+  assert.equal(monotonicUploadBytes(42, 200, total), 100)
+})
+
+test("only active sessions may issue multipart control or part signing", () => {
+  assert.equal(canStartOrSignMultipart("created"), true)
+  assert.equal(canStartOrSignMultipart("uploading"), true)
+  for (const terminal of ["uploaded", "verifying", "finalizing", "complete", "failed", "aborted", "expired"]) {
+    assert.equal(canStartOrSignMultipart(terminal), false, terminal)
+  }
+})
+
+test("NoSuchUpload is identified as reconciliation work, not a user-facing failure", () => {
+  assert.equal(isNoSuchUploadError({ code: "NoSuchUpload" }), true)
+  assert.equal(isNoSuchUploadError({ name: "NoSuchUpload" }), true)
+  assert.equal(isNoSuchUploadError({ message: "S3 returned 404 – NoSuchUpload" }), true)
+  assert.equal(isNoSuchUploadError({ code: "AccessDenied" }), false)
+})
+
+test("recovery state machine has one action for every server and Blob snapshot", () => {
+  const base = { serverStatus: "uploading", hasUsableFile: true, uploadComplete: false, recoveryBlocked: false, online: true }
+  assert.equal(resolveUploadRecoveryAction(base), "resume")
+  assert.equal(resolveUploadRecoveryAction({ ...base, online: false }), "wait")
+  assert.equal(resolveUploadRecoveryAction({ ...base, hasUsableFile: false }), "needs_file")
+  assert.equal(resolveUploadRecoveryAction({ ...base, recoveryBlocked: true }), "preserve_error")
+  assert.equal(resolveUploadRecoveryAction({ ...base, uploadComplete: true }), "finish")
+  assert.equal(resolveUploadRecoveryAction({ ...base, serverStatus: "uploaded" }), "finish")
+  assert.equal(resolveUploadRecoveryAction({ ...base, serverStatus: "complete" }), "show_complete")
+})

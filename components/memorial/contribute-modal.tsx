@@ -127,7 +127,7 @@ export function ContributeModal({
     .filter((item) => item.status === "complete" && item.sessionId)
     .map((item) => item.sessionId)
   const isMemberUploadBusy = selectedMemberUploads.some((item) =>
-    ["preparing", "uploading", "paused", "verifying", "finalizing"].includes(item.status)
+    ["preparing", "queued", "recovering", "uploading", "paused", "verifying", "finalizing"].includes(item.status)
   )
   const restoredMemoryDraftRef = useRef(false)
   const memoryDraftValue = useMemo(() => ({

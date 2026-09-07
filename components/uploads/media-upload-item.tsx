@@ -5,9 +5,12 @@ import type { ResumableUploadItem } from "@/hooks/use-resumable-media-upload"
 import { MediaUploadProgress } from "./media-upload-progress"
 
 function statusLabel(item: ResumableUploadItem, online: boolean) {
-  if (!online && ["uploading", "paused"].includes(item.status)) return "Connection lost — upload paused"
+  if (!online && ["queued", "recovering", "uploading", "paused"].includes(item.status)) return "Connection lost — upload paused"
   if (item.status === "preparing") return "Preparing secure upload…"
+  if (item.status === "queued") return "Queued for upload…"
+  if (item.status === "recovering") return `Resuming upload… · ${item.percentage}%`
   if (item.status === "uploading") return `Uploading · ${item.percentage}%`
+  if (item.status === "needs_file") return `Upload paused at ${item.percentage}%`
   if (item.status === "paused") return `Upload paused at ${item.percentage}%`
   if (item.status === "verifying") return "Verifying upload…"
   if (item.status === "finalizing") return "Adding to the memorial…"
@@ -24,15 +27,15 @@ export function MediaUploadItem({
   onCancel: () => void
   onChooseSameFile?: () => void
 }) {
-  const active = ["preparing", "uploading", "paused"].includes(item.status)
-  const canCancel = ["preparing", "uploading", "paused", "verifying", "error"].includes(item.status)
+  const active = ["preparing", "queued", "recovering", "uploading", "needs_file", "paused"].includes(item.status)
+  const canCancel = ["preparing", "queued", "recovering", "uploading", "needs_file", "paused", "verifying", "error"].includes(item.status)
   return (
     <div className="rounded-2xl border border-black/[0.08] bg-white p-3.5 shadow-xs">
       <div className="flex items-start gap-3">
         <div className="mt-0.5 text-primary">
           {item.status === "complete" ? <CheckCircle2 className="size-4.5 text-emerald-600" />
             : item.status === "error" ? <AlertCircle className="size-4.5 text-rose-600" />
-              : item.status === "paused" ? <Pause className="size-4.5" />
+              : ["paused", "needs_file"].includes(item.status) ? <Pause className="size-4.5" />
                 : <Loader2 className="size-4.5 animate-spin" />}
         </div>
         <div className="min-w-0 flex-1 space-y-2">

@@ -19,6 +19,30 @@ export function dedupeUploadItems<T extends { id: string; sessionId: string }>(i
   })
 }
 
+export function monotonicUploadBytes(previous: number, incoming: number, total: number): number {
+  const safeTotal = Math.max(0, total)
+  return Math.min(safeTotal, Math.max(0, previous, incoming))
+}
+
+export class UploadStartRegistry {
+  private readonly operations = new Map<string, Promise<unknown>>()
+
+  run<T>(sessionId: string, start: () => Promise<T>): Promise<T> {
+    const existing = this.operations.get(sessionId)
+    if (existing) return existing as Promise<T>
+    const operation = Promise.resolve().then(start)
+    this.operations.set(sessionId, operation)
+    void operation.finally(() => {
+      if (this.operations.get(sessionId) === operation) this.operations.delete(sessionId)
+    }).catch(() => {})
+    return operation
+  }
+
+  has(sessionId: string): boolean {
+    return this.operations.has(sessionId)
+  }
+}
+
 export class UploadPreparationRegistry {
   private readonly controllers = new Map<string, AbortController>()
 
@@ -55,6 +79,5 @@ export function hasUsableFileData(file: { isGhost?: boolean; data?: unknown } | 
     typeof (file.data as { slice?: unknown }).slice === "function",
   )
 }
-
 
 
