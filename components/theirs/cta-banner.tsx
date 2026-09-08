@@ -2,33 +2,29 @@
 
 import { useState, useRef } from "react"
 import { useRouter } from "next/navigation"
-import { motion, useScroll, useTransform, useSpring } from "framer-motion"
+import { useScroll, useSpring } from "framer-motion"
 import { normalizeMemorialSlug } from "@/lib/memorial-slug"
 import { TEXT_LIMITS } from "@/lib/validation/text-limits"
 import { TheirsLogo } from "@/components/theirs/theirs-logo"
 import { DitherGradient } from "@/components/theirs/dither-gradient"
+import { SandDissolveWordmark } from "@/components/theirs/sand-dissolve-wordmark"
 
 export function CtaBanner() {
   const router = useRouter()
   const [name, setName] = useState("")
   const sectionRef = useRef<HTMLElement>(null)
 
-  // Scroll-driven emergence from behind the CTA card block
+  // Scroll-driven fracture into bricks and dissolution into sand
   const { scrollYProgress } = useScroll({
     target: sectionRef,
-    offset: ["start end", "center 60%"],
+    offset: ["start 85%", "center 35%"],
   })
 
   const smoothProgress = useSpring(scrollYProgress, {
-    stiffness: 80,
-    damping: 24,
+    stiffness: 90,
+    damping: 26,
     restDelta: 0.001,
   })
-
-  // Starts tucked down behind the card (95%) and rises to final horizon position (0%)
-  const wordmarkY = useTransform(smoothProgress, [0, 1], ["95%", "0%"])
-  // Fades in gently as it ascends from behind the horizon
-  const wordmarkOpacity = useTransform(smoothProgress, [0, 0.35, 1], [0, 0.4, 1])
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
@@ -52,19 +48,13 @@ export function CtaBanner() {
       className="relative pt-24 sm:pt-32 md:pt-40 pb-16 sm:pb-24 px-4 sm:px-6 overflow-hidden"
     >
       <div className="max-w-5xl mx-auto relative">
-        {/* Horizon Monolith Brand Wordmark — Slowly emerges from behind the CTA card on scroll */}
-        <motion.div
+        {/* Horizon Monolith Wordmark with Masonry Brick Fracture & Sand Dissolution */}
+        <div
           aria-hidden="true"
-          style={{
-            y: wordmarkY,
-            opacity: wordmarkOpacity,
-          }}
-          className="pointer-events-none select-none absolute left-1/2 -translate-x-1/2 -top-10 sm:-top-16 md:-top-24 lg:-top-28 w-full flex items-end justify-center z-0 will-change-transform"
+          className="pointer-events-none select-none absolute left-1/2 -translate-x-1/2 -top-12 sm:-top-20 md:-top-28 lg:-top-32 w-full flex items-end justify-center z-0"
         >
-          <span className="font-[family-name:var(--font-heading)] font-bold uppercase tracking-[-0.03em] sm:tracking-[-0.04em] text-[12.5vw] sm:text-[13vw] md:text-[130px] lg:text-[150px] leading-[0.82] whitespace-nowrap bg-gradient-to-b from-[#181925]/[0.22] via-[#181925]/[0.10] to-[#181925]/[0.02] bg-clip-text text-transparent">
-            THEIRS.PAGE
-          </span>
-        </motion.div>
+          <SandDissolveWordmark progress={smoothProgress} text="THEIRS.PAGE" />
+        </div>
 
         {/* Dark CTA Card — sits in front (relative z-10) */}
         <div className="relative z-10 overflow-hidden rounded-[28px] sm:rounded-[36px] bg-[#1a1a1f] p-10 sm:p-20 text-center text-white shadow-2xl flex flex-col items-center justify-center">
