@@ -69,15 +69,12 @@ export function CtaBanner() {
             <DitherGradient from="#305dde" bloom="aura" direction="down" />
           </div>
 
-          {/* Brand SVG Logo in White Shades & Brand Name */}
-          <div className="relative z-10 flex flex-col items-center gap-2 mb-6 select-none">
-          <div className="relative size-16 sm:size-20 flex items-center justify-center">
-            <TheirsLogo themeAware className="size-full text-white drop-shadow-[0_8px_24px_rgba(255,255,255,0.12)]" />
+          {/* Brand SVG Emblem in White Shades */}
+          <div className="relative z-10 flex items-center justify-center mb-6 select-none">
+            <div className="relative size-16 sm:size-20 flex items-center justify-center">
+              <TheirsLogo themeAware className="size-full text-white drop-shadow-[0_8px_24px_rgba(255,255,255,0.12)]" />
+            </div>
           </div>
-          <span className="text-sm font-medium tracking-tight text-neutral-300">
-            theirs.page
-          </span>
-        </div>
 
         {/* Headline */}
         <h2 className="relative z-10 text-balance text-2xl sm:text-4xl md:text-5xl font-medium tracking-tight text-white leading-[1.15] max-w-3xl mx-auto mb-3.5">
