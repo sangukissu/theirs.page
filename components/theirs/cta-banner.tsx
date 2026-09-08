@@ -1,7 +1,8 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useRef } from "react"
 import { useRouter } from "next/navigation"
+import { motion, useScroll, useTransform, useSpring } from "framer-motion"
 import { normalizeMemorialSlug } from "@/lib/memorial-slug"
 import { TEXT_LIMITS } from "@/lib/validation/text-limits"
 import { TheirsLogo } from "@/components/theirs/theirs-logo"
@@ -10,6 +11,24 @@ import { DitherGradient } from "@/components/theirs/dither-gradient"
 export function CtaBanner() {
   const router = useRouter()
   const [name, setName] = useState("")
+  const sectionRef = useRef<HTMLElement>(null)
+
+  // Scroll-driven emergence from behind the CTA card block
+  const { scrollYProgress } = useScroll({
+    target: sectionRef,
+    offset: ["start end", "center 60%"],
+  })
+
+  const smoothProgress = useSpring(scrollYProgress, {
+    stiffness: 80,
+    damping: 24,
+    restDelta: 0.001,
+  })
+
+  // Starts tucked down behind the card (95%) and rises to final horizon position (0%)
+  const wordmarkY = useTransform(smoothProgress, [0, 1], ["95%", "0%"])
+  // Fades in gently as it ascends from behind the horizon
+  const wordmarkOpacity = useTransform(smoothProgress, [0, 0.35, 1], [0, 0.4, 1])
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
@@ -28,21 +47,40 @@ export function CtaBanner() {
   }
 
   return (
-    <section className="py-16 sm:py-24 px-4 sm:px-6">
-      <div className="max-w-5xl mx-auto relative overflow-hidden rounded-[28px] sm:rounded-[36px] bg-[#1a1a1f] p-10 sm:p-20 text-center text-white shadow-2xl flex flex-col items-center justify-center">
-        {/* Subtle Ambient Radial Glow */}
-        <div className="absolute inset-0 bg-radial from-white/[0.04] via-transparent to-transparent pointer-events-none" />
-
-        {/* Dither Pattern Background Cover (Brand Primary #305dde at 60% Opacity) */}
-        <div
+    <section
+      ref={sectionRef}
+      className="relative pt-24 sm:pt-32 md:pt-40 pb-16 sm:pb-24 px-4 sm:px-6 overflow-hidden"
+    >
+      <div className="max-w-5xl mx-auto relative">
+        {/* Horizon Monolith Brand Wordmark — Slowly emerges from behind the CTA card on scroll */}
+        <motion.div
           aria-hidden="true"
-          className="pointer-events-none absolute inset-0 overflow-hidden select-none opacity-30 z-0"
+          style={{
+            y: wordmarkY,
+            opacity: wordmarkOpacity,
+          }}
+          className="pointer-events-none select-none absolute left-1/2 -translate-x-1/2 -top-10 sm:-top-16 md:-top-24 lg:-top-28 w-full flex items-end justify-center z-0 will-change-transform"
         >
-          <DitherGradient from="#305dde" bloom="aura" direction="down" />
-        </div>
+          <span className="font-[family-name:var(--font-heading)] font-bold uppercase tracking-[-0.03em] sm:tracking-[-0.04em] text-[12.5vw] sm:text-[13vw] md:text-[130px] lg:text-[150px] leading-[0.82] whitespace-nowrap bg-gradient-to-b from-[#181925]/[0.22] via-[#181925]/[0.10] to-[#181925]/[0.02] bg-clip-text text-transparent">
+            THEIRS.PAGE
+          </span>
+        </motion.div>
 
-        {/* Brand SVG Logo in White Shades & Brand Name */}
-        <div className="relative z-10 flex flex-col items-center gap-2 mb-6 select-none">
+        {/* Dark CTA Card — sits in front (relative z-10) */}
+        <div className="relative z-10 overflow-hidden rounded-[28px] sm:rounded-[36px] bg-[#1a1a1f] p-10 sm:p-20 text-center text-white shadow-2xl flex flex-col items-center justify-center">
+          {/* Subtle Ambient Radial Glow */}
+          <div className="absolute inset-0 bg-radial from-white/[0.04] via-transparent to-transparent pointer-events-none" />
+
+          {/* Dither Pattern Background Cover (Brand Primary #305dde at 60% Opacity) */}
+          <div
+            aria-hidden="true"
+            className="pointer-events-none absolute inset-0 overflow-hidden select-none opacity-60 z-0"
+          >
+            <DitherGradient from="#305dde" bloom="aura" direction="down" />
+          </div>
+
+          {/* Brand SVG Logo in White Shades & Brand Name */}
+          <div className="relative z-10 flex flex-col items-center gap-2 mb-6 select-none">
           <div className="relative size-16 sm:size-20 flex items-center justify-center">
             <TheirsLogo themeAware className="size-full text-white drop-shadow-[0_8px_24px_rgba(255,255,255,0.12)]" />
           </div>
@@ -132,6 +170,7 @@ export function CtaBanner() {
           </span>
         </div>
       </div>
-    </section>
+    </div>
+  </section>
   )
 }
