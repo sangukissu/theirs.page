@@ -1,53 +1,24 @@
-"use client"
-
-import { useRef } from "react"
-import { motion, useSpring, useMotionValue, useTransform } from "framer-motion"
-
 export function LifePanorama() {
-  const containerRef = useRef<HTMLDivElement>(null)
-
-  // Subtle parallax tracking on desktop
-  const mouseX = useMotionValue(0)
-  const springX = useSpring(useTransform(mouseX, [-0.5, 0.5], [-14, 14]), {
-    stiffness: 85,
-    damping: 28,
-  })
-
-  const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
-    if (!containerRef.current) return
-    const rect = containerRef.current.getBoundingClientRect()
-    const x = (e.clientX - rect.left) / rect.width - 0.5
-    mouseX.set(x)
-  }
-
-  const handleMouseLeave = () => {
-    mouseX.set(0)
-  }
-
   return (
     <div
-      ref={containerRef}
-      onMouseMove={handleMouseMove}
-      onMouseLeave={handleMouseLeave}
       className="relative w-full overflow-hidden select-none flex justify-center items-end bg-white"
     >
       {/* ========================================================================= */}
       {/* THE LIFE RIBBON — Responsive Across All Viewports (Mobile to 4K)          */}
       {/* Full width on mobile, upper corners rounded, bottom sharp                 */}
       {/* ========================================================================= */}
-      <motion.div
-        style={{ x: springX }}
+      <div
         className="relative w-full max-w-[1480px] h-[190px] xs:h-[230px] sm:h-[370px] lg:h-[440px] shrink-0 [mask-image:linear-gradient(to_bottom,black_0%,black_75%,rgba(0,0,0,0.85)_88%,transparent_100%)]"
       >
         {/* ----------------------------------------------------------------------- */}
         {/* OUTER ROUNDED GRAY BEZEL STRIP — Rounded top corners, sharp bottom     */}
         {/* ----------------------------------------------------------------------- */}
-        <div className="relative w-full h-full p-1.5 sm:p-2.5 lg:p-3 rounded-t-2xl sm:rounded-t-[208px] lg:rounded-t-[268px] rounded-b-none bg-[#ebebed] border-t border-x border-black/[0.08] overflow-hidden">
+        <div className="relative w-full h-full p-1.5 sm:p-2.5 lg:p-3 rounded-t-[80px] sm:rounded-t-[208px] lg:rounded-t-[268px] rounded-b-none bg-[#ebebed] border-t border-x border-black/[0.08] overflow-hidden">
 
           {/* --------------------------------------------------------------------- */}
           {/* INNER PHOTO MAIN CARD — Entire timeline visible across full width     */}
           {/* --------------------------------------------------------------------- */}
-          <div className="relative w-full h-full rounded-t-xl sm:rounded-t-[198px] lg:rounded-t-[258px] rounded-b-none overflow-hidden bg-neutral-950 flex items-stretch border border-black/[0.08]">
+          <div className="relative w-full h-full rounded-t-[74px] sm:rounded-t-[198px] lg:rounded-t-[258px] rounded-b-none overflow-hidden bg-neutral-950 flex items-stretch border border-black/[0.08]">
 
             {/* CHAPTER 1: 1952 Childhood — B&W Print */}
             <div className="relative w-[28%] h-full shrink-0 [mask-image:linear-gradient(to_right,black_65%,transparent_100%)] z-10">
@@ -60,7 +31,7 @@ export function LifePanorama() {
             </div>
 
             {/* CHAPTER 2: 1974 Young Adult — Warm Faded 1970s Film */}
-            <div className="relative w-[28%] -ml-[5%] h-full shrink-0 [mask-image:linear-gradient(to_right,transparent_0%,black_30%,black_70%,transparent_100%)] z-20">
+            <div className="relative w-[29%] -ml-[5%] h-full shrink-0 [mask-image:linear-gradient(to_right,transparent_0%,black_30%,black_70%,transparent_100%)] z-20">
               <img
                 src="/landing/robert-hero-image2.png"
                 alt="Robert Carter Young Adult 1974"
@@ -70,7 +41,7 @@ export function LifePanorama() {
             </div>
 
             {/* CHAPTER 3: 1996 Family Reunion — Authentic 1990s 35mm Color */}
-            <div className="relative w-[28%] -ml-[5%] h-full shrink-0 [mask-image:linear-gradient(to_right,transparent_0%,black_30%,black_70%,transparent_100%)] z-30">
+            <div className="relative w-[29%] -ml-[5%] h-full shrink-0 [mask-image:linear-gradient(to_right,transparent_0%,black_30%,black_70%,transparent_100%)] z-30">
               <img
                 src="/landing/robert-hero-image3.png"
                 alt="Family Gathering 1996"
@@ -79,8 +50,8 @@ export function LifePanorama() {
               <div className="absolute inset-0 bg-gradient-to-b from-black/25 via-transparent to-transparent pointer-events-none" />
             </div>
 
-            {/* CHAPTER 4: 2024 Elder Portrait — Final Dominant Panel */}
-            <div className="relative w-[29%] -ml-[5%] h-full shrink-0 [mask-image:linear-gradient(to_right,transparent_0%,black_25%,black_100%)] z-40">
+            {/* CHAPTER 4: 2024 Elder Portrait — Final Dominant Panel (Fills 100% to eliminate right black gap) */}
+            <div className="relative flex-1 min-w-[28%] -ml-[5%] h-full [mask-image:linear-gradient(to_right,transparent_0%,black_25%,black_100%)] z-40">
               <img
                 src="/landing/robert-hero-image4.png"
                 alt="Robert Carter 2024"
@@ -124,7 +95,7 @@ export function LifePanorama() {
           </div>
         </div>
 
-      </motion.div>
+      </div>
     </div>
   )
 }
