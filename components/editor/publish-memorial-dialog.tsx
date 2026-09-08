@@ -16,9 +16,13 @@ import {
   Share2,
   Sparkles,
   X,
+  Image as ImageIcon,
 } from "lucide-react"
-import QRCode from "qrcode"
 import { MEMORIAL_THEMES, type MemorialThemeId } from "@/lib/memorial/themes"
+import {
+  generateThemedQrDataUrl,
+  generateKeepsakeCardDataUrl,
+} from "@/lib/memorial/memorial-qr"
 
 type PublishPrivacy = "public" | "unlisted" | "private"
 
@@ -53,10 +57,10 @@ export function PublishMemorialDialog({
   hasPortrait,
   hasStory,
   memoryCount,
-  portraitUrl: _portraitUrl,
+  portraitUrl,
   theme = "quiet",
-  birthYear: _birthYear,
-  deathYear: _deathYear,
+  birthYear,
+  deathYear,
   onClose,
   onPublish,
   onUnpublish,
@@ -71,11 +75,11 @@ export function PublishMemorialDialog({
   const [error, setError] = useState<string | null>(null)
   const [memorialUrl, setMemorialUrl] = useState(`https://theirs.page/${slug}`)
   const [qrDataUrl, setQrDataUrl] = useState<string | null>(null)
-  const [isDownloadingQr, setIsDownloadingQr] = useState(false)
+  const [isDownloadingCard, setIsDownloadingCard] = useState(false)
+  const [isDownloadingQrOnly, setIsDownloadingQrOnly] = useState(false)
 
   const resolvedTheme = theme || "quiet"
   const themeDef = MEMORIAL_THEMES[resolvedTheme] || MEMORIAL_THEMES.quiet
-  const qrDarkColor = themeDef.colors.textPrimary
 
   useEffect(() => {
     if (!isOpen) return
@@ -89,43 +93,80 @@ export function PublishMemorialDialog({
   }, [isOpen, privacy, slug, status])
 
   useEffect(() => {
+    let isMounted = true
     if (phase === "live" && memorialUrl) {
-      QRCode.toDataURL(memorialUrl, {
-        width: 360,
-        margin: 1,
-        errorCorrectionLevel: "M",
-        color: {
-          dark: qrDarkColor,
-          light: "#ffffff",
+      generateThemedQrDataUrl(
+        {
+          url: memorialUrl,
+          fullName: memorialName,
+          slug,
+          portraitUrl,
+          birthYear,
+          deathYear,
+          themeId: resolvedTheme,
         },
-      })
-        .then((url) => setQrDataUrl(url))
+        360
+      )
+        .then((url) => {
+          if (isMounted) setQrDataUrl(url)
+        })
         .catch((err) => console.error("Error generating QR:", err))
     }
-  }, [phase, memorialUrl, qrDarkColor])
+    return () => {
+      isMounted = false
+    }
+  }, [phase, memorialUrl, memorialName, slug, portraitUrl, birthYear, deathYear, resolvedTheme])
 
-  const downloadQr = async () => {
+  const downloadKeepsakeCard = async () => {
     try {
-      setIsDownloadingQr(true)
-      const highResUrl = await QRCode.toDataURL(memorialUrl, {
-        width: 1024,
-        margin: 4,
-        errorCorrectionLevel: "M",
-        color: {
-          dark: qrDarkColor,
-          light: "#ffffff",
-        },
+      setIsDownloadingCard(true)
+      const cardDataUrl = await generateKeepsakeCardDataUrl({
+        url: memorialUrl,
+        fullName: memorialName,
+        slug,
+        portraitUrl,
+        birthYear,
+        deathYear,
+        themeId: resolvedTheme,
       })
       const link = document.createElement("a")
-      link.href = highResUrl
-      link.download = `${slug}-memorial-qr.png`
+      link.href = cardDataUrl
+      link.download = `${slug}-memorial-keepsake-card.png`
       document.body.appendChild(link)
       link.click()
       document.body.removeChild(link)
     } catch (err) {
-      console.error("Failed to download high-res QR:", err)
+      console.error("Failed to download keepsake card:", err)
     } finally {
-      setIsDownloadingQr(false)
+      setIsDownloadingCard(false)
+    }
+  }
+
+  const downloadQrOnly = async () => {
+    try {
+      setIsDownloadingQrOnly(true)
+      const qrOnlyUrl = await generateThemedQrDataUrl(
+        {
+          url: memorialUrl,
+          fullName: memorialName,
+          slug,
+          portraitUrl,
+          birthYear,
+          deathYear,
+          themeId: resolvedTheme,
+        },
+        1024
+      )
+      const link = document.createElement("a")
+      link.href = qrOnlyUrl
+      link.download = `${slug}-qr-code.png`
+      document.body.appendChild(link)
+      link.click()
+      document.body.removeChild(link)
+    } catch (err) {
+      console.error("Failed to download QR image:", err)
+    } finally {
+      setIsDownloadingQrOnly(false)
     }
   }
 
@@ -291,7 +332,7 @@ export function PublishMemorialDialog({
                       // eslint-disable-next-line @next/next/no-img-element
                       <img
                         src={qrDataUrl}
-                        alt={`QR code for ${memorialName}`}
+                        alt={`Themed QR code for ${memorialName}`}
                         className="size-full object-contain rounded-md"
                       />
                     ) : (
@@ -302,25 +343,42 @@ export function PublishMemorialDialog({
                     <div className="flex items-center gap-1.5">
                       <QrCode className="size-3.5 text-neutral-700" />
                       <span className="text-xs font-semibold text-[#181925]">
-                        Physical Keepsake QR Code
+                        Physical Memorial Keepsake & QR
                       </span>
                     </div>
                     <p className="mt-1 text-[11px] text-[#71717a] leading-relaxed">
-                      Print this high-resolution QR code for funeral programs, prayer cards, framed photos, or headstone plaques.
+                      Download a printable keepsake card with photo & name, or isolated QR code for programs, memory tables, or headstone plaques.
                     </p>
-                    <button
-                      type="button"
-                      onClick={downloadQr}
-                      disabled={isDownloadingQr || !qrDataUrl}
-                      className="mt-2.5 inline-flex items-center gap-1.5 rounded-full bg-white border border-black/[0.12] hover:bg-neutral-50 px-3.5 py-1.5 text-xs font-medium text-[#181925] shadow-2xs active:scale-95 transition-all cursor-pointer disabled:opacity-50"
-                    >
-                      {isDownloadingQr ? (
-                        <Loader2 className="size-3 animate-spin" />
-                      ) : (
-                        <Download className="size-3 text-[#555]" />
-                      )}
-                      <span>Download QR (PNG)</span>
-                    </button>
+                    <div className="mt-2.5 flex items-center gap-2 flex-wrap justify-center sm:justify-start">
+                      <button
+                        type="button"
+                        onClick={downloadKeepsakeCard}
+                        disabled={isDownloadingCard || !qrDataUrl}
+                        className="inline-flex items-center gap-1.5 rounded-full bg-white border border-black/[0.12] hover:bg-neutral-50 px-3.5 py-1.5 text-xs font-medium text-[#181925] shadow-2xs active:scale-95 transition-all cursor-pointer disabled:opacity-50"
+                      >
+                        {isDownloadingCard ? (
+                          <Loader2 className="size-3 animate-spin" />
+                        ) : (
+                          <Download className="size-3 text-[#555]" />
+                        )}
+                        <span>Download Keepsake Card (PNG)</span>
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={downloadQrOnly}
+                        disabled={isDownloadingQrOnly || !qrDataUrl}
+                        className="inline-flex items-center gap-1.5 rounded-full bg-neutral-100 hover:bg-neutral-200 px-3 py-1.5 text-xs font-medium text-neutral-700 active:scale-95 transition-all cursor-pointer disabled:opacity-50"
+                        title="Download raw QR image square"
+                      >
+                        {isDownloadingQrOnly ? (
+                          <Loader2 className="size-3 animate-spin" />
+                        ) : (
+                          <ImageIcon className="size-3 text-neutral-500" />
+                        )}
+                        <span>QR Only</span>
+                      </button>
+                    </div>
                   </div>
                 </div>
 

@@ -9,11 +9,15 @@ import {
   Share2,
   X,
   Loader2,
+  Image as ImageIcon,
 } from "lucide-react"
-import QRCode from "qrcode"
 import { TheirsLogo } from "@/components/theirs/theirs-logo"
 import { PortraitPlaceholder } from "./portrait-placeholder"
 import { MEMORIAL_THEMES, type MemorialThemeId } from "@/lib/memorial/themes"
+import {
+  generateThemedQrDataUrl,
+  generateKeepsakeCardDataUrl,
+} from "@/lib/memorial/memorial-qr"
 
 interface MemorialShareModalProps {
   isOpen: boolean
@@ -21,8 +25,8 @@ interface MemorialShareModalProps {
   fullName: string
   slug: string
   portraitUrl?: string | null
-  birthYear?: number | null
-  deathYear?: number | null
+  birthYear?: number | string | null
+  deathYear?: number | string | null
   themeId?: MemorialThemeId
 }
 
@@ -38,7 +42,8 @@ export function MemorialShareModal({
 }: MemorialShareModalProps) {
   const [qrDataUrl, setQrDataUrl] = useState<string | null>(null)
   const [copied, setCopied] = useState(false)
-  const [isDownloading, setIsDownloading] = useState(false)
+  const [isDownloadingCard, setIsDownloadingCard] = useState(false)
+  const [isDownloadingQrOnly, setIsDownloadingQrOnly] = useState(false)
   const [canShare, setCanShare] = useState(false)
 
   const firstName = fullName.trim().split(/\s+/)[0] || fullName
@@ -52,7 +57,6 @@ export function MemorialShareModal({
       : "In Loving Memory"
 
   const themeDef = MEMORIAL_THEMES[themeId] || MEMORIAL_THEMES.quiet
-  const qrDarkColor = themeDef.colors.textPrimary
 
   const canonicalUrl =
     typeof window !== "undefined"
@@ -80,20 +84,23 @@ export function MemorialShareModal({
     }
   }, [])
 
-  // Generate QR code data URL whenever target URL or theme changes
+  // Generate QR code data URL (with theme color + center avatar) whenever modal opens
   useEffect(() => {
     let isMounted = true
     if (!isOpen) return
 
-    QRCode.toDataURL(canonicalUrl, {
-      width: 480,
-      margin: 1,
-      errorCorrectionLevel: "M",
-      color: {
-        dark: qrDarkColor,
-        light: "#ffffff",
+    generateThemedQrDataUrl(
+      {
+        url: canonicalUrl,
+        fullName,
+        slug,
+        portraitUrl,
+        birthYear,
+        deathYear,
+        themeId,
       },
-    })
+      540
+    )
       .then((url) => {
         if (isMounted) setQrDataUrl(url)
       })
@@ -104,7 +111,7 @@ export function MemorialShareModal({
     return () => {
       isMounted = false
     }
-  }, [canonicalUrl, qrDarkColor, isOpen])
+  }, [canonicalUrl, fullName, slug, portraitUrl, birthYear, deathYear, themeId, isOpen])
 
   // Close on Escape key press
   useEffect(() => {
@@ -135,42 +142,72 @@ export function MemorialShareModal({
           url: canonicalUrl,
         })
       } catch (err) {
-        // User cancelled or share aborted
+        // User cancelled or aborted
       }
     }
   }
 
-  const handleDownloadQr = async () => {
+  // 1-Click Instant Download: Complete Keepsake Plaque / Card (PNG)
+  const handleDownloadCard = async () => {
     try {
-      setIsDownloading(true)
-      // Generate sharp 1024x1024 PNG with 4-module quiet zone margin
-      const highResUrl = await QRCode.toDataURL(canonicalUrl, {
-        width: 1024,
-        margin: 4,
-        errorCorrectionLevel: "M",
-        color: {
-          dark: qrDarkColor,
-          light: "#ffffff",
-        },
+      setIsDownloadingCard(true)
+      const cardDataUrl = await generateKeepsakeCardDataUrl({
+        url: canonicalUrl,
+        fullName,
+        slug,
+        birthYear,
+        deathYear,
+        portraitUrl,
+        themeId,
       })
 
       const downloadLink = document.createElement("a")
-      downloadLink.href = highResUrl
-      downloadLink.download = `${slug}-memorial-qr.png`
+      downloadLink.href = cardDataUrl
+      downloadLink.download = `${slug}-memorial-keepsake-card.png`
       document.body.appendChild(downloadLink)
       downloadLink.click()
       document.body.removeChild(downloadLink)
     } catch (err) {
-      console.error("Failed to download high-resolution QR code:", err)
+      console.error("Failed to download memorial card:", err)
     } finally {
-      setIsDownloading(false)
+      setIsDownloadingCard(false)
+    }
+  }
+
+  // Download raw QR code square only (with theme color & center avatar)
+  const handleDownloadQrOnly = async () => {
+    try {
+      setIsDownloadingQrOnly(true)
+      const qrOnlyUrl = await generateThemedQrDataUrl(
+        {
+          url: canonicalUrl,
+          fullName,
+          slug,
+          portraitUrl,
+          birthYear,
+          deathYear,
+          themeId,
+        },
+        1024
+      )
+
+      const downloadLink = document.createElement("a")
+      downloadLink.href = qrOnlyUrl
+      downloadLink.download = `${slug}-qr-code.png`
+      document.body.appendChild(downloadLink)
+      downloadLink.click()
+      document.body.removeChild(downloadLink)
+    } catch (err) {
+      console.error("Failed to download QR image:", err)
+    } finally {
+      setIsDownloadingQrOnly(false)
     }
   }
 
   return (
     <AnimatePresence>
       {isOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 overflow-y-auto">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 overflow-y-auto">
           {/* Backdrop */}
           <motion.div
             initial={{ opacity: 0 }}
@@ -194,11 +231,11 @@ export function MemorialShareModal({
             className="relative w-full max-w-md rounded-3xl bg-[#ffffff] shadow-2xl border border-black/[0.08] overflow-hidden z-10 flex flex-col my-auto"
           >
             {/* Header bar */}
-            <div className="flex items-center justify-between px-6 pt-5 pb-3">
+            <div className="flex items-center justify-between px-5 pt-4 pb-2.5 sm:px-6 sm:pt-5 sm:pb-3">
               <div className="flex items-center gap-2">
                 <TheirsLogo themeAware className="size-4 text-[var(--theme-accent,#305dde)] shrink-0" />
                 <span className="text-xs font-medium tracking-tight text-neutral-500 uppercase">
-                  Share & Memorial QR
+                  Memorial Keepsake & QR
                 </span>
               </div>
               <button
@@ -212,19 +249,19 @@ export function MemorialShareModal({
             </div>
 
             {/* Content Body */}
-            <div className="px-6 pb-6 flex flex-col items-center">
+            <div className="px-5 pb-5 sm:px-6 sm:pb-6 flex flex-col items-center">
               {/* Keepsake Visual Card (Theme Styled) */}
               <div
                 style={{
                   backgroundColor: themeDef.colors.bgSurface,
                   borderColor: themeDef.colors.border,
                 }}
-                className="w-full rounded-2xl border p-5 sm:p-6 flex flex-col items-center text-center shadow-xs transition-colors duration-200"
+                className="w-full rounded-2xl border p-4 sm:p-5 flex flex-col items-center text-center shadow-xs transition-colors duration-200 relative overflow-hidden"
               >
-                {/* Person Portrait / Monogram */}
+                {/* Person Portrait / Monogram Header */}
                 <div
-                  style={{ borderColor: themeDef.colors.border }}
-                  className="size-16 sm:size-18 rounded-full overflow-hidden border-2 shadow-2xs mb-3 bg-white shrink-0"
+                  style={{ borderColor: themeDef.colors.accent }}
+                  className="size-15 sm:size-17 rounded-full overflow-hidden border-2 shadow-sm mb-2.5 bg-white shrink-0 relative"
                 >
                   {resolvedPortraitUrl ? (
                     // eslint-disable-next-line @next/next/no-img-element
@@ -253,14 +290,14 @@ export function MemorialShareModal({
                   {yearsSpan}
                 </p>
 
-                {/* QR Code Plate */}
-                <div className="mt-4 p-3 bg-white rounded-2xl border border-black/[0.06] shadow-sm flex flex-col items-center">
-                  <div className="size-40 sm:size-44 flex items-center justify-center">
+                {/* Themed QR Code Plate with Center Photo Badge */}
+                <div className="mt-3.5 p-3 bg-white rounded-2xl border border-black/[0.06] shadow-sm flex flex-col items-center">
+                  <div className="size-44 sm:size-48 flex items-center justify-center relative">
                     {qrDataUrl ? (
                       // eslint-disable-next-line @next/next/no-img-element
                       <img
                         src={qrDataUrl}
-                        alt={`QR code for ${fullName}'s memorial`}
+                        alt={`Theme-colored QR code for ${fullName}'s memorial`}
                         className="size-full object-contain rounded-lg"
                       />
                     ) : (
@@ -269,12 +306,12 @@ export function MemorialShareModal({
                   </div>
                 </div>
 
-                {/* Caption / Physical scan bridge note */}
+                {/* Scan Caption */}
                 <p
                   style={{ color: themeDef.colors.textMuted }}
-                  className="text-[11px] leading-relaxed mt-3 max-w-[280px]"
+                  className="text-[11px] leading-relaxed mt-2.5 max-w-[280px]"
                 >
-                  Scan with any phone camera to visit and share memories at{" "}
+                  Scan with any phone camera to visit & share memories at{" "}
                   <strong
                     style={{ color: themeDef.colors.textPrimary }}
                     className="font-semibold"
@@ -282,36 +319,62 @@ export function MemorialShareModal({
                     theirs.page/{slug}
                   </strong>
                 </p>
+
+                {/* Bottom Card Branding (No tagline, logo in theme color, theirs in black, .page in theme color) */}
+                <div
+                  style={{ borderColor: themeDef.colors.border }}
+                  className="mt-3 pt-2.5 border-t w-full flex items-center justify-center gap-1.5 select-none"
+                >
+                  <TheirsLogo themeAware className="size-3.5 text-[var(--theme-accent,#305dde)] shrink-0" />
+                  <span className="text-xs font-semibold tracking-tight text-[#181925]">
+                    theirs<span style={{ color: themeDef.colors.accent }}>.page</span>
+                  </span>
+                </div>
               </div>
 
               {/* Action Buttons */}
               <div className="mt-4 w-full flex flex-col gap-2">
-                {/* Download High-Res PNG Button */}
+                {/* Primary Download: Complete Keepsake Card (PNG) */}
                 <button
                   type="button"
-                  onClick={handleDownloadQr}
-                  disabled={isDownloading || !qrDataUrl}
+                  onClick={handleDownloadCard}
+                  disabled={isDownloadingCard || !qrDataUrl}
                   style={{
                     backgroundColor: themeDef.colors.accent,
                     color: themeDef.colors.accentForeground,
                   }}
                   className="w-full h-11 rounded-full font-medium text-xs sm:text-sm flex items-center justify-center gap-2 shadow-xs hover:brightness-105 active:scale-[0.98] transition-all cursor-pointer disabled:opacity-50"
                 >
-                  {isDownloading ? (
+                  {isDownloadingCard ? (
                     <>
                       <Loader2 className="size-4 animate-spin shrink-0" />
-                      <span>Preparing High-Res PNG...</span>
+                      <span>Generating Card...</span>
                     </>
                   ) : (
                     <>
                       <Download className="size-4 shrink-0" />
-                      <span>Download QR Code (PNG)</span>
+                      <span>Download Keepsake Card (PNG)</span>
                     </>
                   )}
                 </button>
 
-                {/* Secondary Actions: Copy Link & Native Share */}
+                {/* Secondary Row: QR Only, Copy Link, Native Share */}
                 <div className="flex items-center gap-2 w-full">
+                  <button
+                    type="button"
+                    onClick={handleDownloadQrOnly}
+                    disabled={isDownloadingQrOnly || !qrDataUrl}
+                    title="Download isolated QR image square"
+                    className="h-10 px-3 rounded-full border border-black/[0.09] bg-neutral-50 hover:bg-neutral-100 text-neutral-800 text-xs font-medium flex items-center justify-center gap-1.5 active:scale-[0.98] transition-all cursor-pointer disabled:opacity-50 shrink-0"
+                  >
+                    {isDownloadingQrOnly ? (
+                      <Loader2 className="size-3.5 animate-spin" />
+                    ) : (
+                      <ImageIcon className="size-3.5 text-neutral-600 shrink-0" />
+                    )}
+                    <span className="hidden xs:inline">QR Only</span>
+                  </button>
+
                   <button
                     type="button"
                     onClick={handleCopyLink}
@@ -320,7 +383,7 @@ export function MemorialShareModal({
                     {copied ? (
                       <>
                         <Check className="size-3.5 text-emerald-600 shrink-0" />
-                        <span className="text-emerald-700 font-semibold">Copied link!</span>
+                        <span className="text-emerald-700 font-semibold">Copied!</span>
                       </>
                     ) : (
                       <>
@@ -334,18 +397,19 @@ export function MemorialShareModal({
                     <button
                       type="button"
                       onClick={handleNativeShare}
-                      className="flex-1 h-10 rounded-full border border-black/[0.09] bg-neutral-50 hover:bg-neutral-100 text-neutral-800 text-xs font-medium flex items-center justify-center gap-1.5 active:scale-[0.98] transition-all cursor-pointer"
+                      className="h-10 px-3.5 rounded-full border border-black/[0.09] bg-neutral-50 hover:bg-neutral-100 text-neutral-800 text-xs font-medium flex items-center justify-center gap-1.5 active:scale-[0.98] transition-all cursor-pointer shrink-0"
+                      title="Share via device menu"
                     >
                       <Share2 className="size-3.5 text-neutral-600 shrink-0" />
-                      <span>Share via...</span>
+                      <span>Share</span>
                     </button>
                   )}
                 </div>
               </div>
 
-              {/* Quiet Print & Keepsake guidance */}
-              <p className="mt-3.5 text-[11px] text-neutral-400 text-center leading-normal">
-                Perfect for funeral service cards, celebration of life programs, framed table photos, or plaques.
+              {/* Physical Keepsake & Print guidance */}
+              <p className="mt-3 text-[11px] text-neutral-400 text-center leading-normal">
+                Print ready for funeral service cards, celebration of life programs, table displays, or headstone plaques.
               </p>
             </div>
           </motion.div>
