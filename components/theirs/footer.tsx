@@ -9,7 +9,7 @@ export function TheirsFooter() {
         <div className="flex items-center gap-2">
           <Image src="/theirs-logo.svg" alt="Theirs" width={16} height={16} />
           <span className="font-medium text-[#454545]">Theirs</span>
-          <span>· Dedicated to a human life.</span>
+          <span>· Remember them together.</span>
         </div>
 
         {/* Links */}

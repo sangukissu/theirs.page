@@ -24,19 +24,19 @@ const inter = Inter({
 
 export const metadata: Metadata = {
   title: {
-    default: "Theirs — A place on the internet dedicated to a human life",
+    default: "Online Memorial Website for Loved Ones | Theirs",
     template: "%s | Theirs",
   },
   description:
-    "A life archive preserving the stories, voice, memories, and relationships of the people we love.",
+    "Create a beautiful online memorial website for someone you love. Share photos, stories and tributes, and invite family and friends to add their memories.",
   metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL || "https://theirs.page"),
   alternates: {
     canonical: "/",
   },
   openGraph: {
-    title: "Theirs — A place on the internet dedicated to a human life",
+    title: "Online Memorial Website for Loved Ones | Theirs",
     description:
-      "A life archive preserving the stories, voice, memories, and relationships of the people we love.",
+      "Create a beautiful online memorial website for someone you love. Share photos, stories and tributes, and invite family and friends to add their memories.",
     url: "https://theirs.page",
     siteName: "Theirs",
     locale: "en_US",
@@ -44,9 +44,9 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "Theirs — A place on the internet dedicated to a human life",
+    title: "Online Memorial Website for Loved Ones | Theirs",
     description:
-      "A life archive preserving the stories, voice, memories, and relationships of the people we love.",
+      "Create a beautiful online memorial website for someone you love. Share photos, stories and tributes, and invite family and friends to add their memories.",
   },
   robots: {
     index: true,

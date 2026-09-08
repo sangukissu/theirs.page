@@ -1,7 +1,50 @@
 # AGENTS.md — Developer & AI Agent Handbook for Theirs (`theirs.page`)
 
 > **"It should feel like visiting someone’s life, not visiting their obituary."**  
-> We are building **Theirs** (`theirs.page`), a place on the internet dedicated to a human life. Before writing screens, flows, copy, queries, or features, read and adhere to [`the-idea.md`](./the-idea.md) and [`the-plan.md`](./the-plan.md).
+> We are building **Theirs** (`theirs.page`), an online memorial website where families create a memorial for someone they love. Before writing screens, flows, copy, queries, or features, read and adhere to [`docs/positioning-and-seo.md`](./docs/positioning-and-seo.md), [`docs/the-idea.md`](./docs/the-idea.md), and [`docs/the-plan.md`](./docs/the-plan.md).
+
+---
+
+## 0. Category, Positioning & Vocabulary Rules (MANDATORY)
+
+### The Category: Online Memorial Website
+- Our public category is **Online memorial website**.
+- It is **not** "life archive", **not** "digital legacy", and **not** "a place on the internet dedicated to a human life" (internally descriptive phrases must not define the category publicly).
+- Search engines and users anchor around: *online memorial*, *memorial website*, *memorial page*, and *loved one* (ForeverMissed, CreateMemorial, Remembr, Keeper).
+- Digital memorial search demand is focused (~5,610 US searches/month cluster). Do not dilute the category signal with invented terminology.
+
+### Locked Positioning Statement
+> **"Theirs is an online memorial website where families create a memorial for someone they love, bring together their photos, stories and tributes, and invite family and friends to contribute their own memories."**
+
+### Vocabulary Rules for the Entire Site
+From now on, use these terms consistently across UI, copy, meta, and code:
+- **Primary Category**: Online memorial / Online memorial website
+- **Product Object**: Memorial / memorial website / memorial page
+- **Action**: Create a memorial
+- **Audience**: Loved one / family and friends
+- **Content**: Photos, stories, memories, tributes, voice and video
+- **Collaboration**: Invite family and friends to contribute
+- **Paid Outcome**: Complete memorial / family archive
+
+#### Avoid leading with:
+- ❌ `life archive`
+- ❌ `digital legacy`
+- ❌ `legacy platform`
+- ❌ `memory platform`
+- ❌ `virtual memorial`
+- ❌ `digital remembrance space`  
+*(These may appear naturally in deep supporting copy or SEO articles, but should never compete with "online memorial website" for homepage meaning.)*
+
+### Homepage Metadata & Hero Specifications
+- **SEO Title**: `Online Memorial Website for Loved Ones | Theirs`
+- **Meta Description**: `Create a beautiful online memorial website for someone you love. Share photos, stories and tributes, and invite family and friends to add their memories.`
+- **Eyebrow**: `Online memorials`
+- **H1**: `Create a beautiful online memorial for someone you love.`
+- **Hero Supporting Copy**: `Bring their photos, stories and tributes together in one place, and invite family and friends to add their memories.`
+
+### Critical SEO Architecture: Memorial vs. Obituary
+- **Do not chase "obituary" on the homepage**: Even though obituary search volume is massively larger (~616,900 monthly US searches vs ~5,610 for digital memorials), obituary search intent is distinct. Distorting the homepage hurts conversion and search engine clarity.
+- **Dedicated Content Strategy**: Capture obituary demand through dedicated pages (e.g. `Online Obituary vs Online Memorial`, `How to Write an Obituary for a Loved One`, `Create an Online Obituary and Memorial`) that introduce Theirs without diluting homepage category relevance.
 
 ---
 

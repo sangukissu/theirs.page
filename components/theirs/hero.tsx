@@ -19,31 +19,37 @@ export function TheirsHero() {
       localStorage.setItem("theirs_pending_memorial", JSON.stringify({ name: trimmed, slug }))
       document.cookie = `theirs_pending_name=${encodeURIComponent(trimmed)}; path=/; max-age=86400; SameSite=Lax`
       document.cookie = `theirs_pending_slug=${encodeURIComponent(slug)}; path=/; max-age=86400; SameSite=Lax`
-    } catch {}
+    } catch { }
     router.push(`/login?name=${encodeURIComponent(trimmed)}&slug=${encodeURIComponent(slug)}`)
   }
 
   return (
     <section className="relative pt-8 sm:pt-12 pb-0 px-4 text-center overflow-hidden flex flex-col items-center bg-white">
-      <div className="max-w-4xl mx-auto flex flex-col items-center w-full">
-        
-        {/* Eyebrow Pill */}
+      <div className="max-w-5xl mx-auto flex flex-col items-center w-full">
+
+        {/* Eyebrow Badge */}
         <div className="mb-3.5 flex justify-center">
-          <div className="inline-flex items-center gap-2 rounded-full border border-black/[0.06] bg-white px-3.5 py-1 text-xs text-[#666] select-none shadow-2xs">
-            <span className="size-1.5 rounded-full bg-primary" />
-            <span>Online memorials</span>
-          </div>
+          <span
+            data-slot="badge"
+            className="flex items-center justify-center border font-medium w-fit whitespace-nowrap border-transparent bg-neutral-100 text-[#666] h-[24px] min-w-[24px] text-xs px-2.5 rounded-md select-none"
+          >
+            Online memorials
+          </span>
         </div>
 
         {/* Commanding Two-Line Headline */}
-        <h1 className="text-balance text-4xl sm:text-6xl lg:text-[68px] font-medium tracking-[-0.04em] text-[#181925] leading-[1.04] max-w-[850px] mb-3.5">
-          A beautiful place to remember
+        <h1 className="text-balance text-4xl sm:text-6xl lg:text-[68px] font-medium tracking-[-0.04em] text-[#181925] leading-[1.04] mb-3.5">
+          Create a beautiful online memorial
           <br />
-          <span className="text-primary">someone you Love</span>
+          <span className="text-primary">for someone you love.</span>
         </h1>
 
         <p className="mx-auto max-w-[660px] text-pretty text-base sm:text-xl leading-relaxed text-[#666] mb-5 sm:mb-6">
-          Bring their photos, stories and memories <span className="rounded-md bg-primary/10 box-decoration-clone px-1 py-0.5 text-primary font-medium">together in one page</span> and invite family and friends to add theirs.
+          Bring their photos, audios and videos, stories and tributes{" "}
+          <span className="rounded-md bg-primary/10 box-decoration-clone px-1 py-0.5 text-primary font-medium">
+            together in one place
+          </span>
+          , and invite family and friends to add their memories.
         </p>
 
         {/* High-Converting "Create their page" Input Box (Responsive on Mobile & Desktop) */}

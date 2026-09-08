@@ -88,7 +88,7 @@ export function renderTheirsEmail(input: {
               <p style="margin:0 0 4px;color:#34353a;font-weight:600">${escapeEmailHtml(input.signoff || "With care,")}</p>
               <p style="margin:0 0 14px;color:#54565c">The Theirs team<br><a href="${escapeEmailHtml(getTheirsAppUrl())}" style="color:#305dde;text-decoration:none">www.theirs.page</a></p>
               <p style="margin:0;font-size:12px;color:#8a8c92">Questions or need help? Reply directly to this email or write to <a href="mailto:${THEIRS_SUPPORT_ADDRESS}" style="color:#305dde;text-decoration:none">${THEIRS_SUPPORT_ADDRESS}</a>.</p>
-              <p style="margin:6px 0 0;font-size:12px;color:#a4a6ac">theirs.page — a place dedicated to a human life.</p>
+              <p style="margin:6px 0 0;font-size:12px;color:#a4a6ac">theirs.page — Remember them together.</p>
             </td>
           </tr>
         </table>

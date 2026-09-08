@@ -31,12 +31,12 @@ export function FeaturesBento() {
       {/* Section Header */}
       <SectionHeader
         badge="The memorial"
-        title="Everything about them, together in one place."
+        title="Their stories, photos and memories, together in one memorial."
         description={
           <>
-            From the stories only a sibling remembers to the voice note you never want to lose, every part of their memorial stays connected and{" "}
+            Bring together the parts of their life that matter most and let family and friends add the memories and tributes only they remember.{" "}
             <span className="rounded-md bg-primary/10 box-decoration-clone px-1 py-0.5 text-primary">
-              under your family’s control
+              You stay in control of what appears
             </span>
             .
           </>
@@ -45,7 +45,7 @@ export function FeaturesBento() {
 
       {/* Grid of Bento Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        
+
         {/* =================================================================== */}
         {/* Large Card 01: Emotional Anchor — Remember together                 */}
         {/* =================================================================== */}
@@ -55,36 +55,31 @@ export function FeaturesBento() {
               <Heart className="size-5 text-[#ff2f00]" />
             </span>
 
-            <div className="flex flex-col gap-1 max-w-80">
-              <h3 className="text-2xl/7 font-medium text-[#ff2f00]">
+            <div className="flex flex-col gap-1.5 max-w-80">
+              <span className="text-sm sm:text-md font-semibold tracking-tight text-[#ff2f00]">
                 Remember together
-                <br />
-                <span className="text-[#181925]">Everyone remembers a different part of them.</span>
+              </span>
+              <h3 className="text-xl sm:text-[22px] font-medium tracking-tight text-[#181925] leading-snug">
+                Everyone remembers a different part of them.
               </h3>
             </div>
 
             <ul className="list-style-none flex flex-col gap-1.5 mt-1">
               <li className="flex items-center gap-2">
                 <CheckCircle2 className="size-4 text-[#ff2f00] shrink-0" />
-                <span className="text-sm font-medium text-[#181925]">Invite family and friends with one link</span>
+                <span className="text-sm font-medium text-[#181925]">Share the memorial with family and friends</span>
               </li>
               <li className="flex items-center gap-2">
                 <CheckCircle2 className="size-4 text-[#ff2f00] shrink-0" />
-                <span className="text-sm font-medium text-[#181925]">Every story, photo and recording stays attributed</span>
+                <span className="text-sm font-medium text-[#181925]">Collect attributed tributes, stories, photos and memories</span>
               </li>
               <li className="flex items-center gap-2">
                 <CheckCircle2 className="size-4 text-[#ff2f00] shrink-0" />
-                <span className="text-sm font-medium text-[#181925]">Approve contributions before they appear</span>
+                <span className="text-sm font-medium text-[#181925]">Review contributions before they appear</span>
               </li>
             </ul>
 
-            <a
-              href="#how-it-works"
-              className="inline-flex items-center gap-1 rounded-full bg-white px-3 py-1 text-xs font-medium text-[#181925] border border-black/[0.06] hover:bg-neutral-50 transition-colors mt-2"
-            >
-              See how memories are shared
-              <ChevronRight className="size-3 text-[#888]" />
-            </a>
+
           </div>
 
           {/* Full-Height Contribution Feed (3 Real Relationships: Story, Photo+Caption, Voice) */}
@@ -161,7 +156,7 @@ export function FeaturesBento() {
         </div>
 
         {/* =================================================================== */}
-        {/* Large Card 02: Their life                                           */}
+        {/* Large Card 02: Tell the story of their life                         */}
         {/* =================================================================== */}
         <div className="flex flex-col bg-[#f7f7f8] rounded-2xl min-h-[560px] overflow-hidden border border-black/[0.04] justify-between">
           <div className="flex flex-col p-6 px-8 gap-3 items-start">
@@ -169,36 +164,31 @@ export function FeaturesBento() {
               <Clock className="size-5 text-[#2c78fc]" />
             </span>
 
-            <div className="flex flex-col gap-1 max-w-80">
-              <h3 className="text-2xl/7 font-medium text-[#2c78fc]">
-                Their life
-                <br />
-                <span className="text-[#181925]">Turn scattered memories into one life story.</span>
+            <div className="flex flex-col gap-1.5 max-w-80">
+              <span className="text-xs sm:text-sm font-semibold tracking-tight text-[#2c78fc]">
+                Tell the story of their life
+              </span>
+              <h3 className="text-xl sm:text-[22px] font-medium tracking-tight text-[#181925] leading-snug">
+                Bring the moments that shaped them into one timeline.
               </h3>
             </div>
 
             <ul className="list-style-none flex flex-col gap-1.5 mt-1">
               <li className="flex items-center gap-2">
                 <CheckCircle2 className="size-4 text-[#2c78fc] shrink-0" />
-                <span className="text-sm font-medium text-[#181925]">Build their story from childhood onward</span>
+                <span className="text-sm font-medium text-[#181925]">Add important moments from childhood onward</span>
               </li>
               <li className="flex items-center gap-2">
                 <CheckCircle2 className="size-4 text-[#2c78fc] shrink-0" />
-                <span className="text-sm font-medium text-[#181925]">Attach photos, stories and recordings to milestones</span>
+                <span className="text-sm font-medium text-[#181925]">Pair milestones with photos, stories and recordings</span>
               </li>
               <li className="flex items-center gap-2">
                 <CheckCircle2 className="size-4 text-[#2c78fc] shrink-0" />
-                <span className="text-sm font-medium text-[#181925]">Keep important people and moments connected</span>
+                <span className="text-sm font-medium text-[#181925]">Give their life more context than dates alone</span>
               </li>
             </ul>
 
-            <a
-              href="#how-it-works"
-              className="inline-flex items-center gap-1 rounded-full bg-white px-3 py-1 text-xs font-medium text-[#181925] border border-black/[0.06] hover:bg-neutral-50 transition-colors mt-2"
-            >
-              Explore the timeline
-              <ChevronRight className="size-3 text-[#888]" />
-            </a>
+
           </div>
 
           {/* Full-Height Chronological Life Journey Spine with Mixed Media Milestones */}
@@ -278,22 +268,23 @@ export function FeaturesBento() {
               <Mic className="size-5 text-primary" />
             </span>
 
-            <div className="flex flex-col gap-1 max-w-80">
-              <h3 className="text-2xl/7 font-medium text-primary">
+            <div className="flex flex-col gap-1.5 max-w-80">
+              <span className="text-xs sm:text-sm font-semibold tracking-tight text-primary">
                 Photos, video & voice
-                <br />
-                <span className="text-[#181925]">Keep the photos, videos and voices you treasure.</span>
+              </span>
+              <h3 className="text-xl sm:text-[22px] font-medium tracking-tight text-[#181925] leading-snug">
+                Keep the sights and sounds you never want to lose.
               </h3>
             </div>
 
             <ul className="list-style-none flex flex-col gap-1.5 mt-1">
               <li className="flex items-center gap-2">
                 <CheckCircle2 className="size-4 text-primary shrink-0" />
-                <span className="text-sm font-medium text-[#181925]">Original files stay preserved untouched</span>
+                <span className="text-sm font-medium text-[#181925]">Preserve original files in their original quality</span>
               </li>
               <li className="flex items-center gap-2">
                 <CheckCircle2 className="size-4 text-primary shrink-0" />
-                <span className="text-sm font-medium text-[#181925]">Play photos, video and voice inside the memorial</span>
+                <span className="text-sm font-medium text-[#181925]">View photos, videos and voice recordings in the memorial</span>
               </li>
               <li className="flex items-center gap-2">
                 <CheckCircle2 className="size-4 text-primary shrink-0" />
@@ -301,13 +292,6 @@ export function FeaturesBento() {
               </li>
             </ul>
 
-            <a
-              href="#how-it-works"
-              className="inline-flex items-center gap-1 rounded-full bg-white px-3 py-1 text-xs font-medium text-[#181925] border border-black/[0.06] hover:bg-neutral-50 transition-colors mt-2"
-            >
-              Listen to a voice note
-              <ChevronRight className="size-3 text-[#888]" />
-            </a>
           </div>
 
           {/* Full-Height Integrated Audio Player & Uncompressed Original Vault */}
@@ -336,13 +320,12 @@ export function FeaturesBento() {
                   {[35, 55, 80, 100, 65, 45, 90, 75, 40, 85, 95, 60, 45, 75, 85, 40, 55, 80, 45, 90, 60, 40, 70, 95, 50, 35, 60, 80, 45, 30].map((h, i) => (
                     <span
                       key={i}
-                      className={`flex-1 rounded-full transition-all duration-150 ${
-                        isPlaying
-                          ? "bg-primary animate-pulse"
-                          : i < 11
+                      className={`flex-1 rounded-full transition-all duration-150 ${isPlaying
+                        ? "bg-primary animate-pulse"
+                        : i < 11
                           ? "bg-primary"
                           : "bg-neutral-200"
-                      }`}
+                        }`}
                       style={{ height: `${h}%` }}
                     />
                   ))}
@@ -388,36 +371,29 @@ export function FeaturesBento() {
               <ShieldCheck className="size-5 text-[#ffa600]" />
             </span>
 
-            <div className="flex flex-col gap-1 max-w-80">
-              <h3 className="text-2xl/7 font-medium text-[#ffa600]">
+            <div className="flex flex-col gap-1.5 max-w-80">
+              <span className="text-xs sm:text-sm font-semibold tracking-tight text-[#ffa600]">
                 Family continuity
-                <br />
-                <span className="text-[#181925]">Someone you trust can always look after it.</span>
+              </span>
+              <h3 className="text-xl sm:text-[22px] font-medium tracking-tight text-[#181925] leading-snug">
+                Choose who can look after the memorial after you.
               </h3>
             </div>
 
             <ul className="list-style-none flex flex-col gap-1.5 mt-1">
               <li className="flex items-center gap-2">
                 <CheckCircle2 className="size-4 text-[#ffa600] shrink-0" />
-                <span className="text-sm font-medium text-[#181925]">Choose a family member to take over if needed</span>
+                <span className="text-sm font-medium text-[#181925]">Name a trusted successor caretaker</span>
               </li>
               <li className="flex items-center gap-2">
                 <CheckCircle2 className="size-4 text-[#ffa600] shrink-0" />
-                <span className="text-sm font-medium text-[#181925]">Pass control without losing anything</span>
+                <span className="text-sm font-medium text-[#181925]">Transfer control when the family needs to</span>
               </li>
               <li className="flex items-center gap-2">
                 <CheckCircle2 className="size-4 text-[#ffa600] shrink-0" />
-                <span className="text-sm font-medium text-[#181925]">Keep the memorial cared for over time</span>
+                <span className="text-sm font-medium text-[#181925]">Keep the memorial cared for across generations</span>
               </li>
             </ul>
-
-            <a
-              href="#how-it-works"
-              className="inline-flex items-center gap-1 rounded-full bg-white px-3 py-1 text-xs font-medium text-[#181925] border border-black/[0.06] hover:bg-neutral-50 transition-colors mt-2"
-            >
-              How family access works
-              <ChevronRight className="size-3 text-[#888]" />
-            </a>
           </div>
 
           {/* Full-Height Archival Caretaker & Family Archive (Matches Card 03 rhythm exactly) */}
@@ -479,14 +455,14 @@ export function FeaturesBento() {
         {/* Bottom Row: 2 Compact Cards (Privacy & Ownership / Export)          */}
         {/* =================================================================== */}
         <div className="md:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-4">
-          
+
           {/* Compact Card 05: Privacy */}
           <div className="bg-[#f7f7f8] rounded-2xl border border-black/[0.04] p-6 px-8 flex flex-col justify-between gap-4">
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
               <div className="flex flex-col gap-1 max-w-72">
                 <h3 className="text-lg font-medium text-[#181925]">You control who can see it.</h3>
                 <p className="text-sm text-[#666]">
-                  Make the memorial public, keep it unlisted for people with the link, or restrict it to invited family.
+                  Make the memorial public, keep it unlisted for anyone with the link, or make it private for the people you choose.
                 </p>
               </div>
 
@@ -495,33 +471,30 @@ export function FeaturesBento() {
                 <button
                   type="button"
                   onClick={() => setActivePrivacy("public")}
-                  className={`text-xs px-3 py-1.5 rounded-full font-medium transition-colors cursor-pointer ${
-                    activePrivacy === "public"
-                      ? "bg-white text-[#181925]"
-                      : "text-[#71717a] hover:text-[#181925]"
-                  }`}
+                  className={`text-xs px-3 py-1.5 rounded-full font-medium transition-colors cursor-pointer ${activePrivacy === "public"
+                    ? "bg-white text-[#181925]"
+                    : "text-[#71717a] hover:text-[#181925]"
+                    }`}
                 >
                   Public
                 </button>
                 <button
                   type="button"
                   onClick={() => setActivePrivacy("unlisted")}
-                  className={`text-xs px-3 py-1.5 rounded-full font-medium transition-colors cursor-pointer ${
-                    activePrivacy === "unlisted"
-                      ? "bg-white text-[#181925]"
-                      : "text-[#71717a] hover:text-[#181925]"
-                  }`}
+                  className={`text-xs px-3 py-1.5 rounded-full font-medium transition-colors cursor-pointer ${activePrivacy === "unlisted"
+                    ? "bg-white text-[#181925]"
+                    : "text-[#71717a] hover:text-[#181925]"
+                    }`}
                 >
                   Unlisted
                 </button>
                 <button
                   type="button"
                   onClick={() => setActivePrivacy("private")}
-                  className={`text-xs px-3 py-1.5 rounded-full font-medium transition-colors cursor-pointer flex items-center gap-1 ${
-                    activePrivacy === "private"
-                      ? "bg-white text-[#181925]"
-                      : "text-[#71717a] hover:text-[#181925]"
-                  }`}
+                  className={`text-xs px-3 py-1.5 rounded-full font-medium transition-colors cursor-pointer flex items-center gap-1 ${activePrivacy === "private"
+                    ? "bg-white text-[#181925]"
+                    : "text-[#71717a] hover:text-[#181925]"
+                    }`}
                 >
                   <Lock className="size-3 text-primary" />
                   <span>Private</span>
@@ -535,7 +508,7 @@ export function FeaturesBento() {
             <div className="flex flex-col gap-1 max-w-72">
               <h3 className="text-lg font-medium text-[#181925]">Take the whole memorial with you.</h3>
               <p className="text-sm text-[#666]">
-                Export the originals, stories, voice notes and memorial data together in one family archive.
+                Download the memorial&apos;s original photos, stories, recordings and data together in one family archive.
               </p>
             </div>
 

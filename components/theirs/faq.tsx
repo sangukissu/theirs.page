@@ -12,52 +12,52 @@ interface FaqItem {
 
 const FAQS: FaqItem[] = [
   {
-    id: "contribute-no-login",
-    question: "Can relatives and friends contribute without creating an account?",
+    id: "memorial-vs-obituary",
+    question: "How is an online memorial different from an obituary?",
     answer:
-      "Yes, completely. One share link lets anyone write a story, upload a photo, or record a voice note directly from their phone or browser. No app download, no sign-up forms, and no passwords required.",
+      "A traditional obituary is a brief, static announcement centered on dates and funeral services. An online memorial is living, rich, and collaborative — bringing together photos, voice recordings, personal stories, and milestones contributed by the family and friends who knew them.",
+  },
+  {
+    id: "pricing-cost",
+    question: "How much does an online memorial cost? Are there monthly fees?",
+    answer:
+      "It is completely free to create and share a memorial. The Free plan includes up to 5 photos, tributes, and full privacy controls with no commitment. If your family wants to add unlimited photos, voice notes, video clips, and a life story timeline, you can upgrade for a one-time payment of $179. There are never any recurring monthly subscriptions or renewal fees.",
+  },
+  {
+    id: "contribute-no-login",
+    question: "Do family and friends need an account to contribute?",
+    answer:
+      "No, never. Anyone with your memorial link can write a tribute, share a story, or upload a photo directly from their phone or computer. No app downloads, sign-up forms, or passwords required. You control their visibility.",
   },
   {
     id: "approval-queue",
-    question: "Do memories appear automatically, or can I review them first?",
+    question: "Can I approve stories and photos before they appear?",
     answer:
-      "Nothing goes live without your explicit approval. Every contributed memory, photo, and voice memo lands in your private moderation queue first, giving you full control over what is published.",
-  },
-  {
-    id: "photo-preservation",
-    question: "Are original high-resolution photos preserved, or compressed?",
-    answer:
-      "Always preserved untouched. Unlike social media platforms that compress photos into blurry thumbnails, we store your original 4K and RAW files securely in dedicated Cloudflare R2 object storage with zero data loss.",
-  },
-  {
-    id: "pricing-subscription",
-    question: "Is there a recurring monthly subscription?",
-    answer:
-      "Never. We believe charging a recurring subscription for remembrance is wrong. Pro Plan is a one-time $179 payment per memorial, with zero monthly fees. It is completely free to start and share with up to 5 photos, and you only upgrade when your family is ready.",
-  },
-  {
-    id: "offline-export",
-    question: "Can I download an offline copy if I ever want to leave?",
-    answer:
-      "Yes, at any moment. One click exports a self-contained ZIP archive containing all your original high-resolution photographs, audio recordings, and a standalone offline HTML reader that opens in any browser without an internet connection.",
+      "Yes, you have complete moderation control. Every tribute, photo, and memory submitted by visitors lands in your private approval queue first. Nothing goes live on the memorial until you review and approve it.",
   },
   {
     id: "privacy-tiers",
-    question: "Who can view their memorial?",
+    question: "Who can view the memorial? Can we keep it private?",
     answer:
-      "You choose between three privacy tiers: Public (discoverable for old friends, colleagues, and acquaintances), Unlisted (only accessible to people with your private link), or PIN-protected (requiring a family access code).",
+      "You choose your privacy setting: Public (searchable for distant friends and colleagues), Unlisted (only accessible to people with your private link), or Private (restricted strictly to invited family members with secure PIN). You can change this at any time.",
+  },
+  {
+    id: "permanence-lifespan",
+    question: "How long does the memorial stay online?",
+    answer:
+      "Permanently. We believe remembrance should never have an expiration date. Once created, your loved one’s memorial remains online without renewal fees or surprise charges, providing a lasting home for memories across generations.",
+  },
+  {
+    id: "voice-video",
+    question: "Can we upload voicemails, voice notes, and videos?",
+    answer:
+      "Yes. You can preserve audio recordings — like saved voicemails or spoken memories — with an integrated audio waveform player that lets visitors hear their voice. You can also add family videos alongside photographs and stories.",
   },
   {
     id: "caretaker-delegation",
-    question: "What happens if the creator passes away or can no longer manage the page?",
+    question: "What happens if I can no longer manage the memorial myself?",
     answer:
-      "You can designate a successor caretaker at any time. They receive secondary administrative privileges to approve incoming memories and safeguard the archive across generations.",
-  },
-  {
-    id: "voice-notes",
-    question: "Can we record or upload voice notes and voicemails?",
-    answer:
-      "Yes. Visitors can listen to their actual voice with an integrated audio waveform player. You can upload existing voicemails or voice memos directly from your phone in seconds.",
+      "You can name a trusted successor caretaker or co-admin at any time. If you ever need to pass on stewardship, they can manage settings, approve incoming memories, and look after the memorial for your family.",
   },
 ]
 

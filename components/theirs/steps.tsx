@@ -332,10 +332,10 @@ export function TheirsSteps() {
       {/* Section Header */}
       <SectionHeader
         badge="How it works"
-        title="Create their memorial. Let everyone tell their story."
+        title="Create an online memorial, together."
         description={
           <>
-            You don’t need to have everything ready. Start with the basics, share the page with the people who knew them, and{" "}
+            You don’t need to have everything ready. Start with the basics, share the memorial with the people who knew them, and{" "}
             <span className="rounded-md bg-primary/10 box-decoration-clone px-1 py-0.5 text-primary">
               build it together over time
             </span>
@@ -358,7 +358,7 @@ export function TheirsSteps() {
 
           <div className="relative flex items-baseline gap-2.5 px-6 py-4 sm:px-8">
             <span className="text-base tabular-nums text-muted-foreground font-medium">01</span>
-            <h3 className="text-base font-medium tracking-tight text-[#222]">Create their page</h3>
+            <h3 className="text-base font-medium tracking-tight text-[#222]">Create their memorial</h3>
           </div>
 
           <div className="relative flex flex-1 items-center justify-center px-4 py-5 sm:px-6 min-h-[215px]">
@@ -366,7 +366,7 @@ export function TheirsSteps() {
           </div>
 
           <p className="relative pl-6 pr-6 text-sm leading-6 text-muted-foreground sm:pl-8 sm:pr-14 tracking-tight">
-            Add their name, a favourite photo and a few details. Start simple, you can add more whenever you’re ready.
+            Add their name, a favourite photo and a few details. Start simple — you can add more whenever you’re ready.
           </p>
         </li>
 
@@ -381,7 +381,7 @@ export function TheirsSteps() {
 
           <div className="relative flex items-baseline gap-2.5 px-6 py-4 sm:px-8">
             <span className="text-base tabular-nums text-muted-foreground font-medium">02</span>
-            <h3 className="text-base font-medium tracking-tight text-[#222]">Invite family & friends</h3>
+            <h3 className="text-base font-medium tracking-tight text-[#222]">Share with family & friends</h3>
           </div>
 
           <div className="relative flex flex-1 items-center justify-center px-4 py-5 sm:px-6 min-h-[215px]">
@@ -389,7 +389,7 @@ export function TheirsSteps() {
           </div>
 
           <p className="relative pl-6 pr-6 text-sm leading-6 text-muted-foreground sm:pl-8 sm:pr-14 tracking-tight">
-            Share one link so the people who knew them can add their own photos, stories and memories.
+            Share one link so the people who knew them can add tributes, stories, photos and memories of their own.
           </p>
         </li>
 
@@ -404,7 +404,7 @@ export function TheirsSteps() {
 
           <div className="relative flex items-baseline gap-2.5 px-6 py-4 sm:px-8">
             <span className="text-base tabular-nums text-muted-foreground font-medium">03</span>
-            <h3 className="text-base font-medium tracking-tight text-[#222]">Watch their story live</h3>
+            <h3 className="text-base font-medium tracking-tight text-[#222]">Build their memorial together</h3>
           </div>
 
           <div className="relative flex flex-1 items-center justify-center px-4 py-5 sm:px-6 min-h-[215px]">
@@ -412,7 +412,7 @@ export function TheirsSteps() {
           </div>
 
           <p className="relative pl-6 pr-6 text-sm leading-6 text-muted-foreground sm:pl-8 sm:pr-14 tracking-tight">
-            Memories, photos, voicemails, and milestones all together on one screen, updating as family members contribute.
+            Their stories, photos and tributes come together in one place. You stay in control as the memorial grows over time.
           </p>
         </li>
       </ul>

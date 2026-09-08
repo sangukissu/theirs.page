@@ -9,11 +9,25 @@ import { CtaBanner } from "@/components/theirs/cta-banner"
 import { TheirsFooter } from "@/components/theirs/footer"
 
 export const metadata: Metadata = {
-  title: "Theirs — A place on the internet dedicated to a human life",
+  title: {
+    absolute: "Online Memorial Website for Loved Ones | Theirs",
+  },
   description:
-    "Reconstruct the texture of who someone was. A collaborative life archive preserving stories, voicemails, and high-resolution memories without funeral clichés.",
+    "Create a beautiful online memorial website for someone you love. Share photos, stories and tributes, and invite family and friends to add their memories.",
   alternates: {
     canonical: "https://theirs.page/",
+  },
+  openGraph: {
+    title: "Online Memorial Website for Loved Ones | Theirs",
+    description:
+      "Create a beautiful online memorial website for someone you love. Share photos, stories and tributes, and invite family and friends to add their memories.",
+    url: "https://theirs.page",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Online Memorial Website for Loved Ones | Theirs",
+    description:
+      "Create a beautiful online memorial website for someone you love. Share photos, stories and tributes, and invite family and friends to add their memories.",
   },
 }
 
