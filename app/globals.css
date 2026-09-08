@@ -131,3 +131,17 @@ html {
     cursor: not-allowed;
   }
 }
+
+/* Silk Shimmer animation for editorial loading states */
+@keyframes silk-shimmer {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(100%);
+  }
+}
+
+.animate-silk-shimmer {
+  animation: silk-shimmer 2.4s cubic-bezier(0.25, 1, 0.5, 1) infinite;
+}
