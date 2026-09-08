@@ -139,8 +139,50 @@ function roundRect(
 }
 
 /**
- * Generates a themed QR code (Canvas / Data URL) with the person's photo
- * embedded right in the center with a crisp white border (Level H: 30% recovery).
+ * Draws one of the 3 corner position finder patterns with rounded corners (like rounded-lg).
+ * Outer: 7x7 square with smooth rounded corners
+ * Inner cut: 5x5 white square with rounded corners
+ * Center pupil: 3x3 solid square with rounded corners
+ */
+function drawRoundedFinderPattern(
+  ctx: CanvasRenderingContext2D,
+  x: number,
+  y: number,
+  size: number,
+  color: string
+) {
+  const cellSize = size / 7
+
+  // Outer 7x7 square with rounded-lg corners
+  const outerRadius = cellSize * 1.7
+  roundRect(ctx, x, y, size, size, outerRadius)
+  ctx.fillStyle = color
+  ctx.fill()
+
+  // Inner 5x5 white hollow cutout
+  const innerCutX = x + cellSize
+  const innerCutY = y + cellSize
+  const innerCutSize = cellSize * 5
+  const innerCutRadius = cellSize * 1.15
+  roundRect(ctx, innerCutX, innerCutY, innerCutSize, innerCutSize, innerCutRadius)
+  ctx.fillStyle = "#ffffff"
+  ctx.fill()
+
+  // Center 3x3 solid pupil with rounded corners
+  const pupilX = x + cellSize * 2
+  const pupilY = y + cellSize * 2
+  const pupilSize = cellSize * 3
+  const pupilRadius = cellSize * 0.75
+  roundRect(ctx, pupilX, pupilY, pupilSize, pupilSize, pupilRadius)
+  ctx.fillStyle = color
+  ctx.fill()
+}
+
+/**
+ * Generates a themed QR code (Canvas / Data URL) with:
+ * 1. The 3 corner blocks corners rounded (like rounded-lg)
+ * 2. Theme accent color modules
+ * 3. Person's photo embedded right in the center with a crisp white border (Level H: 30% recovery)
  */
 export async function generateThemedQrDataUrl(
   options: MemorialQrOptions,
@@ -151,17 +193,75 @@ export async function generateThemedQrDataUrl(
   const theme = MEMORIAL_THEMES[themeId || "quiet"] || MEMORIAL_THEMES.quiet
   const initials = getInitials(fullName)
 
-  // 1. Render raw QR canvas with Level H error correction (30% recovery)
-  const qrCanvas = document.createElement("canvas")
-  await QRCode.toCanvas(qrCanvas, url, {
-    width: qrSize,
-    margin: 2,
+  // 1. Generate QR matrix data using QRCode.create with Level H (30% recovery capacity)
+  const qr = QRCode.create(url, {
     errorCorrectionLevel: "H",
-    color: {
-      dark: qrColor,
-      light: "#ffffff",
-    },
   })
+  const matrixSize = qr.modules.size
+  const margin = 2
+  const totalCells = matrixSize + margin * 2
+  const cellSize = qrSize / totalCells
+
+  const qrCanvas = document.createElement("canvas")
+  qrCanvas.width = qrSize
+  qrCanvas.height = qrSize
+  const ctx = qrCanvas.getContext("2d")
+  if (!ctx) throw new Error("Could not get 2D context")
+
+  // Fill canvas background
+  ctx.fillStyle = "#ffffff"
+  ctx.fillRect(0, 0, qrSize, qrSize)
+
+  // Helper to identify if module (r, c) is inside one of the 3 corner finder blocks
+  const isFinderPattern = (r: number, c: number) => {
+    if (r < 7 && c < 7) return true // Top-left
+    if (r < 7 && c >= matrixSize - 7) return true // Top-right
+    if (r >= matrixSize - 7 && c < 7) return true // Bottom-left
+    return false
+  }
+
+  // Draw data modules (dark modules only, skipping finder blocks)
+  ctx.fillStyle = qrColor
+  for (let r = 0; r < matrixSize; r++) {
+    for (let c = 0; c < matrixSize; c++) {
+      if (isFinderPattern(r, c)) continue
+      if (qr.modules.get(r, c)) {
+        const x = (margin + c) * cellSize
+        const y = (margin + r) * cellSize
+        ctx.fillRect(x, y, cellSize + 0.4, cellSize + 0.4)
+      }
+    }
+  }
+
+  // Draw the 3 rounded-lg corner finder pattern blocks
+  const finderSize = 7 * cellSize
+
+  // Top-Left corner block
+  drawRoundedFinderPattern(
+    ctx,
+    margin * cellSize,
+    margin * cellSize,
+    finderSize,
+    qrColor
+  )
+
+  // Top-Right corner block
+  drawRoundedFinderPattern(
+    ctx,
+    (margin + matrixSize - 7) * cellSize,
+    margin * cellSize,
+    finderSize,
+    qrColor
+  )
+
+  // Bottom-Left corner block
+  drawRoundedFinderPattern(
+    ctx,
+    margin * cellSize,
+    (margin + matrixSize - 7) * cellSize,
+    finderSize,
+    qrColor
+  )
 
   // 2. Preload portrait image (graceful fallback if null or cross-origin blocked)
   const resolvedPortraitUrl = (() => {
@@ -181,55 +281,52 @@ export async function generateThemedQrDataUrl(
   const portraitImg = await loadBrowserImage(resolvedPortraitUrl)
 
   // 3. Draw center badge
-  const ctx = qrCanvas.getContext("2d")
-  if (ctx) {
-    const cx = qrSize / 2
-    const cy = qrSize / 2
-    const outerRadius = Math.round(qrSize * 0.13) // ~94px for 720px QR (diameter ~26% of QR)
-    const innerRadius = outerRadius - 6 // 6px clean white protective ring
+  const cx = qrSize / 2
+  const cy = qrSize / 2
+  const outerRadius = Math.round(qrSize * 0.13)
+  const innerRadius = outerRadius - 6
 
-    // Clear background shield
-    ctx.save()
-    ctx.beginPath()
-    ctx.arc(cx, cy, outerRadius, 0, Math.PI * 2)
-    ctx.fillStyle = "#ffffff"
-    ctx.shadowColor = "rgba(0, 0, 0, 0.16)"
-    ctx.shadowBlur = 12
-    ctx.shadowOffsetX = 0
-    ctx.shadowOffsetY = 3
-    ctx.fill()
-    ctx.restore()
+  // Clear background shield
+  ctx.save()
+  ctx.beginPath()
+  ctx.arc(cx, cy, outerRadius, 0, Math.PI * 2)
+  ctx.fillStyle = "#ffffff"
+  ctx.shadowColor = "rgba(0, 0, 0, 0.16)"
+  ctx.shadowBlur = 12
+  ctx.shadowOffsetX = 0
+  ctx.shadowOffsetY = 3
+  ctx.fill()
+  ctx.restore()
 
-    // White border ring
-    ctx.save()
-    ctx.beginPath()
-    ctx.arc(cx, cy, outerRadius, 0, Math.PI * 2)
-    ctx.strokeStyle = "#ffffff"
-    ctx.lineWidth = 4
-    ctx.stroke()
-    ctx.restore()
+  // White border ring
+  ctx.save()
+  ctx.beginPath()
+  ctx.arc(cx, cy, outerRadius, 0, Math.PI * 2)
+  ctx.strokeStyle = "#ffffff"
+  ctx.lineWidth = 4
+  ctx.stroke()
+  ctx.restore()
 
-    // Draw inner avatar photo or monogram
-    drawCircularAvatar(
-      ctx,
-      portraitImg,
-      initials,
-      cx,
-      cy,
-      innerRadius,
-      theme.colors.bgSurfaceSubtle,
-      theme.colors.textPrimary
-    )
+  // Draw inner avatar photo or monogram
+  drawCircularAvatar(
+    ctx,
+    portraitImg,
+    initials,
+    cx,
+    cy,
+    innerRadius,
+    theme.colors.bgSurfaceSubtle,
+    theme.colors.textPrimary
+  )
 
-    // Inner subtle outline
-    ctx.save()
-    ctx.beginPath()
-    ctx.arc(cx, cy, innerRadius, 0, Math.PI * 2)
-    ctx.strokeStyle = "rgba(0, 0, 0, 0.1)"
-    ctx.lineWidth = 1.5
-    ctx.stroke()
-    ctx.restore()
-  }
+  // Inner subtle outline
+  ctx.save()
+  ctx.beginPath()
+  ctx.arc(cx, cy, innerRadius, 0, Math.PI * 2)
+  ctx.strokeStyle = "rgba(0, 0, 0, 0.1)"
+  ctx.lineWidth = 1.5
+  ctx.stroke()
+  ctx.restore()
 
   return qrCanvas.toDataURL("image/png")
 }

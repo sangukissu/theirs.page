@@ -347,7 +347,10 @@ export function PublishMemorialDialog({
                       </span>
                     </div>
                     <p className="mt-1 text-[11px] text-[#71717a] leading-relaxed">
-                      Download a printable keepsake card with photo & name, or isolated QR code for programs, memory tables, or headstone plaques.
+                      Scan with any phone camera to visit &amp; share memories at{" "}
+                      <strong className="font-semibold text-[#181925]">
+                        theirs.page/{slug}
+                      </strong>
                     </p>
                     <div className="mt-2.5 flex items-center gap-2 flex-wrap justify-center sm:justify-start">
                       <button
