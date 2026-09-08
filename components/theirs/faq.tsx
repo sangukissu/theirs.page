@@ -12,52 +12,58 @@ interface FaqItem {
 
 const FAQS: FaqItem[] = [
   {
-    id: "memorial-vs-obituary",
-    question: "How is an online memorial different from an obituary?",
+    id: "what-is-an-online-memorial",
+    question: "What is an online memorial website?",
     answer:
-      "A traditional obituary is a brief, static announcement centered on dates and funeral services. An online memorial is living, rich, and collaborative — bringing together photos, voice recordings, personal stories, and milestones contributed by the family and friends who knew them.",
+      "An online memorial is a dedicated place to remember someone who has died through their photos, stories, tributes and important moments. Unlike a traditional obituary, which is usually a short death notice or biography, a memorial on Theirs can grow over time as family and friends add their own memories.",
   },
   {
-    id: "pricing-cost",
-    question: "How much does an online memorial cost? Are there monthly fees?",
+    id: "free-memorial",
+    question: "Can I create an online memorial for free?",
     answer:
-      "It is completely free to create and share a memorial. The Free plan includes up to 5 photos, tributes, and full privacy controls with no commitment. If your family wants to add unlimited photos, voice notes, video clips, and a life story timeline, you can upgrade for a one-time payment of $179. There are never any recurring monthly subscriptions or renewal fees.",
+      "Yes. You can create and publish a memorial on Theirs for free, with their portrait, story, guest tributes and up to 5 gallery photos. No credit card is required to start. If your family later wants more photos, video, voice recordings, privacy controls and other complete memorial features, you can upgrade that memorial.",
   },
   {
-    id: "contribute-no-login",
-    question: "Do family and friends need an account to contribute?",
+    id: "family-contributions",
+    question: "Can family and friends add their own memories and photos?",
     answer:
-      "No, never. Anyone with your memorial link can write a tribute, share a story, or upload a photo directly from their phone or computer. No app downloads, sign-up forms, or passwords required. You control their visibility.",
+      "Yes. Share the memorial with the people who knew them and they can contribute tributes, stories, photos and other memories. Their contributions stay connected to who shared them, so the memorial becomes a collection of different perspectives on the same life. For ordinary tributes and photo memories, contributors don't need to create an account.",
   },
   {
-    id: "approval-queue",
-    question: "Can I approve stories and photos before they appear?",
+    id: "control-and-moderation",
+    question: "Do I control what other people add to the memorial?",
     answer:
-      "Yes, you have complete moderation control. Every tribute, photo, and memory submitted by visitors lands in your private approval queue first. Nothing goes live on the memorial until you review and approve it.",
+      "Yes. You remain the caretaker of the memorial. Contributions from visitors can be reviewed before they appear, so sharing the page with a wider family doesn't mean giving up control of it. You can approve or decline contributions and choose what belongs on the memorial.",
   },
   {
-    id: "privacy-tiers",
-    question: "Who can view the memorial? Can we keep it private?",
+    id: "privacy-controls",
+    question: "Can an online memorial be private?",
     answer:
-      "You choose your privacy setting: Public (searchable for distant friends and colleagues), Unlisted (only accessible to people with your private link), or Private (restricted strictly to invited family members with secure PIN). You can change this at any time.",
+      "Yes. With Complete, you can choose how the memorial is shared: Public for anyone to visit, Unlisted so it isn't intended for search discovery but anyone with the link can open it, or Private for access-controlled sharing. You can change the setting as your family's needs change.",
   },
   {
-    id: "permanence-lifespan",
-    question: "How long does the memorial stay online?",
+    id: "pricing-no-subscription",
+    question: "Is Theirs a subscription? How much does a memorial cost?",
     answer:
-      "Permanently. We believe remembrance should never have an expiration date. Once created, your loved one’s memorial remains online without renewal fees or surprise charges, providing a lasting home for memories across generations.",
+      "There is no monthly subscription. Theirs is free to start, and Complete costs $179 once per memorial. You don't need to keep a subscription active every month or year to retain the Complete features you've purchased.",
   },
   {
-    id: "voice-video",
-    question: "Can we upload voicemails, voice notes, and videos?",
+    id: "ownership-and-export",
+    question: "Who owns the photos and memories we upload? Can we download them?",
     answer:
-      "Yes. You can preserve audio recordings — like saved voicemails or spoken memories — with an integrated audio waveform player that lets visitors hear their voice. You can also add family videos alongside photographs and stories.",
+      "Your family's content remains yours. Theirs doesn't take ownership of the photos, stories or recordings you upload. With Complete, you can export the memorial and its original media into a family archive, so your memories aren't locked inside Theirs.",
   },
   {
-    id: "caretaker-delegation",
-    question: "What happens if I can no longer manage the memorial myself?",
+    id: "successor-caretaker",
+    question: "What happens to the memorial if I can no longer manage it?",
     answer:
-      "You can name a trusted successor caretaker or co-admin at any time. If you ever need to pass on stewardship, they can manage settings, approve incoming memories, and look after the memorial for your family.",
+      "You can choose another trusted person to help care for the memorial and designate a successor caretaker for the future. The goal is for responsibility for the memorial to be able to pass within the family rather than depend on one account holder indefinitely.",
+  },
+  {
+    id: "lifespan-and-permanence",
+    question: "How long will an online memorial stay online?",
+    answer:
+      "Theirs is built for long-term remembrance, but we don't think it is responsible to promise that any online service will exist “forever.” Complete memorials don't depend on an ongoing monthly subscription, and you can export your family's memorial and original files so Theirs never has to be the only copy of something irreplaceable.",
   },
 ]
 
