@@ -7,7 +7,7 @@ export function TheirsFooter() {
       <div className="max-w-5xl mx-auto flex flex-col md:flex-row items-center justify-between gap-6 text-xs text-muted-foreground">
         {/* Brand */}
         <div className="flex items-center gap-2">
-          <Image src="/theirs-icon.png" alt="Theirs" width={20} height={20} />
+          <Image src="/theirs-logo.svg" alt="Theirs" width={16} height={16} />
           <span className="font-medium text-[#454545]">Theirs</span>
           <span>· Dedicated to a human life.</span>
         </div>

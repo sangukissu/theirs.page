@@ -28,7 +28,7 @@ function DashboardSkeleton() {
             className="absolute -inset-4 rounded-3xl bg-primary/10 blur-xl pointer-events-none"
           />
           <Image
-            src="/theirs-icon.png"
+            src="/theirs-logo.svg"
             alt="Theirs"
             width={48}
             height={48}

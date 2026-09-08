@@ -300,7 +300,7 @@ export function InvitationAcceptClient({
             Invited address: <strong className="font-mono text-[#555]">{invitedEmail}</strong>
           </span>
           <Link href="/" className="flex items-center group justify-center mt-2">
-            <Image src="/theirs-icon.png" alt="Theirs" width={12} height={12} />
+            <Image src="/theirs-logo.svg" alt="Theirs" width={12} height={12} />
             <span className="font-semibold tracking-tight text-[#181925] text-xs ml-1 mt-0.5">
               Theirs<span className="text-primary">.page</span>
             </span>

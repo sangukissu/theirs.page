@@ -6,7 +6,7 @@ import { usePathname, useSearchParams } from "next/navigation"
 import { Share2, Plus, Check } from "lucide-react"
 import type { ContributionType } from "./contribute-modal"
 import type { SectionSettings } from "@/types/theirs"
-import Image from "next/image"
+import { TheirsLogo } from "@/components/theirs/theirs-logo"
 
 interface MemorialNavProps {
   slug: string
@@ -112,10 +112,10 @@ export function MemorialNav({
           <Link
             href={withPreview(rootPath)}
             prefetch
-            className="flex items-center gap-1.5 text-xs font-semibold tracking-tight text-[var(--theme-text-primary)] hover:opacity-80 transition-opacity select-none shrink-0 pl-1"
+            className="flex items-center gap-1 text-xs font-semibold tracking-tight text-[var(--theme-text-primary)] hover:opacity-80 transition-opacity select-none shrink-0 pl-1"
             title="Return to memorial home"
           >
-            <Image src="/theirs-icon.png" alt="Theirs" width={16} height={16} />
+            <TheirsLogo themeAware className="size-3.5 text-[var(--theme-accent)] shrink-0" />
             <span className="truncate max-w-[70px] sm:max-w-[100px]">{firstName}</span>
           </Link>
 

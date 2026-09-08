@@ -56,7 +56,7 @@ export function TheirsTopNav({ userEmail }: TheirsTopNavProps) {
       {/* Left: Brand + Section Navigation */}
       <div className="flex items-center gap-4 sm:gap-6">
         <Link href="/" className="flex items-center group">
-          <Image src="/theirs-icon.png" alt="Theirs" width={20} height={20} />
+          <Image src="/theirs-logo.svg" alt="Theirs" width={18} height={18} />
           <span className="font-semibold tracking-tight text-[#181925] text-lg ml-1 mt-0.5">
             Theirs<span className="text-primary">.</span>
           </span>
