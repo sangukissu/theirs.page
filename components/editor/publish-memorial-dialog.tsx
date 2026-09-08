@@ -5,16 +5,20 @@ import { AnimatePresence, motion } from "framer-motion"
 import {
   Check,
   Copy,
+  Download,
   ExternalLink,
   Globe2,
   Link2,
   Loader2,
   LockKeyhole,
   MessageSquare,
+  QrCode,
   Share2,
   Sparkles,
   X,
 } from "lucide-react"
+import QRCode from "qrcode"
+import { MEMORIAL_THEMES, type MemorialThemeId } from "@/lib/memorial/themes"
 
 type PublishPrivacy = "public" | "unlisted" | "private"
 
@@ -27,6 +31,10 @@ interface PublishMemorialDialogProps {
   hasPortrait: boolean
   hasStory: boolean
   memoryCount: number
+  portraitUrl?: string | null
+  theme?: MemorialThemeId | null
+  birthYear?: number | string | null
+  deathYear?: number | string | null
   onClose: () => void
   onPublish: (privacy: PublishPrivacy) => Promise<void>
   onUnpublish: () => Promise<void>
@@ -45,6 +53,10 @@ export function PublishMemorialDialog({
   hasPortrait,
   hasStory,
   memoryCount,
+  portraitUrl: _portraitUrl,
+  theme = "quiet",
+  birthYear: _birthYear,
+  deathYear: _deathYear,
   onClose,
   onPublish,
   onUnpublish,
@@ -58,6 +70,12 @@ export function PublishMemorialDialog({
   const [isUnpublishing, setIsUnpublishing] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [memorialUrl, setMemorialUrl] = useState(`https://theirs.page/${slug}`)
+  const [qrDataUrl, setQrDataUrl] = useState<string | null>(null)
+  const [isDownloadingQr, setIsDownloadingQr] = useState(false)
+
+  const resolvedTheme = theme || "quiet"
+  const themeDef = MEMORIAL_THEMES[resolvedTheme] || MEMORIAL_THEMES.quiet
+  const qrDarkColor = themeDef.colors.textPrimary
 
   useEffect(() => {
     if (!isOpen) return
@@ -69,6 +87,47 @@ export function PublishMemorialDialog({
     setError(null)
     setMemorialUrl(`${window.location.origin}/${slug}`)
   }, [isOpen, privacy, slug, status])
+
+  useEffect(() => {
+    if (phase === "live" && memorialUrl) {
+      QRCode.toDataURL(memorialUrl, {
+        width: 360,
+        margin: 1,
+        errorCorrectionLevel: "M",
+        color: {
+          dark: qrDarkColor,
+          light: "#ffffff",
+        },
+      })
+        .then((url) => setQrDataUrl(url))
+        .catch((err) => console.error("Error generating QR:", err))
+    }
+  }, [phase, memorialUrl, qrDarkColor])
+
+  const downloadQr = async () => {
+    try {
+      setIsDownloadingQr(true)
+      const highResUrl = await QRCode.toDataURL(memorialUrl, {
+        width: 1024,
+        margin: 4,
+        errorCorrectionLevel: "M",
+        color: {
+          dark: qrDarkColor,
+          light: "#ffffff",
+        },
+      })
+      const link = document.createElement("a")
+      link.href = highResUrl
+      link.download = `${slug}-memorial-qr.png`
+      document.body.appendChild(link)
+      link.click()
+      document.body.removeChild(link)
+    } catch (err) {
+      console.error("Failed to download high-res QR:", err)
+    } finally {
+      setIsDownloadingQr(false)
+    }
+  }
 
   const publish = async () => {
     setPhase("publishing")
@@ -223,6 +282,46 @@ export function PublishMemorialDialog({
                     <span>Visit live page</span>
                     <ExternalLink className="size-3 shrink-0 text-[#71717a]" />
                   </a>
+                </div>
+
+                {/* Memorial Keepsake QR Card */}
+                <div className="mt-5 rounded-2xl border border-black/[0.08] bg-[#fafafb] p-4 flex flex-col sm:flex-row items-center gap-4 text-center sm:text-left">
+                  <div className="size-24 rounded-xl bg-white border border-black/[0.06] p-1.5 shadow-2xs shrink-0 flex items-center justify-center">
+                    {qrDataUrl ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img
+                        src={qrDataUrl}
+                        alt={`QR code for ${memorialName}`}
+                        className="size-full object-contain rounded-md"
+                      />
+                    ) : (
+                      <Loader2 className="size-5 animate-spin text-neutral-400" />
+                    )}
+                  </div>
+                  <div className="flex flex-col items-center sm:items-start flex-1 min-w-0">
+                    <div className="flex items-center gap-1.5">
+                      <QrCode className="size-3.5 text-neutral-700" />
+                      <span className="text-xs font-semibold text-[#181925]">
+                        Physical Keepsake QR Code
+                      </span>
+                    </div>
+                    <p className="mt-1 text-[11px] text-[#71717a] leading-relaxed">
+                      Print this high-resolution QR code for funeral programs, prayer cards, framed photos, or headstone plaques.
+                    </p>
+                    <button
+                      type="button"
+                      onClick={downloadQr}
+                      disabled={isDownloadingQr || !qrDataUrl}
+                      className="mt-2.5 inline-flex items-center gap-1.5 rounded-full bg-white border border-black/[0.12] hover:bg-neutral-50 px-3.5 py-1.5 text-xs font-medium text-[#181925] shadow-2xs active:scale-95 transition-all cursor-pointer disabled:opacity-50"
+                    >
+                      {isDownloadingQr ? (
+                        <Loader2 className="size-3 animate-spin" />
+                      ) : (
+                        <Download className="size-3 text-[#555]" />
+                      )}
+                      <span>Download QR (PNG)</span>
+                    </button>
+                  </div>
                 </div>
 
                 {/* Clear Unpublish Section */}

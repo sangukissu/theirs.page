@@ -15,6 +15,7 @@ interface MemorialNavProps {
   deathYear?: number | null
   sectionSettings?: SectionSettings | null
   onOpenContribute: (type?: ContributionType) => void
+  onOpenShare?: () => void
   hasTopBanner?: boolean
 }
 
@@ -25,6 +26,7 @@ export function MemorialNav({
   deathYear: _deathYear,
   sectionSettings,
   onOpenContribute,
+  onOpenShare,
   hasTopBanner = false,
 }: MemorialNavProps) {
   const pathname = usePathname()
@@ -50,6 +52,11 @@ export function MemorialNav({
   ].filter((item) => item.enabled), [rootPath, sectionSettings])
 
   const handleShare = async () => {
+    if (onOpenShare) {
+      onOpenShare()
+      return
+    }
+
     const url = typeof window !== "undefined" ? window.location.href : `https://theirs.page/${slug}`
     const shareMessage = `Remembering ${firstName}. We've gathered stories, photographs, and memories in their honor. Please visit to remember them with us or share a memory: ${url}`
 

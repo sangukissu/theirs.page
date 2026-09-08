@@ -860,6 +860,10 @@ export function MemorialEditorClient({
         hasPortrait={Boolean(form.portrait_photo_url)}
         hasStory={Boolean(form.biography.trim())}
         memoryCount={memories.filter((memory) => memory.status === "approved").length}
+        portraitUrl={form.portrait_photo_url}
+        theme={initialMemorial.theme}
+        birthYear={form.birth_year}
+        deathYear={form.death_year}
         onClose={() => setPublishDialogOpen(false)}
         onPublish={(privacy) => updatePublication("published", privacy)}
         onUnpublish={() => updatePublication("draft")}

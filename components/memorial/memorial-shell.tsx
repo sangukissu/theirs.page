@@ -6,6 +6,7 @@ import { useRouter, useSearchParams } from "next/navigation"
 import { MemorialNav } from "./memorial-nav"
 import { MemorialFooter } from "./memorial-footer"
 import { ContributeModal, type ContributionType } from "./contribute-modal"
+import { MemorialShareModal } from "./memorial-share-modal"
 import type { MemorialIdentity } from "@/types/memorial-view"
 import { isValidThemeId, type MemorialThemeId } from "@/lib/memorial/themes"
 
@@ -16,6 +17,7 @@ interface MemorialActions {
     photoTitle?: string,
     mediaId?: string
   ) => void
+  openShare: () => void
 }
 const MemorialActionsContext = createContext<MemorialActions | null>(null)
 
@@ -29,6 +31,7 @@ export function MemorialShell({ identity, children }: { identity: MemorialIdenti
   const router = useRouter()
   const searchParams = useSearchParams()
   const [isOpen, setIsOpen] = useState(false)
+  const [isShareOpen, setIsShareOpen] = useState(false)
   const [type, setType] = useState<ContributionType | null>(null)
   const [photoUrl, setPhotoUrl] = useState<string | null>(null)
   const [photoTitle, setPhotoTitle] = useState<string | null>(null)
@@ -41,6 +44,9 @@ export function MemorialShell({ identity, children }: { identity: MemorialIdenti
     setType(nextType || null); setPhotoUrl(nextPhotoUrl || null); setPhotoTitle(nextPhotoTitle || null); setMediaId(nextMediaId || null); setIsOpen(true)
   }
   const closeContribute = () => { setIsOpen(false); setPhotoUrl(null); setPhotoTitle(null); setMediaId(null) }
+  const openShare = () => setIsShareOpen(true)
+  const closeShare = () => setIsShareOpen(false)
+
   const visitorPreview = identity.isOwner && searchParams.get("preview") === "visitor"
   const draftPreview = identity.status === "draft" && identity.isOwner && !visitorPreview
 
@@ -54,7 +60,7 @@ export function MemorialShell({ identity, children }: { identity: MemorialIdenti
   }, [router])
 
   return (
-    <MemorialActionsContext.Provider value={{ openContribute }}>
+    <MemorialActionsContext.Provider value={{ openContribute, openShare }}>
       <main
         data-memorial-theme={activeTheme}
         className="theirs-theme-root min-h-screen bg-[var(--theme-bg-page)] text-[var(--theme-text-body)] selection:bg-[var(--theme-accent)]/15 selection:text-[var(--theme-accent)] relative pb-10 sm:pb-16 transition-colors duration-200"
@@ -74,6 +80,7 @@ export function MemorialShell({ identity, children }: { identity: MemorialIdenti
           deathYear={identity.deathYear}
           sectionSettings={identity.sectionSettings}
           onOpenContribute={openContribute}
+          onOpenShare={openShare}
           hasTopBanner={Boolean(draftPreview)}
         />
         {children}
@@ -107,6 +114,16 @@ export function MemorialShell({ identity, children }: { identity: MemorialIdenti
           initialPhotoUrl={photoUrl}
           initialPhotoTitle={photoTitle}
           initialMediaId={mediaId}
+        />
+        <MemorialShareModal
+          isOpen={isShareOpen}
+          onClose={closeShare}
+          fullName={identity.fullName}
+          slug={identity.slug}
+          portraitUrl={identity.portraitUrl}
+          birthYear={identity.birthYear}
+          deathYear={identity.deathYear}
+          themeId={activeTheme}
         />
       </main>
     </MemorialActionsContext.Provider>
