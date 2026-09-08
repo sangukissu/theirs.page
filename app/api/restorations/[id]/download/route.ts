@@ -49,7 +49,7 @@ export async function GET(
     status: 200,
     headers: {
       "Content-Type": contentType,
-      "Content-Disposition": `attachment; filename="bringback-restored-${id}.png"`,
+      "Content-Disposition": `attachment; filename="theirs-restored-${id}.png"`,
       "Cache-Control": "private, max-age=0, must-revalidate",
     },
   })

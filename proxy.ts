@@ -8,50 +8,6 @@ import {
   detectSuspiciousActivity,
 } from "@/middleware/security"
 
-/**
- * Legacy BringBack photo restoration product routes to retire.
- * Redirects visitors permanently to https://theirs.page/ so old links
- * and search indices are smoothly onboarded, while preventing these paths
- * from falling through to the dynamic memorial lookup app/[slug]/page.tsx.
- */
-const RETIRED_BRINGBACK_PAGES = [
-  "/old-photo-restoration",
-  "/colorize-photos",
-  "/denoise-photos",
-  "/ai-photo-animation",
-  "/ai-family-portrait",
-  "/add-person-to-photo",
-  "/remove-person-from-photo",
-  "/family-memory-book",
-  "/restoration-benchmark",
-  "/restore",
-  "/m",
-  "/features",
-  "/compare",
-  "/guides",
-  "/examples",
-  "/blog",
-  "/app",
-  "/referral",
-]
-
-/**
- * Retired BringBack backend API endpoints.
- * Responds with HTTP 410 Gone to cleanly inform obsolete clients.
- */
-const RETIRED_BRINGBACK_APIS = [
-  "/api/memory-books",
-  "/api/referrals",
-  "/api/add-person",
-  "/api/remove-person",
-  "/api/christmas-portrait",
-  "/api/family-portrait",
-  "/api/rerestore",
-  "/api/fal/animate",
-  "/api/fal/enhance",
-  "/api/nostalgic-hug",
-  "/api/video-proxy",
-]
 
 export async function proxy(request: NextRequest) {
   const pathname = request.nextUrl.pathname
@@ -113,36 +69,6 @@ export async function proxy(request: NextRequest) {
     })
   }
 
-  // 3. Handle retired BringBack APIs -> return HTTP 410 Gone
-  const isRetiredApi = RETIRED_BRINGBACK_APIS.some(
-    (prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`)
-  )
-  if (isRetiredApi) {
-    return NextResponse.json(
-      { error: "This legacy BringBack endpoint has been retired." },
-      {
-        status: 410,
-        headers: {
-          "Cache-Control": "public, max-age=86400",
-          "X-Robots-Tag": "noindex, nofollow",
-        },
-      }
-    )
-  }
-
-  // 4. Handle retired BringBack web pages -> 301 Permanent Redirect to homepage
-  const isRetiredPage = RETIRED_BRINGBACK_PAGES.some(
-    (prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`)
-  )
-  if (isRetiredPage) {
-    const destination = new URL("/", request.url)
-    return NextResponse.redirect(destination, {
-      status: 301,
-      headers: {
-        "Cache-Control": "public, max-age=86400",
-      },
-    })
-  }
 
   // 5. Apply core security headers & production HTTPS redirection
   const securityResponse = securityMiddleware(request)

@@ -12,7 +12,7 @@ export const winbackEmail1 = {
     subject: 'Quick tip for your first restoration',
     getBody: `Hey,
 
-Saw you joined BringBack.pro—welcome!
+Saw you joined Theirs.page—welcome!
 
 A lot of users get stuck thinking they need a high-res scan to get good results. I wanted to let you know that a simple phone snap works perfectly.
 
@@ -22,7 +22,7 @@ Give it a try with a photo you have lying around. If you don't love the result, 
 
 Cheers,
 Harvansh
-Founder, BringBack.pro`,
+Founder, Theirs.page`,
 }
 
 // Email 2: Discount email (7 days after signup)
@@ -30,7 +30,7 @@ export const winbackEmail2 = {
     subject: 'Is it the price?',
     getBody: `Hi,
 
-It's been a week since you joined BringBack.pro, but I noticed you haven't tried the Pro Plan yet.
+It's been a week since you joined Theirs.page, but I noticed you haven't tried the Pro Plan yet.
 
 I'm trying to understand what holds users back. Is it the pricing? The features?
 

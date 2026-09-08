@@ -6,11 +6,11 @@
 export const BRAND = {
   name: "BringBack",
   legalName: "BringBack",
-  domain: "bringback.pro",
+  domain: "Theirs.page",
   url: "https://theirs.page",
-  supportEmail: "support@bringback.pro",
+  supportEmail: "support@Theirs.page",
   twitter: "https://x.com/AINotSoSmart",
-  trustpilot: "https://www.trustpilot.com/review/bringback.pro",
+  trustpilot: "https://www.trustpilot.com/review/Theirs.page",
 } as const
 
 export const POSITIONING = {

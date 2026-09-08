@@ -10,7 +10,7 @@ export const fallbackBlogPosts = [
     modified: "2025-01-15T10:00:00Z",
     author: {
       node: {
-        name: "BringBack Team",
+        name: "Theirs Team",
         avatar: {
           url: "/placeholder.svg?height=40&width=40&text=Author"
         }
@@ -41,7 +41,7 @@ export const fallbackBlogPosts = [
     modified: "2025-01-10T14:30:00Z",
     author: {
       node: {
-        name: "BringBack Team",
+        name: "Theirs Team",
         avatar: {
           url: "/placeholder.svg?height=40&width=40&text=Author"
         }
@@ -72,7 +72,7 @@ export const fallbackBlogPosts = [
     modified: "2025-01-05T09:15:00Z",
     author: {
       node: {
-        name: "BringBack Team",
+        name: "Theirs Team",
         avatar: {
           url: "/placeholder.svg?height=40&width=40&text=Author"
         }

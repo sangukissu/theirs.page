@@ -14,7 +14,7 @@ export function CtaBanner() {
   const [name, setName] = useState("")
   const sectionRef = useRef<HTMLElement>(null)
 
-  // Scroll-driven fracture into bricks and dissolution into sand
+  // Scroll-driven bottom-up assembly of the brand wordmark from behind the CTA card
   const { scrollYProgress } = useScroll({
     target: sectionRef,
     offset: ["start 85%", "center 35%"],
@@ -48,7 +48,7 @@ export function CtaBanner() {
       className="relative pt-24 sm:pt-32 md:pt-40 pb-16 sm:pb-24 px-4 sm:px-6 overflow-hidden"
     >
       <div className="max-w-5xl mx-auto relative">
-        {/* Horizon Monolith Wordmark with Masonry Brick Fracture & Sand Dissolution */}
+        {/* Horizon Monolith Wordmark with Bottom-Up Masonry Assembly */}
         <div
           aria-hidden="true"
           className="pointer-events-none select-none absolute left-1/2 -translate-x-1/2 -top-12 sm:-top-20 md:-top-28 lg:-top-32 w-full flex items-end justify-center z-0"

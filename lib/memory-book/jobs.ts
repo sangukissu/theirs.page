@@ -317,8 +317,8 @@ async function sendReactionEmail(job: MemoryBookJob) {
   })
 
   const result = await resend.emails.send({
-    from: "BringBack <updates@bringback.pro>",
-    replyTo: "support@bringback.pro",
+    from: "BringBack <updates@Theirs.page>",
+    replyTo: "support@Theirs.page",
     to: profile.email,
     subject: `New love for “${book.title}”`,
     text: [
@@ -380,8 +380,8 @@ async function sendDraftExpiryWarning(job: MemoryBookJob) {
   }
 
   const result = await resend.emails.send({
-    from: "BringBack <updates@bringback.pro>",
-    replyTo: "support@bringback.pro",
+    from: "BringBack <updates@Theirs.page>",
+    replyTo: "support@Theirs.page",
     to: profile.email,
     subject: `Your Family Heritage draft is waiting`,
     text: [

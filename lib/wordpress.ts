@@ -48,7 +48,7 @@ interface WordPressSinglePostResponse {
   }
 }
 
-const WORDPRESS_GRAPHQL_URL = 'https://blog.bringback.pro/graphql'
+const WORDPRESS_GRAPHQL_URL = 'https://blog.Theirs.page/graphql'
 
 // GraphQL query to fetch all posts
 const GET_POSTS_QUERY = `
@@ -167,7 +167,7 @@ async function fetchGraphQL(query: string, variables: Record<string, any> = {}, 
     }
 
     const json = await response.json()
-    
+
     if (json.errors) {
       throw new Error('GraphQL query failed')
     }
@@ -175,13 +175,13 @@ async function fetchGraphQL(query: string, variables: Record<string, any> = {}, 
     return json
   } catch (error) {
     clearTimeout(timeoutId)
-    
+
     // Retry logic for network errors
     if (retries > 0 && (error instanceof TypeError || (error as Error).name === 'AbortError')) {
       await new Promise(resolve => setTimeout(resolve, 1000)) // Wait 1 second before retry
       return fetchGraphQL(query, variables, retries - 1)
     }
-    
+
     throw error
   }
 }
@@ -208,11 +208,11 @@ export async function getAllPosts(first: number = 10, after?: string): Promise<{
     }
   } catch (error) {
     console.warn('Failed to fetch posts from WordPress, using fallback data:', error)
-    
+
     // Import fallback data dynamically to avoid circular dependencies
     const { fallbackBlogPosts } = await import('./fallback-data')
-    
-    return {  
+
+    return {
       posts: fallbackBlogPosts.slice(0, first),
       pageInfo: {
         hasNextPage: false,
@@ -263,7 +263,7 @@ export function calculateReadingTime(content: string): string {
 export function extractExcerpt(content: string, length: number = 160): string {
   if (!content) return ''
   const textContent = content.replace(/<[^>]*>/g, '') // Strip HTML tags
-  return textContent.length > length 
+  return textContent.length > length
     ? textContent.substring(0, length).trim() + '...'
     : textContent
 }

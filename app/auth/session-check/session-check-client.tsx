@@ -14,7 +14,7 @@ export default function SessionCheckClient({
   const [autoRetrying, setAutoRetrying] = useState(true)
 
   useEffect(() => {
-    const retryKey = `bringback-auth-retry:${nextPath}`
+    const retryKey = `theirs-auth-retry:${nextPath}`
     const previousAttempt = Number(sessionStorage.getItem(retryKey) || 0)
     const shouldRetry =
       !Number.isFinite(previousAttempt) ||
@@ -35,7 +35,7 @@ export default function SessionCheckClient({
   }, [nextPath])
 
   const retry = () => {
-    sessionStorage.removeItem(`bringback-auth-retry:${nextPath}`)
+    sessionStorage.removeItem(`theirs-auth-retry:${nextPath}`)
     window.location.reload()
   }
 
@@ -50,14 +50,14 @@ export default function SessionCheckClient({
         <div className="mx-auto mb-7 flex w-fit items-center gap-3">
           <span className="flex items-center justify-center rounded-xl border border-black/10 bg-brand-surface">
             <Image
-              src="/bringback-logo.webp"
-              alt="BringBack"
+              src="/theirs-logo.png"
+              alt="theirs"
               width={48}
               height={48}
             />
           </span>
           <span className="text-2xl font-extrabold tracking-tight">
-            BringBack
+            Theirs
           </span>
         </div>
 

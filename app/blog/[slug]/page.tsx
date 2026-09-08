@@ -80,18 +80,18 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
 
     if (!post) {
       return {
-        title: "Post Not Found - BringBack Blog",
+        title: "Post Not Found - Theirs Blog",
         description: "The requested blog post could not be found.",
         robots: { index: false, follow: false },
       }
     }
 
     const seoTitle = post.title
-    const seoDescription = post.excerpt || "Read this article on BringBack Blog"
+    const seoDescription = post.excerpt || "Read this article on Theirs Blog"
     const ogImage = post.featuredImage?.node?.sourceUrl || "/placeholder.svg"
 
     return {
-      title: `${seoTitle} - BringBack Blog`,
+      title: `${seoTitle} - Theirs Blog`,
       description: seoDescription,
       openGraph: {
         title: seoTitle,
@@ -121,8 +121,8 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
   } catch (error) {
     console.error('Error generating metadata:', error)
     return {
-      title: "Blog Post - BringBack",
-      description: "Read the latest articles about photo restoration and preservation.",
+      title: "Blog Post - Theirs",
+      description: "Read the latest articles about preserving memories and creating memorial websites for loved ones.",
       robots: { index: false, follow: false },
     }
   }
@@ -161,15 +161,15 @@ function BlogPostContent({ post }: { post: WordPressPost }) {
     dateModified: post.modified,
     author: {
       '@type': 'Organization',
-      name: 'BringBack Team',
+      name: 'Theirs Team',
       url: 'https://theirs.page'
     },
     publisher: {
       '@type': 'Organization',
-      name: 'BringBack',
+      name: 'Theirs',
       logo: {
         '@type': 'ImageObject',
-        url: 'https://theirs.page/bringback-logo.webp'
+        url: 'https://theirs.page/theirs-logo.svg'
       }
     },
     // Use URL string for mainEntityOfPage to avoid emitting a WebPage entity
@@ -181,7 +181,7 @@ function BlogPostContent({ post }: { post: WordPressPost }) {
     isPartOf: {
       '@type': 'Blog',
       '@id': 'https://theirs.page/blog',
-      name: 'BringBack Blog'
+      name: 'Theirs Blog'
     }
   }
 

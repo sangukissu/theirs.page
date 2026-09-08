@@ -10,9 +10,9 @@ import { getAllPosts, formatDate, calculateReadingTime, extractExcerpt, type Wor
 import { Suspense } from "react"
 
 export const metadata: Metadata = {
-  title: "Blog - BringBack | Photo Restoration Tips & Stories",
+  title: "Blog - Theirs | Memorial Website for loved ones",
   description:
-    "Learn about photo restoration, preservation tips, and read inspiring stories of memories brought back to life.",
+    "Guides and tips for preserving memories and creating memorial websites for loved ones.",
   robots: "index, follow",
   alternates: {
     canonical: "/blog",

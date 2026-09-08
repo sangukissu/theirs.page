@@ -343,7 +343,7 @@ export async function GET() {
 
   return NextResponse.json({
     status: "healthy",
-    service: "BringBack API",
+    service: "Theirs API",
     timestamp: new Date().toISOString(),
     falConfigured: hasKey,
     keyPreview,
