@@ -269,6 +269,14 @@ export function buildBlogArticleSchemaGraph(post: WordPressPost) {
         description: plainExcerpt,
         aboutId: articleId,
       }),
+      buildBreadcrumbSchema(
+        [
+          { name: "Home", url: SEO_CONFIG.canonicalOrigin },
+          { name: "Stories & Guides", url: `${SEO_CONFIG.canonicalOrigin}/blog` },
+          { name: post.title, url: articleUrl },
+        ],
+        articleUrl
+      ),
       {
         "@type": "BlogPosting",
         "@id": articleId,
@@ -279,7 +287,14 @@ export function buildBlogArticleSchemaGraph(post: WordPressPost) {
         dateModified: post.modified,
         author: {
           "@type": "Person",
-          name: post.author.node.name,
+          name: post.author.node.name && post.author.node.name.includes("@")
+            ? "Theirs Editorial Team"
+            : post.author.node.name || "Theirs Editorial Team",
+          ...(post.author.node.avatar?.url ? { image: post.author.node.avatar.url } : {}),
+          jobTitle: "Editorial Contributor",
+          worksFor: {
+            "@id": SCHEMA_IDS.organization,
+          },
         },
         publisher: {
           "@id": SCHEMA_IDS.organization,

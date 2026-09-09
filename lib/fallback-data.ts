@@ -2,93 +2,26 @@
 export const fallbackBlogPosts = [
   {
     id: "fallback-1",
-    title: "How to Restore Old Family Photos: A Complete Guide",
-    excerpt: "Learn the essential techniques and tools for bringing your precious family memories back to life with our comprehensive photo restoration guide.",
-    content: "Photo restoration is an art that combines technical skill with emotional care...",
-    slug: "how-to-restore-old-family-photos",
-    date: "2025-01-15T10:00:00Z",
-    modified: "2025-01-15T10:00:00Z",
+    title: "How to Create an Online Memorial for Someone You Love",
+    excerpt: "A thoughtful step-by-step guide to creating a lasting online memorial, bringing together stories, photographs, audio notes, and tributes from family and friends.",
+    content: "Creating an online memorial is an intimate, comforting way to honor a loved one's life. Rather than assembling a sterile obituary, Theirs allows families to preserve living memories, authentic stories, voice notes, and high-resolution photographs together in one collaborative space.",
+    slug: "how-to-create-a-memorial-website",
+    date: "2026-09-01T10:00:00Z",
+    modified: "2026-09-01T10:00:00Z",
     author: {
       node: {
-        name: "Theirs Team",
+        name: "Theirs Editorial",
         avatar: {
-          url: "/placeholder.svg?height=40&width=40&text=Author"
+          url: "/theirs-logo.svg"
         }
       }
     },
-    featuredImage: {
-      node: {
-        sourceUrl: "/placeholder.svg?height=400&width=600&text=Photo+Restoration+Guide",
-        altText: "Photo restoration guide"
-      }
-    },
+    featuredImage: null,
     categories: {
       nodes: [
         {
-          name: "Tutorials",
-          slug: "tutorials"
-        }
-      ]
-    }
-  },
-  {
-    id: "fallback-2",
-    title: "5 Common Photo Damage Types and How to Fix Them",
-    excerpt: "Discover the most common types of photo damage including tears, fading, water damage, and scratches, plus professional tips for restoration.",
-    content: "Photos can suffer from various types of damage over time...",
-    slug: "common-photo-damage-types",
-    date: "2025-01-10T14:30:00Z",
-    modified: "2025-01-10T14:30:00Z",
-    author: {
-      node: {
-        name: "Theirs Team",
-        avatar: {
-          url: "/placeholder.svg?height=40&width=40&text=Author"
-        }
-      }
-    },
-    featuredImage: {
-      node: {
-        sourceUrl: "/placeholder.svg?height=400&width=600&text=Photo+Damage+Types",
-        altText: "Common photo damage types"
-      }
-    },
-    categories: {
-      nodes: [
-        {
-          name: "Tips",
-          slug: "tips"
-        }
-      ]
-    }
-  },
-  {
-    id: "fallback-3",
-    title: "Preserving Your Digital Memories for Future Generations",
-    excerpt: "Learn best practices for storing and organizing your restored photos to ensure they last for generations to come.",
-    content: "Digital preservation is crucial for maintaining your restored photos...",
-    slug: "preserving-digital-memories",
-    date: "2025-01-05T09:15:00Z",
-    modified: "2025-01-05T09:15:00Z",
-    author: {
-      node: {
-        name: "Theirs Team",
-        avatar: {
-          url: "/placeholder.svg?height=40&width=40&text=Author"
-        }
-      }
-    },
-    featuredImage: {
-      node: {
-        sourceUrl: "/placeholder.svg?height=400&width=600&text=Digital+Preservation",
-        altText: "Digital photo preservation"
-      }
-    },
-    categories: {
-      nodes: [
-        {
-          name: "Preservation",
-          slug: "preservation"
+          name: "Guides",
+          slug: "guides"
         }
       ]
     }

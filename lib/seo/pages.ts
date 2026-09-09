@@ -70,15 +70,14 @@ export const STATIC_PAGES: Record<string, StaticPageEntry> = {
   },
   "/blog": {
     path: "/blog",
-    title: "Blog | Theirs",
+    title: "Memorial Guides & Stories | Theirs",
     description:
-      "Guides and articles for remembering loved ones and preserving family memories.",
-    // Set to false temporarily while blog contains legacy BringBack content
-    indexable: false,
-    sitemap: false,
+      "Guides, reflections, and practical advice on honoring loved ones, preserving family stories, and creating meaningful online memorials.",
+    indexable: true,
+    sitemap: true,
     schemaType: "CollectionPage",
     breadcrumbLabel: "Blog",
-    updatedAt: "2026-09-01",
+    updatedAt: "2026-09-09",
   },
 }
 

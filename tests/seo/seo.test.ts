@@ -334,12 +334,13 @@ test("buildBlogArticleSchemaGraph contains real author and clean publisher", () 
 // 4. SITEMAP & CRAWLER POLICY TESTS
 // ==========================================
 
-test("Sitemap static pages exclude /login and /blog (while legacy)", () => {
+test("Sitemap static pages include /blog and exclude private/auth routes", () => {
   const sitemapPages = getSitemapStaticPages()
   const paths = sitemapPages.map((p) => p.path)
 
   // Must include:
   assert.ok(paths.includes("/"))
+  assert.ok(paths.includes("/blog"))
   assert.ok(paths.includes("/privacy"))
   assert.ok(paths.includes("/terms"))
   assert.ok(paths.includes("/guidelines"))
@@ -349,7 +350,6 @@ test("Sitemap static pages exclude /login and /blog (while legacy)", () => {
   assert.equal(paths.includes("/login"), false)
   assert.equal(paths.includes("/dashboard"), false)
   assert.equal(paths.includes("/admin"), false)
-  assert.equal(paths.includes("/blog"), false) // while legacy
 })
 
 test("Crawler configuration cleanly separates search discovery from AI model training", () => {
@@ -378,7 +378,8 @@ test("Crawler configuration cleanly separates search discovery from AI model tra
 test("buildBlogMetadata produces clean absolute titles and strips duplicated brand suffixes", () => {
   // 1. Blog index
   const indexMeta = buildBlogMetadata()
-  assert.deepEqual(indexMeta.title, { absolute: "Blog | Theirs" })
+  assert.deepEqual(indexMeta.title, { absolute: "Memorial Guides & Stories | Theirs" })
+  assert.deepEqual(indexMeta.robots, { index: true, follow: true })
 
   // 2. Blog article with clean title
   const cleanPost: WordPressPost = {

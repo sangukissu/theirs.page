@@ -45,17 +45,11 @@ export function OfflineBanner() {
   }
 
   return (
-    <div className="bg-orange-100 border-l-4 border-orange-500 p-4 mb-6">
-      <div className="flex items-center">
-        <AlertTriangle className="w-5 h-5 text-orange-500 mr-3" />
-        <div>
-          <p className="text-orange-700 font-medium">
-            You're currently offline
-          </p>
-          <p className="text-orange-600 text-sm">
-            Some content may be outdated. Please check your internet connection.
-          </p>
-        </div>
+    <div className="bg-[#f7f7f8] border border-black/[0.08] rounded-xl p-3.5 mb-6 text-sm flex items-center gap-3">
+      <AlertTriangle className="w-4 h-4 text-[#888] shrink-0" />
+      <div>
+        <p className="font-medium text-[#181925]">You are currently offline</p>
+        <p className="text-xs text-[#777]">Showing cached content. Please reconnect to see new updates.</p>
       </div>
     </div>
   )

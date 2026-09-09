@@ -48,7 +48,8 @@ interface WordPressSinglePostResponse {
   }
 }
 
-const WORDPRESS_GRAPHQL_URL = 'https://blog.Theirs.page/graphql'
+const WORDPRESS_URL = (process.env.WORDPRESS_URL || 'https://blog.theirs.page').replace(/\/+$/, '')
+const WORDPRESS_GRAPHQL_URL = process.env.WORDPRESS_GRAPHQL_URL || `${WORDPRESS_URL}/graphql`
 
 // GraphQL query to fetch all posts
 const GET_POSTS_QUERY = `
@@ -226,17 +227,27 @@ export async function getAllPosts(first: number = 10, after?: string): Promise<{
 
 // Fetch a single post by slug
 export async function getPostBySlug(slug: string): Promise<WordPressPost | null> {
-  const response: WordPressSinglePostResponse = await fetchGraphQL(GET_POST_BY_SLUG_QUERY, {
-    slug,
-  })
+  try {
+    const response: WordPressSinglePostResponse = await fetchGraphQL(GET_POST_BY_SLUG_QUERY, {
+      slug,
+    })
 
-  return response.data.post
+    return response?.data?.post || null
+  } catch (error) {
+    console.warn(`Failed to fetch post by slug (${slug}):`, error)
+    return null
+  }
 }
 
 // Get all post slugs for static generation
 export async function getAllPostSlugs(): Promise<string[]> {
-  const response = await fetchGraphQL(GET_ALL_SLUGS_QUERY)
-  return response.data.posts.nodes.map((post: { slug: string }) => post.slug)
+  try {
+    const response = await fetchGraphQL(GET_ALL_SLUGS_QUERY)
+    return (response?.data?.posts?.nodes || []).map((post: { slug: string }) => post.slug)
+  } catch (error) {
+    console.warn('Failed to fetch all post slugs:', error)
+    return []
+  }
 }
 
 // Helper function to format WordPress date

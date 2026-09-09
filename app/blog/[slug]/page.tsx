@@ -10,8 +10,10 @@ import { getPostBySlug, getAllPostSlugs, formatDate, calculateReadingTime, type 
 import { notFound } from "next/navigation"
 import Image from "next/image"
 import { CtaBanner } from '@/components/theirs/cta-banner';
+import { TableOfContents, type TocItem } from "@/components/blog/table-of-contents"
+import { AuthorBox } from "@/components/blog/author-box"
+
 export const revalidate = 3600
-type TocItem = { id: string; text: string; level: number }
 
 function decodeHtmlEntities(value: string) {
   return value.replace(/&(#x?[0-9a-fA-F]+|\w+);/g, (match, code) => {
@@ -54,7 +56,7 @@ function buildToc(content: string) {
     toc.push({ id, text: rawText, level: Number(level) })
     if (existingIdMatch) return match
     const nextAttrs = attrs.trim().length > 0 ? `${attrs} id="${id}"` : ` id="${id}"`
-    return `<h${level}${nextAttrs}>${inner}</h${level}>`
+    return `<h${level}${nextAttrs}>${inner}<a href="#${id}" class="blog-heading-anchor" aria-label="Link to this section">#</a></h${level}>`
   })
   return { toc, content: withIds }
 }
@@ -112,155 +114,138 @@ export default async function BlogArticlePage({ params }: { params: Promise<{ sl
 function BlogPostContent({ post }: { post: WordPressPost }) {
   const readTime = calculateReadingTime(post.content)
   const publishedDate = formatDate(post.date)
-  const category = post.categories.nodes[0]?.name || "General"
+  const category = post.categories.nodes[0]?.name || "Guides"
   const { toc, content } = buildToc(post.content)
 
   const blogPostJsonLd = buildBlogArticleSchemaGraph(post)
 
   return (
-    <div className="min-h-screen bg-brand-bg">
+    <div className="min-h-screen bg-white">
       <JsonLd schema={blogPostJsonLd} id={`blog-post-schema-${post.slug}`} />
       <TheirsNav />
-      <main className="py-6">
 
-        <div className="max-w-[1320px] mx-auto px-2 sm:px-8">
+      <main className="pt-8 sm:pt-12 pb-20">
+        <div className="max-w-3xl mx-auto px-4 sm:px-6">
 
-          {/* Back Link */}
-          <div className="mb-8">
-            <Link href="/blog" className="inline-flex items-center text-sm font-bold text-gray-500 hover:text-brand-black transition-colors uppercase tracking-wide">
-              <ArrowLeft className="w-4 h-4 mr-2" />
-              Back to Blog
+          {/* Semantic Breadcrumbs (matches Schema.org BreadcrumbList) */}
+          <nav aria-label="Breadcrumb" className="mb-6 sm:mb-8 flex items-center gap-2 text-xs sm:text-sm text-[#777]">
+            <Link href="/" className="hover:text-[#181925] transition-colors">
+              Home
             </Link>
-          </div>
+            <span className="text-[#bbb]">/</span>
+            <Link href="/blog" className="hover:text-[#181925] transition-colors">
+              Stories &amp; Guides
+            </Link>
+            <span className="text-[#bbb]">/</span>
+            <span className="text-[#181925] font-medium truncate max-w-[200px] sm:max-w-md">
+              {post.title}
+            </span>
+          </nav>
 
-          {/* Article Container */}
-          <div className="bg-brand-surface p-2 rounded-[2.5rem]">
-
-            {/* Inner White Paper */}
-            <div className="bg-white rounded-[2rem]">
-
-              {/* Hero Section */}
-              <div className="relative py-4 sm:py-8 px-4 sm:px-12 lg:px-20 border-b border-gray-100">
-                <div className="max-w-4xl mx-auto">
-
-                  {/* Meta Tags */}
-                  <div className="flex flex-wrap items-center gap-4 text-xs font-bold text-gray-500 mb-4 uppercase tracking-wide">
-                    <span className="bg-brand-orange/10 text-brand-orange px-3 py-1 rounded-full border border-brand-orange/20">{category}</span>
-                    <div className="flex items-center gap-2">
-                      <Calendar className="w-4 h-4" />
-                      <span>{publishedDate}</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <Clock className="w-4 h-4" />
-                      <span>{readTime}</span>
-                    </div>
-                  </div>
-
-                  {/* Title */}
-                  <h1 className="text-2xl sm:text-5xl text-brand-black leading-[1.05] tracking-tight mb-4">
-                    {post.title}
-                  </h1>
-
-                  {/* Excerpt */}
-                  {post.excerpt && (
-                    <div
-                      className="text-md sm:text-xl text-gray-600 leading-relaxed mb-4 italic"
-                      dangerouslySetInnerHTML={{ __html: post.excerpt }}
-                      suppressHydrationWarning
-                    />
-                  )}
-
-                  {/* Author & Share */}
-                  <div className="flex sm:items-center justify-between gap-6 pt-4 border-t border-gray-100">
-                    <div className="flex items-center gap-4">
-                      {post.author.node.avatar?.url ? (
-                        <Image
-                          src={post.author.node.avatar.url}
-                          alt={post.author.node.name}
-                          width={48}
-                          height={48}
-                          className="rounded-full border-2 border-gray-100"
-                        />
-                      ) : (
-                        <div className="w-12 h-12 bg-gray-100 rounded-full flex items-center justify-center">
-                          <User className="w-6 h-6 text-gray-400" />
-                        </div>
-                      )}
-                      <div>
-                        <p className="font-bold text-brand-black text-lg leading-none">{post.author.node.name}</p>
-                        <p className="text-sm text-gray-500 font-medium mt-1">Author</p>
-                      </div>
-                    </div>
-
-                    <ShareButton
-                      title={post.title}
-                      url={`https://theirs.page/blog/${post.slug}`}
-                      text={post.excerpt || `Check out this article: ${post.title}`}
-                    />
-                  </div>
-
-                </div>
+          {/* Article Header */}
+          <header className="mb-8 sm:mb-10">
+            {/* Category & Meta */}
+            <div className="flex flex-wrap items-center gap-3 mb-4">
+              <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-[#f7f7f8] text-[#555] border border-black/[0.08]">
+                {category}
+              </span>
+              <div className="flex items-center gap-1.5 text-xs text-[#777]">
+                <Calendar className="w-3.5 h-3.5 text-[#999]" />
+                <span>{publishedDate}</span>
               </div>
-
-              {/* Featured Image */}
-              {post.featuredImage?.node?.sourceUrl && (
-                <div className="w-full flex justify-center px-4 sm:px-8 pt-8">
-                  <div className="relative w-full max-w-[1200px] bg-gray-100 rounded-[1.5rem] overflow-hidden">
-                    <Image
-                      src={post.featuredImage.node.sourceUrl}
-                      alt={post.featuredImage.node.altText || post.title}
-                      width={1200}
-                      height={800}
-                      className="w-full h-auto object-cover"
-                      sizes="(max-width: 1200px) 100vw, 1200px"
-                      priority
-                    />
-                  </div>
-                </div>
-              )}
-
-              {/* Article Content */}
-              <div className="px-3 sm:px-8 lg:px-20 py-12">
-                <div className="max-w-5xl mx-auto">
-                  <div className="grid grid-cols-1 lg:grid-cols-[280px_minmax(0,1fr)] gap-10">
-                    {toc.length > 1 && (
-                      <div className="lg:sticky lg:top-24 h-fit">
-                        <details open className="group rounded-2xl border border-gray-200 bg-white/90 backdrop-blur">
-                          <summary className="flex items-center justify-between gap-3 cursor-pointer list-none px-5 py-4 text-sm font-bold text-gray-900 uppercase tracking-wide [&::-webkit-details-marker]:hidden">
-                            On this page
-                            <ChevronDown aria-hidden="true" className="w-4 h-4 text-gray-500 transition-transform group-open:rotate-180" />
-                          </summary>
-                          <div className="px-3 pb-4">
-                            <nav className="flex flex-col">
-                              {toc.map((item, index) => (
-                                <a
-                                  key={item.id}
-                                  href={`#${item.id}`}
-                                  className={`flex items-start gap-3 rounded-xl px-1 py-1 text-sm font-medium transition-colors ${item.level === 3 ? 'ml-4 text-gray-600 hover:text-brand-orange' : 'text-gray-800 hover:text-brand-orange hover:bg-gray-50'}`}
-                                >
-                                  <span className="text-xs font-bold text-gray-400 pt-0.5">{String(index + 1).padStart(2, "0")}</span>
-                                  <span className="leading-snug">{item.text}</span>
-                                </a>
-                              ))}
-                            </nav>
-                          </div>
-                        </details>
-                      </div>
-                    )}
-                    <div>
-                      <BlogContentRenderer content={content} className="prose-lg prose-headings:font-bold prose-headings:text-brand-black prose-p:text-gray-600 prose-a:text-brand-orange prose-img:rounded-2xl" />
-                    </div>
-                  </div>
-                </div>
+              <span className="text-[#ccc]">•</span>
+              <div className="flex items-center gap-1.5 text-xs text-[#777]">
+                <Clock className="w-3.5 h-3.5 text-[#999]" />
+                <span>{readTime}</span>
               </div>
-
             </div>
-          </div>
+
+            {/* Title */}
+            <h1 className="text-3xl sm:text-5xl lg:text-[52px] font-medium tracking-tight text-[#181925] leading-[1.12] mb-6">
+              {post.title}
+            </h1>
+
+            {/* Excerpt */}
+            {post.excerpt && (
+              <div
+                className="text-lg sm:text-xl text-[#555] leading-relaxed mb-6 font-serif italic"
+                dangerouslySetInnerHTML={{ __html: post.excerpt }}
+                suppressHydrationWarning
+              />
+            )}
+
+            {/* Author & Share Bar */}
+            <div className="flex items-center justify-between gap-4 py-4 border-y border-black/[0.08]">
+              <div className="flex items-center gap-3">
+                {post.author.node.avatar?.url ? (
+                  <Image
+                    src={post.author.node.avatar.url}
+                    alt={post.author.node.name}
+                    width={40}
+                    height={40}
+                    className="rounded-full border border-black/[0.08] object-cover"
+                  />
+                ) : (
+                  <div className="w-10 h-10 bg-neutral-100 rounded-full flex items-center justify-center border border-black/[0.08]">
+                    <User className="w-5 h-5 text-[#888]" />
+                  </div>
+                )}
+                <div>
+                  <p className="text-sm font-medium text-[#181925] leading-none">{post.author.node.name}</p>
+                  <p className="text-xs text-[#777] mt-1">Editorial Contributor</p>
+                </div>
+              </div>
+
+              <ShareButton
+                title={post.title}
+                url={`https://theirs.page/blog/${post.slug}`}
+                text={post.excerpt || `Read this guide on Theirs: ${post.title}`}
+              />
+            </div>
+          </header>
+
+          {/* Featured Image */}
+          {post.featuredImage?.node?.sourceUrl && (
+            <div className="w-full mb-10">
+              <div className="relative w-full aspect-[16/9] sm:aspect-[21/9] bg-neutral-100 rounded-2xl sm:rounded-3xl overflow-hidden border border-black/[0.06] shadow-xs">
+                <Image
+                  src={post.featuredImage.node.sourceUrl}
+                  alt={post.featuredImage.node.altText || post.title}
+                  fill
+                  className="object-cover"
+                  sizes="(max-width: 800px) 100vw, 800px"
+                  priority
+                />
+              </div>
+            </div>
+          )}
+
+          {/* Table of Contents (collapsible drawer on mobile, inline guide on tablet/desktop, plus wide floating rail) */}
+          <TableOfContents items={toc} />
+
+          {/* Prose Content */}
+          <article className="min-w-0">
+            <BlogContentRenderer
+              content={content}
+              className="blog-prose"
+            />
+          </article>
+
+          {/* Premium Author & Editorial E-E-A-T Box */}
+          <AuthorBox
+            author={post.author.node}
+            publishedDate={publishedDate}
+            category={category}
+          />
 
         </div>
 
-        <CtaBanner />
+        {/* Global Conversion CTA */}
+        <div className="mt-20">
+          <CtaBanner />
+        </div>
       </main>
+
       <TheirsFooter />
     </div>
   )

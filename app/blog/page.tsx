@@ -9,26 +9,9 @@ import { Button } from "@/components/ui/button"
 import { getAllPosts, formatDate, calculateReadingTime, extractExcerpt, type WordPressPost } from "@/lib/wordpress"
 import { Suspense } from "react"
 
-export const metadata: Metadata = {
-  title: "Blog - Theirs | Memorial Website for loved ones",
-  description:
-    "Guides and tips for preserving memories and creating memorial websites for loved ones.",
-  robots: "index, follow",
-  alternates: {
-    canonical: "/blog",
-  },
-  openGraph: {
-    title: "Blog - Theirs | Memorial Website for loved ones",
-    description: "Guides and tips for preserving memories and creating memorial websites for loved ones.",
-    type: "website",
-    url: "https://theirs.page/blog",
-  },
-  twitter: {
-    card: "summary_large_image",
-    title: "Blog - Theirs | Memorial Website for loved ones",
-    description: "Guides and tips for preserving memories and creating memorial websites for loved ones.",
-  },
-}
+import { buildBlogMetadata } from "@/lib/seo/metadata"
+
+export const metadata: Metadata = buildBlogMetadata()
 
 // Transform WordPress post to blog card format
 function transformWordPressPost(post: WordPressPost, index: number) {
@@ -38,18 +21,16 @@ function transformWordPressPost(post: WordPressPost, index: number) {
     slug: post.slug,
     publishedAt: formatDate(post.date),
     readTime: calculateReadingTime(post.content),
-    category: post.categories.nodes[0]?.name || "General",
+    category: post.categories.nodes[0]?.name || "Guides",
     image: post.featuredImage?.node?.sourceUrl || "/placeholder.svg?height=400&width=600&text=Blog+Post",
-    featured: index === 0, // First post is featured
+    featured: index === 0,
     author: post.author.node.name,
   }
 }
 
-
-
 async function BlogContent() {
   try {
-    const { posts } = await getAllPosts(20) // Fetch 20 posts
+    const { posts } = await getAllPosts(24)
     const blogPosts = posts.map(transformWordPressPost)
 
     return (
@@ -57,7 +38,6 @@ async function BlogContent() {
     )
   } catch (error) {
     console.error('Error fetching blog posts:', error)
-    // Fallback to empty state
     return (
       <BlogPageContent blogPosts={[]} />
     )
@@ -66,37 +46,35 @@ async function BlogContent() {
 
 function BlogPageContent({ blogPosts }: { blogPosts: any[] }) {
   return (
-    <div className="min-h-screen bg-brand-bg">
+    <div className="min-h-screen bg-white">
       <TheirsNav />
 
-      <main className="pt-32 pb-20">
-        <div className="max-w-[1320px] mx-auto px-4 sm:px-8">
+      <main className="pt-10 sm:pt-14 pb-20">
+        <div className="max-w-[1240px] mx-auto px-4 sm:px-6 lg:px-8">
           {/* Offline Banner */}
           <OfflineBanner />
 
-          {/* Header */}
-          <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-8 mb-16">
-            <div className="max-w-2xl">
-              <div className="inline-flex items-center gap-1 bg-brand-black text-white px-4 py-1.5 rounded-full text-xs sm:text-sm font-bold uppercase tracking-wider mb-6 shadow-lg shadow-black/10">
-                <span className="text-brand-orange">//</span> Latest <span className="text-brand-orange">//</span>
-              </div>
-              <h1 className="text-[3.5rem] sm:text-[4rem] font-extrabold tracking-tight text-brand-black leading-[0.95]">
-                Stories & <br />
-                <span className="text-gray-400">Restoration Tips.</span>
-              </h1>
+          {/* Editorial Header */}
+          <div className="max-w-3xl mb-12 sm:mb-16">
+            <div className="mb-4">
+              <span className="inline-flex items-center justify-center font-medium border border-black/[0.06] bg-[#f7f7f8] text-[#666] h-[26px] text-xs px-3 rounded-full select-none">
+                Stories &amp; Guides
+              </span>
             </div>
-            <div className="max-w-sm">
-              <p className="text-lg text-gray-600 font-medium leading-relaxed">
-                Learn about photo restoration, preservation tips, and read inspiring stories of memories brought back to life.
-              </p>
-            </div>
+            <h1 className="text-3xl sm:text-5xl lg:text-6xl font-medium tracking-[-0.03em] text-[#181925] leading-[1.08] mb-4">
+              Remembering well, <br className="hidden sm:inline" />
+              <span className="text-primary">together.</span>
+            </h1>
+            <p className="text-base sm:text-lg text-[#666] leading-relaxed max-w-2xl">
+              Thoughtful guidance on honoring loved ones, preserving family stories, and creating beautiful online memorials.
+            </p>
           </div>
 
-          {/* Blog Grid Container */}
-          <div className="bg-brand-surface p-2 rounded-[1.8rem]">
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-              {blogPosts.length > 0 ? (
-                blogPosts.map((post) => (
+          {/* Blog Grid */}
+          <div>
+            {blogPosts.length > 0 ? (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {blogPosts.map((post) => (
                   <BlogCard
                     key={post.slug}
                     title={post.title}
@@ -107,27 +85,20 @@ function BlogPageContent({ blogPosts }: { blogPosts: any[] }) {
                     category={post.category}
                     image={post.image}
                   />
-                ))
-              ) : (
-                <div className="col-span-full text-center py-24 bg-white rounded-[1.5rem]">
-                  <p className="text-gray-500 text-lg font-medium">No blog posts available at the moment.</p>
-                  <p className="text-gray-400 text-sm mt-2">Please check your internet connection and try again.</p>
-                </div>
-              )}
-            </div>
+                ))}
+              </div>
+            ) : (
+              <div className="text-center py-20 bg-[#fafafa] rounded-2xl border border-black/[0.06]">
+                <p className="text-[#555] text-base font-medium">No published guides yet.</p>
+                <p className="text-[#888] text-sm mt-1">Check back soon for new reflections and guides.</p>
+              </div>
+            )}
           </div>
-
-          {/* Load More Button - Only show if more than 8 posts */}
-          {blogPosts.length > 8 && (
-            <div className="text-center mt-12">
-              <button className="bg-brand-black text-white px-8 py-3 rounded-full hover:bg-gray-800 transition-all duration-200 font-bold tracking-wide hover:shadow-lg hover:-translate-y-1">
-                Load More Posts
-              </button>
-            </div>
-          )}
         </div>
 
-        <CtaBanner />
+        <div className="mt-20">
+          <CtaBanner />
+        </div>
       </main>
 
       <TheirsFooter />
@@ -140,19 +111,16 @@ export default function BlogPage() {
     <Suspense fallback={
       <div className="min-h-screen bg-white">
         <TheirsNav />
-        <main className="pt-24 pb-16">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="text-center mb-16">
-              <h1 className="  text-4xl md:text-5xl font-bold text-gray-900 mb-4">
-                Photo Restoration Blog
-              </h1>
-              <p className="text-xl text-gray-600 max-w-3xl mx-auto">
-                Loading latest articles...
-              </p>
+        <main className="pt-10 sm:pt-14 pb-20">
+          <div className="max-w-[1240px] mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="max-w-3xl mb-12">
+              <div className="h-6 w-32 bg-neutral-100 rounded-full mb-4 animate-pulse" />
+              <div className="h-12 w-3/4 bg-neutral-100 rounded-lg mb-3 animate-pulse" />
+              <div className="h-5 w-1/2 bg-neutral-100 rounded animate-pulse" />
             </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {[...Array(6)].map((_, i) => (
-                <div key={i} className="bg-gray-200 animate-pulse rounded-lg h-96"></div>
+                <div key={i} className="bg-neutral-50 border border-black/[0.05] rounded-2xl h-96 animate-pulse" />
               ))}
             </div>
           </div>

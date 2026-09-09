@@ -27,53 +27,57 @@ export default function BlogCard({
   return (
     <article className="group h-full">
       <Link href={`/blog/${slug}`} className="block h-full">
-        <div className="bg-white rounded-[1.5rem] p-4 flex flex-col gap-5 h-full transition-all duration-300 hover:shadow-lg border border-transparent hover:border-gray-100">
-
+        <div className="bg-white rounded-2xl p-4 sm:p-5 flex flex-col h-full transition-all duration-200 border border-black/[0.08] hover:border-black/[0.16] hover:shadow-[0_8px_24px_rgba(0,0,0,0.04)]">
           {/* Image Container */}
-          <div className="relative overflow-hidden h-52 w-full rounded-[1.2rem]">
+          <div className="relative overflow-hidden aspect-[16/10] w-full rounded-xl bg-neutral-100 mb-4 border border-black/[0.04]">
             <Image
               src={image || "/placeholder.svg"}
               alt={title}
               fill
               priority={featured}
               sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
-              className="object-cover group-hover:scale-105 transition-transform duration-500"
+              className="object-cover group-hover:scale-[1.03] transition-transform duration-500"
             />
-            <div className="absolute top-3 left-3">
-              <span className="bg-black/70 backdrop-blur-md text-white px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider border border-white/10">
-                {category}
-              </span>
-            </div>
+            {category && (
+              <div className="absolute top-3 left-3">
+                <span className="inline-flex items-center px-2.5 py-0.5 rounded-md text-[11px] font-medium bg-white/95 text-[#444] shadow-xs backdrop-blur-xs border border-black/[0.08]">
+                  {category}
+                </span>
+              </div>
+            )}
           </div>
 
           {/* Content */}
-          <div className="flex flex-col flex-grow px-2 pb-2">
+          <div className="flex flex-col flex-grow">
             {/* Meta */}
-            <div className="flex items-center text-xs font-bold text-gray-400 mb-3 uppercase tracking-wide gap-3">
+            <div className="flex items-center text-xs text-[#888] mb-2.5 gap-3">
               <div className="flex items-center gap-1.5">
-                <Calendar className="w-3.5 h-3.5" />
+                <Calendar className="w-3.5 h-3.5 text-[#aaa]" />
                 <span>{publishedAt}</span>
               </div>
+              <span className="text-[#ccc]">•</span>
               <div className="flex items-center gap-1.5">
-                <Clock className="w-3.5 h-3.5" />
+                <Clock className="w-3.5 h-3.5 text-[#aaa]" />
                 <span>{readTime}</span>
               </div>
             </div>
 
             {/* Title */}
-            <h2 className="text-xl font-bold text-brand-black mb-3 leading-tight group-hover:text-brand-orange transition-colors">
+            <h2 className="text-lg sm:text-xl font-medium text-[#181925] mb-2.5 leading-snug group-hover:text-primary transition-colors line-clamp-2">
               {title}
             </h2>
 
             {/* Excerpt */}
-            <p className="text-gray-500 text-sm font-medium leading-relaxed line-clamp-3 mb-6 flex-grow">
-              {excerpt}
-            </p>
+            {excerpt && (
+              <p className="text-[#666] text-sm leading-relaxed line-clamp-3 mb-5 flex-grow">
+                {excerpt}
+              </p>
+            )}
 
-            {/* Read More */}
-            <div className="flex items-center text-brand-black text-sm font-bold group-hover:translate-x-1 transition-transform duration-300 mt-auto">
-              <span>Read Article</span>
-              <ArrowRight className="w-4 h-4 ml-2" strokeWidth={2.5} />
+            {/* Read Story */}
+            <div className="flex items-center text-xs font-medium text-[#181925] group-hover:text-primary transition-colors mt-auto pt-3 border-t border-black/[0.05]">
+              <span>Read guide</span>
+              <ArrowRight className="w-3.5 h-3.5 ml-1.5 transition-transform duration-200 group-hover:translate-x-1" />
             </div>
           </div>
         </div>

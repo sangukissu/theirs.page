@@ -5,8 +5,6 @@ import { SidebarProvider, SidebarInset, SidebarTrigger } from "@/components/ui/s
 import { AppSidebar } from "@/components/dashboard/app-sidebar"
 import { HeaderUser } from "@/components/dashboard/header-user"
 import { DynamicBreadcrumb } from "@/components/dashboard/dynamic-breadcrumb"
-import PaymentModal from "@/components/payment-modal"
-import PaymentSuccessModal from "@/components/payment-success-modal"
 import { useSearchParams } from "next/navigation"
 import { useCredits } from "@/hooks/use-credits"
 import { Separator } from "@/components/ui/separator"
@@ -149,24 +147,6 @@ export default function PaymentController({ user, initialCreditBalance, children
         <div className="flex flex-1 flex-col gap-4 p-0">
           {children}
         </div>
-
-        {/* Payment Modal */}
-        <PaymentModal
-          isOpen={showPaymentModal}
-          onClose={() => setShowPaymentModal(false)}
-          onSkip={handlePaymentSkip}
-          onSuccess={handlePaymentSuccess}
-          onError={handlePaymentError}
-          isProcessing={isProcessingPayment}
-          setIsProcessing={setIsProcessingPayment}
-        />
-
-        {/* Success Toast Modal */}
-        <PaymentSuccessModal
-          isOpen={showPaymentSuccess}
-          onClose={() => setShowPaymentSuccess(false)}
-          userCredits={Number(credits || 0)}
-        />
       </SidebarInset>
     </SidebarProvider>
   )

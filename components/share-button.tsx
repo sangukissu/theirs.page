@@ -82,10 +82,10 @@ export default function ShareButton({ title, url, text }: ShareButtonProps) {
       <Button 
         variant="outline" 
         size="sm" 
-        className="gap-2" 
+        className="gap-1.5 rounded-full border border-black/[0.1] hover:bg-neutral-50 text-xs font-medium text-[#444] h-8 px-3.5 shadow-none" 
         disabled
       >
-        <Share2 className="w-4 h-4" />
+        <Share2 className="w-3.5 h-3.5 text-[#666]" />
         Share
       </Button>
     )
@@ -95,11 +95,11 @@ export default function ShareButton({ title, url, text }: ShareButtonProps) {
     <Button 
       variant="outline" 
       size="sm" 
-      className="gap-2" 
+      className="gap-1.5 rounded-full border border-black/[0.1] hover:bg-neutral-50 text-xs font-medium text-[#444] h-8 px-3.5 shadow-none cursor-pointer transition-colors" 
       onClick={handleShare}
       disabled={isSharing}
     >
-      <Share2 className="w-4 h-4" />
+      <Share2 className="w-3.5 h-3.5 text-[#666]" />
       {isSharing ? 'Sharing...' : 'Share'}
     </Button>
   )

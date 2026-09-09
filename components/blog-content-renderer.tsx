@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useRef, useState } from 'react'
+import '@/styles/blog-content.css'
 
 interface BlogContentRendererProps {
   content: string
@@ -179,7 +180,7 @@ export default function BlogContentRenderer({ content, className = '' }: BlogCon
     const processButtons = () => {
       const buttons = contentRef.current?.querySelectorAll('.wp-block-button__link')
       buttons?.forEach((button) => {
-        button.className = 'inline-block bg-blue-600 text-white px-6 py-3 rounded-lg font-semibold hover:bg-blue-700 transition-colors duration-200 no-underline'
+        button.className = 'inline-flex items-center justify-center rounded-full font-medium border border-[color-mix(in_srgb,var(--primary)_80%,#3a3480)] bg-[color-mix(in_srgb,var(--primary)_90%,#3a3480)] text-white px-6 py-2.5 text-sm hover:bg-primary transition-colors no-underline shadow-xs'
       })
     }
 

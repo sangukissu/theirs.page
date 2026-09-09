@@ -60,10 +60,21 @@ export const metadata: Metadata = {
     index: true,
     follow: true,
   },
+  verification: {
+    google: SEO_CONFIG.verification.google || process.env.NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION || undefined,
+    yandex: SEO_CONFIG.verification.yandex || process.env.NEXT_PUBLIC_YANDEX_VERIFICATION || undefined,
+    other: {
+      ...(SEO_CONFIG.verification.bing || process.env.NEXT_PUBLIC_BING_SITE_VERIFICATION
+        ? { "msvalidate.01": SEO_CONFIG.verification.bing || process.env.NEXT_PUBLIC_BING_SITE_VERIFICATION }
+        : {}),
+    },
+  },
   appleWebApp: {
     title: SEO_CONFIG.siteName,
   },
 }
+
+import { GoogleAnalytics } from "@/components/analytics/google-analytics"
 
 export default function RootLayout({
   children,
@@ -79,9 +90,11 @@ export default function RootLayout({
         <meta name="apple-mobile-web-app-title" content="Theirs" />
         <meta name="theme-color" content="#f6f6f6" />
         <meta name="color-scheme" content="light" />
-        <link rel="icon" type="image/svg+xml" href="/placeholder-logo.svg" />
+        <link rel="icon" type="image/svg+xml" href="/theirs-logo.svg" />
+        <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
       </head>
       <body className="antialiased bg-white text-[#292929] selection:bg-[#305dde]/15 selection:text-[#305dde]">
+        <GoogleAnalytics />
         <Suspense fallback={null}>
           <NavigationProgress />
         </Suspense>

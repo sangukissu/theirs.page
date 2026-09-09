@@ -14,7 +14,19 @@ export const SEO_CONFIG = {
   logoUrl: "https://theirs.page/theirs-logo.svg",
   defaultOgImage: "https://theirs.page/opengraph-image",
   locale: "en_US",
-  supportEmail: "suport@theirs.page",
+  supportEmail: "support@theirs.page",
+  // Verification codes for search consoles (can be set here or via environment variables)
+  verification: {
+    google: process.env.NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION || "",
+    bing: process.env.NEXT_PUBLIC_BING_SITE_VERIFICATION || "",
+    yandex: process.env.NEXT_PUBLIC_YANDEX_VERIFICATION || "",
+  },
+  // Web analytics configuration (GA4, GTM, Clarity)
+  analytics: {
+    gaMeasurementId: process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID || "",
+    gtmId: process.env.NEXT_PUBLIC_GTM_ID || "",
+    clarityId: process.env.NEXT_PUBLIC_CLARITY_PROJECT_ID || "",
+  },
   pricing: {
     free: {
       name: "Free Memorial",

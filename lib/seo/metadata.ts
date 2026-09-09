@@ -216,7 +216,7 @@ export function buildBlogMetadata({
   post,
   isArticle = false,
 }: BlogMetadataOptions = {}): Metadata {
-  const isTemporarilyNoIndex = true // Legacy blog content policy
+  const isTemporarilyNoIndex = process.env.BLOG_NOINDEX === "true"
 
   if (isArticle && post) {
     const rawTitle = post.title || "Article"
@@ -271,9 +271,9 @@ export function buildBlogMetadata({
   const blogCanonical = `${SEO_CONFIG.canonicalOrigin}/blog`
   return {
     title: {
-      absolute: "Blog | Theirs",
+      absolute: "Memorial Guides & Stories | Theirs",
     },
-    description: "Guides and articles for remembering loved ones and preserving family memories.",
+    description: "Guides, reflections, and practical advice on honoring loved ones, preserving family stories, and creating meaningful online memorials.",
     alternates: {
       canonical: blogCanonical,
     },
@@ -281,8 +281,8 @@ export function buildBlogMetadata({
       ? { index: false, follow: false }
       : { index: true, follow: true },
     openGraph: {
-      title: "Blog | Theirs",
-      description: "Guides and articles for remembering loved ones and preserving family memories.",
+      title: "Memorial Guides & Stories | Theirs",
+      description: "Guides, reflections, and practical advice on honoring loved ones, preserving family stories, and creating meaningful online memorials.",
       url: blogCanonical,
       siteName: SEO_CONFIG.siteName,
       locale: SEO_CONFIG.locale,
@@ -298,8 +298,8 @@ export function buildBlogMetadata({
     },
     twitter: {
       card: "summary_large_image",
-      title: "Blog | Theirs",
-      description: "Guides and articles for remembering loved ones and preserving family memories.",
+      title: "Memorial Guides & Stories | Theirs",
+      description: "Guides, reflections, and practical advice on honoring loved ones, preserving family stories, and creating meaningful online memorials.",
       images: [SEO_CONFIG.defaultOgImage],
     },
   }
