@@ -74,7 +74,7 @@ export const metadata: Metadata = {
   },
 }
 
-import { GoogleAnalytics } from "@/components/analytics/google-analytics"
+import { UmamiAnalytics } from "@/components/analytics/umami-analytics"
 
 export default function RootLayout({
   children,
@@ -94,7 +94,7 @@ export default function RootLayout({
         <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
       </head>
       <body className="antialiased bg-white text-[#292929] selection:bg-[#305dde]/15 selection:text-[#305dde]">
-        <GoogleAnalytics />
+        <UmamiAnalytics />
         <Suspense fallback={null}>
           <NavigationProgress />
         </Suspense>

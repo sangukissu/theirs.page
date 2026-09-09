@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useRef } from "react"
-import { Plus, Trash2, Calendar, MapPin, Lock, Upload, Image as ImageIcon, X, Loader2 } from "lucide-react"
+import { Plus, Trash2, Calendar, MapPin, Lock, Upload, Image as ImageIcon, X, Loader2, Pencil } from "lucide-react"
 import { UpgradeBanner } from "../upgrade-banner"
 import { ConfirmDeleteModal } from "../confirm-delete-modal"
 import { TEXT_LIMITS } from "@/lib/validation/text-limits"
@@ -24,6 +24,7 @@ interface TimelineTabProps {
   onUpgrade?: () => void
   onAddEvent: (event: EditorTimelineEvent) => void
   onRemoveEvent: (id: string) => void
+  onUpdateEvent?: (event: EditorTimelineEvent) => void
 }
 
 export function TimelineTab({
@@ -34,6 +35,7 @@ export function TimelineTab({
   onUpgrade,
   onAddEvent,
   onRemoveEvent,
+  onUpdateEvent,
 }: TimelineTabProps) {
   const handleAuthorizationFailure = useEditorAuthorization(memorialId)
   const [yearInput, setYearInput] = useState("")
@@ -47,6 +49,19 @@ export function TimelineTab({
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [eventToDelete, setEventToDelete] = useState<EditorTimelineEvent | null>(null)
   const [isDeleting, setIsDeleting] = useState(false)
+
+  // Edit Milestone States
+  const [editingEventId, setEditingEventId] = useState<string | null>(null)
+  const [editYear, setEditYear] = useState("")
+  const [editTitle, setEditTitle] = useState("")
+  const [editDesc, setEditDesc] = useState("")
+  const [editLocation, setEditLocation] = useState("")
+  const [editPhotoUrl, setEditPhotoUrl] = useState<string | null>(null)
+  const [editPhotoPreviewUrl, setEditPhotoPreviewUrl] = useState<string | null>(null)
+  const [isUploadingEditPhoto, setIsUploadingEditPhoto] = useState(false)
+  const [isSavingEdit, setIsSavingEdit] = useState(false)
+  const [editError, setEditError] = useState<string | null>(null)
+  const editFileInputRef = useRef<HTMLInputElement | null>(null)
 
   const firstName = fullName.split(" ")[0] || "them"
   const DRAFT_KEY = `theirs_timeline_draft_${memorialId}`
@@ -78,6 +93,66 @@ export function TimelineTab({
     }
   }
 
+  const uploadFile = async (file: File): Promise<string | null> => {
+    // 1. Request presigned upload URL from server
+    const presignedRes = await fetch("/api/r2/presigned-upload-url", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        filename: file.name,
+        contentType: file.type || "image/jpeg",
+        fileSize: file.size,
+        folder: "timeline",
+        memorialId,
+      }),
+    })
+
+    const presignedData = await presignedRes.json()
+    if (handleAuthorizationFailure(presignedRes)) return null
+    if (!presignedRes.ok) {
+      throw new Error(presignedData.error || "Failed to prepare photo upload")
+    }
+
+    // 2. Direct browser -> Cloudflare R2 PUT with server fallback
+    let uploadKey = presignedData.stagingKey || presignedData.key
+    let directSucceeded = false
+
+    try {
+      const uploadRes = await fetch(presignedData.uploadUrl, {
+        method: "PUT",
+        headers: {
+          "Content-Type": presignedData.contentType || file.type || "image/jpeg",
+        },
+        body: file,
+      })
+      if (uploadRes.ok) {
+        directSucceeded = true
+      }
+    } catch (directErr) {
+      console.warn("Direct timeline upload failed (likely CORS preflight), falling back to /api/r2/upload:", directErr)
+    }
+
+    if (!directSucceeded) {
+      const formData = new FormData()
+      formData.append("file", file)
+      formData.append("folder", "timeline")
+      formData.append("memorialId", memorialId)
+
+      const fallbackRes = await fetch("/api/r2/upload", {
+        method: "POST",
+        body: formData,
+      })
+      const fallbackData = await fallbackRes.json()
+      if (handleAuthorizationFailure(fallbackRes)) return null
+      if (!fallbackRes.ok) {
+        throw new Error(fallbackData.error || "Failed to upload photo via server fallback")
+      }
+      uploadKey = fallbackData.key
+    }
+
+    return uploadKey
+  }
+
   const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (!file) return
@@ -87,63 +162,12 @@ export function TimelineTab({
     setPhotoPreviewUrl(preview)
 
     try {
-      // 1. Request presigned upload URL from server
-      const presignedRes = await fetch("/api/r2/presigned-upload-url", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          filename: file.name,
-          contentType: file.type || "image/jpeg",
-          fileSize: file.size,
-          folder: "timeline",
-          memorialId,
-        }),
-      })
-
-      const presignedData = await presignedRes.json()
-      if (handleAuthorizationFailure(presignedRes)) return
-      if (!presignedRes.ok) {
-        throw new Error(presignedData.error || "Failed to prepare photo upload")
+      const key = await uploadFile(file)
+      if (key) {
+        setPhotoUrl(key)
+      } else {
+        setPhotoPreviewUrl(null)
       }
-
-      // 2. Direct browser -> Cloudflare R2 PUT with server fallback
-      let uploadKey = presignedData.stagingKey || presignedData.key
-      let directSucceeded = false
-
-      try {
-        const uploadRes = await fetch(presignedData.uploadUrl, {
-          method: "PUT",
-          headers: {
-            "Content-Type": presignedData.contentType || file.type || "image/jpeg",
-          },
-          body: file,
-        })
-        if (uploadRes.ok) {
-          directSucceeded = true
-        }
-      } catch (directErr) {
-        console.warn("Direct timeline upload failed (likely CORS preflight), falling back to /api/r2/upload:", directErr)
-      }
-
-      if (!directSucceeded) {
-        const formData = new FormData()
-        formData.append("file", file)
-        formData.append("folder", "timeline")
-        formData.append("memorialId", memorialId)
-
-        const fallbackRes = await fetch("/api/r2/upload", {
-          method: "POST",
-          body: formData,
-        })
-        const fallbackData = await fallbackRes.json()
-        if (handleAuthorizationFailure(fallbackRes)) return
-        if (!fallbackRes.ok) {
-          throw new Error(fallbackData.error || "Failed to upload photo via server fallback")
-        }
-        uploadKey = fallbackData.key
-      }
-
-      setPhotoUrl(uploadKey)
     } catch (err) {
       console.error("Timeline photo upload failed:", err)
       setPhotoPreviewUrl(null)
@@ -152,6 +176,92 @@ export function TimelineTab({
       if (e.target) {
         e.target.value = ""
       }
+    }
+  }
+
+  const startEditing = (evt: EditorTimelineEvent) => {
+    setEditingEventId(evt.id)
+    setEditYear(String(evt.year))
+    setEditTitle(evt.title)
+    setEditDesc(evt.description || "")
+    setEditLocation(evt.location || "")
+    setEditPhotoUrl(evt.photo_url || null)
+    setEditPhotoPreviewUrl(evt.photo_url || null)
+    setEditError(null)
+  }
+
+  const cancelEditing = () => {
+    setEditingEventId(null)
+    setEditYear("")
+    setEditTitle("")
+    setEditDesc("")
+    setEditLocation("")
+    setEditPhotoUrl(null)
+    setEditPhotoPreviewUrl(null)
+    setEditError(null)
+  }
+
+  const handleEditPhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+
+    setIsUploadingEditPhoto(true)
+    const preview = URL.createObjectURL(file)
+    setEditPhotoPreviewUrl(preview)
+
+    try {
+      const key = await uploadFile(file)
+      if (key) {
+        setEditPhotoUrl(key)
+      } else {
+        setEditPhotoPreviewUrl(editPhotoUrl)
+      }
+    } catch (err: any) {
+      console.error("Edit timeline photo upload failed:", err)
+      setEditError(err.message || "Failed to upload photo")
+      setEditPhotoPreviewUrl(editPhotoUrl)
+    } finally {
+      setIsUploadingEditPhoto(false)
+      if (e.target) {
+        e.target.value = ""
+      }
+    }
+  }
+
+  const handleSaveEdit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!editingEventId || !editYear || !editTitle.trim()) return
+
+    setIsSavingEdit(true)
+    setEditError(null)
+
+    try {
+      const res = await fetch(`/api/memorials/${memorialId}/timeline`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          eventId: editingEventId,
+          year: Number(editYear),
+          title: editTitle.trim(),
+          description: editDesc.trim() || null,
+          location: editLocation.trim() || null,
+          photo_url: editPhotoUrl,
+        }),
+      })
+
+      const data = await res.json()
+      if (handleAuthorizationFailure(res)) return
+      if (res.ok && data.event) {
+        onUpdateEvent?.(data.event)
+        cancelEditing()
+      } else {
+        setEditError(data.error || "Failed to save milestone changes.")
+      }
+    } catch (err: any) {
+      console.error("Failed to update milestone:", err)
+      setEditError(err.message || "An unexpected error occurred while saving.")
+    } finally {
+      setIsSavingEdit(false)
     }
   }
 
@@ -400,60 +510,239 @@ export function TimelineTab({
               No milestones added yet. Add a birth year, wedding, career turn, or major family moment above.
             </div>
           ) : (
-            sortedEvents.map((evt) => (
-              <div
-                key={evt.id}
-                className="p-4 rounded-2xl bg-white border border-black/[0.06] flex items-center justify-between gap-4 group"
-              >
-                <div className="flex items-center gap-3.5 min-w-0">
-                  {evt.photo_url ? (
-                    <div className="size-12 rounded-xl overflow-hidden bg-neutral-100 shrink-0 border border-black/[0.06]">
-                      <img
-                        src={evt.photo_url}
-                        alt={evt.title}
-                        className="size-full object-cover"
-                      />
-                    </div>
-                  ) : (
-                    <span className="font-mono text-sm font-semibold text-primary shrink-0 min-w-10">
-                      {evt.year}
-                    </span>
-                  )}
-                  <div className="flex flex-col min-w-0">
-                    <div className="flex items-center gap-2 flex-wrap">
-                      {evt.photo_url && (
-                        <span className="font-mono text-xs font-semibold text-primary">
-                          {evt.year}
-                        </span>
-                      )}
-                      <span className="text-xs sm:text-sm font-medium text-[#181925] truncate">
-                        {evt.title}
+            sortedEvents.map((evt) =>
+              editingEventId === evt.id ? (
+                <form
+                  key={evt.id}
+                  onSubmit={handleSaveEdit}
+                  className="p-4 sm:p-5 rounded-2xl bg-white border-2 border-primary/20 shadow-xs flex flex-col gap-3.5 transition-all"
+                >
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs font-semibold text-[#181925]">
+                        Edit Life Milestone
+                      </span>
+                      <span className="text-[10px] font-mono text-[#888] bg-neutral-100 px-2 py-0.5 rounded-full">
+                        {evt.year}
                       </span>
                     </div>
-                    <div className="flex items-center gap-2 text-[11px] text-[#71717a] flex-wrap">
-                      {evt.description && (
-                        <span className="truncate">{evt.description}</span>
-                      )}
-                      {evt.location && (
-                        <span className="inline-flex items-center gap-0.5 font-mono text-[10px] text-[#888]">
-                          <MapPin className="size-2.5" />
-                          {evt.location}
-                        </span>
-                      )}
+                    <button
+                      type="button"
+                      onClick={cancelEditing}
+                      disabled={isSavingEdit}
+                      className="size-6 rounded-full hover:bg-neutral-100 text-neutral-400 hover:text-neutral-700 flex items-center justify-center transition-colors cursor-pointer"
+                      title="Cancel editing"
+                    >
+                      <X className="size-3.5" />
+                    </button>
+                  </div>
+
+                  <div className="flex flex-col sm:flex-row gap-3">
+                    <input
+                      type="number"
+                      required
+                      disabled={isSavingEdit}
+                      value={editYear}
+                      onChange={(e) => setEditYear(e.target.value)}
+                      placeholder="Year (e.g. 1974)"
+                      className="w-full sm:w-36 px-3.5 py-2 rounded-xl bg-[#fafafb] border border-black/[0.08] text-xs sm:text-sm text-[#181925] font-mono outline-none focus:border-primary/50"
+                    />
+
+                    <input
+                      type="text"
+                      required
+                      disabled={isSavingEdit}
+                      maxLength={TEXT_LIMITS.timelineTitle}
+                      value={editTitle}
+                      onChange={(e) => setEditTitle(e.target.value)}
+                      placeholder="What happened? (e.g. Married Meena at St. Jude’s)"
+                      className="flex-1 px-3.5 py-2 rounded-xl bg-[#fafafb] border border-black/[0.08] text-xs sm:text-sm text-[#181925] outline-none focus:border-primary/50"
+                    />
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <input
+                      type="text"
+                      disabled={isSavingEdit}
+                      maxLength={TEXT_LIMITS.timelineDescription}
+                      value={editDesc}
+                      onChange={(e) => setEditDesc(e.target.value)}
+                      placeholder="Brief note or detail (optional, e.g. Moved to Devon)"
+                      className="px-3.5 py-2 rounded-xl bg-[#fafafb] border border-black/[0.08] text-xs text-[#181925] outline-none focus:border-primary/50"
+                    />
+
+                    <input
+                      type="text"
+                      disabled={isSavingEdit}
+                      maxLength={TEXT_LIMITS.location}
+                      value={editLocation}
+                      onChange={(e) => setEditLocation(e.target.value)}
+                      placeholder="Location (optional, e.g. Devon, England)"
+                      className="px-3.5 py-2 rounded-xl bg-[#fafafb] border border-black/[0.08] text-xs text-[#181925] outline-none focus:border-primary/50"
+                    />
+                  </div>
+
+                  {/* Photo Attachment / Replacement */}
+                  <div className="flex items-center gap-3 pt-0.5">
+                    <input
+                      ref={editFileInputRef}
+                      type="file"
+                      accept="image/*"
+                      disabled={isUploadingEditPhoto || isSavingEdit}
+                      onChange={handleEditPhotoUpload}
+                      className="hidden"
+                    />
+
+                    {editPhotoUrl ? (
+                      <div className="inline-flex items-center gap-2 p-1.5 pr-2.5 rounded-xl bg-[#fafafb] border border-black/[0.08]">
+                        <img
+                          src={editPhotoPreviewUrl || editPhotoUrl}
+                          alt="Milestone preview"
+                          className="size-7 rounded-lg object-cover"
+                        />
+                        <span className="text-[11px] text-[#444] font-medium">Photo attached</span>
+                        <button
+                          type="button"
+                          onClick={() => editFileInputRef.current?.click()}
+                          disabled={isUploadingEditPhoto || isSavingEdit}
+                          className="text-[11px] text-[#666] hover:text-[#181925] underline ml-1 cursor-pointer"
+                        >
+                          Change
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setEditPhotoUrl(null)
+                            setEditPhotoPreviewUrl(null)
+                          }}
+                          disabled={isUploadingEditPhoto || isSavingEdit}
+                          className="size-5 rounded-full hover:bg-rose-50 text-neutral-400 hover:text-rose-600 flex items-center justify-center transition-colors cursor-pointer"
+                          title="Remove photo"
+                        >
+                          <X className="size-3" />
+                        </button>
+                      </div>
+                    ) : (
+                      <button
+                        type="button"
+                        disabled={isUploadingEditPhoto || isSavingEdit}
+                        onClick={() => editFileInputRef.current?.click()}
+                        className="inline-flex items-center gap-1.5 text-xs text-[#666] hover:text-[#181925] disabled:opacity-50 cursor-pointer select-none"
+                      >
+                        {isUploadingEditPhoto ? (
+                          <>
+                            <Loader2 className="size-3.5 animate-spin text-primary" />
+                            <span>Uploading photo...</span>
+                          </>
+                        ) : (
+                          <>
+                            <Upload className="size-3.5" />
+                            <span>Attach a photo (optional)</span>
+                          </>
+                        )}
+                      </button>
+                    )}
+
+                    <div className="flex-1" />
+
+                    <div className="flex items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={cancelEditing}
+                        disabled={isSavingEdit}
+                        className="px-3.5 py-1.5 rounded-full text-xs font-medium text-[#666] hover:text-[#181925] hover:bg-neutral-100 transition-colors cursor-pointer disabled:opacity-50"
+                      >
+                        Cancel
+                      </button>
+                      <button
+                        type="submit"
+                        disabled={isSavingEdit || !editYear || !editTitle.trim()}
+                        className="inline-flex items-center gap-1.5 px-4 py-1.5 rounded-full text-xs font-medium bg-[#181925] hover:bg-[#252736] text-white cursor-pointer disabled:opacity-50 transition-colors"
+                      >
+                        {isSavingEdit ? (
+                          <>
+                            <Loader2 className="size-3 animate-spin" />
+                            <span>Saving...</span>
+                          </>
+                        ) : (
+                          <span>Save changes</span>
+                        )}
+                      </button>
                     </div>
                   </div>
-                </div>
 
-                <button
-                  type="button"
-                  onClick={() => setEventToDelete(evt)}
-                  className="size-7 rounded-full text-[#888] hover:text-rose-600 hover:bg-rose-50 flex items-center justify-center transition-colors cursor-pointer shrink-0"
-                  title="Remove milestone"
+                  {editError && (
+                    <div className="text-xs text-rose-600 bg-rose-50 border border-rose-200 px-3 py-1.5 rounded-xl">
+                      {editError}
+                    </div>
+                  )}
+                </form>
+              ) : (
+                <div
+                  key={evt.id}
+                  className="p-4 rounded-2xl bg-white border border-black/[0.06] flex items-center justify-between gap-4 group"
                 >
-                  <Trash2 className="size-3.5" />
-                </button>
-              </div>
-            ))
+                  <div className="flex items-center gap-3.5 min-w-0">
+                    {evt.photo_url ? (
+                      <div className="size-12 rounded-xl overflow-hidden bg-neutral-100 shrink-0 border border-black/[0.06]">
+                        <img
+                          src={evt.photo_url}
+                          alt={evt.title}
+                          className="size-full object-cover"
+                        />
+                      </div>
+                    ) : (
+                      <span className="font-mono text-sm font-semibold text-primary shrink-0 min-w-10">
+                        {evt.year}
+                      </span>
+                    )}
+                    <div className="flex flex-col min-w-0">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        {evt.photo_url && (
+                          <span className="font-mono text-xs font-semibold text-primary">
+                            {evt.year}
+                          </span>
+                        )}
+                        <span className="text-xs sm:text-sm font-medium text-[#181925] truncate">
+                          {evt.title}
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-2 text-[11px] text-[#71717a] flex-wrap">
+                        {evt.description && (
+                          <span className="truncate">{evt.description}</span>
+                        )}
+                        {evt.location && (
+                          <span className="inline-flex items-center gap-0.5 font-mono text-[10px] text-[#888]">
+                            <MapPin className="size-2.5" />
+                            {evt.location}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-1 shrink-0">
+                    <button
+                      type="button"
+                      onClick={() => startEditing(evt)}
+                      disabled={!isPaid}
+                      className="size-7 rounded-full text-[#888] hover:text-[#181925] hover:bg-neutral-100 flex items-center justify-center transition-colors cursor-pointer"
+                      title="Edit milestone"
+                    >
+                      <Pencil className="size-3.5" />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setEventToDelete(evt)}
+                      className="size-7 rounded-full text-[#888] hover:text-rose-600 hover:bg-rose-50 flex items-center justify-center transition-colors cursor-pointer"
+                      title="Remove milestone"
+                    >
+                      <Trash2 className="size-3.5" />
+                    </button>
+                  </div>
+                </div>
+              )
+            )
           )}
         </div>
       </div>

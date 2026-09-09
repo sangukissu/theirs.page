@@ -141,6 +141,171 @@ export async function POST(req: NextRequest, context: RouteContext) {
   }
 }
 
+export async function PATCH(req: NextRequest, context: RouteContext) {
+  try {
+    const { id: memorialId } = await context.params
+    const supabase = await createClient()
+    const {
+      data: { user },
+    } = await supabase.auth.getUser()
+
+    if (!user) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+    }
+
+    const authCheck = await assertMemorialAdmin(memorialId, user.id)
+    if (!authCheck.authorized || !authCheck.memorial) {
+      return authCheck.errorResponse || NextResponse.json({ error: "Forbidden" }, { status: 403 })
+    }
+
+    // Paywall Check: Life Story timeline requires Pro Plan ($179)
+    const featureCheck = canAccessFeature(authCheck.memorial, "timeline")
+    if (!featureCheck.allowed) {
+      return NextResponse.json(
+        { error: featureCheck.error },
+        { status: featureCheck.status || 402 }
+      )
+    }
+
+    const body = await req.json()
+    const { eventId, year, title, description, photo_url, location } = body
+
+    if (!eventId) {
+      return NextResponse.json({ error: "eventId is required" }, { status: 400 })
+    }
+    if (!year || !title?.trim()) {
+      return NextResponse.json({ error: "Year and title are required" }, { status: 400 })
+    }
+
+    const textError = validateTextFields(body, {
+      title: TEXT_LIMITS.timelineTitle,
+      description: TEXT_LIMITS.timelineDescription,
+      location: TEXT_LIMITS.location,
+    })
+    if (textError) return NextResponse.json({ error: textError }, { status: 400 })
+
+    const db = getSupabaseAdminSafe() || supabase
+    const { data: existingEvent, error: fetchErr } = await db
+      .from("timeline_events")
+      .select("*")
+      .eq("id", eventId)
+      .eq("memorial_id", memorialId)
+      .maybeSingle()
+
+    if (fetchErr || !existingEvent) {
+      return NextResponse.json({ error: "Timeline milestone not found." }, { status: 404 })
+    }
+
+    let finalPhotoKey: string | null = existingEvent.photo_url
+    let finalOriginalPhotoKey: string | null = null
+    let stagingKeyToDelete: string | null = null
+    let oldPhotoToDelete: string | null = null
+
+    if (photo_url !== undefined) {
+      if (!photo_url) {
+        // User removed the photo
+        if (existingEvent.photo_url) {
+          oldPhotoToDelete = existingEvent.photo_url
+        }
+        finalPhotoKey = null
+      } else {
+        const photoKey = extractManagedR2Key(photo_url)
+        if (!photoKey) {
+          return NextResponse.json({ error: "Invalid timeline photo URL." }, { status: 400 })
+        }
+
+        if (photoKey.startsWith(`dashboard-staging/${authCheck.memorial.id}/`)) {
+          const promoted = await promoteStagedMemorialImage(
+            photoKey,
+            authCheck.memorial.id,
+            "timeline"
+          )
+          finalPhotoKey = promoted.displayKey
+          finalOriginalPhotoKey = promoted.originalKey
+          stagingKeyToDelete = photoKey
+
+          if (existingEvent.photo_url && existingEvent.photo_url !== promoted.displayKey) {
+            oldPhotoToDelete = existingEvent.photo_url
+          }
+        } else if (photoKey.startsWith(`memorials/${authCheck.memorial.id}/`)) {
+          finalPhotoKey = photoKey
+          if (existingEvent.photo_url && existingEvent.photo_url !== photoKey) {
+            oldPhotoToDelete = existingEvent.photo_url
+          }
+        } else {
+          // If body passed full resolved URL matching existing photo, keep it
+          const existingManaged = extractManagedR2Key(existingEvent.photo_url)
+          if (existingManaged && photoKey === existingManaged) {
+            finalPhotoKey = existingEvent.photo_url
+          } else {
+            return NextResponse.json({ error: "Timeline photograph does not belong to this memorial." }, { status: 400 })
+          }
+        }
+      }
+    }
+
+    const { data: updatedEvent, error: updateErr } = await db
+      .from("timeline_events")
+      .update({
+        year: Number(year),
+        title: title.trim(),
+        description: description !== undefined ? (description?.trim() || null) : existingEvent.description,
+        location: location !== undefined ? (location?.trim() || null) : existingEvent.location,
+        photo_url: finalPhotoKey,
+      })
+      .eq("id", eventId)
+      .eq("memorial_id", memorialId)
+      .select()
+      .single()
+
+    if (updateErr) {
+      if (stagingKeyToDelete && finalPhotoKey) {
+        await deleteR2Object(finalPhotoKey).catch(() => {})
+        if (finalOriginalPhotoKey && finalOriginalPhotoKey !== finalPhotoKey) {
+          await deleteR2Object(finalOriginalPhotoKey).catch(() => {})
+        }
+        await releaseMemorialStorage(db, memorialId, stagingKeyToDelete).catch(() => {})
+      }
+      console.error("Timeline update error:", updateErr)
+      return NextResponse.json({ error: "Failed to update timeline event." }, { status: 500 })
+    }
+
+    if (stagingKeyToDelete && finalPhotoKey) {
+      try {
+        await finalizeMemorialStorage(db, memorialId, stagingKeyToDelete, finalOriginalPhotoKey || finalPhotoKey)
+      } catch (quotaError) {
+        console.error("Timeline storage finalization error:", quotaError)
+      }
+      await deleteR2Object(stagingKeyToDelete).catch(() => {})
+    }
+
+    // Clean up replaced or removed old photo from R2
+    if (oldPhotoToDelete) {
+      const oldKey = extractManagedR2Key(oldPhotoToDelete)
+      if (oldKey?.startsWith(`memorials/${memorialId}/`)) {
+        await deleteR2Object(oldKey).catch(() => {})
+        await releaseMemorialStorage(db, memorialId, oldKey).catch(() => {})
+        const originalKey = archivalHeicKeyForDisplay(oldKey)
+        if (originalKey) {
+          await deleteR2Object(originalKey).catch(() => {})
+          await releaseMemorialStorage(db, memorialId, originalKey).catch(() => {})
+        }
+      }
+    }
+
+    return NextResponse.json({
+      success: true,
+      event: {
+        ...updatedEvent,
+        photo_url: resolveMediaUrl(finalPhotoKey),
+      },
+    })
+  } catch (err: any) {
+    console.error("Timeline PATCH error:", err)
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 })
+  }
+}
+
 export async function DELETE(req: NextRequest, context: RouteContext) {
   try {
     const { id: memorialId } = await context.params

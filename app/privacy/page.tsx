@@ -1,4 +1,5 @@
 import type { Metadata } from "next"
+import Link from "next/link"
 import { LegalPageLayout } from "@/components/legal/legal-page-layout"
 import { JsonLd } from "@/components/seo/json-ld"
 import { buildStaticMetadata } from "@/lib/seo/metadata"
@@ -17,244 +18,244 @@ export default function PrivacyPage() {
     <>
       <JsonLd schema={schema} id="privacy-schema" />
       <LegalPageLayout
-      title="Privacy Policy"
-      description="A life archive holds deeply personal memories. Here is exactly what information Theirs receives, why we need it, how it is safeguarded, and the control you retain."
-      lastUpdated="September 2026"
-      highlights={[
-        {
-          title: "Zero Data Selling",
-          description:
-            "We do not sell personal data, family contacts, or memorial content to advertisers, data brokers, or third parties.",
-        },
-        {
-          title: "No Public AI Training",
-          description:
-            "We never use private memorials, family photographs, voice recordings, or videos to train public generative AI models.",
-        },
-        {
-          title: "You Retain Ownership",
-          description:
-            "You and your family retain full ownership of all uploaded photographs, stories, audio notes, and contributions.",
-        },
-      ]}
-    >
-      {/* 1. Introduction */}
-      <section className="flex flex-col gap-3">
-        <h2 className="text-xl sm:text-2xl font-medium text-[#181925]">
-          1. Introduction & Core Philosophy
-        </h2>
-        <p>
-          Theirs (<strong className="font-medium text-[#181925]">theirs.page</strong>, referred to as &ldquo;Theirs&rdquo;, &ldquo;we&rdquo;, &ldquo;our&rdquo;, or &ldquo;us&rdquo;) is dedicated to preserving the story, voice, and memories of human lives. Our platform is built on quiet reverence, archival preservation, and intentional family privacy.
-        </p>
-        <p>
-          This Privacy Policy explains what personal data we collect, how it is processed, where it is stored, and how you can exercise your rights under applicable privacy frameworks, including the Digital Personal Data Protection Act (DPDP Act, India 2025/2026), the General Data Protection Regulation (GDPR / UK GDPR), and the California Consumer Privacy Act (CCPA / CPRA).
-        </p>
-      </section>
+        title="Privacy Policy"
+        description="An online memorial holds deeply personal memories. Here is exactly what information Theirs receives, why we need it, how it is safeguarded, and how you retain full control."
+        lastUpdated="September 2026"
+        highlights={[
+          {
+            title: "Zero Data Selling",
+            description:
+              "We never sell personal information, family contacts, or memorial memories to advertisers, data brokers, or third parties.",
+          },
+          {
+            title: "No Public AI Training",
+            description:
+              "We never use family memorials, photos, voice notes, or videos to train public artificial intelligence models.",
+          },
+          {
+            title: "You Own Your Memories",
+            description:
+              "You and your family retain full ownership of all uploaded photographs, stories, audio notes, and tributes.",
+          },
+        ]}
+      >
+        {/* 1. Introduction */}
+        <section className="flex flex-col gap-3">
+          <h2 className="text-xl sm:text-2xl font-medium text-[#181925]">
+            1. Introduction &amp; Our Principles
+          </h2>
+          <p>
+            Theirs (<strong className="font-medium text-[#181925]">theirs.page</strong>, referred to as &ldquo;Theirs&rdquo;, &ldquo;we&rdquo;, &ldquo;our&rdquo;, or &ldquo;us&rdquo;) is an online memorial website where families create a beautiful, lasting memorial for someone they love. Our platform is built on quiet reverence, lasting preservation, and intentional family privacy.
+          </p>
+          <p>
+            This Privacy Policy explains what personal information we receive, how it is cared for, where it is stored, and how you can exercise your rights under global privacy regulations, including the General Data Protection Regulation (GDPR / UK GDPR), the California Consumer Privacy Act (CCPA / CPRA), and applicable digital personal data protection laws.
+          </p>
+        </section>
 
-      {/* 2. Information We Collect */}
-      <section className="flex flex-col gap-4">
-        <h2 className="text-xl sm:text-2xl font-medium text-[#181925]">
-          2. Information We Collect
-        </h2>
-        <p>
-          We only collect personal information that is genuinely necessary to create, operate, protect, and display memorials.
-        </p>
+        {/* 2. Information We Collect */}
+        <section className="flex flex-col gap-4">
+          <h2 className="text-xl sm:text-2xl font-medium text-[#181925]">
+            2. Information We Collect
+          </h2>
+          <p>
+            We collect only the information genuinely necessary to create, operate, protect, and display your loved one&apos;s memorial.
+          </p>
 
-        <div className="overflow-x-auto rounded-2xl border border-black/[0.06] bg-[#fafafb]">
-          <table className="w-full text-left text-xs sm:text-sm">
-            <thead className="border-b border-black/[0.06] bg-black/[0.02] text-[#181925] font-medium">
-              <tr>
-                <th className="p-3.5 sm:px-4">Category</th>
-                <th className="p-3.5 sm:px-4">Information Collected</th>
-                <th className="p-3.5 sm:px-4">Purpose</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-black/[0.05] text-[#555]">
-              <tr>
-                <td className="p-3.5 sm:px-4 font-medium text-[#181925]">Account Data</td>
-                <td className="p-3.5 sm:px-4">Full name, email address, authentication user identifiers.</td>
-                <td className="p-3.5 sm:px-4">Account creation, secure passwordless magic link logins, caretaker permissions.</td>
-              </tr>
-              <tr>
-                <td className="p-3.5 sm:px-4 font-medium text-[#181925]">Memorial Data</td>
-                <td className="p-3.5 sm:px-4">Honoree full name, preferred name, birth and death years, location, headline, biography, primary portrait photo.</td>
-                <td className="p-3.5 sm:px-4">Assembling and presenting the memorial page according to caretaker preferences.</td>
-              </tr>
-              <tr>
-                <td className="p-3.5 sm:px-4 font-medium text-[#181925]">User Content</td>
-                <td className="p-3.5 sm:px-4">Photographs, original voice notes, video clips, written stories, milestone events, and guestbook tributes.</td>
-                <td className="p-3.5 sm:px-4">Displaying memory galleries and timeline events; compiling family archive ZIP packages.</td>
-              </tr>
-              <tr>
-                <td className="p-3.5 sm:px-4 font-medium text-[#181925]">Contributor Data</td>
-                <td className="p-3.5 sm:px-4">Contributor name, relationship to the deceased, optional email address.</td>
-                <td className="p-3.5 sm:px-4">Attributing contributions and notifying caretakers for moderation approval.</td>
-              </tr>
-              <tr>
-                <td className="p-3.5 sm:px-4 font-medium text-[#181925]">Payment Information</td>
-                <td className="p-3.5 sm:px-4">Transaction ID, purchase date, payment status, customer country.</td>
-                <td className="p-3.5 sm:px-4">Activating the Theirs Complete plan. <strong className="text-[#181925]">Theirs never receives, processes, or stores your complete credit card numbers.</strong> All payment processing is securely handled by our Merchant of Record, Dodo Payments.</td>
-              </tr>
-              <tr>
-                <td className="p-3.5 sm:px-4 font-medium text-[#181925]">Technical & Security</td>
-                <td className="p-3.5 sm:px-4">IP address, browser type, device information, Cloudflare Turnstile bot verification tokens.</td>
-                <td className="p-3.5 sm:px-4">Preventing spam, bot attacks, DDoS abuse, and enforcing durable rate limits.</td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-      </section>
+          <div className="overflow-x-auto rounded-2xl border border-black/[0.06] bg-[#fafafb]">
+            <table className="w-full text-left text-xs sm:text-sm">
+              <thead className="border-b border-black/[0.06] bg-black/[0.02] text-[#181925] font-medium">
+                <tr>
+                  <th className="p-3.5 sm:px-4">Category</th>
+                  <th className="p-3.5 sm:px-4">Information Collected</th>
+                  <th className="p-3.5 sm:px-4">Purpose</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-black/[0.05] text-[#555]">
+                <tr>
+                  <td className="p-3.5 sm:px-4 font-medium text-[#181925]">Account Details</td>
+                  <td className="p-3.5 sm:px-4">Your name and email address.</td>
+                  <td className="p-3.5 sm:px-4">Creating your account, sending secure sign-in links, and enabling you to manage your memorials.</td>
+                </tr>
+                <tr>
+                  <td className="p-3.5 sm:px-4 font-medium text-[#181925]">Memorial Information</td>
+                  <td className="p-3.5 sm:px-4">Loved one&apos;s name, birth and passing years, location, biography, and portrait photograph.</td>
+                  <td className="p-3.5 sm:px-4">Creating and presenting the memorial page according to your preferences.</td>
+                </tr>
+                <tr>
+                  <td className="p-3.5 sm:px-4 font-medium text-[#181925]">Photos, Stories &amp; Media</td>
+                  <td className="p-3.5 sm:px-4">Photographs, original voice notes, video memories, life milestone stories, and guestbook tributes.</td>
+                  <td className="p-3.5 sm:px-4">Displaying memory galleries and timeline events, and compiling your downloadable family archive.</td>
+                </tr>
+                <tr>
+                  <td className="p-3.5 sm:px-4 font-medium text-[#181925]">Contributor Details</td>
+                  <td className="p-3.5 sm:px-4">Contributor name, relationship to the person remembered, and optional email address.</td>
+                  <td className="p-3.5 sm:px-4">Attributing contributions and notifying memorial creators when family or friends share memories.</td>
+                </tr>
+                <tr>
+                  <td className="p-3.5 sm:px-4 font-medium text-[#181925]">Payment Information</td>
+                  <td className="p-3.5 sm:px-4">Transaction identifier, purchase date, payment status, and customer country.</td>
+                  <td className="p-3.5 sm:px-4">Activating the Theirs Complete plan. <strong className="text-[#181925]">Theirs never receives, handles, or stores your credit card numbers.</strong> All transactions are processed securely by our Merchant of Record, Dodo Payments.</td>
+                </tr>
+                <tr>
+                  <td className="p-3.5 sm:px-4 font-medium text-[#181925]">Site Security &amp; Analytics</td>
+                  <td className="p-3.5 sm:px-4">General device and browser type, spam prevention tokens, and anonymous page counts via Umami Analytics.</td>
+                  <td className="p-3.5 sm:px-4">Preventing automated spam, protecting site availability, and understanding general website traffic without tracking individuals across the web.</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
 
-      {/* 3. Public, Unlisted, and Private Settings */}
-      <section className="flex flex-col gap-3">
-        <h2 className="text-xl sm:text-2xl font-medium text-[#181925]">
-          3. Memorial Privacy Settings Defined
-        </h2>
-        <p>
-          The memorial owner controls the accessibility of each page. We define these settings with absolute clarity:
-        </p>
+        {/* 3. Public, Unlisted, and Private Settings */}
+        <section className="flex flex-col gap-3">
+          <h2 className="text-xl sm:text-2xl font-medium text-[#181925]">
+            3. Memorial Privacy Settings
+          </h2>
+          <p>
+            You have complete control over who can view and contribute to your memorial:
+          </p>
 
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 my-2">
-          <div className="p-4 rounded-2xl border border-black/[0.06] bg-[#fafafb] flex flex-col gap-1.5">
-            <span className="text-xs font-mono uppercase font-semibold text-emerald-700">Public</span>
-            <p className="text-xs text-[#555] leading-relaxed">
-              Anyone with internet access can view the memorial. Public search engines (such as Google and Bing) are permitted to index the page and metadata.
-            </p>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 my-2">
+            <div className="p-4 rounded-2xl border border-black/[0.06] bg-[#fafafb] flex flex-col gap-1.5">
+              <span className="text-xs font-mono uppercase font-semibold text-emerald-700">Public</span>
+              <p className="text-xs text-[#555] leading-relaxed">
+                Anyone with the link can visit the memorial. Public search engines (like Google and Bing) can discover and index the page.
+              </p>
+            </div>
+
+            <div className="p-4 rounded-2xl border border-black/[0.06] bg-[#fafafb] flex flex-col gap-1.5">
+              <span className="text-xs font-mono uppercase font-semibold text-amber-700">Unlisted</span>
+              <p className="text-xs text-[#555] leading-relaxed">
+                The memorial is excluded from public search engines and directories. Anyone you share the link with can view the page.
+              </p>
+            </div>
+
+            <div className="p-4 rounded-2xl border border-black/[0.06] bg-[#fafafb] flex flex-col gap-1.5">
+              <span className="text-xs font-mono uppercase font-semibold text-[#2553b9]">Private</span>
+              <p className="text-xs text-[#555] leading-relaxed">
+                Protected by a 4-digit family PIN. Search engines are blocked completely. Visitors must enter the PIN before viewing stories, media, or tributes.
+              </p>
+            </div>
           </div>
 
-          <div className="p-4 rounded-2xl border border-black/[0.06] bg-[#fafafb] flex flex-col gap-1.5">
-            <span className="text-xs font-mono uppercase font-semibold text-amber-700">Unlisted</span>
-            <p className="text-xs text-[#555] leading-relaxed">
-              The memorial is not included in sitemaps or directory listings. However, <strong>anyone who receives or discovers the link can view it</strong>. Unlisted pages can be reshared by recipients.
-            </p>
+          <div className="p-4 rounded-2xl bg-amber-50/70 border border-amber-200/80 text-xs text-amber-900 leading-relaxed">
+            <strong>Search Engine Note:</strong> When you switch a public memorial to private or unlisted, it is instantly protected on our platform. However, search engines take time to refresh their search result listings and remove previously cached links.
           </div>
+        </section>
 
-          <div className="p-4 rounded-2xl border border-black/[0.06] bg-[#fafafb] flex flex-col gap-1.5">
-            <span className="text-xs font-mono uppercase font-semibold text-primary">Private</span>
-            <p className="text-xs text-[#555] leading-relaxed">
-              Protected by a 4-digit family PIN. Search engines are blocked via noindex headers. Visitors must input the valid PIN before accessing stories, timeline, or media.
-            </p>
+        {/* 4. Content Involving Living People */}
+        <section className="flex flex-col gap-3">
+          <h2 className="text-xl sm:text-2xl font-medium text-[#181925]">
+            4. Photos &amp; Stories Involving Living Family &amp; Friends
+          </h2>
+          <p>
+            Memorials naturally include family photographs, stories, and anecdotes that mention living relatives, children, and friends.
+          </p>
+          <p>
+            Memorial creators and contributors should ensure they have permission from living individuals before sharing their personal stories or photos. If you are a living person named or pictured on a memorial and wish for that content to be removed, please email us directly at{" "}
+            <a href="mailto:support@theirs.page" className="text-primary underline font-medium">
+              support@theirs.page
+            </a>
+            . We review and handle privacy requests promptly and respectfully.
+          </p>
+        </section>
+
+        {/* 5. Artificial Intelligence & Content Safety */}
+        <section className="flex flex-col gap-3">
+          <h2 className="text-xl sm:text-2xl font-medium text-[#181925]">
+            5. Safety Screening &amp; Thoughtful Writing Tools
+          </h2>
+          <p>
+            We use automated tools solely to keep memorials safe and to offer optional writing assistance:
+          </p>
+          <ul className="list-disc pl-5 space-y-1.5 text-md text-[#555]">
+            <li>
+              <strong>Automated Safety Checks:</strong> Uploaded media is checked to prevent spam, malicious files, or inappropriate content from appearing on memorial pages.
+            </li>
+            <li>
+              <strong>Optional Writing Assistance:</strong> When you ask our helper tool to polish a written story, it focuses only on fixing grammar and readability while preserving your natural words and voice.
+            </li>
+            <li>
+              <strong>No Value Judgments:</strong> Automated tools never decide what memories are meaningful. The memorial creator always has the final word on approving or declining memories.
+            </li>
+            <li>
+              <strong>Zero Public AI Training:</strong> Your family photos, recordings, stories, and biographies are <strong>never used to train public AI models</strong> and are never sold to external AI companies.
+            </li>
+          </ul>
+        </section>
+
+        {/* 6. Service Providers */}
+        <section className="flex flex-col gap-3">
+          <h2 className="text-xl sm:text-2xl font-medium text-[#181925]">
+            6. Trusted Service Partners
+          </h2>
+          <p>
+            We partner with respected infrastructure providers to host and deliver Theirs safely:
+          </p>
+          <ul className="list-disc pl-5 space-y-1.5 text-md text-[#555]">
+            <li><strong>Cloudflare</strong> (Fast global hosting, encrypted media storage, and spam defense)</li>
+            <li><strong>Supabase</strong> (Secure database and encrypted account authentication)</li>
+            <li><strong>Dodo Payments</strong> (Secure checkout, card processing, and billing compliance)</li>
+            <li><strong>Resend</strong> (Reliable email delivery for sign-in links and memorial notifications)</li>
+            <li><strong>Umami Analytics</strong> (Privacy-first visitor statistics that do not use cookies or track personal identities)</li>
+            <li><strong>Google Cloud</strong> (Automated safety checks and optional story writing assistance)</li>
+          </ul>
+        </section>
+
+        {/* 7. Data Retention & Deletion */}
+        <section className="flex flex-col gap-3">
+          <h2 className="text-xl sm:text-2xl font-medium text-[#181925]">
+            7. Keeping &amp; Deleting Your Information
+          </h2>
+          <p>
+            We manage your data thoughtfully:
+          </p>
+          <ul className="list-disc pl-5 space-y-1.5 text-md text-[#555]">
+            <li><strong>Active Memorials:</strong> Stored safely for as long as your account and memorial remain active.</li>
+            <li><strong>Memorial Deletion:</strong> When you delete a memorial from your dashboard, the memorial page and all uploaded photos, voice notes, and videos are permanently erased from our active servers.</li>
+            <li><strong>Interrupted Uploads:</strong> Incomplete files from canceled or interrupted uploads are cleared automatically.</li>
+            <li><strong>Safety Quarantines:</strong> Uploads that fail safety scans are isolated and deleted permanently.</li>
+            <li><strong>Encrypted Backups:</strong> Routine security backups are overwritten on a rolling 30-day schedule.</li>
+          </ul>
+        </section>
+
+        {/* 8. Your Privacy Rights */}
+        <section className="flex flex-col gap-3">
+          <h2 className="text-xl sm:text-2xl font-medium text-[#181925]">
+            8. Your Rights &amp; Data Portability
+          </h2>
+          <p>
+            You have full control over your personal data:
+          </p>
+          <ul className="list-disc pl-5 space-y-1.5 text-md text-[#555]">
+            <li><strong>Download Your Family Archive:</strong> Memorial creators on Theirs Complete can download a complete, uncompressed archive containing all original full-resolution photos, voice recordings, video files, written stories, and tributes at any time.</li>
+            <li><strong>Edit or Correct:</strong> You can update memorial information directly in your editor at any moment.</li>
+            <li><strong>Delete Your Account or Memorial:</strong> You can delete individual memorials or your entire account from your settings.</li>
+            <li><strong>Support &amp; Inquiries:</strong> If you have any privacy questions or wish to exercise your rights, email us at{" "}
+              <a href="mailto:support@theirs.page" className="text-primary underline font-medium">
+                support@theirs.page
+              </a>
+              . We respond to all requests promptly.
+            </li>
+          </ul>
+        </section>
+
+        {/* 9. Contact */}
+        <section className="flex flex-col gap-2">
+          <h2 className="text-xl sm:text-2xl font-medium text-[#181925]">
+            9. Contact Our Team
+          </h2>
+          <p>
+            If you have questions, feedback, or privacy requests regarding your memorial or data, reach out to us:
+          </p>
+          <div className="p-4 rounded-2xl bg-[#fafafb] border border-black/[0.06] text-xs sm:text-sm text-[#555] flex flex-col gap-1 mt-1">
+            <span className="font-medium text-[#181925]">Theirs Support &amp; Privacy Care</span>
+            <span>Email: support@theirs.page</span>
+            <span>Website: theirs.page</span>
           </div>
-        </div>
-
-        <div className="p-4 rounded-2xl bg-amber-50/70 border border-amber-200/80 text-xs text-amber-900 leading-relaxed">
-          <strong>Important Search Engine & Third-Party Notice:</strong> While switching a public memorial to private or unlisted immediately removes public access from our active servers, Theirs cannot guarantee the immediate deletion of cached copies, screenshots, or indexes previously collected by third-party search engines or past visitors before the setting was changed.
-        </div>
-      </section>
-
-      {/* 4. Content Involving Living People */}
-      <section className="flex flex-col gap-3">
-        <h2 className="text-xl sm:text-2xl font-medium text-[#181925]">
-          4. Content Involving Living Individuals
-        </h2>
-        <p>
-          Memorials frequently contain group family photographs, anecdotes, and stories that mention living relatives, children, or friends.
-        </p>
-        <p>
-          Memorial creators and contributors represent that they have the appropriate permission or lawful basis to share personal information, photographs, or recordings concerning living individuals. Theirs respects the privacy of living individuals: if you are a living person named, depicted, or described in a memorial and wish for that content to be removed or corrected, you may contact our team directly at{" "}
-          <a href="mailto:suport@theirs.page" className="text-primary underline font-medium">
-            suport@theirs.page
-          </a>
-          . We review and act upon verified privacy concerns promptly.
-        </p>
-      </section>
-
-      {/* 5. Artificial Intelligence & Automated Screening */}
-      <section className="flex flex-col gap-3">
-        <h2 className="text-xl sm:text-2xl font-medium text-[#181925]">
-          5. Automated Screening & Artificial Intelligence
-        </h2>
-        <p>
-          We use automated tools (including Google Gemini models) strictly for security and safety purposes:
-        </p>
-        <ul className="list-disc pl-5 space-y-1.5 text-md text-[#555]">
-          <li>
-            <strong>Safety & Malware Screening:</strong> Uploaded media is scanned to detect spam, malicious code, sexually explicit material, and severe abuse before it reaches caretakers.
-          </li>
-          <li>
-            <strong>Optional Editing Assistance:</strong> When caretakers explicitly request AI story polishing, the text is processed solely to fix grammar and improve flow while preserving the author&apos;s authentic voice.
-          </li>
-          <li>
-            <strong>No Value Judgments:</strong> Automated screening does not determine which personal family memories are worthy of celebration. Human caretakers retain absolute discretion over approving or declining memories.
-          </li>
-          <li>
-            <strong>No Generative AI Training:</strong> Your family content, photographs, voice recordings, and biographies are <strong>never used to train public generative AI models</strong> or sold to third-party AI companies.
-          </li>
-        </ul>
-      </section>
-
-      {/* 6. Service Providers & Subprocessors */}
-      <section className="flex flex-col gap-3">
-        <h2 className="text-xl sm:text-2xl font-medium text-[#181925]">
-          6. Service Providers & Subprocessors
-        </h2>
-        <p>
-          We engage trusted, industry-leading infrastructure providers to host and operate Theirs under strict data processing agreements:
-        </p>
-        <ul className="list-disc pl-5 space-y-1.5 text-md text-[#555]">
-          <li><strong>Cloudflare, Inc.</strong> (Global Edge Network, Cloudflare R2 object storage, Turnstile bot protection)</li>
-          <li><strong>Supabase, Inc.</strong> (PostgreSQL database, encrypted authentication, managed cloud infrastructure)</li>
-          <li><strong>Dodo Payments, Inc.</strong> (Merchant of Record, credit card processing, sales tax compliance, fraud prevention)</li>
-          <li><strong>Resend, Inc.</strong> (Transactional email delivery, passwordless authentication magic links)</li>
-          <li><strong>Google LLC</strong> (Google Cloud / Gemini API for media safety screening)</li>
-        </ul>
-      </section>
-
-      {/* 7. Data Retention & Deletion */}
-      <section className="flex flex-col gap-3">
-        <h2 className="text-xl sm:text-2xl font-medium text-[#181925]">
-          7. Data Retention & Erasure
-        </h2>
-        <p>
-          We retain information according to transparent, purposeful criteria:
-        </p>
-        <ul className="list-disc pl-5 space-y-1.5 text-md text-[#555]">
-          <li><strong>Active Memorials:</strong> Stored securely as long as the account and memorial remain active.</li>
-          <li><strong>Incomplete Uploads:</strong> Temporary files from interrupted or canceled uploads are automatically removed by regular maintenance routines.</li>
-          <li><strong>Quarantined Media:</strong> Uploads flagged or rejected by automated security checks are held in temporary isolation before permanent deletion.</li>
-          <li><strong>Memorial Deletion:</strong> When a memorial owner deletes a memorial via the dashboard, the memorial record and all associated storage files (photographs, audio, video) are permanently erased from active systems.</li>
-          <li><strong>System Backups:</strong> Residual copies in encrypted database backups are overwritten according to routine retention cycles (typically 30 days).</li>
-        </ul>
-      </section>
-
-      {/* 8. Your Rights */}
-      <section className="flex flex-col gap-3">
-        <h2 className="text-xl sm:text-2xl font-medium text-[#181925]">
-          8. Your Privacy Rights
-        </h2>
-        <p>
-          Depending on your location, you hold statutory rights regarding your personal data:
-        </p>
-        <ul className="list-disc pl-5 space-y-1.5 text-md text-[#555]">
-          <li><strong>Right of Access & Portability:</strong> You may request a copy of your personal data. Memorial caretakers on paid plans can download a complete, uncompressed ZIP archive containing all original media, biographies, and written tributes at any time.</li>
-          <li><strong>Right to Correction:</strong> You can edit or update memorial information directly in the memorial editor.</li>
-          <li><strong>Right to Erasure:</strong> You can delete your account or individual memorials at any time from your account settings.</li>
-          <li><strong>Right to Withdraw Consent:</strong> You may withdraw consent for optional processing or communications at any time.</li>
-        </ul>
-        <p>
-          To exercise any of these rights, email our Data Privacy Officer at{" "}
-          <a href="mailto:suport@theirs.page" className="text-primary underline font-medium">
-            suport@theirs.page
-          </a>
-          . We acknowledge and respond to verified requests within statutory timeframes.
-        </p>
-      </section>
-
-      {/* 9. Contact */}
-      <section className="flex flex-col gap-2">
-        <h2 className="text-xl sm:text-2xl font-medium text-[#181925]">
-          9. Contact & Grievance Redressal
-        </h2>
-        <p>
-          For questions, privacy requests, or grievances concerning this policy or the treatment of your personal data, contact:
-        </p>
-        <div className="p-4 rounded-2xl bg-[#fafafb] border border-black/[0.06] text-xs sm:text-sm font-mono text-[#555] flex flex-col gap-1 mt-1">
-          <span>Theirs.page Privacy & Data Protection Concerns</span>
-          <span>Email: suport@theirs.page</span>
-          <span>Website: theirs.page</span>
-        </div>
-      </section>
-    </LegalPageLayout>
+        </section>
+      </LegalPageLayout>
     </>
   )
 }
+

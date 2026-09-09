@@ -762,6 +762,11 @@ export function MemorialEditorClient({
               onRemoveEvent={(id) =>
                 setTimelineEvents((prev) => prev.filter((e) => e.id !== id))
               }
+              onUpdateEvent={(updatedEvt) =>
+                setTimelineEvents((prev) =>
+                  prev.map((e) => (e.id === updatedEvt.id ? updatedEvt : e))
+                )
+              }
             />
           )}
 

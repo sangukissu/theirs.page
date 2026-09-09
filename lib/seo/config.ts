@@ -21,11 +21,10 @@ export const SEO_CONFIG = {
     bing: process.env.NEXT_PUBLIC_BING_SITE_VERIFICATION || "",
     yandex: process.env.NEXT_PUBLIC_YANDEX_VERIFICATION || "",
   },
-  // Web analytics configuration (GA4, GTM, Clarity)
+  // Web analytics configuration (Umami Analytics)
   analytics: {
-    gaMeasurementId: process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID || "",
-    gtmId: process.env.NEXT_PUBLIC_GTM_ID || "",
-    clarityId: process.env.NEXT_PUBLIC_CLARITY_PROJECT_ID || "",
+    umamiWebsiteId: process.env.NEXT_PUBLIC_UMAMI_WEBSITE_ID || "ed3a82b5-8b9e-44f5-8a8a-aa2cc5e31783",
+    umamiScriptUrl: process.env.NEXT_PUBLIC_UMAMI_SCRIPT_URL || "https://cloud.umami.is/script.js",
   },
   pricing: {
     free: {
