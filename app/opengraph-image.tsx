@@ -1,6 +1,5 @@
 import { ImageResponse } from "next/og"
 
-export const runtime = "edge"
 export const alt = "Theirs — Online Memorial Website for Loved Ones"
 export const size = {
   width: 1200,
