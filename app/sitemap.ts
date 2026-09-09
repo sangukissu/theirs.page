@@ -1,46 +1,47 @@
-import { MetadataRoute } from "next"
+import type { MetadataRoute } from "next"
+import { SEO_CONFIG } from "@/lib/seo/config"
+import { getSitemapStaticPages } from "@/lib/seo/pages"
+import { getSupabaseAdminSafe } from "@/utils/supabase/admin"
 
-const BASE = process.env.NEXT_PUBLIC_APP_URL || "https://theirs.page"
+export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
+  const items: MetadataRoute.Sitemap = []
 
-export default function sitemap(): MetadataRoute.Sitemap {
-  const lastModified = new Date()
+  // 1. Static Pages defined in the central registry (e.g. /, /privacy, /terms, /guidelines, /refunds)
+  const staticPages = getSitemapStaticPages()
+  for (const page of staticPages) {
+    items.push({
+      url: `${SEO_CONFIG.canonicalOrigin}${page.path === "/" ? "" : page.path}`,
+      lastModified: page.updatedAt ? new Date(page.updatedAt) : undefined,
+    })
+  }
 
-  return [
-    {
-      url: `${BASE}`,
-      lastModified,
-      changeFrequency: "daily",
-      priority: 1.0,
-    },
-    {
-      url: `${BASE}/login`,
-      lastModified,
-      changeFrequency: "monthly",
-      priority: 0.8,
-    },
-    {
-      url: `${BASE}/privacy`,
-      lastModified,
-      changeFrequency: "monthly",
-      priority: 0.3,
-    },
-    {
-      url: `${BASE}/terms`,
-      lastModified,
-      changeFrequency: "monthly",
-      priority: 0.3,
-    },
-    {
-      url: `${BASE}/guidelines`,
-      lastModified,
-      changeFrequency: "monthly",
-      priority: 0.3,
-    },
-    {
-      url: `${BASE}/refunds`,
-      lastModified,
-      changeFrequency: "monthly",
-      priority: 0.3,
-    },
-  ]
+  // 2. Dynamic Public Memorials: ONLY status = 'published' AND privacy = 'public'
+  // Private, unlisted, draft, and archived memorials are strictly excluded.
+  // Memorial subpages (/gallery, /timeline, /memories, /tributes) are strictly excluded.
+  try {
+    const admin = getSupabaseAdminSafe()
+    if (admin) {
+      const { data: memorials, error } = await admin
+        .from("memorials")
+        .select("slug, updated_at")
+        .eq("status", "published")
+        .eq("privacy", "public")
+
+      if (error) {
+        console.error("Sitemap: Failed to query public memorials:", error)
+      } else if (memorials) {
+        for (const memorial of memorials) {
+          if (!memorial.slug) continue
+          items.push({
+            url: `${SEO_CONFIG.canonicalOrigin}/${memorial.slug}`,
+            lastModified: memorial.updated_at ? new Date(memorial.updated_at) : undefined,
+          })
+        }
+      }
+    }
+  } catch (err) {
+    console.error("Sitemap: Error generating memorial entries:", err)
+  }
+
+  return items
 }

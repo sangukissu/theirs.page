@@ -22,38 +22,46 @@ const inter = Inter({
   weight: ["400", "500"],
 })
 
+import { SEO_CONFIG } from "@/lib/seo/config"
+
 export const metadata: Metadata = {
   title: {
-    default: "Online Memorial Website for Loved Ones | Theirs",
-    template: "%s | Theirs",
+    default: SEO_CONFIG.defaultTitle,
+    template: SEO_CONFIG.titleTemplate,
   },
-  description:
-    "Create a beautiful online memorial website for someone you love. Share photos, stories and tributes, and invite family and friends to add their memories.",
-  metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL || "https://theirs.page"),
+  description: SEO_CONFIG.defaultDescription,
+  metadataBase: new URL(SEO_CONFIG.canonicalOrigin),
   alternates: {
     canonical: "/",
   },
   openGraph: {
-    title: "Online Memorial Website for Loved Ones | Theirs",
-    description:
-      "Create a beautiful online memorial website for someone you love. Share photos, stories and tributes, and invite family and friends to add their memories.",
-    url: "https://theirs.page",
-    siteName: "Theirs",
-    locale: "en_US",
+    title: SEO_CONFIG.defaultTitle,
+    description: SEO_CONFIG.defaultDescription,
+    url: SEO_CONFIG.canonicalOrigin,
+    siteName: SEO_CONFIG.siteName,
+    locale: SEO_CONFIG.locale,
     type: "website",
+    images: [
+      {
+        url: SEO_CONFIG.defaultOgImage,
+        width: 1200,
+        height: 630,
+        alt: SEO_CONFIG.siteName,
+      },
+    ],
   },
   twitter: {
     card: "summary_large_image",
-    title: "Online Memorial Website for Loved Ones | Theirs",
-    description:
-      "Create a beautiful online memorial website for someone you love. Share photos, stories and tributes, and invite family and friends to add their memories.",
+    title: SEO_CONFIG.defaultTitle,
+    description: SEO_CONFIG.defaultDescription,
+    images: [SEO_CONFIG.defaultOgImage],
   },
   robots: {
     index: true,
     follow: true,
   },
   appleWebApp: {
-    title: "Theirs",
+    title: SEO_CONFIG.siteName,
   },
 }
 

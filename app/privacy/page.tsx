@@ -1,18 +1,22 @@
 import type { Metadata } from "next"
 import { LegalPageLayout } from "@/components/legal/legal-page-layout"
+import { JsonLd } from "@/components/seo/json-ld"
+import { buildStaticMetadata } from "@/lib/seo/metadata"
+import { buildLegalPageSchemaGraph } from "@/lib/seo/schema"
 
-export const metadata: Metadata = {
-  title: "Privacy Policy",
-  description:
-    "How Theirs collects, protects, and respects family memories, photographs, and personal information.",
-  alternates: {
-    canonical: "/privacy",
-  },
-}
+export const metadata: Metadata = buildStaticMetadata("/privacy")
 
 export default function PrivacyPage() {
+  const schema = buildLegalPageSchemaGraph(
+    "/privacy",
+    "Privacy Policy",
+    "How Theirs collects, protects, and respects family memories, photographs, and personal information."
+  )
+
   return (
-    <LegalPageLayout
+    <>
+      <JsonLd schema={schema} id="privacy-schema" />
+      <LegalPageLayout
       title="Privacy Policy"
       description="A life archive holds deeply personal memories. Here is exactly what information Theirs receives, why we need it, how it is safeguarded, and the control you retain."
       lastUpdated="September 2026"
@@ -251,5 +255,6 @@ export default function PrivacyPage() {
         </div>
       </section>
     </LegalPageLayout>
+    </>
   )
 }

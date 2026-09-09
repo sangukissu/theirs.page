@@ -40,45 +40,404 @@ export const COLLECTION_PAGE_SIZES: Record<BrowseCollection, number> = {
 }
 
 const DEMO_GALLERY: GalleryItem[] = [
-  { id: "g1", title: "At the Watchmaker’s Bench", mediaType: "photo", year: "1984", location: "High Street Workshop, Devon", album: "Workshop", isPinned: true, mediaUrl: "/memorial-family-portrait-grandfather.jpg", aspectRatio: "portrait", story: "Calibrating a 19th-century bracket clock for the village church.", addedBy: "Anita Carter" },
-  { id: "g4", title: "Tea in the Rose Garden", mediaType: "video", year: "1989", location: "Dartmoor Cottage", album: "Family Films", mediaUrl: "/videos/speaking.mp4", posterUrl: "/memorial-family-portrait-combined.jpg", aspectRatio: "landscape", duration: "0:12", story: "A digitized family film from a summer afternoon.", addedBy: "Anita Carter" },
-  { id: "g3", title: "Checking Tyre Pressure Voicemail", mediaType: "audio", year: "2014", location: "Devon Cottage", album: "Recordings", mediaUrl: "/music/Beloved(chosic.com).mp3", duration: "0:24", story: "A voicemail left before Anita drove back to London.", addedBy: "Anita Carter" },
-  { id: "g2", title: "Wedding at St. Jude’s", mediaType: "photo", year: "1974", location: "St. Jude’s Church, Oxford", album: "Family", mediaUrl: "/historical-wedding-photo.webp", aspectRatio: "landscape", story: "Meena and Robert on their wedding day.", addedBy: "Meena Carter" },
-  { id: "g8", title: "Quiet Moment in the Workshop", mediaType: "video", year: "1995", location: "High Street Workshop", album: "Workshop", mediaUrl: "/videos/gentle-smile.mp4", posterUrl: "/vintage-family-portraits-colorized.webp", aspectRatio: "portrait", duration: "0:08", addedBy: "Sarah Jenkins" },
-  { id: "g5", title: "Three Generations in the Rose Garden", mediaType: "photo", year: "1998", location: "Devon Cottage", album: "Family", mediaUrl: "/memorial-family-portrait-combined.jpg", aspectRatio: "square", addedBy: "Meena Carter" },
-  { id: "g7", title: "The Morris Minor Trip", mediaType: "audio", year: "2019", location: "Carter Workshop", album: "Recordings", mediaUrl: "/music/Awakening-Dew(chosic.com).mp3", duration: "0:36", story: "Robert remembering a foggy drive across the moors.", addedBy: "Sarah Jenkins" },
-  { id: "g10", title: "Sunday Afternoon on Dartmoor", mediaType: "video", year: "2016", location: "Dartmoor National Park", album: "Family Films", mediaUrl: "/videos/warm-gaze.mp4", posterUrl: "/memorial-before.jpg", aspectRatio: "landscape", duration: "0:06", addedBy: "Anita Carter" },
-  { id: "g6", title: "Exeter Grammar School Cricket XI", mediaType: "photo", year: "1960", location: "Exeter, Devon", album: "Early Years", mediaUrl: "/old-school-photo.webp", aspectRatio: "landscape", hasUnknownPerson: true, addedBy: "Anita Carter" },
+  {
+    id: "g1",
+    title: "Christmas Day Washing Machine Repair",
+    mediaType: "photo",
+    year: "1984",
+    location: "Mrs. Higgins' Kitchen, Devon",
+    album: "Community Memories",
+    isPinned: true,
+    mediaUrl: "/landing/example-image-of-robert.webp",
+    aspectRatio: "square",
+    people: ["Robert Carter"],
+    story: "Dad couldn’t walk past a broken appliance without pulling out a screwdriver. He spent half of Christmas Day fixing Mrs. Higgins' washing machine while everyone waited for dinner.",
+    addedBy: "Anita Carter",
+    sourceMemoryId: "story-1",
+  },
+  {
+    id: "g2",
+    title: "Tuning the Engine in the Old Garage",
+    mediaType: "photo",
+    year: "1974",
+    location: "Clerkenwell Workshop, London",
+    album: "Workshop",
+    mediaUrl: "/landing/robert-hero-image2.png",
+    aspectRatio: "portrait",
+    people: ["Robert Carter"],
+    story: "Working through the weekend on the Morris Minor engine. Robert believed every ping and rattle was just the car talking to him if you listened closely enough.",
+    addedBy: "Meena Carter",
+  },
+  {
+    id: "g3",
+    title: "Checking Tyre Pressure Voicemail",
+    mediaType: "audio",
+    year: "2014",
+    location: "Devon Cottage",
+    album: "Recordings",
+    mediaUrl: "/music/Beloved(chosic.com).mp3",
+    duration: "0:24",
+    story: "A voicemail Dad left before Anita drove back up to London: 'Check your tyres love, the motorway will be slick in the rain.'",
+    addedBy: "Anita Carter",
+  },
+  {
+    id: "g4",
+    title: "Wedding Day at St. Jude’s",
+    mediaType: "photo",
+    year: "1974",
+    location: "St. Jude’s Church, Oxford",
+    album: "Family",
+    mediaUrl: "/landing/demo/robert-wedding-1974.jpg",
+    aspectRatio: "landscape",
+    people: ["Robert Carter", "Meena Carter"],
+    story: "Meena in vintage lace holding wild meadow flowers and Robert trying so hard to look solemn in his suit. Within five minutes they were both in stitches.",
+    addedBy: "Meena Carter",
+  },
+  {
+    id: "g5",
+    title: "Tailgate Laughs with Brother David",
+    mediaType: "photo",
+    year: "1979",
+    location: "Carter Clocks Yard, Devon",
+    album: "Family",
+    mediaUrl: "/landing/robert-with-david.webp",
+    aspectRatio: "square",
+    people: ["Robert Carter", "David Carter"],
+    story: "Bob and his older brother David after hauling oak planks across Dartmoor. Covered in sawdust and motor grease, sharing a cold beer on the truck tailgate.",
+    addedBy: "David Carter",
+  },
+  {
+    id: "g6",
+    title: "Fixing the Bicycle Chain",
+    mediaType: "photo",
+    year: "1958",
+    location: "Exeter, Devon",
+    album: "Early Years",
+    mediaUrl: "/landing/robert-hero-image1.png",
+    aspectRatio: "portrait",
+    people: ["Robert Carter"],
+    story: "Even at ten years old, Robert couldn’t bear to see a mechanism that didn't run smoothly. He spent Saturday mornings oiling every bicycle on the lane.",
+    addedBy: "Anita Carter",
+  },
+  {
+    id: "g7",
+    title: "The Morris Minor Trip across Dartmoor",
+    mediaType: "audio",
+    year: "2019",
+    location: "Carter Workshop",
+    album: "Recordings",
+    mediaUrl: "/music/Awakening-Dew(chosic.com).mp3",
+    duration: "0:36",
+    story: "Robert chuckling as he remembered getting caught in a sudden Dartmoor fog storm back in '78.",
+    addedBy: "Sarah Jenkins",
+  },
+  {
+    id: "g8",
+    title: "Wiping Grease at the Car Window",
+    mediaType: "photo",
+    year: "1976",
+    location: "Devon Cottage Driveway",
+    album: "Workshop",
+    mediaUrl: "/landing/robert-young.webp",
+    aspectRatio: "square",
+    people: ["Robert Carter"],
+    story: "He wouldn't step foot inside the house until his hands were scrubbed with Swarfega. Meena caught him grinning through the car window after the engine purred.",
+    addedBy: "Meena Carter",
+  },
+  {
+    id: "g9",
+    title: "Summer Barbecue in the Garden",
+    mediaType: "photo",
+    year: "1998",
+    location: "Dartmoor Cottage Garden",
+    album: "Family",
+    mediaUrl: "/landing/robert-hero-image3.png",
+    aspectRatio: "portrait",
+    people: ["Robert Carter"],
+    story: "Watching the grandchildren chase grasshoppers on a warm July afternoon, plate in hand, surrounded by the family he loved.",
+    addedBy: "Anita Carter",
+  },
+  {
+    id: "g10",
+    title: "Morning Tea and the Daily Paper",
+    mediaType: "photo",
+    year: "2021",
+    location: "Devon Cottage Kitchen",
+    album: "Family",
+    mediaUrl: "/landing/robert-hero-image4.png",
+    aspectRatio: "portrait",
+    people: ["Robert Carter"],
+    story: "8:00 AM sharp. Hot pot of Earl Grey, the crossword puzzle, and his favorite mug: 'Same Guy Still Curious :)'.",
+    addedBy: "Anita Carter",
+  },
+  {
+    id: "g11",
+    title: "Tea in the Rose Garden",
+    mediaType: "video",
+    year: "1989",
+    location: "Dartmoor Cottage",
+    album: "Family Films",
+    mediaUrl: "/videos/speaking.mp4",
+    posterUrl: "/landing/demo/robert-with-granddaughter-anita-2004.jpg",
+    aspectRatio: "landscape",
+    duration: "0:12",
+    story: "A digitized 8mm family video clip from a summer afternoon in the cottage garden.",
+    addedBy: "Anita Carter",
+  },
+  {
+    id: "g12",
+    title: "Quiet Moment in the Workshop",
+    mediaType: "video",
+    year: "1995",
+    location: "High Street Workshop",
+    album: "Workshop",
+    mediaUrl: "/videos/gentle-smile.mp4",
+    posterUrl: "/landing/demo/robert-workshop-tea-apprentice.jpg",
+    aspectRatio: "portrait",
+    duration: "0:08",
+    story: "Bob looking up from the workbench and offering his gentle, trademark nod.",
+    addedBy: "Sarah Jenkins",
+  },
+  {
+    id: "g13",
+    title: "Teaching Anita About Garden Birds",
+    mediaType: "photo",
+    year: "2004",
+    location: "Dartmoor Cottage Garden",
+    album: "Family",
+    mediaUrl: "/landing/demo/robert-with-granddaughter-anita-2004.jpg",
+    aspectRatio: "landscape",
+    people: ["Robert Carter", "Anita Carter"],
+    story: "Grandpa Bob carved a little robin out of scrap pine and gave it to me on the garden bench. That morning he taught me the call of three different songbirds.",
+    addedBy: "Anita Carter",
+  },
+  {
+    id: "g14",
+    title: "Sunday Afternoon on Dartmoor",
+    mediaType: "video",
+    year: "2016",
+    location: "Dartmoor National Park",
+    album: "Family Films",
+    mediaUrl: "/videos/warm-gaze.mp4",
+    posterUrl: "/theirs/rose-garden.webp",
+    aspectRatio: "landscape",
+    duration: "0:06",
+    story: "A short home video of Robert smiling warmly in the afternoon sun.",
+    addedBy: "Anita Carter",
+  },
+  {
+    id: "g15",
+    title: "The Workshop Bench at Dawn",
+    mediaType: "photo",
+    year: "2002",
+    location: "Carter Clocks, Devon",
+    album: "Workshop",
+    mediaUrl: "/theirs/wooden-work.webp",
+    aspectRatio: "landscape",
+    story: "The morning light hitting Dad's chisels and wood shavings. That bench smelled of cedar, linseed oil, and forty years of honest patience.",
+    addedBy: "Anita Carter",
+  },
 ]
 
 const DEMO_TIMELINE: TimelineMilestone[] = [
-  { year: 1948, chapter: "Chapter I", title: "Born in Exeter, Devon", description: "Born in autumn, the younger of two sons raised on the edge of the Devon moors.", location: "Exeter, Devon" },
-  { year: 1968, chapter: "Chapter II", title: "Horological Apprenticeship in London", description: "Moved to Clerkenwell to study under master watchmakers.", location: "Clerkenwell, London", photoUrl: "/old-school-photo.webp" },
-  { year: 1974, chapter: "Chapter III", title: "Married Meena at St. Jude’s", description: "They bought a small stone cottage near Dartmoor and began their life together.", location: "St. Jude’s Church", photoUrl: "/historical-wedding-photo.webp" },
-  { year: 1983, chapter: "Chapter IV", title: "Founded Carter Clocks & Woodworking", description: "Opened his independent workshop on the high street.", location: "Devon High Street" },
-  { year: 2004, chapter: "Chapter V", title: "Welcomed Granddaughter Anita", description: "Spent weekends teaching her about birds, ponies, and woodworking.", location: "Devon Cottage", photoUrl: "/memorial-family-portrait-combined.jpg" },
-  { year: 2018, chapter: "Chapter VI", title: "Retirement & The Rose Garden", description: "Handed over the workshop keys and tended his heritage roses.", location: "Dartmoor Cottage" },
-  { year: 2024, chapter: "Chapter VII", title: "A life remembered", description: "Robert died peacefully at home with his family beside him.", location: "Dartmoor, Devon" },
+  {
+    year: 1948,
+    chapter: "Chapter I",
+    title: "Born in Exeter, Devon",
+    description: "Born on an October morning, the younger of two brothers raised on the edge of the wild Devon moors.",
+    location: "Exeter, Devon",
+    photoUrl: "/landing/robert-hero-image1.png",
+  },
+  {
+    year: 1968,
+    chapter: "Chapter II",
+    title: "Horological Apprenticeship in London",
+    description: "Moved to Clerkenwell to study under master clockmakers, learning to turn brass pinions and balance delicate hairsprings.",
+    location: "Clerkenwell, London",
+    photoUrl: "/landing/demo/robert-apprenticeship-1968.jpg",
+  },
+  {
+    year: 1974,
+    chapter: "Chapter III",
+    title: "Married Meena at St. Jude’s",
+    description: "Married Meena surrounded by wildflower confetti. They bought a small stone cottage near Dartmoor and began fifty years together.",
+    location: "St. Jude’s Church, Oxford",
+    photoUrl: "/landing/demo/robert-wedding-1974.jpg",
+  },
+  {
+    year: 1983,
+    chapter: "Chapter IV",
+    title: "Founded Carter Clocks & Woodworking",
+    description: "Opened his independent workshop on the Devon high street, repairing church clocks, grandfather clocks, and neighborhood appliances.",
+    location: "Devon High Street",
+    photoUrl: "/theirs/wooden-work.webp",
+  },
+  {
+    year: 2004,
+    chapter: "Chapter V",
+    title: "Welcomed Granddaughter Anita",
+    description: "Spent weekends teaching her about native songbirds, whittling wooden robins, and making sawdust piles in the workshop.",
+    location: "Dartmoor Cottage",
+    photoUrl: "/landing/demo/robert-with-granddaughter-anita-2004.jpg",
+  },
+  {
+    year: 2018,
+    chapter: "Chapter VI",
+    title: "Retirement & The Rose Garden",
+    description: "Handed over the workshop keys to his apprentice Sarah and spent unhurried days cultivating heritage roses.",
+    location: "Dartmoor Cottage",
+    photoUrl: "/theirs/rose-garden.webp",
+  },
+  {
+    year: 2024,
+    chapter: "Chapter VII",
+    title: "A life remembered",
+    description: "Robert died peacefully at home with his family beside him, his garden roses visible through the bedroom window.",
+    location: "Dartmoor, Devon",
+    photoUrl: "/theirs/still-waters.webp",
+  },
 ]
 
 const DEMO_STORIES: StoryItem[] = [
-  { id: "story-1", authorName: "Anita Carter", authorRelationship: "Daughter", dateOrYear: "1994", chronologicalYear: 1994, location: "London, UK", story: "Dad couldn’t walk past a broken appliance without trying to repair it. Once he spent half of Christmas Day fixing Mrs. Higgins’ washing machine while everyone was waiting for dinner.", photoUrl: "/historical-wedding-photo.webp", createdAt: "2024-04-08T10:00:00.000Z" },
-  { id: "story-2", authorName: "Sarah Jenkins", authorRelationship: "Senior Apprentice", dateOrYear: "1998", chronologicalYear: 1998, location: "Carter Workshop", story: "Thirty years at the bench and I never once heard him raise his voice. Whenever an apprentice broke a delicate clock spring, Bob would pour a fresh cup of tea and call it learning.", createdAt: "2024-04-07T10:00:00.000Z" },
-  { id: "story-3", authorName: "Rahul Carter", authorRelationship: "Grandson", dateOrYear: "2012", chronologicalYear: 2012, location: "Back Porch, Devon", story: "He spent three months carving a miniature wooden chess set for my tenth birthday. I still keep the King in my desk drawer at university.", createdAt: "2024-04-06T10:00:00.000Z" },
+  {
+    id: "story-1",
+    authorName: "Anita Carter",
+    authorRelationship: "Daughter",
+    dateOrYear: "1984",
+    chronologicalYear: 1984,
+    location: "Mrs. Higgins' Cottage, Devon",
+    story: "It was Christmas Day 1984. Mum had taken the turkey out of the oven, the table was set for twelve people, paper crowns were on our heads... and Dad was nowhere to be found.\n\nWe went down the lane in our slippers and found him squeezed behind poor eighty-year-old Mrs. Higgins' washing machine in his good Sunday trousers, covered in pump sludge and humming 'O Little Town of Bethlehem'. Her main drum seal had blown that morning with three loads of laundry trapped inside.\n\nWhen Mum scolded him that the roast potatoes were going cold, he just wiped his forehead with his forearm, leaving a big smear of grease, and said: 'Love, you can warm potatoes up in five minutes, but you can’t leave an elderly neighbor without clean towels on Christmas.' That was Dad all over. Dinner was forty minutes late, the potatoes were a bit leathery, and nobody cared one bit.",
+    photoUrl: "/landing/example-image-of-robert.webp",
+    createdAt: "2024-04-08T10:00:00.000Z",
+  },
+  {
+    id: "story-2",
+    authorName: "Sarah Jenkins",
+    authorRelationship: "Senior Apprentice & Shop Successor",
+    dateOrYear: "1996",
+    chronologicalYear: 1996,
+    location: "Carter Clocks Workshop",
+    story: "My second week at the workshop I was terrified of him. Not because he was harsh — quite the opposite, his quietness felt massive. I was working on an 1820s English fusee bracket clock, slipped with my tweezers, and snapped a mainspring with a sound like a pistol shot. I burst into tears right there at the bench.\n\nBob didn't flinch. He didn't swear or sigh. He just walked over to the electric kettle, filled it from the little copper jug, and made two very strong mugs of PG Tips with evaporated milk. He slid one across to me and said: 'Well now, Sarah. That spring was already sixty years tired. You just gave it permission to retire. Let's make a new one from piano wire.'\n\nThirty years later, whenever an apprentice in my own shop breaks something and panics, I put the kettle on. That was Bob's whole philosophy of life.",
+    photoUrl: "/landing/demo/robert-workshop-tea-apprentice.jpg",
+    createdAt: "2024-04-07T10:00:00.000Z",
+  },
+  {
+    id: "story-3",
+    authorName: "Rahul Carter",
+    authorRelationship: "Grandson",
+    dateOrYear: "2012",
+    chronologicalYear: 2012,
+    location: "Back Porch, Devon",
+    story: "For my tenth birthday I asked him for a Game Boy. I was a silly kid, completely obsessed with screens. On my birthday he handed me an old shoebox wrapped in brown parcel paper and butcher's twine.\n\nInside was a complete 32-piece chess set he'd whittled by hand out of scrap cherry and walnut over three winter months. Each piece had tiny chisel marks on the collar. At ten, I didn't appreciate the hundred hours that took. I think I even made a disappointed face.\n\nBut as I grew up, it became the most sacred thing I owned. I took the King with me to university in Bristol — he lived right next to my textbook pile. Every time I was stressed before an exam, I’d turn that little cherry-wood crown in my fingers and remember his steady, calm hands.",
+    photoUrl: "/landing/demo/robert-carved-chess-king.jpg",
+    createdAt: "2024-04-06T10:00:00.000Z",
+  },
+  {
+    id: "story-4",
+    authorName: "Meena Carter",
+    authorRelationship: "Wife of 50 years",
+    dateOrYear: "1974",
+    chronologicalYear: 1974,
+    location: "St. Jude’s Church, Oxford",
+    story: "The night before we married at St. Jude's in Oxford, the old church organist took ill and there was no one to play the wedding march. I was in tears in my room. Robert showed up at my window at midnight on a borrowed bicycle with a portable cassette player he'd rigged up with four D-cell batteries and an old car speaker.\n\nHe had spent five hours cycling between three Oxford colleges until he found a choir student who let him record a Handel recessional onto a blank tape. He held that speaker above his head outside the church while we walked down the stone path under a storm of wildflower confetti. Everyone was laughing so hard their sides hurt. Fifty years passed in a blink, Bob. I miss the sound of your work boots in the hallway.",
+    photoUrl: "/landing/demo/robert-wedding-1974.jpg",
+    createdAt: "2024-04-05T10:00:00.000Z",
+  },
 ]
 
 const DEMO_BIOGRAPHY = `
-  <p>Robert was born in Exeter during the autumn of 1948, the younger of two brothers raised on the edge of the Devon moors. From his earliest years, he showed an almost mechanical curiosity about the inner workings of things.</p>
-  <p>In 1968, he took an apprenticeship in horology in London’s Clerkenwell district. It was during this period that he met Meena. They married in 1974 and settled in a small stone cottage near Dartmoor, where they would spend the next fifty years.</p>
-  <blockquote>“If you give someone an unhurried hour and a proper pot of tea, there isn’t a single disagreement in this world you can’t unravel.”</blockquote>
-  <p>In 1983, he opened Carter Clocks &amp; Woodworking on the high street. He retired in 2018 to tend his rose garden and teach his granddaughter Anita how to identify every native songbird of Devon.</p>
+  <h2>The Boy with the Pocketknife (1948–1967)</h2>
+  <p><strong>Robert Edward Carter</strong> was born on a gusty October morning in 1948 in Exeter, Devon — the younger son of Arthur, a railway signalman, and Margaret, who tended schoolhouse hearths. From the time he could toddle across the kitchen flagstones, Bob was possessed by what his brother David called <em>“an incurable mechanical stubbornness.”</em></p>
+  <p>Where other boys chased footballs across the common, Robert collected discarded clock springs, bicycle bearings, and broken umbrella ribs. By age twelve, he had dismantled his father’s pocket watch four separate times — not out of mischief, but because he was convinced he could make the ticking <em>“a hair softer.”</em></p>
+
+  <blockquote>“If something doesn’t run true, don’t curse the metal. Metal only remembers the pressure someone put into it. Give it patience and heat, and it will settle.”</blockquote>
+
+  <h2>Clerkenwell, Brass Gears &amp; Meena (1968–1982)</h2>
+  <p>In the autumn of 1968, nineteen-year-old Robert packed a cardboard suitcase and boarded a steam train for London. He had secured a coveted horological apprenticeship in the historic clockmaking quarter of <a href="https://en.wikipedia.org/wiki/Clerkenwell">Clerkenwell</a>. For five years, under the exacting eye of master horologist George Davies, Bob learned to turn brass pinions on a foot-treadle lathe and balance hairsprings thin as horsehair.</p>
+  <p>It was during a rainy winter lunch at a tea stall on Rosebery Avenue that he spilled sugar into the saucer of a young mathematics student named <strong>Meena Patel</strong>. She corrected his grammar; he offered to mend the clasp on her leather handbag. They married in the summer of 1974 at <a href="#timeline">St. Jude’s Parish</a>, surrounded by wild heather and twenty-two members of Meena’s family who immediately adopted the shy Devon boy into their vibrant Sunday curries.</p>
+
+  <hr />
+
+  <h2>Carter Clocks &amp; The Open Door (1983–2017)</h2>
+  <p>In 1983, Robert returned home to Devon and opened <em>Carter Clocks &amp; Woodworking</em> on the High Street. Over thirty-four years, that narrow workshop became an unofficial town sanctuary. The brass bell over the door chimed constantly — not just for grandfather clocks needing repair, but for neighbours carrying broken lawnmowers, schoolgirls with jammed violin pegs, and old friends needing an unhurried listener.</p>
+
+  <h3>The Four Unwritten Bench Rules</h3>
+  <p>Taped with yellowing masking tape to his workbench were four guidelines he taught every apprentice:</p>
+  <ul>
+    <li><strong>Never strike cold brass:</strong> <em>“Take the time to warm the metal, or prepare to apologise to it.”</em></li>
+    <li><strong>The kettle is part of the toolkit:</strong> <em>“No panic ever survived a fresh pot of hot tea.”</em></li>
+    <li><strong>Keep the original scratches:</strong> <em>“A grandfather clock without dings is just furniture with no memories.”</em></li>
+    <li><strong>No clock leaves until it purrs:</strong> <em>“If it limps out of the shop, your name limps with it.”</em></li>
+  </ul>
+
+  <p>You can explore original photographs and workshop recordings in Robert's <a href="#gallery">Life Gallery</a>, including his beloved <a href="#gallery">1974 Morris Minor engine</a>.</p>
+
+  <h2>The Rose Garden &amp; The Last Chapter (2018–2024)</h2>
+  <p>When Robert retired in the spring of 2018, he handed his workshop keys to his senior apprentice Sarah Jenkins, keeping only a pocket set of whittling knives and an oilstone. He turned his attention to the garden behind his stone cottage on the rim of <a href="https://www.dartmoor.gov.uk">Dartmoor National Park</a>.</p>
+  <p>He spent his final years cultivating heirloom heritage roses — particularly <em>Rosa mundi</em> and sweetbriar — and teaching his granddaughter <a href="#memories">Anita</a> how to identify every native songbird of Devon by its morning trill. He died peacefully at home on a bright April afternoon in 2024, surrounded by family, with his beloved garden roses visible through the bedroom window.</p>
 `
 
 const DEMO_TRIBUTES: MemoryItem[] = [
-  { id: "m1", authorName: "Meena Carter", authorRelationship: "Wife of 50 years", dateOrYear: "Yesterday", location: "Devon Cottage", story: "A blossom in memory of my dearest Bob. For fifty years you brought warmth, laughter, and calm into our home.", tributeType: "flower", createdAt: "2024-04-08T12:00:00.000Z" },
-  { id: "m2", authorName: "David Carter", authorRelationship: "Older Brother", dateOrYear: "2 days ago", story: "Lighting a candle for my little brother Bob. Your gentle spirit and steady hands will never be forgotten.", tributeType: "candle", createdAt: "2024-04-07T12:00:00.000Z" },
-  { id: "m3", authorName: "Thomas Bradley", authorRelationship: "Lifelong Friend", dateOrYear: "3 days ago", story: "Rest peacefully, old friend, among the heather and the bees.", tributeType: "flower", createdAt: "2024-04-06T12:00:00.000Z" },
-  { id: "m4", authorName: "Eleanor Vance", authorRelationship: "Family Neighbour", dateOrYear: "5 days ago", story: "Robert’s kindness and warmth touched everyone who walked down our lane.", tributeType: "note", createdAt: "2024-04-04T12:00:00.000Z" },
+  {
+    id: "m1",
+    authorName: "Meena Carter",
+    authorRelationship: "Wife of 50 years",
+    dateOrYear: "Yesterday",
+    location: "Our kitchen in Devon",
+    story: "Still made two cups of tea this morning by habit. The kitchen is far too quiet without you tapping your spoon against the saucer. Thank you for fifty years of gentleness, my darling Bob. The garden roses are just opening for you.",
+    tributeType: "flower",
+    createdAt: "2024-04-08T12:00:00.000Z",
+  },
+  {
+    id: "m2",
+    authorName: "David Carter",
+    authorRelationship: "Older Brother",
+    dateOrYear: "2 days ago",
+    location: "Exeter",
+    story: "Lighting a candle for you little brother. God knows we fought like cats when we were lads over bicycle wrenches and fishhooks, but there was never a better man on this earth. Give Mum a kiss from me. Save me a seat by the river.",
+    tributeType: "candle",
+    createdAt: "2024-04-07T12:00:00.000Z",
+  },
+  {
+    id: "m3",
+    authorName: "Anita Carter",
+    authorRelationship: "Granddaughter",
+    dateOrYear: "3 days ago",
+    location: "London",
+    story: "Grandpa, I found that wooden robin you carved for me in 2004 tucked inside my jewelry box yesterday. I sat on the floor and cried until I was laughing thinking about you yelling at the crows for stealing your tomato seedlings. You taught me how to listen to the world. I love you forever.",
+    tributeType: "flower",
+    createdAt: "2024-04-06T12:00:00.000Z",
+  },
+  {
+    id: "m4",
+    authorName: "Thomas Bradley",
+    authorRelationship: "Lifelong Friend",
+    dateOrYear: "4 days ago",
+    location: "The Plume of Feathers, Princetown",
+    story: "Left a half pint of bitter on the corner table where Bob used to sit every third Thursday. Sixty years of arguing about cricket, carburetor timing, and why Devon cider beats Somerset every day of the week. Miss you terribly mate. The moors won't be the same without your Morris Minor rattling down the lane.",
+    tributeType: "note",
+    createdAt: "2024-04-05T12:00:00.000Z",
+  },
+  {
+    id: "m5",
+    authorName: "Eleanor Vance",
+    authorRelationship: "Family Neighbour",
+    dateOrYear: "5 days ago",
+    location: "High Street, Devon",
+    story: "When my late husband Arthur had his stroke in 2011, Robert came over every single Tuesday at 7am to take our rubbish bins down the long gravel drive so I wouldn't have to struggle. He did it for four years straight and never once mentioned it or accepted a penny. He just left a little bunch of sweet peas on our gatepost every June.",
+    tributeType: "flower",
+    createdAt: "2024-04-04T12:00:00.000Z",
+  },
+  {
+    id: "m6",
+    authorName: "Marcus Thorne",
+    authorRelationship: "Former Apprentice",
+    dateOrYear: "6 days ago",
+    location: "Bristol",
+    story: "Lighting a candle for the master who taught me how to work with my hands and my heart. 'Measure three times, cut once, and forgive the wood when it moves on you.' I still hear your voice every morning when I open the workshop shutters, Bob.",
+    tributeType: "candle",
+    createdAt: "2024-04-03T12:00:00.000Z",
+  },
 ]
 
 type MemorialRow = Record<string, any>
@@ -246,11 +605,11 @@ export const getMemorialViewContext = cache(async (slug: string): Promise<Memori
   }
   const pinUnlocked = Boolean(
     memorial?.privacy === "private" &&
-      verifyPinAccessToken(
-        cookieStore.get(getMemorialPinCookieName(slug))?.value,
-        memorial.id,
-        memorial.access_pin_hash
-      )
+    verifyPinAccessToken(
+      cookieStore.get(getMemorialPinCookieName(slug))?.value,
+      memorial.id,
+      memorial.access_pin_hash
+    )
   )
   const requiresPin = Boolean(memorial?.privacy === "private" && !hasMemberAccess && !pinUnlocked)
   const sections = { ...DEFAULT_SECTIONS, ...(memorial?.section_settings || {}) }
@@ -286,8 +645,8 @@ export const getMemorialViewContext = cache(async (slug: string): Promise<Memori
           : null,
       portraitUrl: memorial?.portrait_photo_url
         ? resolveMediaUrl(memorial.portrait_photo_url, {
-            publicDelivery: memorial.status === "published" && memorial.privacy !== "private",
-          })
+          publicDelivery: memorial.status === "published" && memorial.privacy !== "private",
+        })
         : isDemo
           ? "/landing/robert-hero-image1.png"
           : null,
@@ -314,8 +673,8 @@ export const getMemorialViewContext = cache(async (slug: string): Promise<Memori
             ...raw,
             cover_url: raw.cover_url
               ? resolveMediaUrl(raw.cover_url, {
-                  publicDelivery: memorial?.status === "published" && memorial?.privacy !== "private",
-                })
+                publicDelivery: memorial?.status === "published" && memorial?.privacy !== "private",
+              })
               : null,
           }
         }

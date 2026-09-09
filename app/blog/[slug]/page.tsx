@@ -73,58 +73,23 @@ export async function generateStaticParams(): Promise<{ slug: string }[]> {
   }
 }
 
+import { buildBlogMetadata, buildNoIndexMetadata } from "@/lib/seo/metadata"
+import { buildBlogArticleSchemaGraph } from "@/lib/seo/schema"
+import { JsonLd } from "@/components/seo/json-ld"
+
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
   const { slug } = await params
   try {
     const post = await getPostBySlug(slug)
 
     if (!post) {
-      return {
-        title: "Post Not Found - Theirs Blog",
-        description: "The requested blog post could not be found.",
-        robots: { index: false, follow: false },
-      }
+      return buildNoIndexMetadata("Post Not Found")
     }
 
-    const seoTitle = post.title
-    const seoDescription = post.excerpt || "Read this article on Theirs Blog"
-    const ogImage = post.featuredImage?.node?.sourceUrl || "/placeholder.svg"
-
-    return {
-      title: `${seoTitle} - Theirs Blog`,
-      description: seoDescription,
-      openGraph: {
-        title: seoTitle,
-        description: seoDescription,
-        type: "article",
-        publishedTime: post.date,
-        modifiedTime: post.modified,
-        authors: [post.author.node.name],
-        images: [{
-          url: ogImage,
-          width: 1200,
-          height: 630,
-          alt: post.featuredImage?.node?.altText || post.title,
-        }],
-        url: `https://theirs.page/blog/${post.slug}`,
-      },
-      twitter: {
-        card: "summary_large_image",
-        title: seoTitle,
-        description: seoDescription,
-        images: [ogImage],
-      },
-      alternates: {
-        canonical: `https://theirs.page/blog/${post.slug}`,
-      },
-    }
+    return buildBlogMetadata({ post, isArticle: true })
   } catch (error) {
     console.error('Error generating metadata:', error)
-    return {
-      title: "Blog Post - Theirs",
-      description: "Read the latest articles about preserving memories and creating memorial websites for loved ones.",
-      robots: { index: false, follow: false },
-    }
+    return buildNoIndexMetadata("Blog Post")
   }
 }
 
@@ -150,47 +115,11 @@ function BlogPostContent({ post }: { post: WordPressPost }) {
   const category = post.categories.nodes[0]?.name || "General"
   const { toc, content } = buildToc(post.content)
 
-  const blogPostJsonLd = {
-    '@context': 'https://schema.org',
-    '@type': 'BlogPosting',
-    '@id': `https://theirs.page/blog/${post.slug}`,
-    headline: post.title,
-    description: post.excerpt ? post.excerpt.replace(/<[^>]*>/g, '') : post.title,
-    image: post.featuredImage?.node?.sourceUrl || 'https://theirs.page/placeholder.svg',
-    datePublished: post.date,
-    dateModified: post.modified,
-    author: {
-      '@type': 'Organization',
-      name: 'Theirs Team',
-      url: 'https://theirs.page'
-    },
-    publisher: {
-      '@type': 'Organization',
-      name: 'Theirs',
-      logo: {
-        '@type': 'ImageObject',
-        url: 'https://theirs.page/theirs-logo.svg'
-      }
-    },
-    // Use URL string for mainEntityOfPage to avoid emitting a WebPage entity
-    mainEntityOfPage: `https://theirs.page/blog/${post.slug}`,
-    articleSection: category,
-    wordCount: post.content.split(' ').length,
-    timeRequired: `PT${readTime}M`,
-    inLanguage: 'en-US',
-    isPartOf: {
-      '@type': 'Blog',
-      '@id': 'https://theirs.page/blog',
-      name: 'Theirs Blog'
-    }
-  }
+  const blogPostJsonLd = buildBlogArticleSchemaGraph(post)
 
   return (
     <div className="min-h-screen bg-brand-bg">
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(blogPostJsonLd) }}
-      />
+      <JsonLd schema={blogPostJsonLd} id={`blog-post-schema-${post.slug}`} />
       <TheirsNav />
       <main className="py-6">
 

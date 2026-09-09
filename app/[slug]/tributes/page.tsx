@@ -4,12 +4,20 @@ import { getMemorialViewContext, loadBrowsePage } from "@/lib/memorial/public-da
 import { PagedTributes } from "@/components/memorial/paged-content"
 import type { MemoryItem } from "@/components/memorial/memories-stream"
 
+import { buildMemorialMetadata, buildNoIndexMetadata } from "@/lib/seo/metadata"
+
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
   const { slug } = await params
-  return {
-    title: "Tributes & Condolences",
-    alternates: { canonical: `https://theirs.page/${slug}/tributes` },
-  }
+  const context = await getMemorialViewContext(slug)
+  if (!context) return buildNoIndexMetadata("Tributes")
+
+  return buildMemorialMetadata({
+    identity: context.identity,
+    slug,
+    isSubpage: true,
+    subpageTitle: "Tributes & Condolences",
+    subpagePath: "tributes",
+  })
 }
 
 export default async function TributesPage({ params }: { params: Promise<{ slug: string }> }) {

@@ -9,6 +9,8 @@ export const metadata: Metadata = {
   robots: { index: false, follow: false },
 }
 
+import { JsonLd } from "@/components/seo/json-ld"
+
 export default async function RobertCarterLayout({ children }: { children: React.ReactNode }) {
   const context = await getMemorialViewContext("robert-carter")
   if (!context) notFound()
@@ -25,10 +27,7 @@ export default async function RobertCarterLayout({ children }: { children: React
 
   return (
     <MemorialShell identity={identity}>
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
-      />
+      <JsonLd schema={jsonLd} id="robert-carter-demo-schema" />
       {children}
     </MemorialShell>
   )

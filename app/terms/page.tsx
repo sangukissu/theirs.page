@@ -1,19 +1,23 @@
 import type { Metadata } from "next"
 import Link from "next/link"
 import { LegalPageLayout } from "@/components/legal/legal-page-layout"
+import { JsonLd } from "@/components/seo/json-ld"
+import { buildStaticMetadata } from "@/lib/seo/metadata"
+import { buildLegalPageSchemaGraph } from "@/lib/seo/schema"
 
-export const metadata: Metadata = {
-  title: "Terms of Service",
-  description:
-    "The legal agreement between Theirs and memorial caretakers, contributors, and visitors.",
-  alternates: {
-    canonical: "/terms",
-  },
-}
+export const metadata: Metadata = buildStaticMetadata("/terms")
 
 export default function TermsPage() {
+  const schema = buildLegalPageSchemaGraph(
+    "/terms",
+    "Terms of Service",
+    "The legal agreement between Theirs and memorial caretakers, contributors, and visitors."
+  )
+
   return (
-    <LegalPageLayout
+    <>
+      <JsonLd schema={schema} id="terms-schema" />
+      <LegalPageLayout
       title="Terms of Service"
       description="These terms govern the use of Theirs, establishing content ownership, editorial guidelines for memorial caretakers, and our commitments to durable archival preservation."
       lastUpdated="September 2026"
@@ -238,5 +242,6 @@ export default function TermsPage() {
         </p>
       </section>
     </LegalPageLayout>
+    </>
   )
 }

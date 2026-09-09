@@ -1,19 +1,23 @@
 import type { Metadata } from "next"
 import Link from "next/link"
 import { LegalPageLayout } from "@/components/legal/legal-page-layout"
+import { JsonLd } from "@/components/seo/json-ld"
+import { buildStaticMetadata } from "@/lib/seo/metadata"
+import { buildLegalPageSchemaGraph } from "@/lib/seo/schema"
 
-export const metadata: Metadata = {
-  title: "Refund Policy",
-  description:
-    "Fair, transparent 14-day money-back guarantee for Theirs Complete memorial upgrades.",
-  alternates: {
-    canonical: "/refunds",
-  },
-}
+export const metadata: Metadata = buildStaticMetadata("/refunds")
 
 export default function RefundsPage() {
+  const schema = buildLegalPageSchemaGraph(
+    "/refunds",
+    "Refund Policy",
+    "Fair, transparent 14-day money-back guarantee for Theirs Complete memorial upgrades."
+  )
+
   return (
-    <LegalPageLayout
+    <>
+      <JsonLd schema={schema} id="refunds-schema" />
+      <LegalPageLayout
       title="Refund Policy"
       description="We believe in fair, dignified pricing. You can try Theirs completely free before paying, and all purchases of Theirs Complete are protected by our 14-day money-back guarantee."
       lastUpdated="September 2026"
@@ -146,5 +150,6 @@ export default function RefundsPage() {
         </div>
       </section>
     </LegalPageLayout>
+    </>
   )
 }

@@ -4,12 +4,20 @@ import { getMemorialViewContext, loadBrowsePage } from "@/lib/memorial/public-da
 import { PagedTimeline } from "@/components/memorial/paged-content"
 import type { TimelineMilestone } from "@/components/memorial/life-timeline"
 
+import { buildMemorialMetadata, buildNoIndexMetadata } from "@/lib/seo/metadata"
+
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
   const { slug } = await params
-  return {
-    title: "Life Timeline & Chapters",
-    alternates: { canonical: `https://theirs.page/${slug}/timeline` },
-  }
+  const context = await getMemorialViewContext(slug)
+  if (!context) return buildNoIndexMetadata("Timeline")
+
+  return buildMemorialMetadata({
+    identity: context.identity,
+    slug,
+    isSubpage: true,
+    subpageTitle: "Life Timeline & Chapters",
+    subpagePath: "timeline",
+  })
 }
 
 export default async function TimelinePage({ params }: { params: Promise<{ slug: string }> }) {

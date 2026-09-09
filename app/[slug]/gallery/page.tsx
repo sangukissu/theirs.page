@@ -5,12 +5,20 @@ import { GalleryPageView } from "@/components/memorial/gallery-page-view"
 import type { GalleryItem } from "@/components/memorial/memorial-gallery"
 import type { GalleryFilter } from "@/types/memorial-view"
 
+import { buildMemorialMetadata, buildNoIndexMetadata } from "@/lib/seo/metadata"
+
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
   const { slug } = await params
-  return {
-    title: "Photographs & Media Gallery",
-    alternates: { canonical: `https://theirs.page/${slug}/gallery` },
-  }
+  const context = await getMemorialViewContext(slug)
+  if (!context) return buildNoIndexMetadata("Gallery")
+
+  return buildMemorialMetadata({
+    identity: context.identity,
+    slug,
+    isSubpage: true,
+    subpageTitle: "Photographs & Media Gallery",
+    subpagePath: "gallery",
+  })
 }
 
 export default async function GalleryPage({ params, searchParams }: { params: Promise<{ slug: string }>; searchParams: Promise<{ type?: string; album?: string; media?: string }> }) {

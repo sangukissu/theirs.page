@@ -5,6 +5,9 @@ import { getSupabaseAdminSafe } from "@/utils/supabase/admin"
 import { verifyInvitationToken } from "@/lib/invitations"
 import { resolveMediaUrl } from "@/lib/r2"
 import { InvitationAcceptClient } from "./invitation-accept-client"
+import { buildNoIndexMetadata } from "@/lib/seo/metadata"
+
+export const metadata = buildNoIndexMetadata("Memorial Invitation")
 
 interface PageProps {
   searchParams: Promise<{ token?: string }>

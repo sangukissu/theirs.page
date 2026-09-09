@@ -1,19 +1,23 @@
 import type { Metadata } from "next"
 import Link from "next/link"
 import { LegalPageLayout } from "@/components/legal/legal-page-layout"
+import { JsonLd } from "@/components/seo/json-ld"
+import { buildStaticMetadata } from "@/lib/seo/metadata"
+import { buildLegalPageSchemaGraph } from "@/lib/seo/schema"
 
-export const metadata: Metadata = {
-  title: "Memorial & Content Guidelines",
-  description:
-    "Community standards for creating respectful, authentic, and dignified life archives on Theirs.",
-  alternates: {
-    canonical: "/guidelines",
-  },
-}
+export const metadata: Metadata = buildStaticMetadata("/guidelines")
 
 export default function GuidelinesPage() {
+  const schema = buildLegalPageSchemaGraph(
+    "/guidelines",
+    "Memorial & Content Guidelines",
+    "Community standards for creating respectful, authentic, and dignified life archives on Theirs."
+  )
+
   return (
-    <LegalPageLayout
+    <>
+      <JsonLd schema={schema} id="guidelines-schema" />
+      <LegalPageLayout
       title="Memorial & Content Guidelines"
       description="Theirs exists to celebrate human lives with honesty, dignity, and warmth. These guidelines establish what is welcomed, what is moderated, and how we keep memorials safe for grieving families."
       lastUpdated="September 2026"
@@ -193,5 +197,6 @@ export default function GuidelinesPage() {
         </p>
       </section>
     </LegalPageLayout>
+    </>
   )
 }

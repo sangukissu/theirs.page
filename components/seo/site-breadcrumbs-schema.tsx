@@ -1,4 +1,5 @@
 import React from "react"
+import { JsonLd } from "./json-ld"
 
 interface BreadcrumbItem {
   name: string
@@ -31,10 +32,5 @@ export function SiteBreadcrumbsSchema({ items }: SiteBreadcrumbsSchemaProps) {
     itemListElement: schemaItems,
   }
 
-  return (
-    <script
-      type="application/ld+json"
-      dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }}
-    />
-  )
+  return <JsonLd schema={breadcrumbJsonLd} />
 }

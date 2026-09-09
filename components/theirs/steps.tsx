@@ -42,7 +42,7 @@ function ShowcaseOne() {
                 className="relative size-full"
               >
                 <img
-                  src="/memorial-family-portrait-grandfather.jpg"
+                  src="/landing/robert-young.webp"
                   alt="Robert Carter"
                   className="size-full object-cover"
                 />
@@ -123,17 +123,8 @@ function ShowcaseOne() {
 // SHOWCASE 02: Invite family & friends (Warm Contributed Gathering)
 // =============================================================================
 function ShowcaseTwo() {
-  const [phase, setPhase] = useState(0)
   const [copied, setCopied] = useState(false)
 
-  useEffect(() => {
-    const timers = [
-      setTimeout(() => setPhase(1), 700),  // Anita arrives
-      setTimeout(() => setPhase(2), 2200), // David arrives
-      setTimeout(() => setPhase(0), 7500), // Loop
-    ]
-    return () => timers.forEach(clearTimeout)
-  }, [phase === 0])
 
   const handleCopy = () => {
     setCopied(true)
@@ -199,7 +190,7 @@ function ShowcaseTwo() {
             </div>
             <div className="size-8 rounded-lg overflow-hidden border border-black/10 shrink-0">
               <img
-                src="/vintage-family-portraits-colorized.webp"
+                src="/landing/robert-with-david.webp"
                 alt="Workshop photo"
                 className="size-full object-cover saturate-110"
               />
@@ -272,12 +263,12 @@ function ShowcaseThree() {
                 animate={
                   isPlaying
                     ? {
-                        height: [
-                          `${baseHeight * 0.4}%`,
-                          `${baseHeight}%`,
-                          `${baseHeight * 0.5}%`,
-                        ],
-                      }
+                      height: [
+                        `${baseHeight * 0.4}%`,
+                        `${baseHeight}%`,
+                        `${baseHeight * 0.5}%`,
+                      ],
+                    }
                     : { height: `${baseHeight}%` }
                 }
                 transition={{
@@ -285,9 +276,8 @@ function ShowcaseThree() {
                   repeat: Infinity,
                   ease: "easeInOut",
                 }}
-                className={`w-[1.5px] rounded-full block transition-colors duration-150 ${
-                  isPast ? "bg-primary" : "bg-neutral-300"
-                }`}
+                className={`w-[1.5px] rounded-full block transition-colors duration-150 ${isPast ? "bg-primary" : "bg-neutral-300"
+                  }`}
               />
             )
           })}
@@ -310,7 +300,7 @@ function ShowcaseThree() {
         {/* Vintage 1974 Photo with Amber Year Badge */}
         <div className="size-11 rounded-lg overflow-hidden border border-black/10 shrink-0 relative">
           <img
-            src="/historical-wedding-photo.webp"
+            src="/landing/example-image-of-robert.webp"
             alt="Wedding"
             className="size-full object-cover sepia-[0.2] saturate-110 contrast-105"
           />
@@ -346,7 +336,7 @@ export function TheirsSteps() {
 
       {/* 3 Refined, Vibrant Showcase Cards */}
       <ul className="grid gap-4 sm:gap-6 lg:grid-cols-3">
-        
+
         {/* Step 01 */}
         <li className="group relative flex flex-col overflow-hidden rounded-2xl bg-[#f6f6f6] pb-6 sm:pb-8 border border-black/[0.06]">
           <span

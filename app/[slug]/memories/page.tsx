@@ -4,12 +4,20 @@ import { getMemorialViewContext, loadBrowsePage } from "@/lib/memorial/public-da
 import { PagedMemories } from "@/components/memorial/paged-content"
 import type { StoryItem } from "@/components/memorial/life-stories"
 
+import { buildMemorialMetadata, buildNoIndexMetadata } from "@/lib/seo/metadata"
+
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
   const { slug } = await params
-  return {
-    title: "Stories & Remembrances",
-    alternates: { canonical: `https://theirs.page/${slug}/memories` },
-  }
+  const context = await getMemorialViewContext(slug)
+  if (!context) return buildNoIndexMetadata("Memories")
+
+  return buildMemorialMetadata({
+    identity: context.identity,
+    slug,
+    isSubpage: true,
+    subpageTitle: "Stories & Remembrances",
+    subpagePath: "memories",
+  })
 }
 
 export default async function MemoriesPage({ params }: { params: Promise<{ slug: string }> }) {

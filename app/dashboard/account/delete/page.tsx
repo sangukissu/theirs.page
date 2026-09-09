@@ -3,10 +3,12 @@ import { createClient } from "@/utils/supabase/server"
 import { DeleteAccountClient } from "@/components/account/delete-account-client"
 import { getDashboardIdentity } from "@/lib/auth/dashboard-identity"
 
-export const metadata = {
-  title: "Delete account",
-  description: "Permanently delete your BringBack account and all associated data.",
-}
+import { buildNoIndexMetadata } from "@/lib/seo/metadata"
+
+export const metadata = buildNoIndexMetadata(
+  "Delete account",
+  "Permanently delete your Theirs account and all associated data."
+)
 
 export default async function DeleteAccountPage() {
   const supabase = await createClient()

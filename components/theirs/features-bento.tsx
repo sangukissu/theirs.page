@@ -120,7 +120,7 @@ export function FeaturesBento() {
                   <div className="flex items-center gap-2.5 mt-1">
                     <div className="size-10 rounded-md overflow-hidden bg-neutral-200 shrink-0 border border-black/[0.08]">
                       <img
-                        src="/vintage-family-portraits-colorized.webp"
+                        src="/landing/robert-with-david.webp"
                         alt="Devon moors 1968"
                         className="size-full object-cover grayscale"
                       />

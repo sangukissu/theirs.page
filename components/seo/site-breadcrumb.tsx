@@ -1,5 +1,6 @@
 import Link from "next/link"
 import { SITE_URL } from "@/lib/pricing"
+import { JsonLd } from "@/components/seo/json-ld"
 
 export type Crumb = { name: string; href?: string }
 
@@ -23,10 +24,7 @@ export function SiteBreadcrumb({ items }: { items: Crumb[] }) {
 
   return (
     <>
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
-      />
+      <JsonLd schema={jsonLd} />
       <nav aria-label="Breadcrumb" className="mb-6">
         <ol className="flex flex-wrap items-center gap-1.5 text-sm text-gray-500 font-medium">
           {withHome.map((item, i) => {

@@ -1,8 +1,7 @@
 import Link from "next/link"
+import { buildNoIndexMetadata } from "@/lib/seo/metadata"
 
-export const metadata = {
-  title: "Account deleted",
-}
+export const metadata = buildNoIndexMetadata("Account deleted")
 
 export default function AccountDeletedPage() {
   return (

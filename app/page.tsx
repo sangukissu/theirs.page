@@ -7,33 +7,20 @@ import { TheirsPricing } from "@/components/theirs/pricing"
 import { TheirsFaq } from "@/components/theirs/faq"
 import { CtaBanner } from "@/components/theirs/cta-banner"
 import { TheirsFooter } from "@/components/theirs/footer"
+import { JsonLd } from "@/components/seo/json-ld"
+import { buildStaticMetadata } from "@/lib/seo/metadata"
+import { buildHomeSchemaGraph } from "@/lib/seo/schema"
 
-export const metadata: Metadata = {
-  title: {
-    absolute: "Online Memorial Website for Loved Ones | Theirs",
-  },
-  description:
-    "Create a beautiful online memorial website for someone you love. Share photos, stories and tributes, and invite family and friends to add their memories.",
-  alternates: {
-    canonical: "https://theirs.page/",
-  },
-  openGraph: {
-    title: "Online Memorial Website for Loved Ones | Theirs",
-    description:
-      "Create a beautiful online memorial website for someone you love. Share photos, stories and tributes, and invite family and friends to add their memories.",
-    url: "https://theirs.page",
-  },
-  twitter: {
-    card: "summary_large_image",
-    title: "Online Memorial Website for Loved Ones | Theirs",
-    description:
-      "Create a beautiful online memorial website for someone you love. Share photos, stories and tributes, and invite family and friends to add their memories.",
-  },
-}
+export const metadata: Metadata = buildStaticMetadata("/")
 
 export default function HomePage() {
+  const schemaGraph = buildHomeSchemaGraph()
+
   return (
     <main className="min-h-screen bg-white text-[#666666] selection:bg-primary/10 selection:text-primary relative">
+      {/* Connected JSON-LD Schema Graph: Organization, WebSite, WebApplication, WebPage, FAQPage */}
+      <JsonLd schema={schemaGraph} id="theirs-home-schema" />
+
       {/* Floating Frosted Pill Navbar */}
       <TheirsNav />
 

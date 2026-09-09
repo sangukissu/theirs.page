@@ -24,7 +24,7 @@ export function TheirsHero() {
   }
 
   return (
-    <section className="relative pt-8 sm:pt-12 pb-0 px-4 text-center overflow-hidden flex flex-col items-center bg-white">
+    <section className="relative pt-16 sm:pt-12 pb-0 px-4 text-center overflow-hidden flex flex-col items-center bg-white">
       <div className="max-w-5xl mx-auto flex flex-col items-center w-full">
 
         {/* Eyebrow Badge */}

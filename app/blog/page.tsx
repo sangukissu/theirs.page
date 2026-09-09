@@ -18,15 +18,15 @@ export const metadata: Metadata = {
     canonical: "/blog",
   },
   openGraph: {
-    title: "Blog - BringBack | Photo Restoration Tips & Stories",
-    description: "Learn about photo restoration, preservation tips, and read inspiring stories of memories brought back to life.",
+    title: "Blog - Theirs | Memorial Website for loved ones",
+    description: "Guides and tips for preserving memories and creating memorial websites for loved ones.",
     type: "website",
     url: "https://theirs.page/blog",
   },
   twitter: {
     card: "summary_large_image",
-    title: "Blog - BringBack | Photo Restoration Tips & Stories",
-    description: "Learn about photo restoration, preservation tips, and read inspiring stories of memories brought back to life.",
+    title: "Blog - Theirs | Memorial Website for loved ones",
+    description: "Guides and tips for preserving memories and creating memorial websites for loved ones.",
   },
 }
 
