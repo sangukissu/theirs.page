@@ -485,7 +485,7 @@ function mapMedia(row: MemorialRow, publicDelivery = false): GalleryItem {
 }
 
 const MEMORIAL_PUBLIC_COLUMNS =
-  "id, slug, owner_id, full_name, preferred_name, creator_relationship, birth_year, birth_month, birth_day, death_year, death_month, death_day, location, headline, biography, portrait_photo_url, status, privacy, is_paid, section_settings, contribution_settings, access_pin_hash, theme, cover_settings"
+  "id, slug, owner_id, full_name, preferred_name, creator_relationship, birth_year, birth_month, birth_day, death_year, death_month, death_day, location, headline, biography, portrait_photo_url, status, privacy, is_paid, section_settings, contribution_settings, access_pin_hash, theme, cover_settings, language"
 
 const MEDIA_COLUMNS =
   "id, caption, media_type, approx_year, location, album, is_pinned, url, order_index, created_at, source_memory_id, source_type, external_provider, external_id, external_url"
@@ -666,6 +666,7 @@ export const getMemorialViewContext = cache(async (slug: string): Promise<Memori
       sectionSettings: sections,
       contributionSettings: memorial?.contribution_settings || null,
       theme: (memorial?.theme as MemorialIdentity["theme"]) || "quiet",
+      language: memorial?.language || "en",
       coverSettings: (() => {
         const raw = memorial?.cover_settings as MemorialIdentity["coverSettings"]
         if (raw) {

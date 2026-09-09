@@ -47,6 +47,7 @@ export default async function DashboardPage(props: DashboardPageProps) {
         status,
         privacy,
         is_paid,
+        language,
         created_at
       `).eq("owner_id", user.id).order("created_at", { ascending: false }),
       db.from("collaborators")
@@ -71,6 +72,7 @@ export default async function DashboardPage(props: DashboardPageProps) {
           status,
           privacy,
           is_paid,
+          language,
           created_at
         `).in("id", membershipIds)
       : { data: [], error: null }

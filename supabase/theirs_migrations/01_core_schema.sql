@@ -62,6 +62,7 @@ create table if not exists public.memorials (
   successor_name text,
   successor_email text,
   status text not null default 'draft' check (status in ('draft', 'published', 'archived')),
+  language text not null default 'en',
   is_paid boolean not null default false,
   paid_at timestamp with time zone,
   section_settings jsonb default '{"story": true, "tributes": true, "timeline": true, "gallery": true, "stories": true}'::jsonb,
@@ -72,6 +73,7 @@ create table if not exists public.memorials (
 -- Idempotent column additions if table was created previously
 alter table public.memorials add column if not exists section_settings jsonb default '{"story": true, "tributes": true, "timeline": true, "gallery": true, "stories": true}'::jsonb;
 alter table public.memorials add column if not exists location text;
+alter table public.memorials add column if not exists language text not null default 'en';
 alter table public.memorials drop column if exists birth_date;
 alter table public.memorials drop column if exists death_date;
 alter table public.memorials drop column if exists cover_photo_url;

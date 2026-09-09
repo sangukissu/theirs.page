@@ -38,6 +38,7 @@ export interface MemorialIdentity {
   photoCount?: number
   theme?: MemorialTheme
   coverSettings?: MemorialCoverSettings | null
+  language?: string
 }
 
 export interface GalleryFacets {

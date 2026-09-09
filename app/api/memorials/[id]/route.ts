@@ -192,11 +192,18 @@ export async function PATCH(req: NextRequest, context: RouteContext) {
       "section_settings",
       "contribution_settings",
       "theme",
+      "language",
     ]
 
     for (const f of editorialFields) {
       if (body[f] !== undefined) {
-        updates[f] = body[f]
+        if (f === "language") {
+          updates[f] = typeof body[f] === "string" && body[f].trim()
+            ? body[f].trim().toLowerCase().slice(0, 10)
+            : "en"
+        } else {
+          updates[f] = body[f]
+        }
       }
     }
 

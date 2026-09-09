@@ -45,6 +45,7 @@ export async function GET() {
         status,
         privacy,
         is_paid,
+        language,
         created_at,
         updated_at
       `)
@@ -170,12 +171,18 @@ export async function POST(req: NextRequest) {
     }
 
     // 3. Create the memorial record
+    const memorialLanguage =
+      typeof body.language === "string" && body.language.trim()
+        ? body.language.trim().toLowerCase().slice(0, 10)
+        : "en"
+
     const insertPayload: Record<string, any> = {
       owner_id: user.id,
       slug: finalSlug,
       full_name: fullName,
       status: "draft",
       privacy: "unlisted",
+      language: memorialLanguage,
     }
     if (creatorRelationship) {
       insertPayload.creator_relationship = creatorRelationship
@@ -197,6 +204,7 @@ export async function POST(req: NextRequest) {
         full_name: fullName,
         status: "draft",
         privacy: "unlisted",
+        language: memorialLanguage,
       }
       if (creatorRelationship) {
         retryPayload.creator_relationship = creatorRelationship

@@ -114,6 +114,7 @@ export interface Memorial {
   successor_name: string | null
   successor_email: string | null
   status: MemorialStatus
+  language?: string
   is_paid: boolean
   paid_at: string | null
   section_settings?: SectionSettings | null
