@@ -74,7 +74,7 @@ export const metadata: Metadata = {
   },
 }
 
-import { UmamiAnalytics } from "@/components/analytics/umami-analytics"
+import Script from "next/script"
 
 export default function RootLayout({
   children,
@@ -94,14 +94,21 @@ export default function RootLayout({
         <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
       </head>
       <body className="antialiased bg-white text-[#292929] selection:bg-[#305dde]/15 selection:text-[#305dde]">
-        <UmamiAnalytics />
         <Suspense fallback={null}>
           <NavigationProgress />
         </Suspense>
         {children}
         <NetworkStatus />
         <Toaster />
+
+        <Script
+          src="https://c.ecompin.com/oa.js"
+          data-key="oa_pk_k1j2WPtzPgJye7wIeOfXmvydcUwpAG0u"
+          data-collector="https://c.ecompin.com"
+          strategy="afterInteractive"
+        />
       </body>
     </html>
   )
 }
+

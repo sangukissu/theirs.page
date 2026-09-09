@@ -21,10 +21,10 @@ export const SEO_CONFIG = {
     bing: process.env.NEXT_PUBLIC_BING_SITE_VERIFICATION || "",
     yandex: process.env.NEXT_PUBLIC_YANDEX_VERIFICATION || "",
   },
-  // Web analytics configuration (Umami Analytics)
+  // Web analytics configuration (Self-hosted Open Analytics)
   analytics: {
-    umamiWebsiteId: process.env.NEXT_PUBLIC_UMAMI_WEBSITE_ID || "ed3a82b5-8b9e-44f5-8a8a-aa2cc5e31783",
-    umamiScriptUrl: process.env.NEXT_PUBLIC_UMAMI_SCRIPT_URL || "https://cloud.umami.is/script.js",
+    openAnalyticsKey: process.env.NEXT_PUBLIC_OA_TRACKING_KEY || "oa_pk_k1j2WPtzPgJye7wIeOfXmvydcUwpAG0u",
+    openAnalyticsCollectorUrl: process.env.NEXT_PUBLIC_OA_COLLECTOR_URL || "https://c.ecompin.com",
   },
   pricing: {
     free: {
