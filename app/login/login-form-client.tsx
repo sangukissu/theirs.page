@@ -12,6 +12,7 @@ import { createClient } from "@/utils/supabase/client"
 import { isAuthRetryableFetchError } from "@supabase/supabase-js"
 import { DitherGradient } from "@/components/theirs/dither-gradient"
 import { normalizeMemorialSlug } from "@/lib/memorial-slug"
+import { track } from "@/lib/analytics"
 
 function MagicLinkSubmit({ isVerifying }: { isVerifying?: boolean }) {
   const { pending } = useFormStatus()
@@ -78,6 +79,7 @@ function GoogleSignInButton({ nextPath }: { nextPath: string }) {
 
   const handleGoogleSignIn = async () => {
     setIsLoading(true)
+    track("auth_started", { method: "google" })
     try {
       document.cookie = "last_auth=google; path=/; max-age=31536000; SameSite=Lax"
       await signInWithGoogle(nextPath)
@@ -346,6 +348,7 @@ function LoginFormWithSearchParams({ nextPath: propNextPath }: { nextPath?: stri
                 }
 
                 document.cookie = "last_auth=magic; path=/; max-age=31536000; SameSite=Lax"
+                track("auth_started", { method: "magic_link" })
                 if (memorialName) {
                   document.cookie = `theirs_pending_name=${encodeURIComponent(memorialName)}; path=/; max-age=86400; SameSite=Lax`
                   document.cookie = `theirs_pending_slug=${encodeURIComponent(memorialSlug)}; path=/; max-age=86400; SameSite=Lax`

@@ -23,6 +23,7 @@ import {
   generateThemedQrDataUrl,
   generateKeepsakeCardDataUrl,
 } from "@/lib/memorial/memorial-qr"
+import { track } from "@/lib/analytics"
 
 type PublishPrivacy = "public" | "unlisted" | "private"
 
@@ -175,6 +176,11 @@ export function PublishMemorialDialog({
     setError(null)
     try {
       await onPublish(selectedPrivacy)
+      track("memorial_published", {
+        privacy: selectedPrivacy,
+        has_portrait: hasPortrait,
+        has_story: hasStory,
+      })
       setPhase("live")
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : "The memorial could not be published.")

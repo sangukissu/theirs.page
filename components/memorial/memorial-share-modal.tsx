@@ -18,6 +18,7 @@ import {
   generateThemedQrDataUrl,
   generateKeepsakeCardDataUrl,
 } from "@/lib/memorial/memorial-qr"
+import { track } from "@/lib/analytics"
 
 interface MemorialShareModalProps {
   isOpen: boolean
@@ -126,6 +127,7 @@ export function MemorialShareModal({
   const handleCopyLink = async () => {
     try {
       await navigator.clipboard.writeText(canonicalUrl)
+      track("memorial_shared", { channel: "copy_link", source: "memorial_modal" })
       setCopied(true)
       setTimeout(() => setCopied(false), 2000)
     } catch (err) {
@@ -141,6 +143,7 @@ export function MemorialShareModal({
           text: `Remembering ${firstName}. We've gathered stories, photographs, and memories in their honor. Please visit to remember them with us or share a memory: ${canonicalUrl}`,
           url: canonicalUrl,
         })
+        track("memorial_shared", { channel: "native_share", source: "memorial_modal" })
       } catch (err) {
         // User cancelled or aborted
       }
@@ -151,6 +154,7 @@ export function MemorialShareModal({
   const handleDownloadCard = async () => {
     try {
       setIsDownloadingCard(true)
+      track("memorial_shared", { channel: "qr_card_download", source: "memorial_modal" })
       const cardDataUrl = await generateKeepsakeCardDataUrl({
         url: canonicalUrl,
         fullName,
@@ -178,6 +182,7 @@ export function MemorialShareModal({
   const handleDownloadQrOnly = async () => {
     try {
       setIsDownloadingQrOnly(true)
+      track("memorial_shared", { channel: "qr_only", source: "memorial_modal" })
       const qrOnlyUrl = await generateThemedQrDataUrl(
         {
           url: canonicalUrl,

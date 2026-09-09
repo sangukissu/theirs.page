@@ -132,6 +132,9 @@ export function TheirsPricing() {
             <Link
               href="/login"
               prefetch={true}
+              data-oa-event="cta_click"
+              data-oa-prop-location="pricing_free"
+              data-oa-prop-target="create_free_memorial"
               className="inline-flex items-center justify-center gap-1 whitespace-nowrap !rounded-full font-medium transition-all cursor-pointer border border-[color-mix(in_srgb,var(--primary)_80%,#3a3480)] bg-[color-mix(in_srgb,var(--primary)_90%,#3a3480)] text-primary-foreground shadow-[inset_0_1px_0_rgba(255,255,255,0.22),inset_0_-1px_0_rgba(58,52,128,0.30)] transform-gpu hover:bg-primary hover:border-[color-mix(in_srgb,var(--primary)_70%,#3a3480)] active:translate-y-px active:scale-[0.98] h-10 px-4 text-sm mt-6 w-full"
             >
               Create a free memorial
@@ -286,6 +289,9 @@ export function TheirsPricing() {
             <Link
               href="/login"
               prefetch={true}
+              data-oa-event="cta_click"
+              data-oa-prop-location="pricing_complete"
+              data-oa-prop-target="make_memorial_complete"
               className="inline-flex items-center justify-center gap-1 whitespace-nowrap !rounded-full font-medium transition-all cursor-pointer border border-[color-mix(in_srgb,var(--primary)_80%,#3a3480)] bg-[color-mix(in_srgb,var(--primary)_90%,#3a3480)] text-primary-foreground shadow-[inset_0_1px_0_rgba(255,255,255,0.22),inset_0_-1px_0_rgba(58,52,128,0.30)] transform-gpu hover:bg-primary hover:border-[color-mix(in_srgb,var(--primary)_70%,#3a3480)] active:translate-y-px active:scale-[0.98] h-10 px-4 text-sm mt-6 w-full"
             >
               Make their memorial complete

@@ -8,6 +8,7 @@ import { TEXT_LIMITS } from "@/lib/validation/text-limits"
 import { TheirsLogo } from "@/components/theirs/theirs-logo"
 import { DitherGradient } from "@/components/theirs/dither-gradient"
 import { SandDissolveWordmark } from "@/components/theirs/sand-dissolve-wordmark"
+import { track } from "@/lib/analytics"
 
 export function CtaBanner() {
   const router = useRouter()
@@ -33,6 +34,7 @@ export function CtaBanner() {
       router.push("/login")
       return
     }
+    track("memorial_intent", { source: "cta_banner" })
     const slug = normalizeMemorialSlug(trimmed)
     try {
       localStorage.setItem("theirs_pending_memorial", JSON.stringify({ name: trimmed, slug }))

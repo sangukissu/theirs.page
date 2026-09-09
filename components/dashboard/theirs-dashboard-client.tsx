@@ -26,6 +26,7 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { TEXT_LIMITS } from "@/lib/validation/text-limits"
+import { track, identify } from "@/lib/analytics"
 
 interface MemorialSummary {
   id: string
@@ -92,8 +93,16 @@ export function TheirsDashboardClient({
   const firstName = fullNameInput.trim().split(" ")[0] || ""
   const accessNotice = searchParams.get("access")
 
+  // Identify user with Open Analytics (using pseudonymous user ID)
+  useEffect(() => {
+    if (userId) {
+      identify(userId)
+    }
+  }, [userId])
+
   const handleUpgrade = async (memorialId: string) => {
     setCheckingOutId(memorialId)
+    track("checkout_initiated", { plan: "complete", source: "dashboard" })
     try {
       const res = await fetch("/api/checkout/session", {
         method: "POST",
@@ -183,6 +192,10 @@ export function TheirsDashboardClient({
         throw new Error(data.error || "Failed to create memorial")
       }
 
+      track("memorial_created", {
+        relationship: selectedRel || "unspecified",
+      })
+
       setIsRedirecting(true)
 
       // Clean up pending memorial storage & cookies
@@ -223,6 +236,7 @@ export function TheirsDashboardClient({
   const handleCopyLink = (slug: string, id: string) => {
     const url = `${window.location.origin}/${slug}`
     navigator.clipboard.writeText(url)
+    track("memorial_shared", { channel: "copy_link", source: "dashboard" })
     setCopiedId(id)
     setTimeout(() => setCopiedId(null), 2000)
   }

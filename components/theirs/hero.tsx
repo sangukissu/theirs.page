@@ -4,6 +4,7 @@ import { useState } from "react"
 import { useRouter } from "next/navigation"
 import { normalizeMemorialSlug } from "@/lib/memorial-slug"
 import { TEXT_LIMITS } from "@/lib/validation/text-limits"
+import { track } from "@/lib/analytics"
 import { LifePanorama } from "./life-panorama"
 
 export function TheirsHero() {
@@ -14,6 +15,7 @@ export function TheirsHero() {
     e.preventDefault()
     const trimmed = name.trim()
     if (!trimmed) return
+    track("memorial_intent", { source: "hero" })
     const slug = normalizeMemorialSlug(trimmed)
     try {
       localStorage.setItem("theirs_pending_memorial", JSON.stringify({ name: trimmed, slug }))

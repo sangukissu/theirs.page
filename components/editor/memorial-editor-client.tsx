@@ -34,6 +34,7 @@ import { PublishMemorialDialog } from "./publish-memorial-dialog"
 import { useEditorAuthorization } from "./use-editor-authorization"
 import { SectionSettings, ContributionSettings, MemorialTheme, MemorialCoverSettings } from "@/types/theirs"
 import { toast } from "sonner"
+import { track, conversion } from "@/lib/analytics"
 
 export type EditorSectionTab =
   | "identity"
@@ -123,6 +124,13 @@ export function MemorialEditorClient({
         .then((data) => {
           if (data.is_paid) {
             setIsPaid(true)
+            conversion("purchase", {
+              order_id: (paymentId as string) || undefined,
+              plan: "complete",
+            })
+            track("checkout_completed", {
+              plan: "complete",
+            })
             toast.success("Payment confirmed! Your memorial is upgraded to Theirs Complete.", {
               description: "All premium archive features and private controls are permanently active.",
             })
@@ -218,6 +226,7 @@ export function MemorialEditorClient({
 
   // Checkout handling for Pro Plan ($179)
   const handleUpgradeComplete = async () => {
+    track("checkout_initiated", { plan: "complete", source: "editor_header" })
     try {
       const res = await fetch("/api/checkout/session", {
         method: "POST",

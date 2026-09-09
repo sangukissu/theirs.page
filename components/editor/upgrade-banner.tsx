@@ -2,6 +2,7 @@
 
 import { useState } from "react"
 import { Shield, Sparkles, Loader2, ArrowRight } from "lucide-react"
+import { track } from "@/lib/analytics"
 
 interface UpgradeBannerProps {
   memorialId: string
@@ -24,6 +25,7 @@ export function UpgradeBanner({
   const [error, setError] = useState<string | null>(null)
 
   const handleCheckout = async () => {
+    track("checkout_initiated", { plan: "complete", source: "editor_banner" })
     if (onUpgrade) {
       onUpgrade()
       return

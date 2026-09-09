@@ -27,6 +27,7 @@ import type { ContributionSettings } from "@/types/theirs"
 import { useContributionDraft } from "@/hooks/use-contribution-draft"
 import { TEXT_LIMITS } from "@/lib/validation/text-limits"
 import type { MemorialAccessRole } from "@/lib/memorial-auth"
+import { track } from "@/lib/analytics"
 import { useResumableMediaUpload } from "@/hooks/use-resumable-media-upload"
 import { MediaUploadList } from "@/components/uploads/media-upload-list"
 import { parseYouTubeUrl } from "@/lib/uploads/youtube"
@@ -603,6 +604,13 @@ export function ContributeModal({
       setSubmissionResult({
         status: data.status === "approved" ? "approved" : "pending_approval",
       })
+
+      track("contribution_submitted", {
+        type: selectedType,
+        tribute_type: isTributeMode ? tributeRitual : undefined,
+        status: data.status === "approved" ? "approved" : "pending_approval",
+      })
+
       if (selectedType === "memory") clearMemoryDraft()
       setIsSubmitted(true)
       onSubmitted?.()

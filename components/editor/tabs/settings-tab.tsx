@@ -27,6 +27,7 @@ import { UpgradeBanner } from "../upgrade-banner"
 import { ConfirmDeleteModal } from "../confirm-delete-modal"
 import { SectionSettings, ContributionSettings } from "@/types/theirs"
 import { TEXT_LIMITS } from "@/lib/validation/text-limits"
+import { track } from "@/lib/analytics"
 
 interface CollaboratorItem {
   id: string
@@ -293,6 +294,7 @@ export function SettingsTab({
 
   // 5. Complete Upgrade ($179 One-Time)
   const handleUpgradeComplete = async () => {
+    track("checkout_initiated", { plan: "complete", source: "settings_tab" })
     setCheckingOut(true)
     setCheckoutError(null)
     try {
@@ -1107,6 +1109,9 @@ export function SettingsTab({
           <a
             href={`/api/memorials/${memorialId}/export`}
             download
+            data-oa-event="archive_exported"
+            data-oa-prop-format="zip"
+            data-oa-prop-source="settings_tab"
             className="inline-flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-xl bg-[#fafafb] hover:bg-[#f2f2f4] border border-black/[0.08] text-xs font-medium text-[#181925] transition-colors w-fit cursor-pointer"
           >
             <Download className="size-3.5 text-primary" />
