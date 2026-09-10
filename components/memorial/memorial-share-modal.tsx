@@ -264,7 +264,22 @@ export function MemorialShareModal({
                 }}
                 className="w-full rounded-2xl border p-4 sm:p-5 flex flex-col items-center text-center shadow-xs transition-colors duration-200 relative overflow-hidden"
               >
-
+                {/* Person Portrait / Monogram Header */}
+                <div
+                  style={{ borderColor: themeDef.colors.accent }}
+                  className="size-15 sm:size-17 rounded-full overflow-hidden border-2 shadow-sm mb-2.5 bg-white shrink-0 relative"
+                >
+                  {resolvedPortraitUrl ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img
+                      src={resolvedPortraitUrl}
+                      alt={fullName}
+                      className="size-full object-cover object-top"
+                    />
+                  ) : (
+                    <PortraitPlaceholder fullName={fullName} />
+                  )}
+                </div>
 
                 {/* Name & Lifespan */}
                 <h3
@@ -276,7 +291,7 @@ export function MemorialShareModal({
                 </h3>
                 <p
                   style={{ color: themeDef.colors.textMuted }}
-                  className="text-xs font-mono mt-0.5"
+                  className="text-xs font-mono mt-1.5 sm:mt-2"
                 >
                   {yearsSpan}
                 </p>

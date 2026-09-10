@@ -263,7 +263,80 @@ export async function generateThemedQrDataUrl(
     qrColor
   )
 
-  // 2. Preload portrait image (graceful fallback if null or cross-origin blocked)
+  // 2. Preload Theirs logo SVG in theme module color
+  const logoDataUrl = getTheirsLogoSvgDataUrl(qrColor)
+  const logoImg = await loadBrowserImage(logoDataUrl)
+
+  // 3. Draw center badge with Theirs logo
+  const cx = qrSize / 2
+  const cy = qrSize / 2
+  const outerRadius = Math.round(qrSize * 0.125)
+  const innerRadius = outerRadius - 4
+
+  // Clear background shield (crisp white circular disc with subtle shadow)
+  ctx.save()
+  ctx.beginPath()
+  ctx.arc(cx, cy, outerRadius, 0, Math.PI * 2)
+  ctx.fillStyle = "#ffffff"
+  ctx.shadowColor = "rgba(0, 0, 0, 0.14)"
+  ctx.shadowBlur = 10
+  ctx.shadowOffsetX = 0
+  ctx.shadowOffsetY = 2
+  ctx.fill()
+  ctx.restore()
+
+  // White border ring to isolate cleanly from QR modules
+  ctx.save()
+  ctx.beginPath()
+  ctx.arc(cx, cy, outerRadius, 0, Math.PI * 2)
+  ctx.strokeStyle = "#ffffff"
+  ctx.lineWidth = 4
+  ctx.stroke()
+  ctx.restore()
+
+  // Draw Theirs logo in center
+  if (logoImg) {
+    const logoDrawSize = Math.round(innerRadius * 1.35)
+    ctx.drawImage(
+      logoImg,
+      cx - logoDrawSize / 2,
+      cy - logoDrawSize / 2,
+      logoDrawSize,
+      logoDrawSize
+    )
+  }
+
+  // Subtle outer outline ring
+  ctx.save()
+  ctx.beginPath()
+  ctx.arc(cx, cy, outerRadius, 0, Math.PI * 2)
+  ctx.strokeStyle = "rgba(0, 0, 0, 0.08)"
+  ctx.lineWidth = 1.5
+  ctx.stroke()
+  ctx.restore()
+
+  return qrCanvas.toDataURL("image/png")
+}
+
+/**
+ * Generates an ultra-sharp (1200 x 1480 px) Memorial Keepsake Card PNG
+ * that is an exact 1:1 match of the modal preview card:
+ * - Single rounded card with theme bgSurface and border (no double mat frames)
+ * - Prominent portrait avatar with theme accent ring and soft shadow
+ * - Full name in warm editorial Georgia serif (font-medium)
+ * - Lifespan in clean monospace directly below
+ * - Crisp white rounded QR plate with center Theirs logo
+ * - Two-line caption matching modal phrasing and bold link
+ * - Full-width border-t divider line
+ * - Themed Theirs logo + theirs.page branding
+ */
+export async function generateKeepsakeCardDataUrl(
+  options: MemorialQrOptions
+): Promise<string> {
+  const { url, fullName, slug, birthYear, deathYear, portraitUrl, themeId } = options
+  const theme = MEMORIAL_THEMES[themeId || "quiet"] || MEMORIAL_THEMES.quiet
+  const initials = getInitials(fullName)
+
   const resolvedPortraitUrl = (() => {
     if (!portraitUrl) return null
     if (
@@ -278,123 +351,89 @@ export async function generateThemedQrDataUrl(
     return `/api/media?key=${encodeURIComponent(portraitUrl)}`
   })()
 
-  const portraitImg = await loadBrowserImage(resolvedPortraitUrl)
-
-  // 3. Draw center badge
-  const cx = qrSize / 2
-  const cy = qrSize / 2
-  const outerRadius = Math.round(qrSize * 0.13)
-  const innerRadius = outerRadius - 6
-
-  // Clear background shield
-  ctx.save()
-  ctx.beginPath()
-  ctx.arc(cx, cy, outerRadius, 0, Math.PI * 2)
-  ctx.fillStyle = "#ffffff"
-  ctx.shadowColor = "rgba(0, 0, 0, 0.16)"
-  ctx.shadowBlur = 12
-  ctx.shadowOffsetX = 0
-  ctx.shadowOffsetY = 3
-  ctx.fill()
-  ctx.restore()
-
-  // White border ring
-  ctx.save()
-  ctx.beginPath()
-  ctx.arc(cx, cy, outerRadius, 0, Math.PI * 2)
-  ctx.strokeStyle = "#ffffff"
-  ctx.lineWidth = 4
-  ctx.stroke()
-  ctx.restore()
-
-  // Draw inner avatar photo or monogram
-  drawCircularAvatar(
-    ctx,
-    portraitImg,
-    initials,
-    cx,
-    cy,
-    innerRadius,
-    theme.colors.bgSurfaceSubtle,
-    theme.colors.textPrimary
-  )
-
-  // Inner subtle outline
-  ctx.save()
-  ctx.beginPath()
-  ctx.arc(cx, cy, innerRadius, 0, Math.PI * 2)
-  ctx.strokeStyle = "rgba(0, 0, 0, 0.1)"
-  ctx.lineWidth = 1.5
-  ctx.stroke()
-  ctx.restore()
-
-  return qrCanvas.toDataURL("image/png")
-}
-
-/**
- * Generates an ultra-sharp (1200 x 1600 px) Memorial Keepsake Card PNG
- * complete with person's portrait, full name, lifespan, themed QR with center photo,
- * and elegant Theirs branding at the footer.
- * Renders 100% client-side in ~20-50 milliseconds.
- */
-export async function generateKeepsakeCardDataUrl(
-  options: MemorialQrOptions
-): Promise<string> {
-  const { url, fullName, slug, birthYear, deathYear, themeId } = options
-  const theme = MEMORIAL_THEMES[themeId || "quiet"] || MEMORIAL_THEMES.quiet
-
   const logoDataUrl = getTheirsLogoSvgDataUrl(theme.colors.accent || "#305dde")
 
-  // Preload themed QR (which contains the center avatar badge) and brand logo concurrently
-  const [qrDataUrl, logoImg] = await Promise.all([
+  // Preload portrait image, themed QR (with center Theirs logo), and brand logo concurrently
+  const [portraitImg, qrDataUrl, logoImg] = await Promise.all([
+    loadBrowserImage(resolvedPortraitUrl),
     generateThemedQrDataUrl(options, 700),
     loadBrowserImage(logoDataUrl),
   ])
 
   const qrImg = await loadBrowserImage(qrDataUrl)
 
-  // Setup master card canvas (1200 x 1600 px, 3:4 aspect ratio)
+  // Master card canvas dimensions (1200 x 1480 px, exact proportion of the preview card)
   const W = 1200
-  const H = 1600
+  const H = 1480
   const canvas = document.createElement("canvas")
   canvas.width = W
   canvas.height = H
   const ctx = canvas.getContext("2d")
   if (!ctx) throw new Error("Could not get 2D context")
 
-  // 1. Draw Card Background
-  ctx.fillStyle = theme.colors.bgPage || "#fcf9f5"
-  ctx.fillRect(0, 0, W, H)
-
-  // 2. Draw Decorative Card Border Frame
-  const pad = 48
-  roundRect(ctx, pad, pad, W - pad * 2, H - pad * 2, 40)
+  // 1. Draw Card Background & Single Rounded Border (Matches modal card exactly)
+  ctx.clearRect(0, 0, W, H)
+  const cardRadius = 44
+  ctx.save()
+  roundRect(ctx, 2, 2, W - 4, H - 4, cardRadius)
   ctx.fillStyle = theme.colors.bgSurface || "#f5eee4"
   ctx.fill()
   ctx.strokeStyle = theme.colors.border || "rgba(0, 0, 0, 0.08)"
-  ctx.lineWidth = 2
+  ctx.lineWidth = 3
   ctx.stroke()
-
-  // Inner subtle accent border
-  const innerPad = pad + 12
-  roundRect(ctx, innerPad, innerPad, W - innerPad * 2, H - innerPad * 2, 32)
-  ctx.strokeStyle = theme.colors.borderSubtle || "rgba(0, 0, 0, 0.04)"
-  ctx.lineWidth = 1.5
-  ctx.stroke()
-
-  // 3. Name & Lifespan Header
-  const centerX = W / 2
-
-  // Full Name
-  ctx.save()
-  ctx.fillStyle = theme.colors.textPrimary || "#181925"
-  ctx.font = `600 52px serif, "Times New Roman", Georgia`
-  ctx.textAlign = "center"
-  ctx.textBaseline = "middle"
-  ctx.fillText(fullName, centerX, 185)
   ctx.restore()
 
-  // Lifespan Dates
+  const centerX = W / 2
+
+  // 2. Person Portrait Header (Large, prominent, matching size-17 / 19% card width)
+  const portraitY = 175
+  const portraitRadius = 112
+
+  // Outer portrait frame shadow
+  ctx.save()
+  ctx.beginPath()
+  ctx.arc(centerX, portraitY, portraitRadius + 4, 0, Math.PI * 2)
+  ctx.fillStyle = "#ffffff"
+  ctx.shadowColor = "rgba(0, 0, 0, 0.10)"
+  ctx.shadowBlur = 18
+  ctx.shadowOffsetY = 4
+  ctx.fill()
+  ctx.restore()
+
+  // Draw Header Portrait / Monogram
+  drawCircularAvatar(
+    ctx,
+    portraitImg,
+    initials,
+    centerX,
+    portraitY,
+    portraitRadius,
+    theme.colors.bgSurfaceSubtle,
+    theme.colors.textPrimary
+  )
+
+  // Portrait border ring in theme accent
+  ctx.save()
+  ctx.beginPath()
+  ctx.arc(centerX, portraitY, portraitRadius, 0, Math.PI * 2)
+  ctx.strokeStyle = theme.colors.accent || "#b85d2a"
+  ctx.lineWidth = 5
+  ctx.stroke()
+  ctx.restore()
+
+  // 3. Full Name (Matching font-serif font-medium tracking-tight)
+  ctx.save()
+  ctx.fillStyle = theme.colors.textPrimary || "#181925"
+  ctx.font = `500 60px Georgia, Cambria, "Times New Roman", serif`
+  ctx.textAlign = "center"
+  ctx.textBaseline = "middle"
+  if ("letterSpacing" in ctx) {
+    ;(ctx as unknown as { letterSpacing: string }).letterSpacing = "-0.8px"
+  }
+  ctx.fillText(fullName, centerX, 344)
+  ctx.restore()
+
+  // 4. Lifespan Dates (Matching text-xs font-mono with comfortable gap)
   const yearsSpan =
     birthYear && deathYear
       ? `${birthYear} \u2014 ${deathYear}`
@@ -406,70 +445,85 @@ export async function generateKeepsakeCardDataUrl(
 
   ctx.save()
   ctx.fillStyle = theme.colors.textMuted || "#71717a"
-  ctx.font = `500 24px "SF Mono", "Courier New", monospace`
+  ctx.font = `400 32px "SF Mono", "Geist Mono", Menlo, Consolas, monospace`
   ctx.textAlign = "center"
   ctx.textBaseline = "middle"
-  ctx.fillText(yearsSpan, centerX, 245)
+  ctx.fillText(yearsSpan, centerX, 410)
   ctx.restore()
 
-  // 4. Center QR Code Plate (with center photo badge embedded)
-  const plateW = 760
-  const plateH = 760
+  // 5. Themed QR Code Plate (White rounded plate with soft shadow, matching modal plate)
+  const plateW = 740
+  const plateH = 740
   const plateX = (W - plateW) / 2
-  const plateY = 320
+  const plateY = 466
 
-  // Draw white rounded plate for QR code
   ctx.save()
-  roundRect(ctx, plateX, plateY, plateW, plateH, 32)
+  roundRect(ctx, plateX, plateY, plateW, plateH, 36)
   ctx.fillStyle = "#ffffff"
   ctx.shadowColor = "rgba(0, 0, 0, 0.08)"
   ctx.shadowBlur = 24
   ctx.shadowOffsetY = 8
   ctx.fill()
   ctx.strokeStyle = "rgba(0, 0, 0, 0.06)"
-  ctx.lineWidth = 1.5
+  ctx.lineWidth = 2
   ctx.stroke()
   ctx.restore()
 
   // Draw the QR image onto the plate
   if (qrImg) {
-    const qrDrawSize = 700
+    const qrDrawSize = 660
     const qrX = (W - qrDrawSize) / 2
     const qrY = plateY + (plateH - qrDrawSize) / 2
     ctx.drawImage(qrImg, qrX, qrY, qrDrawSize, qrDrawSize)
   }
 
-  // 5. Scan Instructions & Short Link
+  // 6. Scan Instructions & Short Link (2 lines, exact modal phrasing & bold styling)
   ctx.save()
   ctx.fillStyle = theme.colors.textMuted || "#71717a"
-  ctx.font = `400 22px system-ui, -apple-system, sans-serif`
+  ctx.font = `400 31px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif`
   ctx.textAlign = "center"
   ctx.textBaseline = "middle"
-  ctx.fillText("Scan with any camera to visit & share memories", centerX, 1165)
+  ctx.fillText("Scan with any phone camera to visit & share", centerX, 1252)
 
+  const line2Muted = "memories at "
+  const line2Bold = `theirs.page/${slug}`
+
+  ctx.font = `400 31px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif`
+  const wMuted = ctx.measureText(line2Muted).width
+
+  ctx.font = `600 31px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif`
+  const wBold = ctx.measureText(line2Bold).width
+
+  const startX = centerX - (wMuted + wBold) / 2
+
+  ctx.font = `400 31px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif`
+  ctx.fillStyle = theme.colors.textMuted || "#71717a"
+  ctx.textAlign = "left"
+  ctx.fillText(line2Muted, startX, 1294)
+
+  ctx.font = `600 31px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif`
   ctx.fillStyle = theme.colors.textPrimary || "#181925"
-  ctx.font = `600 26px system-ui, -apple-system, sans-serif`
-  ctx.fillText(`theirs.page/${slug}`, centerX, 1215)
+  ctx.fillText(line2Bold, startX + wMuted, 1294)
   ctx.restore()
 
-  // 6. Footer Branding Line
+  // 7. Full-width Divider Line (Matches border-t w-full in modal container)
   ctx.save()
-  const lineY = 1320
+  const lineY = 1352
   ctx.beginPath()
-  ctx.moveTo(centerX - 240, lineY)
-  ctx.lineTo(centerX + 240, lineY)
+  ctx.moveTo(64, lineY)
+  ctx.lineTo(W - 64, lineY)
   ctx.strokeStyle = theme.colors.border || "rgba(0, 0, 0, 0.08)"
-  ctx.lineWidth = 1.5
+  ctx.lineWidth = 2
   ctx.stroke()
   ctx.restore()
 
-  // Footer Logo + Brand Name (Logo in theme color, 'theirs' in black, '.page' in theme color. No tagline.)
+  // 8. Footer Branding (Matches size-3.5 logo + text-xs font-semibold theirs.page)
   ctx.save()
   const footerY = 1400
-  const logoSize = 36
-  const logoGap = 12
+  const logoSize = 42
+  const logoGap = 16
 
-  ctx.font = `700 30px system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif`
+  ctx.font = `600 36px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif`
   ctx.textAlign = "left"
   ctx.textBaseline = "middle"
 
@@ -480,16 +534,13 @@ export async function generateKeepsakeCardDataUrl(
   const totalBrandWidth = logoSize + logoGap + theirsWidth + pageWidth
   const brandStartX = centerX - (totalBrandWidth / 2)
 
-  // Real Theirs SVG logo in theme accent color
   if (logoImg) {
     ctx.drawImage(logoImg, brandStartX, footerY - (logoSize / 2), logoSize, logoSize)
   }
 
-  // 'theirs' in black
   ctx.fillStyle = "#181925"
   ctx.fillText(theirsText, brandStartX + logoSize + logoGap, footerY)
 
-  // '.page' in theme accent color
   ctx.fillStyle = theme.colors.accent || "#305dde"
   ctx.fillText(pageText, brandStartX + logoSize + logoGap + theirsWidth, footerY)
   ctx.restore()
