@@ -457,25 +457,7 @@ export function MemoriesStream({
 
                   {/* Bottom Action: Clean Share link */}
                   <div className="pt-2 border-t border-[var(--theme-border-subtle)] flex items-center justify-between text-xs text-[var(--theme-text-muted)]">
-                    {isDemo ? (
-                      <>
-                        <button
-                          type="button"
-                          onClick={() => handleShare(item)}
-                          className="inline-flex items-center gap-1.5 text-xs text-[#777] hover:text-[#181925] transition-colors cursor-pointer select-none"
-                        >
-                          <Share2 className="size-3.5" />
-                          <span>Share</span>
-                        </button>
-                        {copiedId === item.id && (
-                          <span className="text-[11px] text-emerald-700 font-medium animate-in fade-in">
-                            Link copied to clipboard!
-                          </span>
-                        )}
-                      </>
-                    ) : (
-                      <TributeShareMenu tributeId={item.id} authorName={item.authorName} memorialName={fullName} />
-                    )}
+                    <TributeShareMenu tributeId={item.id} authorName={item.authorName} memorialName={fullName} />
                   </div>
                 </div>
               </article>

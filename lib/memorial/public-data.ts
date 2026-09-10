@@ -23,6 +23,8 @@ import type { SectionSettings } from "@/types/theirs"
 import { getMemorialPinCookieName, verifyPinAccessToken } from "@/lib/security/pin"
 import { sanitizeContributionHtml } from "@/lib/safety/contribution-html"
 import { getMemorialAccess } from "@/lib/memorial-auth"
+import { isValidThemeId } from "@/lib/memorial/themes"
+import { DEMO_COVER_PRESETS } from "@/components/memorial/demo-cover-presets"
 
 const DEFAULT_SECTIONS: Required<SectionSettings> = {
   story: true,
@@ -346,7 +348,6 @@ const DEMO_STORIES: StoryItem[] = [
 ]
 
 const DEMO_BIOGRAPHY = `
-  <h2>The Boy with the Pocketknife (1948–1967)</h2>
   <p><strong>Robert Edward Carter</strong> was born on a gusty October morning in 1948 in Exeter, Devon — the younger son of Arthur, a railway signalman, and Margaret, who tended schoolhouse hearths. From the time he could toddle across the kitchen flagstones, Bob was possessed by what his brother David called <em>“an incurable mechanical stubbornness.”</em></p>
   <p>Where other boys chased footballs across the common, Robert collected discarded clock springs, bicycle bearings, and broken umbrella ribs. By age twelve, he had dismantled his father’s pocket watch four separate times — not out of mischief, but because he was convinced he could make the ticking <em>“a hair softer.”</em></p>
 
@@ -665,7 +666,13 @@ export const getMemorialViewContext = cache(async (slug: string): Promise<Memori
       privacy: memorial?.privacy,
       sectionSettings: sections,
       contributionSettings: memorial?.contribution_settings || null,
-      theme: (memorial?.theme as MemorialIdentity["theme"]) || "quiet",
+      theme: (() => {
+        if (isDemo) {
+          const cookieTheme = cookieStore.get("theirs_demo_theme")?.value
+          if (isValidThemeId(cookieTheme)) return cookieTheme
+        }
+        return (memorial?.theme as MemorialIdentity["theme"]) || "quiet"
+      })(),
       language: memorial?.language || "en",
       coverSettings: (() => {
         const raw = memorial?.cover_settings as MemorialIdentity["coverSettings"]
@@ -679,7 +686,13 @@ export const getMemorialViewContext = cache(async (slug: string): Promise<Memori
               : null,
           }
         }
-        return isDemo ? { type: "pattern", pattern_style: "soft_aura" } : null
+        if (isDemo) {
+          const cookieCoverId = cookieStore.get("theirs_demo_cover")?.value
+          const matched = DEMO_COVER_PRESETS.find((p) => p.id === cookieCoverId)
+          if (matched) return matched.settings
+          return DEMO_COVER_PRESETS[0].settings
+        }
+        return null
       })(),
     },
   }

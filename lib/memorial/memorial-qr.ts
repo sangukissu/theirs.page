@@ -340,29 +340,13 @@ export async function generateThemedQrDataUrl(
 export async function generateKeepsakeCardDataUrl(
   options: MemorialQrOptions
 ): Promise<string> {
-  const { url, fullName, slug, birthYear, deathYear, portraitUrl, themeId } = options
+  const { url, fullName, slug, birthYear, deathYear, themeId } = options
   const theme = MEMORIAL_THEMES[themeId || "quiet"] || MEMORIAL_THEMES.quiet
-  const initials = getInitials(fullName)
-
-  const resolvedPortraitUrl = (() => {
-    if (!portraitUrl) return null
-    if (
-      portraitUrl.startsWith("blob:") ||
-      portraitUrl.startsWith("data:") ||
-      portraitUrl.startsWith("http://") ||
-      portraitUrl.startsWith("https://") ||
-      portraitUrl.startsWith("/")
-    ) {
-      return portraitUrl
-    }
-    return `/api/media?key=${encodeURIComponent(portraitUrl)}`
-  })()
 
   const logoDataUrl = getTheirsLogoSvgDataUrl(theme.colors.accent || "#305dde")
 
-  // Preload portrait image, themed QR, and brand logo concurrently
-  const [portraitImg, qrDataUrl, logoImg] = await Promise.all([
-    loadBrowserImage(resolvedPortraitUrl),
+  // Preload themed QR (which contains the center avatar badge) and brand logo concurrently
+  const [qrDataUrl, logoImg] = await Promise.all([
     generateThemedQrDataUrl(options, 700),
     loadBrowserImage(logoDataUrl),
   ])
@@ -398,50 +382,16 @@ export async function generateKeepsakeCardDataUrl(
   ctx.lineWidth = 1.5
   ctx.stroke()
 
-  // 3. Top Memorial Header
+  // 3. Name & Lifespan Header
   const centerX = W / 2
-  const portraitY = 190
-  const portraitRadius = 78
-
-  // Outer portrait frame shadow
-  ctx.save()
-  ctx.beginPath()
-  ctx.arc(centerX, portraitY, portraitRadius + 5, 0, Math.PI * 2)
-  ctx.fillStyle = "#ffffff"
-  ctx.shadowColor = "rgba(0, 0, 0, 0.12)"
-  ctx.shadowBlur = 16
-  ctx.shadowOffsetY = 4
-  ctx.fill()
-  ctx.restore()
-
-  // Draw Header Portrait / Monogram
-  drawCircularAvatar(
-    ctx,
-    portraitImg,
-    initials,
-    centerX,
-    portraitY,
-    portraitRadius,
-    theme.colors.bgSurfaceSubtle,
-    theme.colors.textPrimary
-  )
-
-  // Portrait border ring in theme accent
-  ctx.save()
-  ctx.beginPath()
-  ctx.arc(centerX, portraitY, portraitRadius, 0, Math.PI * 2)
-  ctx.strokeStyle = theme.colors.accent || "#b85d2a"
-  ctx.lineWidth = 3
-  ctx.stroke()
-  ctx.restore()
 
   // Full Name
   ctx.save()
   ctx.fillStyle = theme.colors.textPrimary || "#181925"
-  ctx.font = `600 48px serif, "Times New Roman", Georgia`
+  ctx.font = `600 52px serif, "Times New Roman", Georgia`
   ctx.textAlign = "center"
   ctx.textBaseline = "middle"
-  ctx.fillText(fullName, centerX, 320)
+  ctx.fillText(fullName, centerX, 185)
   ctx.restore()
 
   // Lifespan Dates
@@ -456,17 +406,17 @@ export async function generateKeepsakeCardDataUrl(
 
   ctx.save()
   ctx.fillStyle = theme.colors.textMuted || "#71717a"
-  ctx.font = `500 22px "SF Mono", "Courier New", monospace`
+  ctx.font = `500 24px "SF Mono", "Courier New", monospace`
   ctx.textAlign = "center"
   ctx.textBaseline = "middle"
-  ctx.fillText(yearsSpan, centerX, 368)
+  ctx.fillText(yearsSpan, centerX, 245)
   ctx.restore()
 
-  // 4. Center QR Code Plate
+  // 4. Center QR Code Plate (with center photo badge embedded)
   const plateW = 760
   const plateH = 760
   const plateX = (W - plateW) / 2
-  const plateY = 420
+  const plateY = 320
 
   // Draw white rounded plate for QR code
   ctx.save()
@@ -495,16 +445,16 @@ export async function generateKeepsakeCardDataUrl(
   ctx.font = `400 22px system-ui, -apple-system, sans-serif`
   ctx.textAlign = "center"
   ctx.textBaseline = "middle"
-  ctx.fillText("Scan with any camera to visit & share memories", centerX, 1225)
+  ctx.fillText("Scan with any camera to visit & share memories", centerX, 1165)
 
   ctx.fillStyle = theme.colors.textPrimary || "#181925"
   ctx.font = `600 26px system-ui, -apple-system, sans-serif`
-  ctx.fillText(`theirs.page/${slug}`, centerX, 1265)
+  ctx.fillText(`theirs.page/${slug}`, centerX, 1215)
   ctx.restore()
 
   // 6. Footer Branding Line
   ctx.save()
-  const lineY = 1350
+  const lineY = 1320
   ctx.beginPath()
   ctx.moveTo(centerX - 240, lineY)
   ctx.lineTo(centerX + 240, lineY)
@@ -515,7 +465,7 @@ export async function generateKeepsakeCardDataUrl(
 
   // Footer Logo + Brand Name (Logo in theme color, 'theirs' in black, '.page' in theme color. No tagline.)
   ctx.save()
-  const footerY = 1415
+  const footerY = 1400
   const logoSize = 36
   const logoGap = 12
 

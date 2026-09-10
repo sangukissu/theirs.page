@@ -7,6 +7,7 @@ import { Share2, Plus, Check } from "lucide-react"
 import type { ContributionType } from "./contribute-modal"
 import type { SectionSettings } from "@/types/theirs"
 import { TheirsLogo } from "@/components/theirs/theirs-logo"
+import { isValidThemeId } from "@/lib/memorial/themes"
 
 interface MemorialNavProps {
   slug: string
@@ -37,11 +38,15 @@ export function MemorialNav({
   const firstName = fullName.split(" ")[0] || fullName
   const rootPath = `/${slug}`
   const isHome = pathname === rootPath
-  const previewSuffix = searchParams.get("preview") === "visitor" ? "?preview=visitor" : ""
+  const previewParam = searchParams.get("preview")
+  const themeParam = searchParams.get("theme")
   const withPreview = (path: string) => {
-    if (!previewSuffix) return path
     const [base, hash] = path.split("#")
-    return `${base}${previewSuffix}${hash ? `#${hash}` : ""}`
+    const params = new URLSearchParams()
+    if (previewParam === "visitor") params.set("preview", "visitor")
+    if (themeParam && isValidThemeId(themeParam)) params.set("theme", themeParam)
+    const q = params.toString() ? `?${params.toString()}` : ""
+    return `${base}${q}${hash ? `#${hash}` : ""}`
   }
   const navItems = useMemo(() => [
     { id: "about", label: "About", href: `${rootPath}#about`, enabled: true },
@@ -58,13 +63,13 @@ export function MemorialNav({
     }
 
     const url = typeof window !== "undefined" ? window.location.href : `https://theirs.page/${slug}`
-    const shareMessage = `Remembering ${firstName}. We've gathered stories, photographs, and memories in their honor. Please visit to remember them with us or share a memory: ${url}`
+    const shareText = `Remembering ${firstName}. We've gathered stories, photographs, and memories in their honor. Please visit to remember them with us or share a memory:`
 
     if (typeof navigator !== "undefined" && navigator.share) {
       await navigator
         .share({
           title: `${fullName} — Theirs`,
-          text: shareMessage,
+          text: shareText,
           url,
         })
         .catch(() => undefined)

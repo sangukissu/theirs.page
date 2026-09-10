@@ -9,6 +9,8 @@ import { ContributeModal, type ContributionType } from "./contribute-modal"
 import { MemorialShareModal } from "./memorial-share-modal"
 import type { MemorialIdentity } from "@/types/memorial-view"
 import { isValidThemeId, type MemorialThemeId } from "@/lib/memorial/themes"
+import { MemorialThemeSwitcher } from "./memorial-theme-switcher"
+import { DEMO_COVER_PRESETS, getRandomCoverPreset, type DemoCoverPreset } from "./demo-cover-presets"
 
 interface MemorialActions {
   openContribute: (
@@ -52,6 +54,49 @@ export function MemorialShell({ identity, children }: { identity: MemorialIdenti
 
   const themeQueryParam = searchParams.get("theme")
   const activeTheme: MemorialThemeId = (isValidThemeId(themeQueryParam) ? themeQueryParam : identity.theme) || "quiet"
+  const [shellTheme, setShellTheme] = useState<MemorialThemeId>(activeTheme)
+  const [demoCover, setDemoCover] = useState<DemoCoverPreset>(() => {
+    const match = DEMO_COVER_PRESETS.find(
+      (p) =>
+        (p.settings.pattern_style && p.settings.pattern_style === identity.coverSettings?.pattern_style) ||
+        (p.settings.cover_url && p.settings.cover_url === identity.coverSettings?.cover_url)
+    )
+    return match || DEMO_COVER_PRESETS[0]
+  })
+
+  useEffect(() => {
+    if (isValidThemeId(themeQueryParam)) {
+      setShellTheme(themeQueryParam)
+    } else if (identity.theme) {
+      setShellTheme(identity.theme)
+    }
+  }, [themeQueryParam, identity.theme])
+
+  const handleDemoThemeChange = (nextTheme: MemorialThemeId) => {
+    setShellTheme(nextTheme)
+    const nextCover = getRandomCoverPreset(demoCover.id)
+    setDemoCover(nextCover)
+
+    if (typeof document !== "undefined") {
+      document.cookie = `theirs_demo_theme=${nextTheme}; path=/; max-age=604800; SameSite=Lax`
+      document.cookie = `theirs_demo_cover=${nextCover.id}; path=/; max-age=604800; SameSite=Lax`
+      const mainEl = document.querySelector<HTMLElement>("main[data-memorial-theme]")
+      if (mainEl) {
+        mainEl.setAttribute("data-memorial-theme", nextTheme)
+      }
+    }
+
+    if (typeof window !== "undefined") {
+      const url = new URL(window.location.href)
+      url.searchParams.set("theme", nextTheme)
+      window.history.replaceState(null, "", url.toString())
+      window.dispatchEvent(
+        new CustomEvent("theirs_demo_theme_changed", {
+          detail: { theme: nextTheme, cover: nextCover },
+        })
+      )
+    }
+  }
 
   useEffect(() => {
     const refreshPublishedReceipt = () => router.refresh()
@@ -62,7 +107,7 @@ export function MemorialShell({ identity, children }: { identity: MemorialIdenti
   return (
     <MemorialActionsContext.Provider value={{ openContribute, openShare }}>
       <main
-        data-memorial-theme={activeTheme}
+        data-memorial-theme={identity.isDemo ? shellTheme : activeTheme}
         className="theirs-theme-root min-h-screen bg-[var(--theme-bg-page)] text-[var(--theme-text-body)] selection:bg-[var(--theme-accent)]/15 selection:text-[var(--theme-accent)] relative pb-10 transition-colors duration-200"
       >
         {draftPreview && (
@@ -123,8 +168,15 @@ export function MemorialShell({ identity, children }: { identity: MemorialIdenti
           portraitUrl={identity.portraitUrl}
           birthYear={identity.birthYear}
           deathYear={identity.deathYear}
-          themeId={activeTheme}
+          themeId={identity.isDemo ? shellTheme : activeTheme}
         />
+        {identity.isDemo && (
+          <MemorialThemeSwitcher
+            currentTheme={shellTheme}
+            currentCoverName={demoCover.name}
+            onThemeChange={handleDemoThemeChange}
+          />
+        )}
       </main>
     </MemorialActionsContext.Provider>
   )

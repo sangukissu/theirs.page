@@ -45,8 +45,12 @@ interface PublishMemorialDialogProps {
   onUnpublish: () => Promise<void>
 }
 
+export function buildMemorialShareText(memorialName: string): string {
+  return `Remembering ${memorialName}. We've gathered stories, photographs, and memories in their honor. Please visit to remember them with us or share a memory:`
+}
+
 export function buildMemorialShareMessage(memorialName: string, url: string): string {
-  return `Remembering ${memorialName}. We've gathered stories, photographs, and memories in their honor. Please visit to remember them with us or share a memory: ${url}`
+  return `${buildMemorialShareText(memorialName)} ${url}`
 }
 
 export function PublishMemorialDialog({
@@ -220,7 +224,7 @@ export function PublishMemorialDialog({
       await navigator
         .share({
           title: `${memorialName} — Theirs`,
-          text: shareMessage,
+          text: buildMemorialShareText(memorialName),
           url: memorialUrl,
         })
         .catch(() => undefined)

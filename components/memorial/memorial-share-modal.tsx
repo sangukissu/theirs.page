@@ -8,6 +8,7 @@ import {
   Download,
   Share2,
   X,
+  QrCode,
   Loader2,
   Image as ImageIcon,
 } from "lucide-react"
@@ -52,10 +53,10 @@ export function MemorialShareModal({
     birthYear && deathYear
       ? `${birthYear} \u2014 ${deathYear}`
       : birthYear
-      ? `Born ${birthYear}`
-      : deathYear
-      ? `\u2014 ${deathYear}`
-      : "In Loving Memory"
+        ? `Born ${birthYear}`
+        : deathYear
+          ? `\u2014 ${deathYear}`
+          : "In Loving Memory"
 
   const themeDef = MEMORIAL_THEMES[themeId] || MEMORIAL_THEMES.quiet
 
@@ -140,7 +141,7 @@ export function MemorialShareModal({
       try {
         await navigator.share({
           title: `${fullName} — Theirs`,
-          text: `Remembering ${firstName}. We've gathered stories, photographs, and memories in their honor. Please visit to remember them with us or share a memory: ${canonicalUrl}`,
+          text: `Remembering ${firstName}. We've gathered stories, photographs, and memories in their honor. Please visit to remember them with us or share a memory:`,
           url: canonicalUrl,
         })
         track("memorial_shared", { channel: "native_share", source: "memorial_modal" })
@@ -263,22 +264,7 @@ export function MemorialShareModal({
                 }}
                 className="w-full rounded-2xl border p-4 sm:p-5 flex flex-col items-center text-center shadow-xs transition-colors duration-200 relative overflow-hidden"
               >
-                {/* Person Portrait / Monogram Header */}
-                <div
-                  style={{ borderColor: themeDef.colors.accent }}
-                  className="size-15 sm:size-17 rounded-full overflow-hidden border-2 shadow-sm mb-2.5 bg-white shrink-0 relative"
-                >
-                  {resolvedPortraitUrl ? (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img
-                      src={resolvedPortraitUrl}
-                      alt={fullName}
-                      className="size-full object-cover object-top"
-                    />
-                  ) : (
-                    <PortraitPlaceholder fullName={fullName} />
-                  )}
-                </div>
+
 
                 {/* Name & Lifespan */}
                 <h3
@@ -339,32 +325,8 @@ export function MemorialShareModal({
 
               {/* Action Buttons */}
               <div className="mt-4 w-full flex flex-col gap-2">
-                {/* Primary Download: Complete Keepsake Card (PNG) */}
-                <button
-                  type="button"
-                  onClick={handleDownloadCard}
-                  disabled={isDownloadingCard || !qrDataUrl}
-                  style={{
-                    backgroundColor: themeDef.colors.accent,
-                    color: themeDef.colors.accentForeground,
-                  }}
-                  className="w-full h-11 rounded-full font-medium text-xs sm:text-sm flex items-center justify-center gap-2 shadow-xs hover:brightness-105 active:scale-[0.98] transition-all cursor-pointer disabled:opacity-50"
-                >
-                  {isDownloadingCard ? (
-                    <>
-                      <Loader2 className="size-4 animate-spin shrink-0" />
-                      <span>Generating Card...</span>
-                    </>
-                  ) : (
-                    <>
-                      <Download className="size-4 shrink-0" />
-                      <span>Download Keepsake Card (PNG)</span>
-                    </>
-                  )}
-                </button>
-
-                {/* Secondary Row: QR Only, Copy Link, Native Share */}
                 <div className="flex items-center gap-2 w-full">
+                  {/* Primary Download: Complete Keepsake Card (PNG) */}
                   <button
                     type="button"
                     onClick={handleDownloadQrOnly}
@@ -375,10 +337,37 @@ export function MemorialShareModal({
                     {isDownloadingQrOnly ? (
                       <Loader2 className="size-3.5 animate-spin" />
                     ) : (
-                      <ImageIcon className="size-3.5 text-neutral-600 shrink-0" />
+                      <QrCode className="size-3.5 text-neutral-600 shrink-0" />
                     )}
-                    <span className="hidden xs:inline">QR Only</span>
+                    <span className="">QR Only</span>
                   </button>
+                  <button
+                    type="button"
+                    onClick={handleDownloadCard}
+                    disabled={isDownloadingCard || !qrDataUrl}
+                    style={{
+                      backgroundColor: themeDef.colors.accent,
+                      color: themeDef.colors.accentForeground,
+                    }}
+                    className="w-full h-11 rounded-full font-medium text-xs sm:text-sm flex items-center justify-center gap-2 shadow-xs hover:brightness-105 active:scale-[0.98] transition-all cursor-pointer disabled:opacity-50"
+                  >
+                    {isDownloadingCard ? (
+                      <>
+                        <Loader2 className="size-4 animate-spin shrink-0" />
+                        <span>Generating Card...</span>
+                      </>
+                    ) : (
+                      <>
+                        <Download className="size-4 shrink-0" />
+                        <span>Download Keepsake Card</span>
+                      </>
+                    )}
+                  </button>
+
+                </div>
+                {/* Secondary Row: QR Only, Copy Link, Native Share */}
+                <div className="flex items-center gap-2 w-full">
+
 
                   <button
                     type="button"

@@ -88,7 +88,7 @@ export function MemorialStory({ fullName, biography }: MemorialStoryProps) {
           font-size: 1.5rem;
           font-weight: 500;
           color: var(--theme-text-primary);
-          margin-top: 2rem;
+          margin-top: 1rem;
           margin-bottom: 0.75rem;
           letter-spacing: -0.015em;
           border-bottom: 1px solid var(--theme-border);
@@ -99,7 +99,7 @@ export function MemorialStory({ fullName, biography }: MemorialStoryProps) {
           font-size: 1.25rem;
           font-weight: 500;
           color: var(--theme-text-primary);
-          margin-top: 1.5rem;
+          margin-top: 1rem;
           margin-bottom: 0.5rem;
         }
         .story-editorial-body p {
@@ -109,7 +109,7 @@ export function MemorialStory({ fullName, biography }: MemorialStoryProps) {
         }
         .story-editorial-body blockquote {
           position: relative;
-          margin: 2.25rem 0;
+          margin: 1rem 0;
           padding: 0.25rem 0 0.25rem 2.5rem;
           border: none;
           background: transparent;
@@ -149,7 +149,7 @@ export function MemorialStory({ fullName, biography }: MemorialStoryProps) {
         .story-editorial-body ul {
           list-style-type: disc;
           padding-left: 1.75rem;
-          margin-bottom: 1.25rem;
+          margin-bottom: 1rem;
         }
         .story-editorial-body li {
           margin-bottom: 0.35rem;
@@ -164,7 +164,7 @@ export function MemorialStory({ fullName, biography }: MemorialStoryProps) {
           opacity: 0.85;
         }
         .story-editorial-body hr {
-          margin: 2rem 0;
+          margin: 1rem 0;
           border: none;
           border-top: 1px solid var(--theme-border);
         }

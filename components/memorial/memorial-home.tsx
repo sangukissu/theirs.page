@@ -1,5 +1,6 @@
 "use client"
 
+import { useState, useEffect } from "react"
 import Link from "next/link"
 import { useSearchParams } from "next/navigation"
 import { MemorialHero } from "./memorial-hero"
@@ -11,6 +12,8 @@ import { LifeStories } from "./life-stories"
 import { LegacyHashRedirect } from "./legacy-hash-redirect"
 import { useMemorialActions } from "./memorial-shell"
 import { ThemeDivider } from "./memorial-theme-decorations"
+import { isValidThemeId, type MemorialThemeId } from "@/lib/memorial/themes"
+import { DEMO_COVER_PRESETS, type DemoCoverPreset } from "./demo-cover-presets"
 import type { MemorialHomeData, MemorialIdentity } from "@/types/memorial-view"
 
 type SectionMarkKind = "tributes" | "timeline" | "gallery" | "memories"
@@ -57,11 +60,56 @@ function ViewFullSection({ href, kind, children }: { href: string; kind: Section
 export function MemorialHome({ identity, data }: { identity: MemorialIdentity; data: MemorialHomeData }) {
   const { openContribute } = useMemorialActions()
   const searchParams = useSearchParams()
-  const preview = searchParams.get("preview") === "visitor" ? "?preview=visitor" : ""
-  const viewHref = (view: string, hash = "") => `/${identity.slug}/${view}${preview}${hash}`
   const sections = identity.sectionSettings
   const remaining = (total: number, shown: number) => Math.max(0, total - shown)
-  const currentTheme = identity.theme || "quiet"
+
+  const themeQueryParam = searchParams.get("theme")
+  const initialTheme: MemorialThemeId = (isValidThemeId(themeQueryParam) ? themeQueryParam : identity.theme) || "quiet"
+  const [currentTheme, setCurrentTheme] = useState<MemorialThemeId>(initialTheme)
+
+  // Curated demo cover selection (Heritage Lines, Sanctuary Arch, Dither, Soft Aura, Misty Coastline, Highland Heather, Still Waters, Artisan Workshop)
+  const [activeCover, setActiveCover] = useState<DemoCoverPreset | null>(() => {
+    if (!identity.isDemo) return null
+    const match = DEMO_COVER_PRESETS.find(
+      (p) =>
+        (p.settings.pattern_style && p.settings.pattern_style === identity.coverSettings?.pattern_style) ||
+        (p.settings.cover_url && p.settings.cover_url === identity.coverSettings?.cover_url)
+    )
+    return match || DEMO_COVER_PRESETS[0]
+  })
+
+  const [currentCoverSettings, setCurrentCoverSettings] = useState(
+    identity.coverSettings || (identity.isDemo ? DEMO_COVER_PRESETS[0].settings : null)
+  )
+
+  useEffect(() => {
+    if (isValidThemeId(themeQueryParam)) {
+      setCurrentTheme(themeQueryParam)
+    }
+  }, [themeQueryParam])
+
+  useEffect(() => {
+    if (!identity.isDemo) return
+    const onDemoThemeChange = (e: Event) => {
+      const detail = (e as CustomEvent).detail
+      if (detail?.theme && isValidThemeId(detail.theme)) {
+        setCurrentTheme(detail.theme)
+      }
+      if (detail?.cover?.settings) {
+        setCurrentCoverSettings(detail.cover.settings)
+      }
+    }
+    window.addEventListener("theirs_demo_theme_changed", onDemoThemeChange)
+    return () => window.removeEventListener("theirs_demo_theme_changed", onDemoThemeChange)
+  }, [identity.isDemo])
+
+  const viewHref = (view: string, hash = "") => {
+    const params = new URLSearchParams()
+    if (searchParams.get("preview") === "visitor") params.set("preview", "visitor")
+    if (identity.isDemo && currentTheme) params.set("theme", currentTheme)
+    const q = params.toString() ? `?${params.toString()}` : ""
+    return `/${identity.slug}/${view}${q}${hash}`
+  }
 
   return (
     <>
@@ -77,7 +125,7 @@ export function MemorialHome({ identity, data }: { identity: MemorialIdentity; d
         portraitUrl={identity.portraitUrl}
         isDemo={identity.isDemo}
         themeId={currentTheme}
-        coverSettings={identity.coverSettings}
+        coverSettings={currentCoverSettings}
         onOpenContribute={openContribute}
       />
 
@@ -99,7 +147,7 @@ export function MemorialHome({ identity, data }: { identity: MemorialIdentity; d
           />
           {data.tributes.hasMore ? (
             <ViewFullSection href={viewHref("tributes")} kind="tributes">
-              {identity.isDemo ? `View all ${data.tributes.total} tributes` : `View ${remaining(data.tributes.total, data.tributes.items.length)} more tributes`}
+              View {remaining(data.tributes.total, data.tributes.items.length)} more tributes
             </ViewFullSection>
           ) : (
             <ThemeDivider themeId={currentTheme} />
@@ -112,7 +160,7 @@ export function MemorialHome({ identity, data }: { identity: MemorialIdentity; d
           <LifeTimeline milestones={data.timeline.items} isDemo={identity.isDemo} />
           {data.timeline.hasMore ? (
             <ViewFullSection href={viewHref("timeline")} kind="timeline">
-              {identity.isDemo ? `Explore all ${data.timeline.total} milestones` : `Explore ${remaining(data.timeline.total, data.timeline.items.length)} more milestones`}
+              Explore {remaining(data.timeline.total, data.timeline.items.length)} more milestones
             </ViewFullSection>
           ) : (
             <ThemeDivider themeId={currentTheme} />
@@ -138,7 +186,7 @@ export function MemorialHome({ identity, data }: { identity: MemorialIdentity; d
           />
           {data.media.hasMore ? (
             <ViewFullSection href={viewHref("gallery")} kind="gallery">
-              {identity.isDemo ? `View all ${data.media.total} photos & recordings` : `View ${remaining(data.media.total, data.media.items.length)} more photos & recordings`}
+              View {remaining(data.media.total, data.media.items.length)} more photos & recordings
             </ViewFullSection>
           ) : (
             <ThemeDivider themeId={currentTheme} />
@@ -158,7 +206,7 @@ export function MemorialHome({ identity, data }: { identity: MemorialIdentity; d
           />
           {data.memories.hasMore ? (
             <ViewFullSection href={viewHref("memories")} kind="memories">
-              {identity.isDemo ? `View all ${data.memories.total} stories & memories` : `Read ${remaining(data.memories.total, data.memories.items.length)} more stories & memories`}
+              Read {remaining(data.memories.total, data.memories.items.length)} more stories & memories
             </ViewFullSection>
           ) : (
             <ThemeDivider themeId={currentTheme} />
