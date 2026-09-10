@@ -22,7 +22,7 @@ export function TheirsFaq() {
       <div className="py-12 sm:py-20">
         {/* Section Heading */}
         <SectionHeader
-          badge="FAQ"
+          badge="FAQs"
           title="Fair questions, straight answers."
           description={
             <>

@@ -88,12 +88,12 @@ export default function RootLayout({
     >
       <head>
         <meta name="apple-mobile-web-app-title" content="Theirs" />
-        <meta name="theme-color" content="#f6f6f6" />
+        <meta name="theme-color" content="#FAF7F2" />
         <meta name="color-scheme" content="light" />
         <link rel="icon" type="image/svg+xml" href="/theirs-logo.svg" />
         <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
       </head>
-      <body className="antialiased bg-white text-[#292929] selection:bg-[#305dde]/15 selection:text-[#305dde]">
+      <body className="antialiased bg-[#FAF7F2] text-[#292929] selection:bg-[#305dde]/15 selection:text-[#305dde]">
         <Suspense fallback={null}>
           <NavigationProgress />
         </Suspense>

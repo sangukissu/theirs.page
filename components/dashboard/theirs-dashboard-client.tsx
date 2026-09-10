@@ -488,7 +488,7 @@ export function TheirsDashboardClient({
               return (
                 <div
                   key={m.id}
-                  className="p-6 rounded-3xl bg-white border border-black/[0.07] hover:border-black/[0.14] transition-all flex flex-col sm:flex-row sm:items-center justify-between gap-6 shadow-2xs group"
+                  className="p-6 rounded-3xl bg-white border border-black/[0.07] hover:border-black/[0.14] transition-all flex flex-col sm:flex-row sm:items-center justify-between gap-6 group"
                 >
                   {/* Left: Avatar & Identity */}
                   <div className="flex items-center gap-4">
@@ -573,7 +573,7 @@ export function TheirsDashboardClient({
                         type="button"
                         disabled={checkingOutId === m.id}
                         onClick={() => handleUpgrade(m.id)}
-                        className="inline-flex items-center justify-center gap-1.5 px-3.5 py-1.5 rounded-full bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-medium transition-all cursor-pointer shadow-2xs disabled:opacity-50"
+                        className="inline-flex items-center justify-center gap-1.5 px-3.5 py-1.5 rounded-full bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-medium transition-all cursor-pointer disabled:opacity-50"
                       >
                         {checkingOutId === m.id ? (
                           <Loader2 className="size-3 animate-spin" />

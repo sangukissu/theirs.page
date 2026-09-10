@@ -63,4 +63,10 @@ export const FAQS: readonly FaqItem[] = [
     answer:
       "Theirs is built for long-term remembrance, but we don't think it is responsible to promise that any online service will exist “forever.” Complete memorials don't depend on an ongoing monthly subscription, and you can export your family's memorial and original files so Theirs never has to be the only copy of something irreplaceable.",
   },
+  {
+    id: "photo-restorations",
+    question: "Can Theirs restore old or damaged photos?",
+    answer:
+      "Yes. Theirs Pro Plan includes 5 photo restorations for faded, scratched or damaged family photographs. Once restored, you can add the photo directly to the memorial."
+  },
 ] as const

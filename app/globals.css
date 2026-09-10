@@ -19,7 +19,7 @@ html {
   --popover-foreground: #454545;
 
   /* Primary Cobalt & Inks */
-  --primary: #305dde;
+  --primary: #df702b;
   --primary-foreground: #ffffff;
   --secondary: #f6f6f6;
   --secondary-foreground: #292929;
@@ -29,7 +29,7 @@ html {
   --accent-foreground: #292929;
   --destructive: #e11d48;
   --destructive-foreground: #ffffff;
-  
+
   /* Delicate borders and inputs */
   --border: rgba(41, 41, 41, 0.10);
   --input: rgba(41, 41, 41, 0.12);
@@ -106,7 +106,12 @@ html {
   }
 
   /* Exact getopen.so heading rules */
-  h1, h2, h3, h4, h5, h6 {
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
     font-family: var(--font-heading), var(--font-sans), sans-serif;
     font-weight: 500;
     letter-spacing: -0.025em;
@@ -138,6 +143,7 @@ html {
   0% {
     transform: translateX(-100%);
   }
+
   100% {
     transform: translateX(100%);
   }

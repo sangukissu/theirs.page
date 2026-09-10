@@ -45,6 +45,20 @@ export type EditorSectionTab =
   | "moderation"
   | "settings"
 
+export const VALID_EDITOR_TABS: readonly EditorSectionTab[] = [
+  "identity",
+  "appearance",
+  "story",
+  "gallery",
+  "timeline",
+  "moderation",
+  "settings",
+] as const
+
+export function isValidEditorTab(tab: string | null | undefined): tab is EditorSectionTab {
+  return Boolean(tab && (VALID_EDITOR_TABS as readonly string[]).includes(tab))
+}
+
 interface InitialMemorialData {
   id: string
   slug: string
@@ -100,9 +114,51 @@ export function MemorialEditorClient({
   const router = useRouter()
   const handleAuthorizationFailure = useEditorAuthorization(initialMemorial.id)
   const searchParams = useSearchParams()
-  const requestedTab = searchParams.get("tab")
-  const [activeTab, setActiveTab] = useState<EditorSectionTab>(requestedTab === "moderation" ? "moderation" : "identity")
+  const [activeTab, setActiveTab] = useState<EditorSectionTab>(() => {
+    const requestedTab = searchParams.get("tab")
+    if (isValidEditorTab(requestedTab)) {
+      if (requestedTab === "settings" && !initialMemorial.can_manage_owner_settings) {
+        return "identity"
+      }
+      return requestedTab
+    }
+    return "identity"
+  })
   const [publishDialogOpen, setPublishDialogOpen] = useState(false)
+
+  // Synchronize active tab with URL search params (e.g. Next.js router navigation)
+  useEffect(() => {
+    const paramTab = searchParams.get("tab")
+    if (isValidEditorTab(paramTab)) {
+      const targetTab = paramTab === "settings" && !initialMemorial.can_manage_owner_settings
+        ? "identity"
+        : paramTab
+      if (targetTab !== activeTab) {
+        setActiveTab(targetTab)
+      }
+    } else if (!paramTab && activeTab !== "identity") {
+      setActiveTab("identity")
+    }
+  }, [searchParams, activeTab, initialMemorial.can_manage_owner_settings])
+
+  // Synchronize active tab on browser back/forward buttons
+  useEffect(() => {
+    const handlePopState = () => {
+      if (typeof window === "undefined") return
+      const url = new URL(window.location.href)
+      const tab = url.searchParams.get("tab")
+      if (isValidEditorTab(tab)) {
+        const targetTab = tab === "settings" && !initialMemorial.can_manage_owner_settings
+          ? "identity"
+          : tab
+        setActiveTab(targetTab)
+      } else {
+        setActiveTab("identity")
+      }
+    }
+    window.addEventListener("popstate", handlePopState)
+    return () => window.removeEventListener("popstate", handlePopState)
+  }, [initialMemorial.can_manage_owner_settings])
 
   const [isPaid, setIsPaid] = useState<boolean>(Boolean(initialMemorial.is_paid))
 
@@ -545,6 +601,14 @@ export function MemorialEditorClient({
   const goToTab = (tabId: EditorSectionTab) => {
     setActiveTab(tabId)
     if (typeof window !== "undefined") {
+      const url = new URL(window.location.href)
+      if (tabId === "identity") {
+        url.searchParams.delete("tab")
+      } else {
+        url.searchParams.set("tab", tabId)
+      }
+      const newUrl = url.pathname + (url.search ? url.search : "")
+      window.history.replaceState(null, "", newUrl)
       window.scrollTo({ top: 0, behavior: "smooth" })
     }
   }

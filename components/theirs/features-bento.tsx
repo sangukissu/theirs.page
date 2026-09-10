@@ -30,7 +30,7 @@ export function FeaturesBento() {
     <section id="features" className="w-full max-w-5xl px-5 mx-auto py-16 sm:py-24 flex flex-col gap-12">
       {/* Section Header */}
       <SectionHeader
-        badge="The memorial"
+        badge="The Features"
         title="Their stories, photos and memories, together in one memorial."
         description={
           <>

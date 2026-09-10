@@ -131,9 +131,8 @@ export function ContributionMediaPreview({
       {/* 1. AUDIO PLAYBACK CARD */}
       {mediaType === "audio" && (
         <div
-          className={`flex flex-col gap-2 rounded-2xl bg-[#faf8f5] border border-[#8b5a45]/20 p-3 sm:p-4 ${
-            compact ? "w-full max-w-sm" : "w-full max-w-md"
-          }`}
+          className={`flex flex-col gap-2 rounded-2xl bg-[#faf8f5] border border-[#8b5a45]/20 p-3 sm:p-4 ${compact ? "w-full max-w-sm" : "w-full max-w-md"
+            }`}
         >
           <div className="flex items-center justify-between gap-2">
             <div className="flex items-center gap-2">
@@ -169,9 +168,8 @@ export function ContributionMediaPreview({
       {/* 2. PLAYABLE VIDEO CARD */}
       {mediaType === "video" && (
         <div
-          className={`relative rounded-2xl overflow-hidden bg-black border border-black/10 flex flex-col group ${
-            compact ? "w-full max-w-xs" : "w-full max-w-sm"
-          }`}
+          className={`relative rounded-2xl overflow-hidden bg-black border border-black/10 flex flex-col group ${compact ? "w-full max-w-xs" : "w-full max-w-sm"
+            }`}
         >
           <video
             src={primaryUrl}
@@ -209,7 +207,7 @@ export function ContributionMediaPreview({
               <div
                 key={url + idx}
                 onClick={() => setLightboxIndex(idx)}
-                className="relative aspect-4/3 rounded-xl overflow-hidden border border-black/[0.08] bg-neutral-100 group cursor-pointer shadow-2xs hover:shadow-sm transition-all"
+                className="relative aspect-4/3 rounded-xl overflow-hidden border border-black/[0.08] bg-neutral-100 group cursor-pointer hover:shadow-xs transition-all"
               >
                 <img
                   src={url}
@@ -235,9 +233,8 @@ export function ContributionMediaPreview({
         <div className="relative inline-block group">
           <div
             onClick={() => setLightboxIndex(0)}
-            className={`relative rounded-xl overflow-hidden border border-black/[0.08] bg-neutral-100 cursor-pointer shadow-2xs hover:shadow-sm transition-all ${
-              compact ? "h-28 w-auto max-w-full" : "h-36 sm:h-44 w-auto max-w-full"
-            }`}
+            className={`relative rounded-xl overflow-hidden border border-black/[0.08] bg-neutral-100 cursor-pointer shadow-2xs hover:shadow-sm transition-all ${compact ? "h-28 w-auto max-w-full" : "h-36 sm:h-44 w-auto max-w-full"
+              }`}
           >
             <img
               src={primaryUrl}

@@ -63,7 +63,7 @@ export function MemorialShell({ identity, children }: { identity: MemorialIdenti
     <MemorialActionsContext.Provider value={{ openContribute, openShare }}>
       <main
         data-memorial-theme={activeTheme}
-        className="theirs-theme-root min-h-screen bg-[var(--theme-bg-page)] text-[var(--theme-text-body)] selection:bg-[var(--theme-accent)]/15 selection:text-[var(--theme-accent)] relative pb-10 sm:pb-16 transition-colors duration-200"
+        className="theirs-theme-root min-h-screen bg-[var(--theme-bg-page)] text-[var(--theme-text-body)] selection:bg-[var(--theme-accent)]/15 selection:text-[var(--theme-accent)] relative pb-10 transition-colors duration-200"
       >
         {draftPreview && (
           <div className="bg-amber-500 text-black px-4 py-2 text-xs font-medium text-center sticky top-0 z-50 shadow-xs flex items-center justify-center gap-2">
