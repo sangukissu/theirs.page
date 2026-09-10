@@ -37,12 +37,12 @@ export async function sendWelcomeEmailForNewUser(user: User): Promise<void> {
     eventKey: `welcome/${user.id}`,
     subject: "Welcome to Theirs",
     html: renderTheirsEmail({
-      preheader: "Your quiet place to gather a life is ready.",
-      eyebrow: "Welcome to Theirs",
-      title: "A place dedicated to a human life",
-      bodyHtml: `<p style="margin:0 0 16px">${greeting(displayName)}</p><p style="margin:0 0 16px">You now have a quiet, dedicated place on the internet to bring together the stories, photographs, and small details that made someone unmistakably themselves.</p><p style="margin:0 0 6px">There is no pressure to finish everything today. Start with what feels easiest; you can return whenever you are ready.</p>`,
-      heroAction: { label: "Continue to your dashboard", url: dashboardUrl },
-      bodyHtmlAfterHero: emailNotice("Every new memorial begins as a private draft. Nothing is shared with anyone else until you choose to publish it."),
+      preheader: "Create an online memorial for someone you love.",
+      eyebrow: "Online Memorials",
+      title: "Create a memorial for someone you love",
+      bodyHtml: `<p style="margin:0 0 16px">${greeting(displayName)}</p><p style="margin:0 0 16px">Welcome to Theirs. We built this platform so families can create a beautiful online memorial for someone they love—bringing together their photos, stories, and tributes in one quiet, lasting place.</p><p style="margin:0 0 6px">You can start whenever you feel ready by simply entering their name. Every memorial begins as a private draft that only you can see, so you can take all the time you need.</p>`,
+      heroAction: { label: "Go to your dashboard", url: dashboardUrl },
+      bodyHtmlAfterHero: emailNotice("Every new memorial begins as a private draft. Nothing is visible to the public or shared with anyone until you choose to publish it."),
     }),
   })
 }
@@ -62,16 +62,17 @@ export async function sendMemorialCreatedEmail(input: {
     eventKey: `memorial-created/${input.memorialId}`,
     subject: `Your draft for ${memorialName} is ready`,
     html: renderTheirsEmail({
-      preheader: `Your private draft for ${memorialName} is ready.`,
-      eyebrow: "Private draft ready",
+      preheader: `Your private memorial draft for ${memorialName} is saved.`,
+      eyebrow: "Private Memorial Draft",
       title: `${memorialName}’s memorial is ready for you`,
-      bodyHtml: `<p style="margin:0 0 16px">${greeting(input.caretakerName)}</p><p style="margin:0 0 8px">Your draft for <strong style="color:#181925">${escapeEmailHtml(memorialName)}</strong> is safely saved as a private draft. A thoughtful page does not need to be completed all at once—take your time.</p>`,
-      heroAction: { label: `Continue ${memorialName}’s memorial`, url: editorUrl },
-      bodyHtmlAfterHero: `<p style="margin:26px 0 12px;font-weight:600;color:#181925">Here are three gentle steps to begin:</p>${emailChecklist([
-        { title: "Choose a portrait photo", description: "Use a warm, memorable image that immediately feels like them." },
-        { title: "Write the opening of their story", description: "A few honest sentences are enough to begin." },
-        { title: "Preview and publish when ready", description: "The page remains completely private until you choose to publish it." },
-      ])}<p style="margin:20px 0 0;font-size:13px;color:#71737a">Take all the time you need. We are here whenever you wish to return.</p>`,
+      bodyHtml: `<p style="margin:0 0 16px">${greeting(input.caretakerName)}</p><p style="margin:0 0 8px">Your draft for <strong style="color:#181925">${escapeEmailHtml(memorialName)}</strong> is safely saved. There is no rush—a meaningful memorial is assembled gradually, piece by piece.</p>`,
+      heroAction: { label: `Open ${memorialName}’s memorial`, url: editorUrl },
+      bodyHtmlAfterHero: `<p style="margin:24px 0 12px;font-weight:600;color:#181925">A few gentle ways to begin:</p>${emailChecklist([
+        { title: "Add their portrait and dates", description: "Choose a warm, memorable photo and add their birth and passing years." },
+        { title: "Share key memories and life stories", description: "Write a few sentences about what made them special, or add milestones to their timeline." },
+        { title: "Invite family to contribute", description: "You don’t have to do it alone. Invite family and friends to upload their favorite photos and stories." },
+        { title: "Publish whenever you are ready", description: "Your memorial stays completely private until you decide to share it with others." },
+      ])}<p style="margin:20px 0 0;font-size:13px;color:#71717a">Take all the time you need. Your progress is saved automatically.</p>`,
     }),
   })
 }
@@ -86,22 +87,24 @@ export async function sendMemorialPublishedEmail(input: {
   if (!input.email) return
   const memorialName = input.memorialName?.trim() || "Memorial"
   const memorialUrl = `${getTheirsAppUrl()}/${input.slug}`
+  const editorUrl = `${getTheirsAppUrl()}/dashboard/memorials/${input.memorialId}/editor`
+
   await sendTheirsEmail({
     to: input.email,
     eventKey: `memorial-published/${input.memorialId}`,
     subject: `${memorialName}’s memorial is now live`,
     html: renderTheirsEmail({
-      preheader: `${memorialName}’s memorial is live and ready to share.`,
-      eyebrow: "Memorial is live",
+      preheader: `${memorialName}’s memorial is published and ready to share.`,
+      eyebrow: "Memorial is Live",
       title: `${memorialName}’s memorial is now live`,
-      bodyHtml: `<p style="margin:0 0 16px">${greeting(input.caretakerName)}</p><p style="margin:0 0 8px"><strong style="color:#181925">${escapeEmailHtml(memorialName)}</strong>’s memorial website is now live and can be accessed here:</p>`,
-      heroAction: { label: `Visit ${memorialName}’s memorial`, url: memorialUrl },
-      heroSubAction: { label: "Click here to get the link you can share with others", url: memorialUrl },
-      bodyHtmlAfterHero: `<p style="margin:26px 0 16px">We hope this website becomes a comforting space to honor ${escapeEmailHtml(memorialName)}, share special memories, and support one another.</p><p style="margin:0 0 12px;font-weight:600;color:#181925">Here are some suggestions to help you get started:</p>${emailChecklist([
-        { title: "Add a cover photo", description: `Choose a memorable photo that helps visitors feel connected to ${escapeEmailHtml(memorialName)}.` },
-        { title: "Leave a tribute", description: `Share a short message in ${escapeEmailHtml(memorialName)}’s memory or a few words of support for those close to them.` },
-        { title: "Invite others", description: `Your online memorial will be most meaningful if created together. Share it now with those who knew ${escapeEmailHtml(memorialName)} so they can add their own memories and photos.` },
-      ])}<p style="margin:24px 0 0;font-size:13px;color:#71737a">Thank you for choosing Theirs to remember your loved one.</p>`,
+      bodyHtml: `<p style="margin:0 0 16px">${greeting(input.caretakerName)}</p><p style="margin:0 0 8px"><strong style="color:#181925">${escapeEmailHtml(memorialName)}</strong>’s memorial website is now published and accessible online:</p>`,
+      heroAction: { label: `View ${memorialName}’s memorial`, url: memorialUrl },
+      bodyHtmlAfterHero: `<p style="margin:24px 0 16px">This page is now ready for family, relatives, and friends to visit, remember, and celebrate ${escapeEmailHtml(memorialName)}’s life.</p><p style="margin:0 0 12px;font-weight:600;color:#181925">What you can do next:</p>${emailChecklist([
+        { title: "Share the link with family and friends", description: `Send the memorial link to loved ones so they can visit and celebrate ${escapeEmailHtml(memorialName)} together.` },
+        { title: "Visitors can contribute without an account", description: "Anyone with the link can leave tributes, write memories, and upload photos directly from their phone or computer." },
+        { title: "You stay in full control", description: "As the memorial caretaker, you can review contributions, edit details, or update settings at any time from your dashboard." },
+      ])}<p style="margin:24px 0 0;font-size:13px;color:#71717a">Thank you for creating a dedicated space to honor ${escapeEmailHtml(memorialName)}.</p>`,
+      primaryAction: { label: "Open caretaker dashboard", url: editorUrl },
     }),
   })
 }
@@ -120,9 +123,9 @@ export async function sendMemorialDeletedEmail(input: {
     subject: "Memorial deletion confirmation",
     html: renderTheirsEmail({
       preheader: `This email confirms that the memorial for ${memorialName} has been deleted.`,
-      eyebrow: "Memorial deletion confirmation",
+      eyebrow: "Memorial Confirmation",
       title: "Memorial deletion confirmation",
-      bodyHtml: `<p style="margin:0 0 16px">${greeting(input.caretakerName)}</p><p style="margin:0 0 16px">This email confirms that the memorial for <strong style="color:#181925">${escapeEmailHtml(memorialName)}</strong> has been deleted from our platform. We understand there are many reasons why you may need to do this, and we respect your decision.</p><p style="margin:0">If you ever choose to create a new tribute on Theirs in the future, we are here to support you.</p>`,
+      bodyHtml: `<p style="margin:0 0 16px">${greeting(input.caretakerName)}</p><p style="margin:0 0 16px">This email confirms that the memorial for <strong style="color:#181925">${escapeEmailHtml(memorialName)}</strong> has been permanently deleted from our platform per your request.</p><p style="margin:0">If you ever need to create a memorial on Theirs in the future, we are always here to support you.</p>`,
     }),
   })
 }
@@ -152,7 +155,7 @@ export async function sendTrustpilotInviteEmail(input: {
         label: "Share your experience",
         url: input.reviewUrl,
       },
-      bodyHtmlAfterHero: `<p style="margin:24px 0 0;font-size:13px;color:#71737a">Thank you for taking the time to share your honest thoughts with others.</p>`,
+      bodyHtmlAfterHero: `<p style="margin:24px 0 0;font-size:13px;color:#71717a">Thank you for taking the time to share your honest thoughts with others.</p>`,
     }),
   })
 }
@@ -182,7 +185,7 @@ export async function sendTrustpilotReminderEmail(input: {
         label: "Share your experience",
         url: input.reviewUrl,
       },
-      bodyHtmlAfterHero: `<p style="margin:24px 0 0;font-size:13px;color:#71737a">We will not contact you again regarding reviews. Thank you for being part of Theirs.</p>`,
+      bodyHtmlAfterHero: `<p style="margin:24px 0 0;font-size:13px;color:#71717a">We will not contact you again regarding reviews. Thank you for being part of Theirs.</p>`,
     }),
   })
 }
