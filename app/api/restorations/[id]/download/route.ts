@@ -1,5 +1,7 @@
 import { NextResponse } from "next/server"
 import { createClient } from "@/utils/supabase/server"
+import { assertMemorialAdmin } from "@/lib/memorial-auth"
+import { extractManagedR2Key, getR2ObjectStream } from "@/lib/r2"
 
 export async function GET(
   _request: Request,
@@ -18,40 +20,65 @@ export async function GET(
 
   const { data: restoration, error: restorationError } = await supabase
     .from("image_restorations")
-    .select("id, user_id, restored_image_url")
+    .select("id, user_id, memorial_id, restored_image_url")
     .eq("id", id)
     .single()
 
-  if (restorationError || !restoration) {
+  if (restorationError || !restoration || !restoration.restored_image_url) {
     return NextResponse.json({ error: "Not found" }, { status: 404 })
   }
 
+  // Authorization check: User must be creator or caretaker/editor of the memorial
   if (restoration.user_id !== user.id) {
-    return NextResponse.json({ error: "Forbidden" }, { status: 403 })
+    if (restoration.memorial_id) {
+      const authCheck = await assertMemorialAdmin(restoration.memorial_id, user.id)
+      if (!authCheck.authorized) {
+        return NextResponse.json({ error: "Forbidden" }, { status: 403 })
+      }
+    } else {
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 })
+    }
   }
 
-  const url = restoration.restored_image_url
-  if (!url || (!url.startsWith("http://") && !url.startsWith("https://"))) {
-    return NextResponse.json({ error: "Not found" }, { status: 404 })
+  const key = extractManagedR2Key(restoration.restored_image_url) || restoration.restored_image_url
+
+  if (key && !key.startsWith("http://") && !key.startsWith("https://")) {
+    try {
+      const { body, contentType } = await getR2ObjectStream(key)
+      return new Response(body as any, {
+        status: 200,
+        headers: {
+          "Content-Type": contentType || "image/png",
+          "Content-Disposition": `attachment; filename="theirs-restored-${id}.png"`,
+          "Cache-Control": "private, max-age=0, must-revalidate",
+        },
+      })
+    } catch (streamErr) {
+      console.error("[download R2 error]", streamErr)
+      return NextResponse.json({ error: "Failed to download image from storage" }, { status: 500 })
+    }
   }
 
-  // Fetch the image from the public URL
-  const response = await fetch(url)
-  if (!response.ok) {
-    return NextResponse.json({ error: "Failed to fetch image" }, { status: 500 })
+  // Legacy fallback for raw http URLs
+  try {
+    const response = await fetch(restoration.restored_image_url)
+    if (!response.ok) {
+      return NextResponse.json({ error: "Failed to fetch image" }, { status: 500 })
+    }
+
+    const arrayBuffer = await response.arrayBuffer()
+    const buffer = Buffer.from(arrayBuffer)
+    const contentType = response.headers.get("content-type") || "image/png"
+
+    return new NextResponse(buffer, {
+      status: 200,
+      headers: {
+        "Content-Type": contentType,
+        "Content-Disposition": `attachment; filename="theirs-restored-${id}.png"`,
+        "Cache-Control": "private, max-age=0, must-revalidate",
+      },
+    })
+  } catch {
+    return NextResponse.json({ error: "Failed to download image" }, { status: 500 })
   }
-
-  const arrayBuffer = await response.arrayBuffer()
-  const buffer = Buffer.from(arrayBuffer)
-  const contentType = response.headers.get("content-type") || "image/png"
-
-  return new NextResponse(buffer, {
-    status: 200,
-    headers: {
-      "Content-Type": contentType,
-      "Content-Disposition": `attachment; filename="theirs-restored-${id}.png"`,
-      "Cache-Control": "private, max-age=0, must-revalidate",
-    },
-  })
 }
-

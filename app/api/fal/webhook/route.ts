@@ -1,6 +1,7 @@
 import { type NextRequest, NextResponse } from "next/server"
 import { getSupabaseAdminSafe } from "@/utils/supabase/admin"
-import { uploadImageToR2 } from "@/lib/r2"
+import { putR2Object, uploadImageToR2 } from "@/lib/r2"
+import { finalizeMemorialStorage } from "@/lib/storage-quota"
 import { normalizeToPng } from "@/lib/watermark"
 import { logError } from "@/lib/error-handling"
 import { verifyFalWebhook } from "@/lib/fal-webhook"
@@ -114,7 +115,7 @@ export async function POST(request: NextRequest) {
     }
     const { data: restoration, error: fetchError } = await supabase
       .from("image_restorations")
-      .select("id, user_id, status, restored_image_url, fal_request_id")
+      .select("id, user_id, memorial_id, status, restored_image_url, fal_request_id")
       .eq("id", generationId)
       .single()
 
@@ -132,32 +133,59 @@ export async function POST(request: NextRequest) {
     }
 
     if (webhook.payloadError || webhook.status === "ERROR") {
-      const { error } = await supabase.rpc("fail_restoration_and_refund", {
-        p_restoration_id: restoration.id,
-        p_error_message: webhook.payloadError || webhook.error || "Image restoration failed at FAL",
-      })
-      if (error) throw error
-      return NextResponse.json({ success: true, message: "Restoration failed and credits refunded" })
+      await supabase
+        .from("image_restorations")
+        .update({
+          status: "failed",
+          error_message: webhook.payloadError || webhook.error || "Image restoration failed at FAL",
+          updated_at: new Date().toISOString(),
+        })
+        .eq("id", restoration.id)
+      return NextResponse.json({ success: true, message: "Restoration marked failed" })
     }
 
     const restoredImageUrl = getRestorationImageUrl(webhook.payload)
     if (!restoredImageUrl) {
-      const { error } = await supabase.rpc("fail_restoration_and_refund", {
-        p_restoration_id: restoration.id,
-        p_error_message: "Restoration payload did not contain an image URL",
-      })
-      if (error) throw error
-      return NextResponse.json({ success: true, message: "Restoration failed and credits refunded" })
+      await supabase
+        .from("image_restorations")
+        .update({
+          status: "failed",
+          error_message: "Restoration payload did not contain an image URL",
+          updated_at: new Date().toISOString(),
+        })
+        .eq("id", restoration.id)
+      return NextResponse.json({ success: true, message: "Restoration marked failed" })
     }
 
     const imageBuffer = await downloadFalImage(restoredImageUrl)
     const pngBuffer = await normalizeToPng(imageBuffer)
-    const r2Key = await uploadImageToR2(
-      pngBuffer,
-      `restored-${restoration.id}.png`,
-      restoration.user_id,
-      "image/png"
-    )
+
+    let r2Key: string
+    if (restoration.memorial_id) {
+      r2Key = `memorials/${restoration.memorial_id}/restorations/${restoration.id}/restored.png`
+      await putR2Object(r2Key, pngBuffer, "image/png", "private, max-age=31536000")
+      try {
+        await finalizeMemorialStorage(supabase, restoration.memorial_id, r2Key, r2Key)
+      } catch {
+        await supabase.from("memorial_storage_ledger").insert({
+          memorial_id: restoration.memorial_id,
+          reservation_key: r2Key,
+          object_key: r2Key,
+          original_bytes: pngBuffer.length,
+          status: "active",
+          expires_at: "infinity",
+          finalized_at: new Date().toISOString(),
+        })
+      }
+    } else {
+      r2Key = await uploadImageToR2(
+        pngBuffer,
+        `restored-${restoration.id}.png`,
+        restoration.user_id,
+        "image/png"
+      )
+    }
+
     const { error: updateError } = await supabase
       .from("image_restorations")
       .update({

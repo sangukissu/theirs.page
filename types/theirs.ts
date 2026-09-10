@@ -191,11 +191,27 @@ export interface MediaItem {
   album?: string | null
   is_pinned?: boolean
   source_memory_id?: string | null
+  source_restoration_id?: string | null
   source_type?: 'uploaded' | 'youtube'
   external_provider?: 'youtube' | null
   external_id?: string | null
   external_url?: string | null
   created_at: string
+}
+
+export interface MemorialImageRestoration {
+  id: string
+  memorial_id: string
+  user_id: string
+  status: 'pending' | 'processing' | 'completed' | 'failed'
+  original_image_url: string | null
+  restored_image_url: string | null
+  error_message?: string | null
+  fal_request_id?: string | null
+  created_at: string
+  updated_at: string
+  in_gallery?: boolean
+  gallery_media_id?: string | null
 }
 
 export interface TimelineEvent {

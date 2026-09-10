@@ -1,15 +1,16 @@
 import { type NextRequest, NextResponse } from "next/server"
 import { fal } from "@fal-ai/client"
 import { createClient } from "@/utils/supabase/server"
-import { getSupabaseAdmin } from "@/utils/supabase/admin"
+import { getSupabaseAdminSafe } from "@/utils/supabase/admin"
 import { getImageDimensions, validateMagicBytes } from "@/lib/safety/moderation"
+import { assertMemorialAdmin } from "@/lib/memorial-auth"
 import {
   buildRestorationInput,
   getWebhookBaseUrl,
   originalProxyUrl,
-  preserveOriginalForComparison,
+  preserveMemorialOriginalForComparison,
   uploadR2ObjectToFal,
-  validateOwnedTempRestoreKey,
+  validateMemorialRestoreKey,
 } from "@/lib/restore-helpers"
 
 fal.config({
@@ -17,8 +18,8 @@ fal.config({
 })
 
 const ALLOWED_TYPES = ["image/jpeg", "image/jpg", "image/png", "image/webp"]
-const MAX_FILE_SIZE = 10 * 1024 * 1024
-const MAX_REQUEST_BYTES = 16 * 1024 * 1024
+const MAX_FILE_SIZE = 15 * 1024 * 1024
+const MAX_REQUEST_BYTES = 20 * 1024 * 1024
 
 function sanitizeInput(input: any): any {
   if (typeof input === "string") {
@@ -41,7 +42,7 @@ function validateFile(file: File): { valid: boolean; error?: string } {
   if (file.size > MAX_FILE_SIZE) {
     return {
       valid: false,
-      error: "File too large. Maximum size is 10MB.",
+      error: "File too large. Maximum size is 15MB.",
     }
   }
 
@@ -53,24 +54,6 @@ function validateFile(file: File): { valid: boolean; error?: string } {
   }
 
   return { valid: true }
-}
-
-async function markFailedAndRefund(
-  restorationId: string,
-  message: string,
-): Promise<number | null> {
-  // The RPC refunds the credit (if it was reserved) and returns the user's
-  // updated balance. We return it so the client can resync without a second
-  // round-trip.
-  const { data, error } = await getSupabaseAdmin().rpc("fail_restoration_and_refund", {
-    p_restoration_id: restorationId,
-    p_error_message: message,
-  })
-  if (error) {
-    console.error("[restore] fail_restoration_and_refund failed", error)
-    return null
-  }
-  return typeof data === "number" ? data : null
 }
 
 export async function POST(request: NextRequest) {
@@ -99,20 +82,26 @@ export async function POST(request: NextRequest) {
     let seed: string | undefined
     let preserveOriginalColors = false
     let originalImageKey: string | null = null
-    const batchId = crypto.randomUUID()
+    let memorialId: string | undefined
+    let inputKey: string | undefined
+    let filename = "original.png"
 
     if (contentTypeHeader.includes("application/json")) {
       const body = await request.json().catch(() => ({}))
-      const key = typeof body?.key === "string" ? body.key : undefined
+      memorialId = typeof body?.memorial_id === "string" ? body.memorial_id : typeof body?.memorialId === "string" ? body.memorialId : undefined
+      inputKey = typeof body?.key === "string" ? body.key : undefined
       const bodyOutputFormat = typeof body?.output_format === "string" ? body.output_format : undefined
       const bodySeed = typeof body?.seed === "string" ? body.seed : undefined
-      const bodyPreserveOriginalColors = body?.preserveOriginalColors === true || body?.preserve_original_colors === true
-      const filename = typeof body?.filename === "string" ? body.filename : key?.split("/").pop() || "original"
+      preserveOriginalColors = body?.preserveOriginalColors === true || body?.preserve_original_colors === true
+      filename = typeof body?.filename === "string" ? body.filename : inputKey?.split("/").pop() || "original.png"
 
-      if (!key) {
+      if (!memorialId) {
+        return NextResponse.json({ error: "Memorial ID is required" }, { status: 400 })
+      }
+      if (!inputKey) {
         return NextResponse.json({ error: "No image key provided" }, { status: 400 })
       }
-      if (!validateOwnedTempRestoreKey(key, user.id)) {
+      if (!validateMemorialRestoreKey(inputKey, memorialId, user.id)) {
         return NextResponse.json({ error: "Invalid image key" }, { status: 400 })
       }
       if (bodyOutputFormat) {
@@ -122,19 +111,9 @@ export async function POST(request: NextRequest) {
         outputFormat = bodyOutputFormat
       }
       if (bodySeed) seed = bodySeed
-      preserveOriginalColors = bodyPreserveOriginalColors
-
-      try {
-        originalImageKey = await preserveOriginalForComparison(key, user.id, batchId, 0, filename)
-        uploadedFile = await uploadR2ObjectToFal(key)
-      } catch (fetchErr) {
-        return NextResponse.json(
-          { error: fetchErr instanceof Error ? fetchErr.message : "Failed to read uploaded image" },
-          { status: 400 }
-        )
-      }
     } else if (contentTypeHeader.includes("multipart/form-data")) {
       const formData = await request.formData()
+      memorialId = (formData.get("memorial_id") as string) || (formData.get("memorialId") as string) || undefined
       const file = formData.get("image") as File
       seed = (formData.get("seed") as string) || undefined
       const requestedOutput = formData.get("output_format")
@@ -145,12 +124,16 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({ error: "Invalid output format" }, { status: 400 })
       }
       outputFormat = typeof requestedOutput === "string" ? requestedOutput : "png"
-      preserveOriginalColors = formData.get("preserve_original_colors") === "true"
+      preserveOriginalColors = formData.get("preserve_original_colors") === "true" || formData.get("preserveOriginalColors") === "true"
 
+      if (!memorialId) {
+        return NextResponse.json({ error: "Memorial ID is required" }, { status: 400 })
+      }
       if (!file) {
         return NextResponse.json({ error: "No image file provided" }, { status: 400 })
       }
 
+      filename = file.name || "original.png"
       const fileValidation = validateFile(file)
       if (!fileValidation.valid) {
         return NextResponse.json({ error: fileValidation.error }, { status: 400 })
@@ -188,151 +171,100 @@ export async function POST(request: NextRequest) {
       )
     }
 
+    // 1. Authorization check: user must be caretaker or editor for this memorial
+    const authCheck = await assertMemorialAdmin(memorialId, user.id)
+    if (!authCheck.authorized || !authCheck.memorial) {
+      return authCheck.errorResponse || NextResponse.json({ error: "Forbidden" }, { status: 403 })
+    }
+
+    // 2. Paywall check: Memorial must be Complete
+    if (!authCheck.memorial.is_paid) {
+      return NextResponse.json(
+        { error: "Photo restoration is included with Theirs Complete." },
+        { status: 402 }
+      )
+    }
+
+    // 3. Atomically reserve slot and create restoration record with serialized lock
+    const db = getSupabaseAdminSafe() || supabase
+    const { data: restorationId, error: reserveError } = await db.rpc("reserve_memorial_restoration", {
+      p_memorial_id: memorialId,
+      p_user_id: user.id,
+    })
+
+    if (reserveError || !restorationId) {
+      const msg = reserveError?.message || "All 5 photo restorations included with Theirs Complete have been used."
+      const status = reserveError?.code === "P0001" ? 402 : reserveError?.code === "P0003" ? 403 : 400
+      return NextResponse.json({ error: msg }, { status })
+    }
+
+    // 4. Preserve original image file under memorial restoration namespace
+    if (inputKey) {
+      try {
+        originalImageKey = await preserveMemorialOriginalForComparison(inputKey, memorialId, restorationId, filename)
+        uploadedFile = await uploadR2ObjectToFal(inputKey)
+      } catch (fetchErr) {
+        await db.from("image_restorations").update({
+          status: "failed",
+          error_message: fetchErr instanceof Error ? fetchErr.message : "Failed to read uploaded image",
+          updated_at: new Date().toISOString(),
+        }).eq("id", restorationId)
+
+        return NextResponse.json(
+          { error: fetchErr instanceof Error ? fetchErr.message : "Failed to read uploaded image" },
+          { status: 400 }
+        )
+      }
+    }
+
     const sanitizedSeed = seed ? sanitizeInput(Number.parseInt(seed)) : undefined
-    const input = buildRestorationInput(uploadedFile, {
+    const input = buildRestorationInput(uploadedFile!, {
       outputFormat,
       seed: typeof sanitizedSeed === "number" && !isNaN(sanitizedSeed) ? sanitizedSeed : undefined,
       preserveOriginalColors,
     })
 
-    const { data: restoration, error: insertError } = await supabase
-      .from("image_restorations")
-      .insert({
-        user_id: user.id,
-        status: "processing",
-        original_image_url: originalImageKey,
-        batch_id: batchId,
-        batch_index: 0,
-        credits_charged: 1,
-        credit_refunded: false,
-      })
-      .select("id")
-      .single()
-
-    if (insertError || !restoration) {
-      return NextResponse.json({ error: "Failed to create restoration record" }, { status: 500 })
-    }
-
-    const { data: remainingCredits, error: reserveError } = await supabase.rpc("reserve_restore_credits", {
-      p_user_id: user.id,
-      p_amount: 1,
-    })
-
-    if (reserveError || typeof remainingCredits !== "number") {
-      await supabase
-        .from("image_restorations")
-        .update({
-          status: "failed",
-          error_message: "Insufficient credits",
-          credits_charged: 0,
-          credit_refunded: true,
-          updated_at: new Date().toISOString(),
-        })
-        .eq("id", restoration.id)
-
-      return NextResponse.json({ error: "Insufficient credits" }, { status: 402 })
-    }
-
+    // 5. Submit to Fal Queue
     try {
       const queueResult = await fal.queue.submit("fal-ai/nano-banana-2/edit", {
         input,
-        webhookUrl: `${getWebhookBaseUrl(request)}/api/fal/webhook?generationId=${restoration.id}&type=restoration`,
+        webhookUrl: `${getWebhookBaseUrl(request)}/api/fal/webhook?generationId=${restorationId}&type=restoration`,
       })
 
       const requestId = queueResult.request_id
-      const { error: metadataError } = await supabase
+      await db
         .from("image_restorations")
         .update({
           fal_request_id: requestId,
+          original_image_url: originalImageKey,
           updated_at: new Date().toISOString(),
         })
-        .eq("id", restoration.id)
-
-      if (metadataError) {
-        throw metadataError
-      }
+        .eq("id", restorationId)
 
       return NextResponse.json({
         success: true,
-        restorationId: restoration.id,
+        restorationId,
         requestId,
         status: "processing",
-        creditsRemaining: remainingCredits,
         originalImageUrl: originalImageKey ? originalProxyUrl(originalImageKey) : undefined,
         message: "Image restoration started.",
       })
     } catch (falError) {
-      const rawMessage = falError instanceof Error ? falError.message : "Unknown error"
-      // Refund the credit (best-effort) and capture the user's updated balance
-      // so we can hand it back to the client in one round-trip.
-      const refundedBalance = await markFailedAndRefund(restoration.id, rawMessage)
+      const rawMessage = falError instanceof Error ? falError.message : "Restoration service error"
+      await db.from("image_restorations").update({
+        status: "failed",
+        error_message: rawMessage,
+        original_image_url: originalImageKey,
+        updated_at: new Date().toISOString(),
+      }).eq("id", restorationId)
 
-      if (falError instanceof Error) {
-        if (rawMessage.includes("authentication") || rawMessage.includes("401")) {
-          return NextResponse.json(
-            { error: "Authentication failed with restoration service. Please contact support.", creditsRemaining: refundedBalance ?? undefined },
-            { status: 401 }
-          )
-        }
-        if (rawMessage.includes("rate limit") || rawMessage.includes("429")) {
-          return NextResponse.json(
-            { error: "You're going a bit fast. Please wait a moment and try again.", creditsRemaining: refundedBalance ?? undefined },
-            { status: 429 }
-          )
-        }
-        if (rawMessage.includes("timeout") || rawMessage.includes("408")) {
-          return NextResponse.json(
-            { error: "The request took too long. Please try again with a smaller image.", creditsRemaining: refundedBalance ?? undefined },
-            { status: 408 }
-          )
-        }
-        if (rawMessage.includes("model not found") || rawMessage.includes("404")) {
-          return NextResponse.json(
-            { error: "The restoration model is temporarily unavailable. Please try again in a few minutes.", creditsRemaining: refundedBalance ?? undefined },
-            { status: 503 }
-          )
-        }
-        if (rawMessage.includes("422") || rawMessage.includes("Unprocessable") || rawMessage.includes("invalid_input")) {
-          return NextResponse.json(
-            {
-              error:
-                "We couldn't process this photo. It may be in an unsupported format, too large, or contain content our AI can't restore. Please try a JPG or PNG under 10MB.",
-              creditsRemaining: refundedBalance ?? undefined,
-            },
-            { status: 422 }
-          )
-        }
-        if (rawMessage.includes("content_policy") || rawMessage.includes("safety") || rawMessage.includes("moderation")) {
-          return NextResponse.json(
-            {
-              error: "This photo was flagged by our safety system. Please try a different photo.",
-              creditsRemaining: refundedBalance ?? undefined,
-            },
-            { status: 422 }
-          )
-        }
+      if (rawMessage.includes("rate limit") || rawMessage.includes("429")) {
+        return NextResponse.json({ error: "Restoration service is busy. Please wait a moment." }, { status: 429 })
       }
-      return NextResponse.json(
-        {
-          error: "Restoration service is temporarily unavailable. Please try again in a moment.",
-          creditsRemaining: refundedBalance ?? undefined,
-        },
-        { status: 503 }
-      )
+      return NextResponse.json({ error: "Restoration service is temporarily unavailable. Please try again." }, { status: 503 })
     }
   } catch (error) {
-    if (error instanceof Error) {
-      if (error.message.includes("authentication")) {
-        return NextResponse.json({ error: "Authentication failed with restoration service" }, { status: 401 })
-      }
-      if (error.message.includes("rate limit")) {
-        return NextResponse.json({ error: "Rate limit exceeded. Please try again later." }, { status: 429 })
-      }
-      if (error.message.includes("timeout")) {
-        return NextResponse.json({ error: "Request timeout. Please try again." }, { status: 408 })
-      }
-    }
-
+    console.error("[restore POST error]", error)
     return NextResponse.json({ error: "Failed to restore image. Please try again." }, { status: 500 })
   }
 }
@@ -343,7 +275,7 @@ export async function GET() {
 
   return NextResponse.json({
     status: "healthy",
-    service: "Theirs API",
+    service: "Theirs Restoration API",
     timestamp: new Date().toISOString(),
     falConfigured: hasKey,
     keyPreview,

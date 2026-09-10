@@ -45,44 +45,75 @@ export async function POST(req: NextRequest, context: RouteContext) {
       album: TEXT_LIMITS.albumName,
     })
     if (textError) return NextResponse.json({ error: textError }, { status: 400 })
-    const { url, stagingKey, media_type, caption, approx_year, location, album, is_pinned, order_index } = body
+    const { url, stagingKey, media_type, caption, approx_year, location, album, is_pinned, order_index, source_restoration_id } = body
     if (!['image', 'audio', 'video'].includes(media_type || 'image')) {
       return NextResponse.json({ error: "Invalid media type." }, { status: 400 })
     }
 
-    const inputKey = extractManagedR2Key(stagingKey || url)
-    if (!inputKey) {
-      return NextResponse.json({ error: "Media URL or staging key is required" }, { status: 400 })
-    }
+    const db = getSupabaseAdminSafe() || supabase
+    let inputKey: string | null = null
+    let finalKey = ""
+    let finalOriginalKey = ""
+    let isStaging = false
 
-    const isStaging = inputKey.startsWith(`dashboard-staging/${authCheck.memorial.id}/`)
-    const isPermanent = inputKey.startsWith(`memorials/${authCheck.memorial.id}/`)
-    if (!isStaging && !isPermanent) {
-      return NextResponse.json({ error: "Media does not belong to this memorial." }, { status: 400 })
-    }
+    if (source_restoration_id) {
+      const { data: restoration, error: restErr } = await db
+        .from("image_restorations")
+        .select("id, status, restored_image_url")
+        .eq("id", source_restoration_id)
+        .eq("memorial_id", memorialId)
+        .maybeSingle()
 
-    let finalKey = inputKey
-    let finalOriginalKey = inputKey
-    if (isStaging) {
-      if ((media_type || "image") === "image") {
-        const promoted = await promoteStagedMemorialImage(
-          inputKey,
-          authCheck.memorial.id,
-          "gallery",
-        )
-        finalKey = promoted.displayKey
-        finalOriginalKey = promoted.originalKey
-      } else {
-        const filename = inputKey.split("/").pop() || "upload"
-        const timestamp = Date.now()
-        const randomId = crypto.randomUUID()
-        finalKey = `memorials/${authCheck.memorial.id}/gallery/${timestamp}_${randomId}_${filename}`
-        finalOriginalKey = finalKey
-        await copyR2Object(inputKey, finalKey)
+      if (restErr || !restoration || restoration.status !== "completed" || !restoration.restored_image_url) {
+        return NextResponse.json({ error: "Restored photograph not found or not ready." }, { status: 404 })
+      }
+
+      const { data: existingLink } = await db
+        .from("media_items")
+        .select("id")
+        .eq("memorial_id", memorialId)
+        .eq("source_restoration_id", source_restoration_id)
+        .maybeSingle()
+
+      if (existingLink) {
+        return NextResponse.json({ error: "This restored photograph is already in the gallery." }, { status: 400 })
+      }
+
+      finalKey = restoration.restored_image_url
+      finalOriginalKey = restoration.restored_image_url
+    } else {
+      inputKey = extractManagedR2Key(stagingKey || url)
+      if (!inputKey) {
+        return NextResponse.json({ error: "Media URL or staging key is required" }, { status: 400 })
+      }
+
+      isStaging = inputKey.startsWith(`dashboard-staging/${authCheck.memorial.id}/`)
+      const isPermanent = inputKey.startsWith(`memorials/${authCheck.memorial.id}/`)
+      if (!isStaging && !isPermanent) {
+        return NextResponse.json({ error: "Media does not belong to this memorial." }, { status: 400 })
+      }
+
+      finalKey = inputKey
+      finalOriginalKey = inputKey
+      if (isStaging) {
+        if ((media_type || "image") === "image") {
+          const promoted = await promoteStagedMemorialImage(
+            inputKey,
+            authCheck.memorial.id,
+            "gallery",
+          )
+          finalKey = promoted.displayKey
+          finalOriginalKey = promoted.originalKey
+        } else {
+          const filename = inputKey.split("/").pop() || "upload"
+          const timestamp = Date.now()
+          const randomId = crypto.randomUUID()
+          finalKey = `memorials/${authCheck.memorial.id}/gallery/${timestamp}_${randomId}_${filename}`
+          finalOriginalKey = finalKey
+          await copyR2Object(inputKey, finalKey)
+        }
       }
     }
-
-    const db = getSupabaseAdminSafe() || supabase
 
     // Paywall Check: Enforce free tier 5-photo limit and audio/video restriction
     const { count } = await db
@@ -97,7 +128,7 @@ export async function POST(req: NextRequest, context: RouteContext) {
     )
 
     if (!quotaCheck.allowed) {
-      if (isStaging) {
+      if (isStaging && inputKey) {
         await deleteR2Object(finalKey).catch(() => {})
         if (finalOriginalKey !== finalKey) await deleteR2Object(finalOriginalKey).catch(() => {})
         await releaseMemorialStorage(db, memorialId, inputKey).catch(() => {})
@@ -113,6 +144,7 @@ export async function POST(req: NextRequest, context: RouteContext) {
       .insert({
         memorial_id: memorialId,
         url: finalKey,
+        source_restoration_id: source_restoration_id || null,
         media_type: media_type || "image",
         caption: caption ? clampWords(caption.trim(), TEXT_LIMITS.galleryCaptionMaxWords).slice(0, TEXT_LIMITS.photoCaption) : null,
         approx_year: approx_year ? Number(String(approx_year).replace(/\D/g, "").slice(0, TEXT_LIMITS.approxYearDigits)) || null : null,
@@ -126,7 +158,7 @@ export async function POST(req: NextRequest, context: RouteContext) {
 
     if (error) {
       console.error("Media insert error:", error)
-      if (isStaging) {
+      if (isStaging && inputKey) {
         await deleteR2Object(finalKey).catch(() => {})
         if (finalOriginalKey !== finalKey) await deleteR2Object(finalOriginalKey).catch(() => {})
         await releaseMemorialStorage(db, memorialId, inputKey).catch(() => {})
@@ -140,7 +172,7 @@ export async function POST(req: NextRequest, context: RouteContext) {
       return NextResponse.json({ error: "Failed to save media item." }, { status: 500 })
     }
 
-    if (isStaging) {
+    if (isStaging && inputKey) {
       try {
         await finalizeMemorialStorage(db, memorialId, inputKey, finalOriginalKey)
       } catch (quotaError) {
@@ -154,7 +186,7 @@ export async function POST(req: NextRequest, context: RouteContext) {
     }
 
     // Insert succeeded: Remove the temporary staging object
-    if (isStaging) {
+    if (isStaging && inputKey) {
       await deleteR2Object(inputKey).catch(() => {})
     }
 
@@ -259,10 +291,10 @@ export async function DELETE(req: NextRequest, context: RouteContext) {
 
     const db = getSupabaseAdminSafe() || supabase
 
-    // 1. Fetch media item to extract R2 storage key
+    // 1. Fetch media item to extract R2 storage key and source_restoration_id
     const { data: item } = await db
       .from("media_items")
-      .select("id, url")
+      .select("id, url, source_restoration_id")
       .eq("id", mediaId)
       .eq("memorial_id", memorialId)
       .maybeSingle()
@@ -279,8 +311,9 @@ export async function DELETE(req: NextRequest, context: RouteContext) {
       return NextResponse.json({ error: "Failed to delete media item." }, { status: 500 })
     }
 
-    // 3. Only after DB deletion succeeds: clean up R2 file
-    if (item?.url) {
+    // 3. Only after DB deletion succeeds: clean up R2 file IF NOT from restoration!
+    // Restored photos belong to the memorial's restoration library and must not be deleted when removed from gallery.
+    if (!item?.source_restoration_id && item?.url) {
       const key = extractR2KeyFromUrl(item.url)
       if (key) {
         try {

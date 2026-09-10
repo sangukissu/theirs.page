@@ -98,8 +98,8 @@ export default function PrivacyPage() {
                 </tr>
                 <tr>
                   <td className="p-3.5 sm:px-4 font-medium text-[#181925]">Site Security &amp; Analytics</td>
-                  <td className="p-3.5 sm:px-4">General device and browser type, spam prevention tokens, and anonymous page counts via Umami Analytics.</td>
-                  <td className="p-3.5 sm:px-4">Preventing automated spam, protecting site availability, and understanding general website traffic without tracking individuals across the web.</td>
+                  <td className="p-3.5 sm:px-4">General device and browser type, spam prevention tokens, and cookieless, privacy-first page statistics via self-hosted Open Analytics.</td>
+                  <td className="p-3.5 sm:px-4">Preventing automated spam, protecting site availability, and measuring general website traffic without persistent cookies, raw IP logging, or cross-site tracking.</td>
                 </tr>
               </tbody>
             </table>
@@ -197,7 +197,7 @@ export default function PrivacyPage() {
             <li><strong>Supabase</strong> (Secure database and encrypted account authentication)</li>
             <li><strong>Dodo Payments</strong> (Secure checkout, card processing, and billing compliance)</li>
             <li><strong>Resend</strong> (Reliable email delivery for sign-in links and memorial notifications)</li>
-            <li><strong>Umami Analytics</strong> (Privacy-first visitor statistics that do not use cookies or track personal identities)</li>
+            <li><strong>Open Analytics (Self-Hosted)</strong> (Privacy-first visitor statistics that set no tracking cookies, store no raw IP addresses, and respect Global Privacy Control)</li>
             <li><strong>Google Cloud</strong> (Automated safety checks and optional story writing assistance)</li>
           </ul>
         </section>

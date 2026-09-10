@@ -5,7 +5,6 @@ import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { createClient } from "@/utils/supabase/client"
 import {
-  Wand2,
   ChevronDown,
   LogOut,
   Heart,
@@ -49,7 +48,6 @@ export function TheirsTopNav({ userEmail }: TheirsTopNavProps) {
 
   const initial = userEmail ? userEmail.charAt(0).toUpperCase() : "U"
   const isMemorialsActive = pathname === "/dashboard" || pathname.startsWith("/dashboard/memorials")
-  const isRestoreActive = pathname.startsWith("/dashboard/restore")
 
   return (
     <header className="h-16 border-b border-black/[0.06] bg-white/80 backdrop-blur-md px-4 sm:px-8 flex items-center justify-between sticky top-0 z-40">
@@ -69,24 +67,12 @@ export function TheirsTopNav({ userEmail }: TheirsTopNavProps) {
           <Link
             href="/dashboard"
             prefetch={true}
-            className={`px-3 py-1.5 rounded-full font-medium transition-colors ${isMemorialsActive && !isRestoreActive
+            className={`px-3 py-1.5 rounded-full font-medium transition-colors ${isMemorialsActive
               ? "bg-black/[0.05] text-[#181925]"
               : "text-[#71717a] hover:text-[#181925] hover:bg-black/[0.03]"
               }`}
           >
             Memorials
-          </Link>
-
-          <Link
-            href="/dashboard/restore"
-            prefetch={true}
-            className={`hidden md:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full font-medium transition-colors ${isRestoreActive
-              ? "bg-black/[0.05] text-[#181925]"
-              : "text-[#71717a] hover:text-[#181925] hover:bg-black/[0.03]"
-              }`}
-          >
-            <Wand2 className="size-3 text-primary" />
-            <span>Restore a photo</span>
           </Link>
         </nav>
       </div>

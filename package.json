@@ -12,6 +12,8 @@
     "lint": "next lint",
     "start": "next start",
     "test:uploads": "tsx --test tests/uploads/*.test.ts",
+    "test:restoration": "tsx --test tests/restoration/*.test.ts",
+    "test": "tsx --test tests/*.test.ts tests/*/*.test.ts",
     "r2:cors:check": "wrangler r2 bucket cors list theirs",
     "r2:cors:apply": "wrangler r2 bucket cors set theirs --file r2-cors.json --force"
   },

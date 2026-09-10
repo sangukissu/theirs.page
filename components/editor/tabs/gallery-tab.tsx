@@ -36,6 +36,7 @@ import { MediaUploadList } from "@/components/uploads/media-upload-list"
 import type { MemorialAccessRole } from "@/lib/memorial-auth"
 import { isMediaAllowed, resolveMediaCapabilities } from "@/lib/uploads/capabilities"
 import { detectMediaType, MEDIA_ACCEPT_ATTRIBUTE, resolveMediaMime } from "@/lib/uploads/constants"
+import { RestorationsSubview } from "./restorations-subview"
 
 export interface EditorMediaItem {
   id: string
@@ -47,6 +48,7 @@ export interface EditorMediaItem {
   album?: string | null
   is_pinned?: boolean
   order_index?: number
+  source_restoration_id?: string | null
 }
 
 interface GalleryTabProps {
@@ -232,6 +234,7 @@ export function GalleryTab({
 }: GalleryTabProps) {
   const handleAuthorizationFailure = useEditorAuthorization(memorialId)
   const [uploadError, setUploadError] = useState<string | null>(null)
+  const [subview, setSubview] = useState<"gallery" | "restore">("gallery")
   const [selectedAlbumFilter, setSelectedAlbumFilter] = useState<string>("all")
   const fileInputRef = useRef<HTMLInputElement | null>(null)
   const uploads = useResumableMediaUpload({
@@ -374,13 +377,58 @@ export function GalleryTab({
 
   return (
     <div className="flex flex-col gap-6 max-w-2xl mb-6">
-      {/* Header with Small Toggle */}
-      <div className="flex flex-col gap-1 border-b border-black/[0.06] pb-4">
-        <div className="flex items-center justify-between gap-4">
-          <h2 className="text-lg sm:text-xl font-medium text-[#181925]">
-            Photographs, Audio & Video Gallery
-          </h2>
-        </div>
+      {/* Subview Switcher */}
+      <div className="flex items-center gap-1.5 p-1 bg-black/[0.04] rounded-full w-fit">
+        <button
+          type="button"
+          onClick={() => setSubview("gallery")}
+          className={`px-4 py-1.5 rounded-full text-xs font-medium transition-all cursor-pointer ${
+            subview === "gallery"
+              ? "bg-white text-[#181925] shadow-xs"
+              : "text-[#71717a] hover:text-[#181925]"
+          }`}
+        >
+          Gallery
+        </button>
+        <button
+          type="button"
+          onClick={() => setSubview("restore")}
+          className={`inline-flex items-center gap-1.5 px-4 py-1.5 rounded-full text-xs font-medium transition-all cursor-pointer ${
+            subview === "restore"
+              ? "bg-white text-[#181925] shadow-xs"
+              : "text-[#71717a] hover:text-[#181925]"
+          }`}
+        >
+          <Sparkles className="size-3 text-primary" />
+          <span>Restore old photos</span>
+          {!isPaid && (
+            <span className="inline-flex items-center gap-0.5 text-[10px] px-1.5 py-0.2 rounded-full bg-amber-100 text-amber-800 font-medium">
+              <Lock className="size-2.5" />
+              Pro
+            </span>
+          )}
+        </button>
+      </div>
+
+      {subview === "restore" ? (
+        <RestorationsSubview
+          memorialId={memorialId}
+          fullName={fullName}
+          isPaid={isPaid}
+          mediaItems={mediaItems}
+          onUpgrade={onUpgrade}
+          onAddMedia={onAddMedia}
+          onSwitchToGallery={() => setSubview("gallery")}
+        />
+      ) : (
+        <>
+          {/* Header with Small Toggle */}
+          <div className="flex flex-col gap-1 border-b border-black/[0.06] pb-4">
+            <div className="flex items-center justify-between gap-4">
+              <h2 className="text-lg sm:text-xl font-medium text-[#181925]">
+                Photographs, Audio & Video Gallery
+              </h2>
+            </div>
         <p className="text-xs sm:text-sm text-[#71717a]">
           Bulk upload family memories. Zero mandatory forms—drop photos, saved voicemails, or vintage video clips. Captions and years are completely optional.
         </p>
@@ -895,6 +943,8 @@ export function GalleryTab({
         onConfirm={handleConfirmDelete}
         onClose={() => !isDeleting && setItemToDelete(null)}
       />
+    </>
+  )}
 
       {/* FULLSCREEN GALLERY LIGHTBOX VIEWER */}
       {previewMediaItem && (

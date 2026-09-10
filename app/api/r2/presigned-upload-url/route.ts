@@ -157,14 +157,46 @@ export async function POST(req: NextRequest) {
       }
 
       const safeFolder = folder.toLowerCase().trim()
-      if (!["gallery", "portraits", "timeline", "covers"].includes(safeFolder)) {
+      if (!["gallery", "portraits", "timeline", "covers", "restorations"].includes(safeFolder)) {
         return NextResponse.json({ error: "Invalid upload destination folder." }, { status: 400 })
       }
 
       const contentType = resolveContentType(filename, rawContentType)
       const mediaType = detectMediaType(filename, contentType)
 
-      if (safeFolder === "portraits" || safeFolder === "timeline" || safeFolder === "covers") {
+      if (safeFolder === "restorations") {
+        if (!authCheck.memorial.is_paid) {
+          return NextResponse.json(
+            { error: "Photo restoration is included with Theirs Complete." },
+            { status: 402 }
+          )
+        }
+        if (!TRANSIENT_ALLOWED_CONTENT_TYPES.includes(contentType)) {
+          return NextResponse.json(
+            { error: "Only JPEG, PNG, and WebP images can be restored." },
+            { status: 400 }
+          )
+        }
+        if (fileSize < 1 || fileSize > MAX_TRANSIENT_UPLOAD_BYTES) {
+          return NextResponse.json(
+            { error: "Image file must be under 15MB." },
+            { status: 400 }
+          )
+        }
+        const db = getSupabaseAdminSafe() || supabase
+        const { count, error: countErr } = await db
+          .from("image_restorations")
+          .select("id", { count: "exact", head: true })
+          .eq("memorial_id", authCheck.memorial.id)
+          .in("status", ["completed", "processing"])
+
+        if (!countErr && typeof count === "number" && count >= 5) {
+          return NextResponse.json(
+            { error: "All 5 photo restorations included with Theirs Complete have been used." },
+            { status: 403 }
+          )
+        }
+      } else if (safeFolder === "portraits" || safeFolder === "timeline" || safeFolder === "covers") {
         if (!MEMORIAL_ALLOWED_IMAGE_TYPES.has(contentType)) {
           return NextResponse.json({ error: "Only supported image files (JPEG, PNG, WebP, GIF, HEIC, or HEIF) are accepted here." }, { status: 400 })
         }
@@ -219,9 +251,10 @@ export async function POST(req: NextRequest) {
 
       const randomId = crypto.randomUUID()
       const cleanFilename = filename.replace(/[^a-zA-Z0-9.-]/g, "_").slice(-180)
-      // Upload directly into private dashboard-staging/ prefix.
-      // Promoted into permanent memorials/ storage only upon successful DB record creation.
-      const stagingKey = `dashboard-staging/${authCheck.memorial.id}/${randomId}/${cleanFilename}`
+      // Upload directly into private dashboard-staging/ or memorial restoration staging prefix.
+      const stagingKey = safeFolder === "restorations"
+        ? `memorials/${authCheck.memorial.id}/restorations/staging/${randomId}.${extensionForContentType(contentType)}`
+        : `dashboard-staging/${authCheck.memorial.id}/${randomId}/${cleanFilename}`
       const quotaDb = getSupabaseAdminSafe()
       if (!quotaDb) {
         return NextResponse.json({ error: "Media uploads are temporarily unavailable." }, { status: 503 })

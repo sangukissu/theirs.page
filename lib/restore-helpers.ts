@@ -29,12 +29,43 @@ export function validateOwnedTempRestoreKey(key: string, userId: string): boolea
   const parts = key.split("/")
   return parts.length >= 4 && parts[0] === "temp" && parts[1] === "restorations" && parts[2] === userId
 }
+
+export function validateMemorialRestoreKey(key: string, memorialId: string, userId: string): boolean {
+  if (typeof key !== "string" || key.length === 0 || key.length > 1024) {
+    return false
+  }
+
+  if (key.includes("..") || key.startsWith("http://") || key.startsWith("https://")) {
+    return false
+  }
+
+  const parts = key.split("/")
+  if (parts.length >= 4 && parts[0] === "temp" && parts[1] === "restorations" && parts[2] === userId) {
+    return true
+  }
+  if (parts.length >= 4 && parts[0] === "memorials" && parts[1] === memorialId && parts[2] === "restorations") {
+    return true
+  }
+  return false
+}
+
 function cleanFilename(filename: string) {
   return filename.replace(/[^a-zA-Z0-9.-]/g, "_").slice(0, 120) || "original-image"
 }
 
 export function originalProxyUrl(key: string) {
-  return `/api/image-proxy?key=${encodeURIComponent(key)}`
+  return `/api/media?key=${encodeURIComponent(key)}`
+}
+
+export async function preserveMemorialOriginalForComparison(
+  sourceKey: string,
+  memorialId: string,
+  restorationId: string,
+  filename: string,
+) {
+  const extension = mime.getExtension(mime.getType(sourceKey) || "") || filename.split(".").pop() || "png"
+  const destinationKey = `memorials/${memorialId}/restorations/${restorationId}/original.${extension}`
+  return copyR2Object(sourceKey, destinationKey)
 }
 
 export async function preserveOriginalForComparison(

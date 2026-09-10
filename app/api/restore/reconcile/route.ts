@@ -2,7 +2,8 @@ import { type NextRequest, NextResponse } from "next/server"
 import { fal } from "@fal-ai/client"
 import { createClient } from "@/utils/supabase/server"
 import { supabaseAdmin } from "@/utils/supabase/admin"
-import { uploadImageToR2 } from "@/lib/r2"
+import { putR2Object, uploadImageToR2, resolveMediaUrl } from "@/lib/r2"
+import { finalizeMemorialStorage } from "@/lib/storage-quota"
 import { normalizeToPng } from "@/lib/watermark"
 
 fal.config({
@@ -15,6 +16,7 @@ const MAX_RECONCILE_IDS = 10
 type RestorationRecord = {
   id: string
   user_id: string
+  memorial_id?: string | null
   status: string
   restored_image_url: string | null
   original_image_url: string | null
@@ -24,14 +26,6 @@ type RestorationRecord = {
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null
-}
-
-function proxiedImageUrl(value?: string | null) {
-  if (!value) return undefined
-  if (value.startsWith("images/") || value.startsWith("temp/")) {
-    return `/api/image-proxy?key=${encodeURIComponent(value)}`
-  }
-  return value
 }
 
 function getRestorationImageUrl(payload: unknown) {
@@ -62,24 +56,53 @@ async function completeRestorationFromFal(restoration: RestorationRecord) {
   if (!restoration.fal_request_id) return restoration
   if (restoration.status === "completed" || restoration.restored_image_url) return restoration
 
-  const queueStatus = await fal.queue.status(RESTORATION_ENDPOINT, {
-    requestId: restoration.fal_request_id,
-  })
+  let queueStatus: any
+  try {
+    queueStatus = await fal.queue.status(RESTORATION_ENDPOINT, {
+      requestId: restoration.fal_request_id,
+    })
+  } catch (statusErr: any) {
+    console.error("[reconcile] queue.status error:", statusErr)
+    return restoration
+  }
 
   if (queueStatus.status !== "COMPLETED") {
     return restoration
   }
 
-  const result = await fal.queue.result(RESTORATION_ENDPOINT, {
-    requestId: restoration.fal_request_id,
-  })
+  let result: any
+  try {
+    result = await fal.queue.result(RESTORATION_ENDPOINT, {
+      requestId: restoration.fal_request_id,
+    })
+  } catch (resErr: any) {
+    await supabaseAdmin
+      .from("image_restorations")
+      .update({
+        status: "failed",
+        error_message: resErr?.message || "Restoration failed at FAL",
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", restoration.id)
+
+    return {
+      ...restoration,
+      status: "failed",
+      error_message: resErr?.message || "Restoration failed at FAL",
+    }
+  }
+
   const restoredImageUrl = getRestorationImageUrl(result.data)
 
   if (!restoredImageUrl) {
-    await supabaseAdmin.rpc("fail_restoration_and_refund", {
-      p_restoration_id: restoration.id,
-      p_error_message: "Restoration payload did not contain an image URL",
-    })
+    await supabaseAdmin
+      .from("image_restorations")
+      .update({
+        status: "failed",
+        error_message: "Restoration payload did not contain an image URL",
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", restoration.id)
 
     return {
       ...restoration,
@@ -90,12 +113,32 @@ async function completeRestorationFromFal(restoration: RestorationRecord) {
 
   const imageBuffer = await downloadImageFromUrl(restoredImageUrl)
   const pngBuffer = await normalizeToPng(imageBuffer)
-  const r2Key = await uploadImageToR2(
-    pngBuffer,
-    `restored-${restoration.id}.png`,
-    restoration.user_id,
-    "image/png",
-  )
+
+  let r2Key: string
+  if (restoration.memorial_id) {
+    r2Key = `memorials/${restoration.memorial_id}/restorations/${restoration.id}/restored.png`
+    await putR2Object(r2Key, pngBuffer, "image/png", "private, max-age=31536000")
+    try {
+      await finalizeMemorialStorage(supabaseAdmin, restoration.memorial_id, r2Key, r2Key)
+    } catch {
+      await supabaseAdmin.from("memorial_storage_ledger").insert({
+        memorial_id: restoration.memorial_id,
+        reservation_key: r2Key,
+        object_key: r2Key,
+        original_bytes: pngBuffer.length,
+        status: "active",
+        expires_at: "infinity",
+        finalized_at: new Date().toISOString(),
+      })
+    }
+  } else {
+    r2Key = await uploadImageToR2(
+      pngBuffer,
+      `restored-${restoration.id}.png`,
+      restoration.user_id,
+      "image/png",
+    )
+  }
 
   const { data, error } = await supabaseAdmin
     .from("image_restorations")
@@ -105,9 +148,8 @@ async function completeRestorationFromFal(restoration: RestorationRecord) {
       updated_at: new Date().toISOString(),
     })
     .eq("id", restoration.id)
-    .eq("user_id", restoration.user_id)
     .eq("fal_request_id", restoration.fal_request_id)
-    .select("id, user_id, status, restored_image_url, original_image_url, error_message, fal_request_id")
+    .select("id, user_id, memorial_id, status, restored_image_url, original_image_url, error_message, fal_request_id")
     .single()
 
   if (error || !data) {
@@ -132,6 +174,7 @@ export async function POST(request: NextRequest) {
   }
 
   const body = await request.json().catch(() => ({}))
+  const memorialId = typeof body?.memorial_id === "string" ? body.memorial_id : typeof body?.memorialId === "string" ? body.memorialId : undefined
   const ids = Array.isArray(body?.ids)
     ? body.ids.filter((id: unknown): id is string => typeof id === "string" && id.length > 0).slice(0, MAX_RECONCILE_IDS)
     : []
@@ -140,11 +183,18 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ restorations: [] })
   }
 
-  const { data: restorations, error } = await supabaseAdmin
+  let query = supabaseAdmin
     .from("image_restorations")
-    .select("id, user_id, status, restored_image_url, original_image_url, error_message, fal_request_id")
-    .eq("user_id", user.id)
+    .select("id, user_id, memorial_id, status, restored_image_url, original_image_url, error_message, fal_request_id")
     .in("id", ids)
+
+  if (memorialId) {
+    query = query.eq("memorial_id", memorialId)
+  } else {
+    query = query.eq("user_id", user.id)
+  }
+
+  const { data: restorations, error } = await query
 
   if (error) {
     return NextResponse.json({ error: "Unable to fetch restorations" }, { status: 500 })
@@ -168,8 +218,8 @@ export async function POST(request: NextRequest) {
       restored_image_url: restoration.restored_image_url,
       original_image_url: restoration.original_image_url,
       error_message: restoration.error_message,
-      restoredImageUrl: proxiedImageUrl(restoration.restored_image_url),
-      originalImageUrl: proxiedImageUrl(restoration.original_image_url),
+      restoredImageUrl: resolveMediaUrl(restoration.restored_image_url),
+      originalImageUrl: resolveMediaUrl(restoration.original_image_url),
     })),
   })
 }
