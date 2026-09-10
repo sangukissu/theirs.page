@@ -1,4 +1,5 @@
-import { redirect } from "next/navigation"
+import { notFound, redirect, permanentRedirect } from "next/navigation"
+import { getMemorialViewContext } from "@/lib/memorial/public-data"
 
 export default async function LegacyLifePage({
   params,
@@ -9,7 +10,16 @@ export default async function LegacyLifePage({
 }) {
   const { slug } = await params
   const query = await searchParams
+  const context = await getMemorialViewContext(slug)
+  if (!context) notFound()
+
   const nextQuery = new URLSearchParams()
   if (query.preview === "visitor") nextQuery.set("preview", "visitor")
-  redirect(`/${slug}/timeline${nextQuery.size ? `?${nextQuery.toString()}` : ""}`)
+  const qs = nextQuery.size ? `?${nextQuery.toString()}` : ""
+
+  if (context.redirectedToSlug) {
+    permanentRedirect(`/${context.redirectedToSlug}/timeline${qs}`)
+  }
+
+  redirect(`/${slug}/timeline${qs}`)
 }

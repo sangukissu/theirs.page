@@ -212,7 +212,7 @@ export function HelpFeedbackModal({
             {/* Compact Header */}
             <div className="px-5 pt-4 pb-3 border-b border-black/[0.05] bg-[#fafafb]">
               <div className="flex items-center gap-2 mb-1">
-                <span className="flex size-7 items-center justify-center rounded-lg bg-[#305dde]/10 text-[#305dde]">
+                <span className="flex size-7 items-center justify-center rounded-lg bg-primary/10 text-primary">
                   {activeTab === "feedback" ? (
                     <MessageSquare className="size-3.5" />
                   ) : (
@@ -297,7 +297,7 @@ export function HelpFeedbackModal({
                           Experience so far <span className="text-[#888] font-normal">(optional)</span>
                         </label>
                         {(rating !== null || hoverRating !== null) && (
-                          <span className="text-[11px] text-[#305dde] font-medium animate-in fade-in">
+                          <span className="text-[11px] text-primary font-medium animate-in fade-in">
                             {RATING_LABELS[hoverRating || rating || 0]}
                           </span>
                         )}
@@ -382,7 +382,7 @@ export function HelpFeedbackModal({
                       <button
                         type="submit"
                         disabled={isSubmittingFeedback}
-                        className="min-h-9 rounded-full bg-[#305dde] hover:bg-[#254cb8] text-white px-5 text-xs font-medium transition-colors disabled:opacity-50 flex items-center gap-1.5 cursor-pointer"
+                        className="min-h-9 rounded-full bg-primary hover:bg-primary/90 text-primary-foreground px-5 text-xs font-medium transition-colors disabled:opacity-50 flex items-center gap-1.5 cursor-pointer shadow-xs"
                       >
                         {isSubmittingFeedback ? (
                           <>
@@ -500,7 +500,7 @@ export function HelpFeedbackModal({
                       <button
                         type="submit"
                         disabled={isSubmittingSupport}
-                        className="min-h-9 rounded-full bg-[#305dde] hover:bg-[#254cb8] text-white px-5 text-xs font-medium transition-colors disabled:opacity-50 flex items-center gap-1.5 cursor-pointer"
+                        className="min-h-9 rounded-full bg-primary hover:bg-primary/90 text-primary-foreground px-5 text-xs font-medium transition-colors disabled:opacity-50 flex items-center gap-1.5 cursor-pointer shadow-xs"
                       >
                         {isSubmittingSupport ? (
                           <>

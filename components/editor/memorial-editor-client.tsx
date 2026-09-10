@@ -87,7 +87,9 @@ interface InitialMemorialData {
   cover_settings?: MemorialCoverSettings | null
   is_paid?: boolean
   paid_at?: string | null
+  published_at?: string | null
   updated_at?: string
+  slug_change_count?: number
 }
 
 interface MemorialEditorClientProps {
@@ -275,6 +277,14 @@ export function MemorialEditorClient({
   const [saveStatus, setSaveStatus] = useState<SaveStatus>("saved")
   const [restoredNotice, setRestoredNotice] = useState(false)
   const [lastSavedAt, setLastSavedAt] = useState<Date | null>(null)
+  const [slugChangeCount, setSlugChangeCount] = useState<number>(initialMemorial.slug_change_count || 0)
+  const [hasEverBeenPublished, setHasEverBeenPublished] = useState<boolean>(
+    Boolean(
+      initialMemorial.published_at ||
+      initialMemorial.status === "published" ||
+      (initialMemorial.slug_change_count || 0) > 0
+    )
+  )
 
   const debounceTimerRef = useRef<NodeJS.Timeout | null>(null)
   const formRef = useRef(form)
@@ -397,6 +407,12 @@ export function MemorialEditorClient({
               cover_settings: resData.memorial.cover_settings,
             }))
           }
+          if (typeof resData.memorial?.slug_change_count === "number") {
+            setSlugChangeCount(resData.memorial.slug_change_count)
+          }
+          if (currentForm.status === "published") {
+            setHasEverBeenPublished(true)
+          }
           setSaveStatus("saved")
           setLastSavedAt(new Date())
           try {
@@ -413,6 +429,9 @@ export function MemorialEditorClient({
         } else {
           const errData = await res.json().catch(() => ({}))
           console.warn("Cloud save error:", res.status, errData)
+          if (errData.error) {
+            toast.error(errData.error)
+          }
           setSaveStatus("local-saved")
           return false
         }
@@ -550,6 +569,9 @@ export function MemorialEditorClient({
       } catch { }
       return next
     })
+    if (status === "published") {
+      setHasEverBeenPublished(true)
+    }
     router.refresh()
   }
 
@@ -869,6 +891,10 @@ export function MemorialEditorClient({
               memorialId={initialMemorial.id}
               memorialName={form.full_name || initialMemorial.full_name || "Memorial"}
               slug={form.slug}
+              status={form.status || initialMemorial.status || "draft"}
+              hasEverBeenPublished={hasEverBeenPublished}
+              slugChangeCount={slugChangeCount}
+              initialSlug={initialMemorial.slug}
               privacy={form.privacy}
               pin={form.pin}
               hasPin={Boolean(initialMemorial.has_access_pin)}

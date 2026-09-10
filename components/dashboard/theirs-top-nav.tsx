@@ -11,7 +11,6 @@ import {
   HelpCircle,
 } from "lucide-react"
 import Image from "next/image"
-import { HelpFeedbackModal } from "./help-feedback-modal"
 
 interface TheirsTopNavProps {
   userEmail: string
@@ -22,7 +21,6 @@ export function TheirsTopNav({ userEmail, userId }: TheirsTopNavProps) {
   const pathname = usePathname()
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false)
   const [isSigningOut, setIsSigningOut] = useState(false)
-  const [isHelpFeedbackOpen, setIsHelpFeedbackOpen] = useState(false)
 
   const userMenuRef = useRef<HTMLDivElement>(null)
 
@@ -117,7 +115,12 @@ export function TheirsTopNav({ userEmail, userId }: TheirsTopNavProps) {
                 type="button"
                 onClick={() => {
                   setIsUserMenuOpen(false)
-                  setIsHelpFeedbackOpen(true)
+                  const trigger = document.getElementById("support-feedback-trigger")
+                  if (trigger) {
+                    trigger.click()
+                  }
+                  window.dispatchEvent(new CustomEvent("open-support-feedback"))
+                  window.dispatchEvent(new CustomEvent("open-help-feedback"))
                 }}
                 className="w-full flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-medium text-[#181925] hover:bg-neutral-50 transition-colors cursor-pointer text-left"
               >
@@ -138,13 +141,6 @@ export function TheirsTopNav({ userEmail, userId }: TheirsTopNavProps) {
           )}
         </div>
       </div>
-
-      <HelpFeedbackModal
-        isOpen={isHelpFeedbackOpen}
-        onClose={() => setIsHelpFeedbackOpen(false)}
-        userEmail={userEmail}
-        userId={userId}
-      />
     </header>
   )
 }

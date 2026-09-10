@@ -313,37 +313,91 @@ export async function PATCH(req: NextRequest, context: RouteContext) {
       // If slug update requested, validate and ensure uniqueness
       if (body.slug) {
         const cleanSlug = normalizeMemorialSlug(body.slug)
-        const parsed = memorialSlugSchema.safeParse(cleanSlug)
+        if (cleanSlug !== authCheck.memorial.slug) {
+          const parsed = memorialSlugSchema.safeParse(cleanSlug)
 
-        if (!parsed.success) {
-          return NextResponse.json(
-            { error: parsed.error.issues[0]?.message || "Invalid address" },
-            { status: 400 }
+          if (!parsed.success) {
+            return NextResponse.json(
+              { error: parsed.error.issues[0]?.message || "Invalid address" },
+              { status: 400 }
+            )
+          }
+
+          if (RESERVED_MEMORIAL_SLUGS.has(cleanSlug)) {
+            return NextResponse.json(
+              { error: "That address is reserved for system use" },
+              { status: 400 }
+            )
+          }
+
+          const { data: slugCheck } = await db
+            .from("memorials")
+            .select("id")
+            .eq("slug", cleanSlug)
+            .neq("id", id)
+            .maybeSingle()
+
+          if (slugCheck) {
+            return NextResponse.json(
+              { error: "That address is already taken. Please choose another." },
+              { status: 409 }
+            )
+          }
+
+          // Check if slug is currently an alias redirecting to another memorial
+          const { data: redirectCheck } = await db
+            .from("memorial_slug_redirects")
+            .select("memorial_id")
+            .eq("old_slug", cleanSlug)
+            .neq("memorial_id", id)
+            .maybeSingle()
+
+          if (redirectCheck) {
+            return NextResponse.json(
+              { error: "That address is reserved for an existing memorial. Please choose another." },
+              { status: 409 }
+            )
+          }
+
+          // Enforce 1-time change limit if memorial has ever been published or is currently published
+          const currentChangeCount = (authCheck.memorial as { slug_change_count?: number }).slug_change_count || 0
+          const hasEverBeenPublished = Boolean(
+            authCheck.memorial.published_at ||
+            authCheck.memorial.status === "published" ||
+            body.status === "published" ||
+            currentChangeCount > 0
           )
+
+          if (hasEverBeenPublished) {
+            if (currentChangeCount >= 1) {
+              return NextResponse.json(
+                {
+                  error:
+                    "This web address is permanently set to protect printed keepsake cards and shared QR codes from broken links. Please contact support if you need assistance.",
+                },
+                { status: 400 }
+              )
+            }
+
+            // Save old slug in redirects table so printed cards permanently redirect
+            const previousSlug = authCheck.memorial.slug
+            if (previousSlug && previousSlug !== cleanSlug) {
+              const { error: redirectError } = await db
+                .from("memorial_slug_redirects")
+                .insert({
+                  memorial_id: id,
+                  old_slug: previousSlug,
+                })
+              if (redirectError) {
+                console.error("Failed to insert slug redirect:", redirectError)
+              }
+            }
+
+            updates.slug_change_count = currentChangeCount + 1
+          }
+
+          updates.slug = cleanSlug
         }
-
-        if (RESERVED_MEMORIAL_SLUGS.has(cleanSlug)) {
-          return NextResponse.json(
-            { error: "That address is reserved for system use" },
-            { status: 400 }
-          )
-        }
-
-        const { data: slugCheck } = await db
-          .from("memorials")
-          .select("id")
-          .eq("slug", cleanSlug)
-          .neq("id", id)
-          .maybeSingle()
-
-        if (slugCheck) {
-          return NextResponse.json(
-            { error: "That address is already taken. Please choose another." },
-            { status: 409 }
-          )
-        }
-
-        updates.slug = cleanSlug
       }
     }
 

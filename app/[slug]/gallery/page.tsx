@@ -1,5 +1,5 @@
 import type { Metadata } from "next"
-import { notFound } from "next/navigation"
+import { notFound, permanentRedirect } from "next/navigation"
 import { getMemorialViewContext, loadBrowsePage, loadGalleryItem } from "@/lib/memorial/public-data"
 import { GalleryPageView } from "@/components/memorial/gallery-page-view"
 import type { GalleryItem } from "@/components/memorial/memorial-gallery"
@@ -11,6 +11,9 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
   const { slug } = await params
   const context = await getMemorialViewContext(slug)
   if (!context) return buildNoIndexMetadata("Gallery")
+  if (context.redirectedToSlug) {
+    permanentRedirect(`/${context.redirectedToSlug}/gallery`)
+  }
 
   return buildMemorialMetadata({
     identity: context.identity,
@@ -25,6 +28,14 @@ export default async function GalleryPage({ params, searchParams }: { params: Pr
   const { slug } = await params
   const query = await searchParams
   const context = await getMemorialViewContext(slug)
+  if (context?.redirectedToSlug) {
+    const sp = new URLSearchParams()
+    if (query.type) sp.set("type", query.type)
+    if (query.album) sp.set("album", query.album)
+    if (query.media) sp.set("media", query.media)
+    const qs = sp.toString() ? `?${sp.toString()}` : ""
+    permanentRedirect(`/${context.redirectedToSlug}/gallery${qs}`)
+  }
   if (!context || context.identity.sectionSettings.gallery === false) notFound()
   if (context.requiresPin) return null
   const filter: GalleryFilter = ["photo", "audio", "video"].includes(query.type || "") ? query.type as GalleryFilter : "all"

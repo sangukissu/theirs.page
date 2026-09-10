@@ -449,6 +449,7 @@ export interface MemorialViewContext {
   db: SupabaseClient | null
   requiresPin: boolean
   canSeeFamilyOnly: boolean
+  redirectedToSlug?: string
 }
 
 function displayDate(value?: string | null) {
@@ -580,7 +581,44 @@ export const getMemorialViewContext = cache(async (slug: string): Promise<Memori
     }
   }
 
-  if (!memorial && !isDemo) return null
+  if (!memorial && !isDemo) {
+    const queryDb = admin || serverClient || (await createClient())
+    const redirectCheck = await queryDb
+      .from("memorial_slug_redirects")
+      .select("memorial_id")
+      .eq("old_slug", slug.toLowerCase().trim())
+      .maybeSingle()
+
+    if (redirectCheck.data?.memorial_id) {
+      const targetRes = await queryDb
+        .from("memorials")
+        .select("slug")
+        .eq("id", redirectCheck.data.memorial_id)
+        .maybeSingle()
+
+      if (targetRes.data?.slug) {
+        return {
+          identity: {
+            id: redirectCheck.data.memorial_id,
+            fullName: "",
+            slug: targetRes.data.slug,
+            isDemo: false,
+            status: "published",
+            theme: "quiet",
+            sectionSettings: {},
+            contributionSettings: {},
+          } as any,
+          memorial: null,
+          db: null,
+          requiresPin: false,
+          canSeeFamilyOnly: false,
+          redirectedToSlug: targetRes.data.slug,
+        }
+      }
+    }
+
+    return null
+  }
 
   const cookieStore = await cookies()
   const hasAuthCookie = cookieStore.getAll().some((c) => c.name.startsWith("sb-") && c.name.includes("-auth-token"))

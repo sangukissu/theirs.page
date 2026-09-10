@@ -1,5 +1,5 @@
 import type { Metadata } from "next"
-import { notFound } from "next/navigation"
+import { notFound, permanentRedirect } from "next/navigation"
 import { getMemorialViewContext } from "@/lib/memorial/public-data"
 import { MemorialPinGate } from "@/components/memorial/memorial-pin-gate"
 import { MemorialShell } from "@/components/memorial/memorial-shell"
@@ -12,6 +12,9 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
   const context = await getMemorialViewContext(slug)
   if (!context) {
     return buildNoIndexMetadata("Memorial")
+  }
+  if (context.redirectedToSlug) {
+    permanentRedirect(`/${context.redirectedToSlug}`)
   }
 
   return buildMemorialMetadata({
@@ -30,6 +33,10 @@ export default async function MemorialLayout({
   const { slug } = await params
   const context = await getMemorialViewContext(slug)
   if (!context) notFound()
+
+  if (context.redirectedToSlug) {
+    permanentRedirect(`/${context.redirectedToSlug}`)
+  }
 
   const { identity } = context
   if (context.requiresPin) {

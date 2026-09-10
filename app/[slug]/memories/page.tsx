@@ -1,5 +1,5 @@
 import type { Metadata } from "next"
-import { notFound } from "next/navigation"
+import { notFound, permanentRedirect } from "next/navigation"
 import { getMemorialViewContext, loadBrowsePage } from "@/lib/memorial/public-data"
 import { PagedMemories } from "@/components/memorial/paged-content"
 import type { StoryItem } from "@/components/memorial/life-stories"
@@ -10,6 +10,9 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
   const { slug } = await params
   const context = await getMemorialViewContext(slug)
   if (!context) return buildNoIndexMetadata("Memories")
+  if (context.redirectedToSlug) {
+    permanentRedirect(`/${context.redirectedToSlug}/memories`)
+  }
 
   return buildMemorialMetadata({
     identity: context.identity,
@@ -23,6 +26,9 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
 export default async function MemoriesPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params
   const context = await getMemorialViewContext(slug)
+  if (context?.redirectedToSlug) {
+    permanentRedirect(`/${context.redirectedToSlug}/memories`)
+  }
   if (!context || context.identity.sectionSettings.stories === false) notFound()
   if (context.requiresPin) return null
   const page = await loadBrowsePage<StoryItem>(context, "memories")

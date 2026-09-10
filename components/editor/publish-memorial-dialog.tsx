@@ -17,6 +17,7 @@ import {
   Sparkles,
   X,
   Image as ImageIcon,
+  QrCodeIcon,
 } from "lucide-react"
 import { MEMORIAL_THEMES, type MemorialThemeId } from "@/lib/memorial/themes"
 import {
@@ -374,7 +375,7 @@ export function PublishMemorialDialog({
                         ) : (
                           <Download className="size-3 text-[#555]" />
                         )}
-                        <span>Download Keepsake Card (PNG)</span>
+                        <span>Download Keepsake Card</span>
                       </button>
 
                       <button
@@ -387,7 +388,7 @@ export function PublishMemorialDialog({
                         {isDownloadingQrOnly ? (
                           <Loader2 className="size-3 animate-spin" />
                         ) : (
-                          <ImageIcon className="size-3 text-neutral-500" />
+                          <QrCodeIcon className="size-3 text-neutral-500" />
                         )}
                         <span>QR Only</span>
                       </button>

@@ -43,6 +43,10 @@ interface SettingsTabProps {
   memorialId: string
   memorialName?: string
   slug: string
+  status?: "draft" | "published" | "archived"
+  hasEverBeenPublished?: boolean
+  slugChangeCount?: number
+  initialSlug?: string
   privacy: "public" | "unlisted" | "private"
   pin?: string
   hasPin?: boolean
@@ -59,6 +63,10 @@ export function SettingsTab({
   memorialId,
   memorialName,
   slug,
+  status = "draft",
+  hasEverBeenPublished = false,
+  slugChangeCount = 0,
+  initialSlug,
   privacy,
   pin = "",
   hasPin = false,
@@ -150,7 +158,11 @@ export function SettingsTab({
     }
   }, [memorialId])
 
+  const isSlugLocked = slugChangeCount >= 1
+  const isProtectedAddress = Boolean(hasEverBeenPublished || status === "published")
+
   const handleSlugChange = (raw: string) => {
+    if (isSlugLocked) return
     const cleaned = raw.toLowerCase().replace(/[^a-z0-9-]/g, "").replace(/-{2,}/g, "-")
     onChange("slug", cleaned)
 
@@ -418,52 +430,155 @@ export function SettingsTab({
       )}
 
       {/* Permanent web address */}
-      <div className="flex flex-col gap-2 p-5 rounded-2xl bg-white border border-black/[0.07]">
-        <label className="text-xs font-medium text-[#181925]">
-          Web Address (Link)
-        </label>
-        <div className="flex items-center px-4 py-2 rounded-xl bg-[#fafafb] border border-black/[0.08] text-xs text-[#888] font-mono">
-          <span>theirs.page/</span>
-          <input
-            type="text"
-            value={slug}
-            onChange={(e) => handleSlugChange(e.target.value)}
-            placeholder="robert-carter"
-            className="flex-1 bg-transparent text-[#181925] outline-none font-medium ml-0.5"
-          />
-          {slugChecking && <span className="text-[10px] text-muted-foreground animate-pulse">Checking...</span>}
-          {!slugChecking && slugAvailable === true && (
-            <span className="inline-flex items-center gap-1 text-[11px] text-emerald-600 font-medium">
-              <CheckCircle2 className="size-3" /> Available
-            </span>
-          )}
-          {!slugChecking && slugAvailable === false && (
-            <span className="inline-flex items-center gap-1 text-[11px] text-amber-700 font-medium">
-              <AlertCircle className="size-3" /> Already taken
-            </span>
-          )}
-        </div>
-
-        {slugSuggestions.length > 0 && slugAvailable === false && (
-          <div className="flex items-center gap-2 flex-wrap pt-1">
-            <span className="text-[11px] text-[#71717a]">Try an alternative:</span>
-            {slugSuggestions.map((sug) => (
-              <button
-                key={sug}
-                type="button"
-                onClick={() => handleSlugChange(sug)}
-                className="px-2.5 py-0.5 rounded-full bg-primary/10 hover:bg-primary/20 text-primary text-[11px] font-mono font-medium transition-colors cursor-pointer"
-              >
-                {sug}
-              </button>
-            ))}
+      {isSlugLocked ? (
+        <div className="flex flex-col gap-3 p-5 rounded-2xl bg-[#fafafb] border border-black/[0.08]">
+          <div className="flex items-center justify-between">
+            <label className="text-xs font-medium text-[#181925] flex items-center gap-2">
+              <span>Web Address (Link)</span>
+              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-neutral-200/80 text-neutral-700 text-[10px] font-medium">
+                <Lock className="size-2.5" /> URL Locked
+              </span>
+            </label>
+            <span className="text-[11px] text-[#888] font-mono">1 of 1 change used</span>
           </div>
-        )}
 
-        <span className="text-[11px] text-[#888]">
-          You can customize this address anytime.
-        </span>
-      </div>
+          <div className="flex items-center px-4 py-2.5 rounded-xl bg-neutral-100 border border-black/[0.08] text-xs text-[#71717a] font-mono select-none">
+            <span>theirs.page/</span>
+            <span className="font-semibold text-[#181925] ml-0.5">{slug}</span>
+            <Lock className="size-3.5 ml-auto text-[#888]" />
+          </div>
+
+          <div className="flex flex-col gap-1.5 pt-0.5">
+            <p className="text-xs text-[#71717a] leading-relaxed">
+              To protect distributed keepsake cards, service programs, and bookmarks from broken links, this web address is permanently set and can no longer be edited.
+            </p>
+            <p className="text-[11px] text-[#888]">
+              Need to fix a critical mistake?{" "}
+              <a
+                href={`mailto:support@theirs.page?subject=Request%20URL%20Change%20for%20${encodeURIComponent(memorialName || "Memorial")}&body=Memorial%20ID:%20${encodeURIComponent(memorialId)}%0ACurrent%20URL:%20theirs.page/${encodeURIComponent(slug)}%0ARequested%20New%20URL:%20theirs.page/`}
+                className="text-primary hover:underline font-medium"
+              >
+                Contact support
+              </a>
+            </p>
+          </div>
+        </div>
+      ) : isProtectedAddress ? (
+        <div className="flex flex-col gap-3 p-5 rounded-2xl bg-white border border-amber-200/80 shadow-2xs">
+          <div className="flex items-center justify-between">
+            <label className="text-xs font-medium text-[#181925] flex items-center gap-2">
+              <span>Web Address (Link)</span>
+              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-amber-50 text-amber-800 border border-amber-200/70 text-[10px] font-medium">
+                1 change allowed
+              </span>
+            </label>
+            <span className="text-[11px] text-[#888] font-mono">0 of 1 change used</span>
+          </div>
+
+          <div className="flex items-center px-4 py-2 rounded-xl bg-[#fafafb] border border-black/[0.08] text-xs text-[#888] font-mono">
+            <span>theirs.page/</span>
+            <input
+              type="text"
+              value={slug}
+              onChange={(e) => handleSlugChange(e.target.value)}
+              placeholder="robert-carter"
+              className="flex-1 bg-transparent text-[#181925] outline-none font-medium ml-0.5"
+            />
+            {slugChecking && <span className="text-[10px] text-muted-foreground animate-pulse">Checking...</span>}
+            {!slugChecking && slugAvailable === true && (
+              <span className="inline-flex items-center gap-1 text-[11px] text-emerald-600 font-medium">
+                <CheckCircle2 className="size-3" /> Available
+              </span>
+            )}
+            {!slugChecking && slugAvailable === false && (
+              <span className="inline-flex items-center gap-1 text-[11px] text-amber-700 font-medium">
+                <AlertCircle className="size-3" /> Already taken
+              </span>
+            )}
+          </div>
+
+          {slugSuggestions.length > 0 && slugAvailable === false && (
+            <div className="flex items-center gap-2 flex-wrap pt-0.5">
+              <span className="text-[11px] text-[#71717a]">Try an alternative:</span>
+              {slugSuggestions.map((sug) => (
+                <button
+                  key={sug}
+                  type="button"
+                  onClick={() => handleSlugChange(sug)}
+                  className="px-2.5 py-0.5 rounded-full bg-primary/10 hover:bg-primary/20 text-primary text-[11px] font-mono font-medium transition-colors cursor-pointer"
+                >
+                  {sug}
+                </button>
+              ))}
+            </div>
+          )}
+
+          {/* Amber Consequence-Focused Warning Banner */}
+          <div className="flex items-start gap-2.5 p-3 rounded-xl bg-amber-50/70 border border-amber-200/60 text-amber-900 text-xs leading-relaxed">
+            <AlertTriangle className="size-4 shrink-0 text-amber-600 mt-0.5" />
+            <div className="flex flex-col gap-0.5">
+              <span className="font-medium">Protecting your printed cards and shared links</span>
+              <p className="text-[11px] text-amber-800/90 leading-normal">
+                Family and friends often save, bookmark, or print QR codes on keepsake cards and funeral stationery. To prevent anyone from ever reaching a broken link, you can only change this web address once. Any cards or links already shared will automatically forward to your new address.
+              </p>
+            </div>
+          </div>
+        </div>
+      ) : (
+        <div className="flex flex-col gap-2 p-5 rounded-2xl bg-white border border-black/[0.07]">
+          <div className="flex items-center justify-between">
+            <label className="text-xs font-medium text-[#181925] flex items-center gap-2">
+              <span>Web Address (Link)</span>
+              <span className="inline-flex items-center px-2 py-0.5 rounded-full bg-blue-50 text-blue-700 border border-blue-200/60 text-[10px] font-medium">
+                Draft Mode
+              </span>
+            </label>
+            <span className="text-[11px] text-[#888]">Unlimited changes before publishing</span>
+          </div>
+
+          <div className="flex items-center px-4 py-2 rounded-xl bg-[#fafafb] border border-black/[0.08] text-xs text-[#888] font-mono">
+            <span>theirs.page/</span>
+            <input
+              type="text"
+              value={slug}
+              onChange={(e) => handleSlugChange(e.target.value)}
+              placeholder="robert-carter"
+              className="flex-1 bg-transparent text-[#181925] outline-none font-medium ml-0.5"
+            />
+            {slugChecking && <span className="text-[10px] text-muted-foreground animate-pulse">Checking...</span>}
+            {!slugChecking && slugAvailable === true && (
+              <span className="inline-flex items-center gap-1 text-[11px] text-emerald-600 font-medium">
+                <CheckCircle2 className="size-3" /> Available
+              </span>
+            )}
+            {!slugChecking && slugAvailable === false && (
+              <span className="inline-flex items-center gap-1 text-[11px] text-amber-700 font-medium">
+                <AlertCircle className="size-3" /> Already taken
+              </span>
+            )}
+          </div>
+
+          {slugSuggestions.length > 0 && slugAvailable === false && (
+            <div className="flex items-center gap-2 flex-wrap pt-1">
+              <span className="text-[11px] text-[#71717a]">Try an alternative:</span>
+              {slugSuggestions.map((sug) => (
+                <button
+                  key={sug}
+                  type="button"
+                  onClick={() => handleSlugChange(sug)}
+                  className="px-2.5 py-0.5 rounded-full bg-primary/10 hover:bg-primary/20 text-primary text-[11px] font-mono font-medium transition-colors cursor-pointer"
+                >
+                  {sug}
+                </button>
+              ))}
+            </div>
+          )}
+
+          <p className="text-[11px] text-[#888] leading-relaxed">
+            You can customize this link freely while in draft. Once published or printed on cards, address changes are strictly limited to protect family access.
+          </p>
+        </div>
+      )}
 
       {/* 3. Privacy Mode & PIN Protection */}
       <div className="flex flex-col gap-4 p-5 rounded-2xl bg-white border border-black/[0.07]">

@@ -126,8 +126,16 @@ export interface Memorial {
   contribution_settings?: ContributionSettings | null
   theme?: MemorialTheme | null
   cover_settings?: MemorialCoverSettings | null
+  slug_change_count?: number
   created_at: string
   updated_at: string
+}
+
+export interface MemorialSlugRedirect {
+  id: string
+  memorial_id: string
+  old_slug: string
+  created_at: string
 }
 
 export interface Collaborator {

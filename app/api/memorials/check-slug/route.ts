@@ -52,7 +52,17 @@ export async function GET(req: NextRequest) {
 
     const { data: existing } = await query.maybeSingle()
 
-    if (existing) {
+    // Also check if slug is an alias in memorial_slug_redirects
+    let redirectQuery = db
+      .from("memorial_slug_redirects")
+      .select("memorial_id")
+      .eq("old_slug", slug)
+    if (excludeMemorialId) {
+      redirectQuery = redirectQuery.neq("memorial_id", excludeMemorialId)
+    }
+    const { data: existingRedirect } = await redirectQuery.maybeSingle()
+
+    if (existing || existingRedirect) {
       // Find available alternatives
       const candidates = createMemorialSlugCandidates(fullName || slug)
       const suggestions: string[] = []
@@ -65,7 +75,13 @@ export async function GET(req: NextRequest) {
           .eq("slug", candidate)
           .maybeSingle()
 
-        if (!check && !RESERVED_MEMORIAL_SLUGS.has(candidate)) {
+        const { data: redirectCheck } = await db
+          .from("memorial_slug_redirects")
+          .select("memorial_id")
+          .eq("old_slug", candidate)
+          .maybeSingle()
+
+        if (!check && !redirectCheck && !RESERVED_MEMORIAL_SLUGS.has(candidate)) {
           suggestions.push(candidate)
           if (suggestions.length >= 3) break
         }

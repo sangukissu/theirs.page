@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useState } from "react"
+import React, { useState, useEffect } from "react"
 import { usePathname } from "next/navigation"
 import { LifeBuoy } from "lucide-react"
 import { HelpFeedbackModal } from "./help-feedback-modal"
@@ -14,6 +14,12 @@ export function SupportFeedbackBadge({ userEmail, userId }: SupportFeedbackBadge
   const [isOpen, setIsOpen] = useState(false)
   const pathname = usePathname()
 
+  useEffect(() => {
+    const handleOpen = () => setIsOpen(true)
+    window.addEventListener("open-support-feedback", handleOpen)
+    return () => window.removeEventListener("open-support-feedback", handleOpen)
+  }, [])
+
   // Extract memorialId from pathname if in editor or memorial subpage
   const memorialMatch = pathname.match(/\/memorials\/([0-9a-fA-F-]{36})/)
   const memorialId = memorialMatch ? memorialMatch[1] : undefined
@@ -22,6 +28,7 @@ export function SupportFeedbackBadge({ userEmail, userId }: SupportFeedbackBadge
     <>
       {/* Sticky Right-Wall Badge */}
       <button
+        id="support-feedback-trigger"
         type="button"
         onClick={() => setIsOpen(true)}
         aria-label="Support and Feedback"
