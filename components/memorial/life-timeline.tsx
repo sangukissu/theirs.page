@@ -64,7 +64,7 @@ export function LifeTimeline({ milestones, isDemo = false }: LifeTimelineProps) 
 
                 {/* Body Text */}
                 {item.description && (
-                  <p className="text-xs sm:text-sm text-[var(--theme-text-body)] leading-relaxed max-w-2xl">
+                  <p className="text-xs sm:text-sm text-[var(--theme-text-body)] leading-relaxed max-w-2xl whitespace-pre-line">
                     {item.description}
                   </p>
                 )}

@@ -43,7 +43,7 @@ function DashboardSkeleton() {
             theirs<span className="text-primary font-semibold">.page</span>
           </span>
           <span className="text-[11px] text-[#8e9096] font-mono tracking-wider">
-            Dedicated to a human life
+            Remember Them Together.
           </span>
         </div>
 

@@ -52,8 +52,12 @@ export async function POST(req: NextRequest, context: RouteContext) {
     if (textError) return NextResponse.json({ error: textError }, { status: 400 })
     const { year, title, description, photo_url, location } = body
 
-    if (!year || !title) {
-      return NextResponse.json({ error: "Year and title are required" }, { status: 400 })
+    const yearNum = Number(year)
+    if (!year || isNaN(yearNum) || yearNum < 1000 || yearNum > 9999) {
+      return NextResponse.json({ error: "Please enter a valid 4-digit year (e.g. 1974)" }, { status: 400 })
+    }
+    if (!title?.trim()) {
+      return NextResponse.json({ error: "Title is required" }, { status: 400 })
     }
 
     let finalPhotoKey: string | null = null
@@ -244,10 +248,18 @@ export async function PATCH(req: NextRequest, context: RouteContext) {
       }
     }
 
+    const yearNum = Number(year)
+    if (!year || isNaN(yearNum) || yearNum < 1000 || yearNum > 9999) {
+      return NextResponse.json({ error: "Please enter a valid 4-digit year (e.g. 1974)" }, { status: 400 })
+    }
+    if (!title?.trim()) {
+      return NextResponse.json({ error: "Title is required" }, { status: 400 })
+    }
+
     const { data: updatedEvent, error: updateErr } = await db
       .from("timeline_events")
       .update({
-        year: Number(year),
+        year: yearNum,
         title: title.trim(),
         description: description !== undefined ? (description?.trim() || null) : existingEvent.description,
         location: location !== undefined ? (location?.trim() || null) : existingEvent.location,

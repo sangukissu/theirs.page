@@ -3,6 +3,7 @@
 import React from "react"
 import { usePathname } from "next/navigation"
 import { TheirsTopNav } from "./theirs-top-nav"
+import { SupportFeedbackBadge } from "./support-feedback-badge"
 
 interface TheirsDashboardShellProps {
   user: {
@@ -19,9 +20,10 @@ export function TheirsDashboardShell({ user, children }: TheirsDashboardShellPro
   const isEditor = pathname.includes("/editor")
 
   return (
-    <div className="min-h-screen bg-[#fafafb] text-[#181925] flex flex-col">
+    <div className="min-h-screen bg-[#fafafb] text-[#181925] flex flex-col relative">
       {!isEditor && <TheirsTopNav userEmail={user.email} userId={user.id} />}
       <div className="flex-1 flex flex-col w-full">{children}</div>
+      <SupportFeedbackBadge userEmail={user.email} userId={user.id} />
     </div>
   )
 }

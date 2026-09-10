@@ -198,6 +198,23 @@ export function RestorationsSubview({
     }
   }, [isPaid, memorialId, toast])
 
+  // Escape key and body scroll lock for active comparison modal
+  useEffect(() => {
+    if (!activeComparison) return
+    const originalOverflow = document.body.style.overflow
+    document.body.style.overflow = "hidden"
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        setActiveComparison(null)
+      }
+    }
+    window.addEventListener("keydown", handleKeyDown)
+    return () => {
+      document.body.style.overflow = originalOverflow
+      window.removeEventListener("keydown", handleKeyDown)
+    }
+  }, [activeComparison])
+
   // Periodic reconcile polling while jobs are in processing state
   useEffect(() => {
     if (!isPaid) return
@@ -344,12 +361,12 @@ export function RestorationsSubview({
           prev.map((r) =>
             r.id === tempId
               ? {
-                  ...r,
-                  id: restoreData.restorationId,
-                  original_image_url: key,
-                  originalUrl: restoreData.originalImageUrl || localPreviewUrl,
-                  status: "processing",
-                }
+                ...r,
+                id: restoreData.restorationId,
+                original_image_url: key,
+                originalUrl: restoreData.originalImageUrl || localPreviewUrl,
+                status: "processing",
+              }
               : r
           )
         )
@@ -441,40 +458,40 @@ export function RestorationsSubview({
         </div>
 
         {/* Editorial Locked Card */}
-        <div className="rounded-3xl border border-black/[0.08] bg-[#181925] p-6 sm:p-8 text-white flex flex-col gap-6 shadow-sm">
-          <div className="flex items-center justify-between gap-4 border-b border-white/10 pb-4">
+        <div className="rounded-2xl border border-black/[0.08] bg-white p-6 sm:p-8 flex flex-col gap-6 font-sans">
+          <div className="flex items-center justify-between gap-4 border-b border-black/[0.06] pb-4">
             <div className="flex items-center gap-2.5">
-              <div className="size-8 rounded-full bg-primary/20 flex items-center justify-center text-primary">
+              <div className="size-8 rounded-full bg-[#305dde]/10 flex items-center justify-center text-[#305dde]">
                 <Sparkles className="size-4" />
               </div>
-              <span className="text-xs font-mono uppercase tracking-wider text-primary font-semibold">
+              <span className="text-xs font-mono uppercase tracking-wider text-[#305dde] font-semibold">
                 Theirs Complete
               </span>
             </div>
-            <span className="text-xs text-neutral-400 font-mono">5 restorations included</span>
+            <span className="text-xs text-[#71717a] font-mono">5 restorations included</span>
           </div>
 
           <div className="space-y-2">
-            <h3 className="text-base sm:text-lg font-medium text-white">
+            <h3 className="text-base sm:text-lg font-semibold text-[#181925] tracking-tight">
               Restore faded, scratched or damaged family photographs.
             </h3>
-            <p className="text-xs sm:text-sm text-neutral-300 leading-relaxed max-w-xl">
+            <p className="text-xs sm:text-sm text-[#71717a] leading-relaxed max-w-xl">
               Bring historical, sepia, or damaged family photographs back to lifelike clarity.
               Every Theirs Complete memorial includes 5 full-resolution photograph restorations with
               before-and-after comparison and direct gallery integration.
             </p>
           </div>
 
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pt-2">
-            <div className="text-xs text-neutral-400">
-              Preserves high-resolution originals · Zero credit packs or subscription lock-in
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pt-2 border-t border-black/[0.05]">
+            <div className="flex items-center gap-2 text-xs text-[#888]">
+              <Shield className="size-3.5 text-emerald-600 shrink-0" />
+              <span>Preserves high-resolution originals · Zero credit packs or subscription lock-in</span>
             </div>
             <button
               type="button"
               onClick={onUpgrade}
-              className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-full bg-white hover:bg-neutral-100 text-[#181925] text-xs font-medium transition-all shadow-sm cursor-pointer shrink-0"
+              className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-full bg-[#305dde] hover:bg-[#254cb8] text-white text-xs font-medium transition-colors shadow-xs cursor-pointer shrink-0"
             >
-              <Shield className="size-3.5 text-primary" />
               <span>Upgrade to Theirs Complete ($179)</span>
               <ArrowRight className="size-3.5" />
             </button>
@@ -507,11 +524,10 @@ export function RestorationsSubview({
         {/* Quota Badge */}
         <div className="shrink-0">
           <span
-            className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium border ${
-              isQuotaReached
-                ? "bg-rose-50 text-rose-800 border-rose-200"
-                : "bg-emerald-50 text-emerald-800 border-emerald-200"
-            }`}
+            className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium border ${isQuotaReached
+              ? "bg-rose-50 text-rose-800 border-rose-200"
+              : "bg-emerald-50 text-emerald-800 border-emerald-200"
+              }`}
           >
             <Sparkles className="size-3" />
             <span>{completedCount} of {MAX_RESTORATIONS_LIMIT} restorations used</span>
@@ -547,11 +563,10 @@ export function RestorationsSubview({
             setDragActive(false)
             if (e.dataTransfer.files) void handleUploadFiles(e.dataTransfer.files)
           }}
-          className={`relative rounded-3xl border-2 border-dashed p-6 sm:p-8 flex flex-col items-center justify-center text-center transition-all ${
-            dragActive
-              ? "border-primary bg-primary/[0.04]"
-              : "border-black/[0.12] bg-neutral-50/60 hover:bg-neutral-50"
-          }`}
+          className={`relative rounded-3xl border-2 border-dashed p-6 sm:p-8 flex flex-col items-center justify-center text-center transition-all ${dragActive
+            ? "border-primary bg-primary/[0.04]"
+            : "border-black/[0.12] bg-neutral-50/60 hover:bg-neutral-50"
+            }`}
         >
           <input
             ref={fileInputRef}
@@ -831,30 +846,44 @@ export function RestorationsSubview({
         <div
           role="dialog"
           aria-modal="true"
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/85 backdrop-blur-md p-4 animate-in fade-in duration-200"
+          className="fixed inset-0 z-[100] flex items-center justify-center p-3 sm:p-4 font-sans"
           onClick={() => setActiveComparison(null)}
         >
+          {/* Flat dark backdrop */}
+          <div className="fixed inset-0 bg-black/40 cursor-pointer" />
+
+          {/* Modal Container */}
           <div
             onClick={(e) => e.stopPropagation()}
-            className="relative w-full max-w-4xl bg-[#181925] rounded-3xl p-4 sm:p-6 border border-white/10 flex flex-col gap-4 shadow-2xl overflow-hidden"
+            className="relative w-full max-w-4xl rounded-2xl bg-white border border-black/[0.12] shadow-sm z-10 flex flex-col overflow-hidden"
           >
+            {/* Top Close Button */}
+            <button
+              type="button"
+              onClick={() => setActiveComparison(null)}
+              className="absolute right-3.5 top-3.5 size-7 rounded-full flex items-center justify-center text-[#888] hover:bg-[#f4f4f6] hover:text-[#181925] transition-colors cursor-pointer z-20"
+              aria-label="Close"
+            >
+              <X className="size-4" />
+            </button>
+
             {/* Modal Header */}
-            <div className="flex items-center justify-between pb-3 border-b border-white/10">
+            <div className="px-5 pt-4 pb-3 border-b border-black/[0.05] bg-[#fafafb]">
               <div className="flex items-center gap-2">
-                <Sparkles className="size-4 text-primary" />
-                <span className="text-sm font-medium text-white">Before & After Comparison</span>
+                <span className="flex size-7 items-center justify-center rounded-lg bg-[#305dde]/10 text-[#305dde]">
+                  <Sparkles className="size-3.5" />
+                </span>
+                <h2 className="text-base font-semibold text-[#181925] tracking-tight">
+                  Before & after comparison
+                </h2>
               </div>
-              <button
-                type="button"
-                onClick={() => setActiveComparison(null)}
-                className="p-1.5 rounded-full hover:bg-white/10 text-white/70 hover:text-white transition-colors cursor-pointer"
-              >
-                <X className="size-4" />
-              </button>
+              <p className="text-[12px] text-[#71717a] mt-0.5">
+                Drag the center slider to inspect restored photograph detail.
+              </p>
             </div>
 
-            {/* Slider comparison component */}
-            <div className="w-full flex justify-center py-2">
+            {/* Seamless Slider comparison component */}
+            <div className="p-4 sm:p-5 bg-white flex justify-center">
               <ImageComparison
                 originalUrl={
                   activeComparison.originalUrl ||
@@ -871,15 +900,19 @@ export function RestorationsSubview({
                 showStartOver={false}
                 beforeLabel="Original"
                 afterLabel="Restored"
+                hideControls={true}
+                hideCard={true}
                 onStartOver={() => setActiveComparison(null)}
                 onDownload={() => handleDownload(activeComparison.id)}
               />
             </div>
 
             {/* Modal Actions */}
-            <div className="flex items-center justify-between pt-3 border-t border-white/10 text-xs text-neutral-400">
-              <span>Drag the center slider to inspect reconstructed detail</span>
-              <div className="flex items-center gap-2">
+            <div className="px-5 py-3 border-t border-black/[0.06] bg-[#fafafb] flex items-center justify-between text-xs">
+              <span className="text-[11px] text-[#71717a] hidden sm:inline">
+                Original full-resolution photograph preserved
+              </span>
+              <div className="flex items-center gap-2 ml-auto">
                 {!galleryMap.has(activeComparison.id) && (
                   <button
                     type="button"
@@ -887,18 +920,18 @@ export function RestorationsSubview({
                     onClick={async () => {
                       await handleAddToGallery(activeComparison)
                     }}
-                    className="px-4 py-2 rounded-full bg-white text-[#181925] font-medium hover:bg-neutral-100 transition-colors cursor-pointer"
+                    className="px-4 py-2 rounded-full border border-black/[0.08] bg-white hover:bg-neutral-50 text-[#181925] text-xs font-medium transition-colors cursor-pointer disabled:opacity-50"
                   >
-                    Add to gallery
+                    {addingToGalleryId === activeComparison.id ? "Adding to gallery..." : "Add to gallery"}
                   </button>
                 )}
                 <button
                   type="button"
                   onClick={() => handleDownload(activeComparison.id)}
-                  className="px-4 py-2 rounded-full bg-white/10 text-white font-medium hover:bg-white/20 transition-colors cursor-pointer flex items-center gap-1.5"
+                  className="inline-flex items-center gap-1.5 px-4.5 py-2 rounded-full bg-[#305dde] hover:bg-[#254cb8] text-white text-xs font-medium transition-colors cursor-pointer shadow-xs"
                 >
                   <Download className="size-3.5" />
-                  <span>Download</span>
+                  <span>Download photo</span>
                 </button>
               </div>
             </div>

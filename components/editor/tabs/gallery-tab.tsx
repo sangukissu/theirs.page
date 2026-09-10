@@ -382,22 +382,20 @@ export function GalleryTab({
         <button
           type="button"
           onClick={() => setSubview("gallery")}
-          className={`px-4 py-1.5 rounded-full text-xs font-medium transition-all cursor-pointer ${
-            subview === "gallery"
-              ? "bg-white text-[#181925] shadow-xs"
-              : "text-[#71717a] hover:text-[#181925]"
-          }`}
+          className={`px-4 py-1.5 rounded-full text-xs font-medium transition-all cursor-pointer ${subview === "gallery"
+            ? "bg-white text-[#181925] shadow-xs"
+            : "text-[#71717a] hover:text-[#181925]"
+            }`}
         >
           Gallery
         </button>
         <button
           type="button"
           onClick={() => setSubview("restore")}
-          className={`inline-flex items-center gap-1.5 px-4 py-1.5 rounded-full text-xs font-medium transition-all cursor-pointer ${
-            subview === "restore"
-              ? "bg-white text-[#181925] shadow-xs"
-              : "text-[#71717a] hover:text-[#181925]"
-          }`}
+          className={`inline-flex items-center gap-1.5 px-4 py-1.5 rounded-full text-xs font-medium transition-all cursor-pointer ${subview === "restore"
+            ? "bg-white text-[#181925] shadow-xs"
+            : "text-[#71717a] hover:text-[#181925]"
+            }`}
         >
           <Sparkles className="size-3 text-primary" />
           <span>Restore old photos</span>
@@ -429,522 +427,546 @@ export function GalleryTab({
                 Photographs, Audio & Video Gallery
               </h2>
             </div>
-        <p className="text-xs sm:text-sm text-[#71717a]">
-          Bulk upload family memories. Zero mandatory forms—drop photos, saved voicemails, or vintage video clips. Captions and years are completely optional.
-        </p>
-      </div>
+            <p className="text-xs sm:text-sm text-[#71717a]">
+              Bulk upload family memories. Zero mandatory forms—drop photos, saved voicemails, or vintage video clips. Captions and years are completely optional.
+            </p>
+          </div>
 
-      <div className="flex flex-col gap-8">
+          <div className="flex flex-col gap-8">
 
 
-        {/* Quota & Feature Indicator Bar */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 sm:gap-4 rounded-2xl bg-white p-3.5 sm:p-4.5 border border-black/[0.06]">
-          {/* Top row on mobile: Header label + Quota badge */}
-          <div className="flex items-center justify-between sm:justify-start gap-2">
-            <span className="text-xs font-medium text-[#181925] shrink-0">Accepted Media</span>
+            {/* Quota & Feature Indicator Bar */}
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 sm:gap-4 rounded-2xl bg-white p-3.5 sm:p-4.5 border border-black/[0.06]">
+              {/* Top row on mobile: Header label + Quota badge */}
+              <div className="flex items-center justify-between sm:justify-start gap-2">
+                <span className="text-xs font-medium text-[#181925] shrink-0">Accepted Media</span>
 
-            {/* Mobile Quota Badge */}
-            <div className="sm:hidden">
-              {isPaid ? (
-                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 text-[10px] font-medium border border-emerald-200">
-                  <Sparkles className="size-2.5" /> Complete · 10 GB archive
-                </span>
-              ) : (
-                <span
-                  className={`px-2 py-0.5 rounded-full text-[10px] font-mono font-medium border ${isPhotoQuotaReached
-                    ? "bg-rose-50 text-rose-700 border-rose-200"
-                    : "bg-neutral-100 text-[#555] border-black/[0.06]"
-                    }`}
-                >
-                  {photoCount} / {mediaCapabilities.maxImageItems} Photos Used
-                </span>
-              )}
+                {/* Mobile Quota Badge */}
+                <div className="sm:hidden">
+                  {isPaid ? (
+                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 text-[10px] font-medium border border-emerald-200">
+                      <Sparkles className="size-2.5" /> Pro Plan Active
+                    </span>
+                  ) : (
+                    <span
+                      className={`px-2 py-0.5 rounded-full text-[10px] font-mono font-medium border ${isPhotoQuotaReached
+                        ? "bg-rose-50 text-rose-700 border-rose-200"
+                        : "bg-neutral-100 text-[#555] border-black/[0.06]"
+                        }`}
+                    >
+                      {photoCount} / {mediaCapabilities.maxImageItems} Photos Used
+                    </span>
+                  )}
+                </div>
+              </div>
+
+              {/* Formats Pills Row */}
+              <div className="flex items-center justify-between sm:justify-end gap-2 flex-wrap sm:flex-nowrap pt-1 sm:pt-0 border-t border-black/[0.04] sm:border-t-0">
+                <div className="flex items-center gap-1.5 flex-wrap">
+                  <span className="inline-flex items-center gap-1 text-[11px] px-2.5 py-0.5 sm:py-1 rounded-full bg-neutral-100/90 text-[#444] border border-black/[0.05] font-medium">
+                    <ImageIcon className="size-3 text-[#666]" /> Photos
+                  </span>
+                  <span
+                    className={`inline-flex items-center gap-1 text-[11px] px-2.5 py-0.5 sm:py-1 rounded-full border font-medium ${isPaid
+                      ? "bg-neutral-100/90 text-[#444] border-black/[0.05]"
+                      : "bg-amber-50/70 text-amber-900 border-amber-200/90"
+                      }`}
+                  >
+                    <Volume2 className="size-3 text-primary" /> Audio Notes{" "}
+                    {!mediaCapabilities.nativeAudio && <Lock className="size-2.5 text-amber-700" />}
+                  </span>
+                  <span
+                    className={`inline-flex items-center gap-1 text-[11px] px-2.5 py-0.5 sm:py-1 rounded-full border font-medium ${isPaid
+                      ? "bg-neutral-100/90 text-[#444] border-black/[0.04]"
+                      : "bg-amber-50/70 text-amber-900 border-amber-200/90"
+                      }`}
+                  >
+                    <Video className="size-3 text-primary" /> Video Clips{" "}
+                    {!mediaCapabilities.nativeVideo && <Lock className="size-2.5 text-amber-700" />}
+                  </span>
+                </div>
+
+                {/* Desktop Quota Badge */}
+                <div className="hidden sm:block shrink-0">
+                  {isPaid ? (
+                    <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-emerald-50 text-emerald-700 text-xs font-medium border border-emerald-200">
+                      <Sparkles className="size-3" /> Pro Plan Active
+                    </span>
+                  ) : (
+                    <span
+                      className={`px-2.5 py-1 rounded-full text-xs font-mono font-medium border ${isPhotoQuotaReached
+                        ? "bg-rose-50 text-rose-700 border-rose-200"
+                        : "bg-neutral-100 text-[#555] border-black/[0.06]"
+                        }`}
+                    >
+                      {photoCount} / {mediaCapabilities.maxImageItems} Free Photos Used
+                    </span>
+                  )}
+                </div>
+              </div>
             </div>
-          </div>
 
-          {/* Formats Pills Row */}
-          <div className="flex items-center justify-between sm:justify-end gap-2 flex-wrap sm:flex-nowrap pt-1 sm:pt-0 border-t border-black/[0.04] sm:border-t-0">
-            <div className="flex items-center gap-1.5 flex-wrap">
-              <span className="inline-flex items-center gap-1 text-[11px] px-2.5 py-0.5 sm:py-1 rounded-full bg-neutral-100/90 text-[#444] border border-black/[0.05] font-medium">
-                <ImageIcon className="size-3 text-[#666]" /> Photos
-              </span>
-              <span
-                className={`inline-flex items-center gap-1 text-[11px] px-2.5 py-0.5 sm:py-1 rounded-full border font-medium ${isPaid
-                  ? "bg-neutral-100/90 text-[#444] border-black/[0.05]"
-                  : "bg-amber-50/70 text-amber-900 border-amber-200/90"
-                  }`}
-              >
-                <Volume2 className="size-3 text-primary" /> Audio Notes{" "}
-                {!mediaCapabilities.nativeAudio && <Lock className="size-2.5 text-amber-700" />}
-              </span>
-              <span
-                className={`inline-flex items-center gap-1 text-[11px] px-2.5 py-0.5 sm:py-1 rounded-full border font-medium ${isPaid
-                  ? "bg-neutral-100/90 text-[#444] border-black/[0.04]"
-                  : "bg-amber-50/70 text-amber-900 border-amber-200/90"
-                  }`}
-              >
-                <Video className="size-3 text-primary" /> Video Clips{" "}
-                {!mediaCapabilities.nativeVideo && <Lock className="size-2.5 text-amber-700" />}
-              </span>
-            </div>
-
-            {/* Desktop Quota Badge */}
-            <div className="hidden sm:block shrink-0">
-              {isPaid ? (
-                <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-emerald-50 text-emerald-700 text-xs font-medium border border-emerald-200">
-                  <Sparkles className="size-3" /> Complete · 10 GB archive
-                </span>
-              ) : (
-                <span
-                  className={`px-2.5 py-1 rounded-full text-xs font-mono font-medium border ${isPhotoQuotaReached
-                    ? "bg-rose-50 text-rose-700 border-rose-200"
-                    : "bg-neutral-100 text-[#555] border-black/[0.06]"
-                    }`}
-                >
-                  {photoCount} / {mediaCapabilities.maxImageItems} Free Photos Used
-                </span>
-              )}
-            </div>
-          </div>
-        </div>
-
-        {uploadError && (
-          <div className="p-3.5 rounded-xl bg-rose-50 border border-rose-200 text-xs text-rose-700 flex items-center justify-between gap-2">
-            <div className="flex items-center gap-2">
-              <AlertCircle className="size-4 shrink-0" />
-              <span>{uploadError}</span>
-            </div>
-            {!isPaid && (
-              <button
-                type="button"
-                onClick={onUpgrade}
-                className="text-xs font-semibold text-rose-800 underline hover:no-underline cursor-pointer shrink-0"
-              >
-                Upgrade to Pro
-              </button>
-            )}
-          </div>
-        )}
-
-        {/* Low-Friction Bulk Upload Area */}
-        <label
-          className={`p-8 sm:p-10 rounded-3xl border-2 border-dashed transition-all flex flex-col items-center justify-center gap-3 cursor-pointer text-center group ${isPhotoQuotaReached
-            ? "border-amber-300 bg-amber-50/20 hover:bg-amber-50/40"
-            : "border-black/[0.12] hover:border-primary/50 bg-white hover:bg-neutral-50/50"
-            }`}
-        >
-          <div className="size-12 rounded-full bg-primary/10 text-primary flex items-center justify-center group-hover:scale-105 transition-transform">
-            {isPhotoQuotaReached ? <Lock className="size-6 text-amber-700" /> : <Upload className="size-6" />}
-          </div>
-
-          <div className="flex flex-col gap-1">
-            <span className="text-xs sm:text-sm font-medium text-[#181925]">
-              {uploads.isUploading
-                ? "Uploading securely — each file shows its own progress below"
-                : isPhotoQuotaReached
-                  ? "Free 5-photo limit reached · Drop more files after upgrading"
-                  : "Drop photographs, voice notes, or home videos here"}
-            </span>
-            <span className="text-[11px] text-[#888]">
-              Select multiple files at once (JPG, PNG, MP4, MP3, M4A, OGG) · Original quality preserved
-            </span>
-          </div>
-
-          <input
-            ref={fileInputRef}
-            type="file"
-            multiple
-            accept={MEDIA_ACCEPT_ATTRIBUTE}
-            onChange={handleFileUpload}
-            className="hidden"
-          />
-        </label>
-
-        <MediaUploadList
-          items={uploads.items}
-          online={uploads.isOnline}
-          onRetry={(id) => void uploads.retry(id)}
-          onCancel={(id) => void uploads.cancel(id)}
-          onChooseFiles={(files) => void uploads.addFiles(files)}
-        />
-
-        {/* Uploaded Media Grid & Album Filter Bar */}
-        <div className="flex flex-col gap-3">
-
-
-          {/* Album Filter Chips in Editor */}
-          {existingAlbums.length > 0 && (
-            <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar py-1 select-none">
-              <span className="text-xs font-medium text-[#181925] shrink-0 mr-1 flex items-center gap-1">
-                <Folder className="size-3.5 text-primary" />
-                <span>Albums:</span>
-              </span>
-
-              <button
-                type="button"
-                onClick={() => setSelectedAlbumFilter("all")}
-                className={`text-xs px-3 py-1 rounded-full font-medium transition-all cursor-pointer shrink-0 ${selectedAlbumFilter === "all"
-                  ? "bg-primary text-primary-foreground shadow-2xs"
-                  : "bg-[#f4f4f6] text-[#666] hover:text-[#181925]"
-                  }`}
-              >
-                All ({mediaItems.length})
-              </button>
-
-              {existingAlbums.map((alb) => {
-                const count = mediaItems.filter((m) => m.album?.trim() === alb).length
-                return (
+            {uploadError && (
+              <div className="p-3.5 rounded-xl bg-rose-50 border border-rose-200 text-xs text-rose-700 flex items-center justify-between gap-2">
+                <div className="flex items-center gap-2">
+                  <AlertCircle className="size-4 shrink-0" />
+                  <span>{uploadError}</span>
+                </div>
+                {!isPaid && (
                   <button
-                    key={alb}
                     type="button"
-                    onClick={() => setSelectedAlbumFilter(alb)}
-                    className={`text-xs px-3 py-1 rounded-full font-medium transition-all cursor-pointer shrink-0 flex items-center gap-1.5 ${selectedAlbumFilter === alb
+                    onClick={onUpgrade}
+                    className="text-xs font-semibold text-rose-800 underline hover:no-underline cursor-pointer shrink-0"
+                  >
+                    Upgrade to Pro
+                  </button>
+                )}
+              </div>
+            )}
+
+            {/* Low-Friction Bulk Upload Area */}
+            <label
+              className={`p-8 sm:p-10 rounded-3xl border-2 border-dashed transition-all flex flex-col items-center justify-center gap-3 cursor-pointer text-center group ${isPhotoQuotaReached
+                ? "border-amber-300 bg-amber-50/20 hover:bg-amber-50/40"
+                : "border-black/[0.12] hover:border-primary/50 bg-white hover:bg-neutral-50/50"
+                }`}
+            >
+              <div className="size-12 rounded-full bg-primary/10 text-primary flex items-center justify-center group-hover:scale-105 transition-transform">
+                {isPhotoQuotaReached ? <Lock className="size-6 text-amber-700" /> : <Upload className="size-6" />}
+              </div>
+
+              <div className="flex flex-col gap-1">
+                <span className="text-xs sm:text-sm font-medium text-[#181925]">
+                  {uploads.isUploading
+                    ? "Uploading securely — each file shows its own progress below"
+                    : isPhotoQuotaReached
+                      ? "Free 5-photo limit reached · Drop more files after upgrading"
+                      : "Drop photographs, voice notes, or home videos here"}
+                </span>
+                <span className="text-[11px] text-[#888]">
+                  Select multiple files at once (JPG, PNG, MP4, MP3, M4A, OGG) · Original quality preserved
+                </span>
+              </div>
+
+              <input
+                ref={fileInputRef}
+                type="file"
+                multiple
+                accept={MEDIA_ACCEPT_ATTRIBUTE}
+                onChange={handleFileUpload}
+                className="hidden"
+              />
+            </label>
+
+            <MediaUploadList
+              items={uploads.items}
+              online={uploads.isOnline}
+              onRetry={(id) => void uploads.retry(id)}
+              onCancel={(id) => void uploads.cancel(id)}
+              onChooseFiles={(files) => void uploads.addFiles(files)}
+            />
+
+            {/* Uploaded Media Grid & Album Filter Bar */}
+            <div className="flex flex-col gap-3">
+
+
+              {/* Album Filter Chips in Editor */}
+              {existingAlbums.length > 0 && (
+                <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar py-1 select-none">
+                  <span className="text-xs font-medium text-[#181925] shrink-0 mr-1 flex items-center gap-1">
+                    <Folder className="size-3.5 text-primary" />
+                    <span>Albums:</span>
+                  </span>
+
+                  <button
+                    type="button"
+                    onClick={() => setSelectedAlbumFilter("all")}
+                    className={`text-xs px-3 py-1 rounded-full font-medium transition-all cursor-pointer shrink-0 ${selectedAlbumFilter === "all"
                       ? "bg-primary text-primary-foreground shadow-2xs"
                       : "bg-[#f4f4f6] text-[#666] hover:text-[#181925]"
                       }`}
                   >
-                    <Folder className="size-3 shrink-0" />
-                    <span>{alb}</span>
-                    <span className="text-[10px] opacity-75 font-mono">({count})</span>
+                    All ({mediaItems.length})
                   </button>
-                )
-              })}
 
-              {mediaItems.some((m) => !m.album?.trim()) && (
-                <button
-                  type="button"
-                  onClick={() => setSelectedAlbumFilter("__no_album__")}
-                  className={`text-xs px-3 py-1 rounded-full font-medium transition-all cursor-pointer shrink-0 ${selectedAlbumFilter === "__no_album__"
-                    ? "bg-neutral-800 text-white shadow-2xs"
-                    : "bg-[#f4f4f6] text-[#888] hover:text-[#181925]"
-                    }`}
-                >
-                  Untagged ({mediaItems.filter((m) => !m.album?.trim()).length})
-                </button>
+                  {existingAlbums.map((alb) => {
+                    const count = mediaItems.filter((m) => m.album?.trim() === alb).length
+                    return (
+                      <button
+                        key={alb}
+                        type="button"
+                        onClick={() => setSelectedAlbumFilter(alb)}
+                        className={`text-xs px-3 py-1 rounded-full font-medium transition-all cursor-pointer shrink-0 flex items-center gap-1.5 ${selectedAlbumFilter === alb
+                          ? "bg-primary text-primary-foreground shadow-2xs"
+                          : "bg-[#f4f4f6] text-[#666] hover:text-[#181925]"
+                          }`}
+                      >
+                        <Folder className="size-3 shrink-0" />
+                        <span>{alb}</span>
+                        <span className="text-[10px] opacity-75 font-mono">({count})</span>
+                      </button>
+                    )
+                  })}
+
+                  {mediaItems.some((m) => !m.album?.trim()) && (
+                    <button
+                      type="button"
+                      onClick={() => setSelectedAlbumFilter("__no_album__")}
+                      className={`text-xs px-3 py-1 rounded-full font-medium transition-all cursor-pointer shrink-0 ${selectedAlbumFilter === "__no_album__"
+                        ? "bg-neutral-800 text-white shadow-2xs"
+                        : "bg-[#f4f4f6] text-[#888] hover:text-[#181925]"
+                        }`}
+                    >
+                      Untagged ({mediaItems.filter((m) => !m.album?.trim()).length})
+                    </button>
+                  )}
+                </div>
               )}
-            </div>
-          )}
 
-          {displayedMediaItems.length === 0 ? (
-            <div className="p-8 rounded-2xl bg-white border border-black/[0.05] text-center text-xs text-[#888]">
-              {selectedAlbumFilter !== "all"
-                ? `No media in "${selectedAlbumFilter === "__no_album__" ? "Untagged" : selectedAlbumFilter}". Drop files above to add to this album.`
-                : "No media uploaded yet. Drag and drop photos, voice memos, or vintage home videos above."}
-            </div>
-          ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              {/* Permanent Media Items */}
-              {displayedMediaItems.map((item, index) => (
-                <div
-                  key={item.id}
-                  className={`p-3 rounded-2xl bg-white border flex flex-col gap-2.5 group relative transition-all ${item.is_pinned ? "border-[#8b5a45]/40 bg-[#faf8f5]/40" : "border-black/[0.07]"
-                    }`}
-                >
-                  <div className="aspect-4/3 rounded-xl overflow-hidden bg-neutral-100 relative">
-                    {(() => {
-                      const yt = parseYouTubeUrl(item.url)
-                      if (yt) {
-                        return (
-                          <div className="size-full bg-black relative flex items-center justify-center">
-                            <YouTubeEmbed videoId={yt.id} title={item.caption || "YouTube video"} />
-                          </div>
-                        )
-                      }
-                      if (item.media_type === "video") {
-                        return (
-                          <div className="size-full bg-black relative flex items-center justify-center group/video">
-                            <video
-                              src={item.url}
-                              controls
-                              preload="metadata"
-                              playsInline
-                              className="size-full object-contain bg-black"
-                            />
-                            <button
-                              type="button"
-                              onClick={() => setPreviewMediaItem(item)}
-                              className="absolute top-2 right-10 size-7 rounded-full bg-black/65 hover:bg-black/90 text-white flex items-center justify-center opacity-0 group-hover/video:opacity-100 transition-all cursor-pointer shadow-xs z-10"
-                              title="Inspect full screen"
-                            >
-                              <Maximize2 className="size-3.5" />
-                            </button>
-                          </div>
-                        )
-                      }
-                      if (item.media_type === "audio") {
-                        return (
-                          <div className="size-full bg-gradient-to-br from-[#1c1917] via-[#292524] to-[#0c0a09] flex flex-col items-center justify-center p-3 text-white gap-2 relative">
-                            <div className="size-10 rounded-full bg-amber-500/20 border border-amber-500/30 flex items-center justify-center text-amber-400">
-                              <Volume2 className="size-5" />
+              {displayedMediaItems.length === 0 ? (
+                <div className="p-8 rounded-2xl bg-white border border-black/[0.05] text-center text-xs text-[#888]">
+                  {selectedAlbumFilter !== "all"
+                    ? `No media in "${selectedAlbumFilter === "__no_album__" ? "Untagged" : selectedAlbumFilter}". Drop files above to add to this album.`
+                    : "No media uploaded yet. Drag and drop photos, voice memos, or vintage home videos above."}
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  {/* Permanent Media Items */}
+                  {displayedMediaItems.map((item, index) => (
+                    <div
+                      key={item.id}
+                      className={`p-3 rounded-2xl bg-white border flex flex-col gap-2.5 group relative transition-all ${item.is_pinned ? "border-[#8b5a45]/40 bg-[#faf8f5]/40" : "border-black/[0.07]"
+                        }`}
+                    >
+                      <div className="aspect-4/3 rounded-xl overflow-hidden bg-neutral-100 relative">
+                        {(() => {
+                          const yt = parseYouTubeUrl(item.url)
+                          if (yt) {
+                            return (
+                              <div className="size-full bg-black relative flex items-center justify-center">
+                                <YouTubeEmbed videoId={yt.id} title={item.caption || "YouTube video"} />
+                              </div>
+                            )
+                          }
+                          if (item.media_type === "video") {
+                            return (
+                              <div className="size-full bg-black relative flex items-center justify-center group/video">
+                                <video
+                                  src={item.url}
+                                  controls
+                                  preload="metadata"
+                                  playsInline
+                                  className="size-full object-contain bg-black"
+                                />
+                                <button
+                                  type="button"
+                                  onClick={() => setPreviewMediaItem(item)}
+                                  className="absolute top-2 right-10 size-7 rounded-full bg-black/65 hover:bg-black/90 text-white flex items-center justify-center opacity-100 sm:opacity-0 sm:group-hover/video:opacity-100 transition-all cursor-pointer shadow-xs z-10"
+                                  title="Inspect full screen"
+                                >
+                                  <Maximize2 className="size-3.5" />
+                                </button>
+                              </div>
+                            )
+                          }
+                          if (item.media_type === "audio") {
+                            return (
+                              <div className="size-full bg-gradient-to-br from-[#1c1917] via-[#292524] to-[#0c0a09] flex flex-col items-center justify-center p-3 text-white gap-2 relative">
+                                <div className="size-10 rounded-full bg-amber-500/20 border border-amber-500/30 flex items-center justify-center text-amber-400">
+                                  <Volume2 className="size-5" />
+                                </div>
+                                <div className="text-center w-full px-2">
+                                  <p className="text-[11px] font-medium text-amber-100 truncate">
+                                    {item.caption || "Audio Recording"}
+                                  </p>
+                                  {item.approx_year && (
+                                    <span className="text-[10px] text-neutral-400 font-mono">c. {item.approx_year}</span>
+                                  )}
+                                </div>
+                                <audio
+                                  src={item.url}
+                                  controls
+                                  preload="metadata"
+                                  className="w-full h-8 max-w-[95%] accent-amber-500"
+                                />
+                                <button
+                                  type="button"
+                                  onClick={() => setPreviewMediaItem(item)}
+                                  className="absolute top-2 right-10 size-7 rounded-full bg-black/60 hover:bg-black/80 text-white flex items-center justify-center opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-all cursor-pointer shadow-xs z-10"
+                                  title="Inspect"
+                                >
+                                  <Maximize2 className="size-3.5" />
+                                </button>
+                              </div>
+                            )
+                          }
+                          return (
+                            <div className="relative size-full group/photo overflow-hidden">
+                              <img
+                                src={item.url}
+                                alt={item.caption || "Gallery item"}
+                                className="size-full object-cover transition-transform duration-300 sm:group-hover/photo:scale-105 cursor-pointer"
+                                loading="lazy"
+                                onClick={() => setPreviewMediaItem(item)}
+                              />
+                              {/* Desktop hover inspect overlay */}
+                              <button
+                                type="button"
+                                onClick={() => setPreviewMediaItem(item)}
+                                className="hidden sm:flex absolute inset-0 bg-black/30 opacity-0 group-hover/photo:opacity-100 transition-opacity items-center justify-center cursor-pointer"
+                                title="Click to view full size"
+                              >
+                                <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-black/70 text-white text-xs font-medium backdrop-blur-xs shadow-md">
+                                  <Maximize2 className="size-3.5" /> Inspect
+                                </span>
+                              </button>
+
+                              {/* Mobile inspect button in bottom right */}
+                              <button
+                                type="button"
+                                onClick={(e) => {
+                                  e.stopPropagation()
+                                  setPreviewMediaItem(item)
+                                }}
+                                className="sm:hidden absolute bottom-2 right-2 size-7 rounded-full bg-black/65 text-white flex items-center justify-center cursor-pointer shadow-xs z-10"
+                                title="Inspect full size"
+                                aria-label="Inspect full size"
+                              >
+                                <Maximize2 className="size-3.5" />
+                              </button>
                             </div>
-                            <div className="text-center w-full px-2">
-                              <p className="text-[11px] font-medium text-amber-100 truncate">
-                                {item.caption || "Audio Recording"}
-                              </p>
-                              {item.approx_year && (
-                                <span className="text-[10px] text-neutral-400 font-mono">c. {item.approx_year}</span>
-                              )}
-                            </div>
-                            <audio
-                              src={item.url}
-                              controls
-                              preload="metadata"
-                              className="w-full h-8 max-w-[95%] accent-amber-500"
-                            />
-                            <button
-                              type="button"
-                              onClick={() => setPreviewMediaItem(item)}
-                              className="absolute top-2 right-10 size-7 rounded-full bg-black/60 hover:bg-black/80 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all cursor-pointer shadow-xs z-10"
-                              title="Inspect"
-                            >
-                              <Maximize2 className="size-3.5" />
-                            </button>
-                          </div>
-                        )
-                      }
-                      return (
-                        <div className="relative size-full group/photo overflow-hidden">
-                          <img
-                            src={item.url}
-                            alt={item.caption || "Gallery item"}
-                            className="size-full object-cover transition-transform duration-300 group-hover/photo:scale-105"
-                            loading="lazy"
-                          />
+                          )
+                        })()}
+
+                        {/* Pin to Top Button (Top Left) */}
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            onUpdateMedia(item.id, "is_pinned", !item.is_pinned)
+                          }}
+                          className={`absolute top-2 left-2 size-7 rounded-full flex items-center justify-center transition-all cursor-pointer shadow-xs z-10 ${item.is_pinned
+                            ? "bg-[#8b5a45] text-white opacity-100"
+                            : "bg-black/60 hover:bg-black/80 text-white opacity-100 sm:opacity-0 sm:group-hover:opacity-100"
+                            }`}
+                          title={item.is_pinned ? "Unpin from top" : "Pin to top as featured"}
+                        >
+                          <Pin className={`size-3.5 ${item.is_pinned ? "fill-white" : ""}`} />
+                        </button>
+
+                        {item.is_pinned && (
+                          <span className="absolute top-2 left-10 text-[9px] font-mono uppercase tracking-wider bg-[#8b5a45] text-white px-2 py-0.5 rounded-full shadow-xs z-10">
+                            Pinned
+                          </span>
+                        )}
+
+                        {/* Delete Button (Top Right) */}
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            setItemToDelete(item)
+                          }}
+                          className="absolute top-2 right-2 size-7 rounded-full bg-black/60 hover:bg-rose-600 text-white flex items-center justify-center opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-all cursor-pointer shadow-sm z-10"
+                          title="Remove from gallery"
+                        >
+                          <Trash2 className="size-3.5" />
+                        </button>
+
+                        {/* Move Earlier / Move Later Controls (Bottom Left inside overlay) */}
+                        <div className="absolute bottom-2 left-2 flex items-center gap-1 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity z-10">
                           <button
                             type="button"
-                            onClick={() => setPreviewMediaItem(item)}
-                            className="absolute inset-0 bg-black/30 opacity-0 group-hover/photo:opacity-100 transition-opacity flex items-center justify-center cursor-pointer"
-                            title="Click to view full size"
+                            disabled={index === 0}
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              if (index > 0 && onReorderMedia) {
+                                const next = [...mediaItems]
+                                const temp = next[index]
+                                next[index] = next[index - 1]
+                                next[index - 1] = temp
+                                onReorderMedia(next)
+                              }
+                            }}
+                            className="size-6 rounded-md bg-black/70 hover:bg-black/90 disabled:opacity-30 disabled:pointer-events-none flex items-center justify-center text-white cursor-pointer"
+                            title="Move earlier"
                           >
-                            <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-black/70 text-white text-xs font-medium backdrop-blur-xs shadow-md">
-                              <Maximize2 className="size-3.5" /> Inspect
-                            </span>
+                            <ArrowUp className="size-3" />
+                          </button>
+                          <button
+                            type="button"
+                            disabled={index === mediaItems.length - 1}
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              if (index < mediaItems.length - 1 && onReorderMedia) {
+                                const next = [...mediaItems]
+                                const temp = next[index]
+                                next[index] = next[index + 1]
+                                next[index + 1] = temp
+                                onReorderMedia(next)
+                              }
+                            }}
+                            className="size-6 rounded-md bg-black/70 hover:bg-black/90 disabled:opacity-30 disabled:pointer-events-none flex items-center justify-center text-white cursor-pointer"
+                            title="Move later"
+                          >
+                            <ArrowDown className="size-3" />
                           </button>
                         </div>
-                      )
-                    })()}
+                      </div>
 
-                    {/* Pin to Top Button (Top Left) */}
-                    <button
-                      type="button"
-                      onClick={() => onUpdateMedia(item.id, "is_pinned", !item.is_pinned)}
-                      className={`absolute top-2 left-2 size-7 rounded-full flex items-center justify-center transition-all cursor-pointer shadow-xs ${item.is_pinned
-                        ? "bg-[#8b5a45] text-white opacity-100"
-                        : "bg-black/60 hover:bg-black/80 text-white opacity-0 group-hover:opacity-100"
-                        }`}
-                      title={item.is_pinned ? "Unpin from top" : "Pin to top as featured"}
-                    >
-                      <Pin className={`size-3.5 ${item.is_pinned ? "fill-white" : ""}`} />
-                    </button>
-
-                    {item.is_pinned && (
-                      <span className="absolute top-2 left-10 text-[9px] font-mono uppercase tracking-wider bg-[#8b5a45] text-white px-2 py-0.5 rounded-full shadow-xs">
-                        Pinned
-                      </span>
-                    )}
-
-                    {/* Delete Button (Top Right) */}
-                    <button
-                      type="button"
-                      onClick={() => setItemToDelete(item)}
-                      className="absolute top-2 right-2 size-7 rounded-full bg-black/60 hover:bg-rose-600 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all cursor-pointer shadow-sm"
-                      title="Remove from gallery"
-                    >
-                      <Trash2 className="size-3.5" />
-                    </button>
-
-                    {/* Move Earlier / Move Later Controls (Bottom Left inside overlay) */}
-                    <div className="absolute bottom-2 left-2 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                      <button
-                        type="button"
-                        disabled={index === 0}
-                        onClick={() => {
-                          if (index > 0 && onReorderMedia) {
-                            const next = [...mediaItems]
-                            const temp = next[index]
-                            next[index] = next[index - 1]
-                            next[index - 1] = temp
-                            onReorderMedia(next)
-                          }
-                        }}
-                        className="size-6 rounded-md bg-black/70 hover:bg-black/90 disabled:opacity-30 disabled:pointer-events-none flex items-center justify-center text-white cursor-pointer"
-                        title="Move earlier"
-                      >
-                        <ArrowUp className="size-3" />
-                      </button>
-                      <button
-                        type="button"
-                        disabled={index === mediaItems.length - 1}
-                        onClick={() => {
-                          if (index < mediaItems.length - 1 && onReorderMedia) {
-                            const next = [...mediaItems]
-                            const temp = next[index]
-                            next[index] = next[index + 1]
-                            next[index + 1] = temp
-                            onReorderMedia(next)
-                          }
-                        }}
-                        className="size-6 rounded-md bg-black/70 hover:bg-black/90 disabled:opacity-30 disabled:pointer-events-none flex items-center justify-center text-white cursor-pointer"
-                        title="Move later"
-                      >
-                        <ArrowDown className="size-3" />
-                      </button>
-                    </div>
-                  </div>
-
-                  {/* Inline Metadata Form */}
-                  <div className="flex flex-col gap-2">
-                    {/* Row 1: Caption (15 words limit) */}
-                    <input
-                      type="text"
-                      maxLength={TEXT_LIMITS.photoCaption}
-                      defaultValue={item.caption || ""}
-                      onKeyDown={(e) => handleWordKeyDown(e, TEXT_LIMITS.galleryCaptionMaxWords)}
-                      onInput={(e) => handleWordInput(e, TEXT_LIMITS.galleryCaptionMaxWords, TEXT_LIMITS.photoCaption)}
-                      onPaste={(e) => handleWordPaste(e, TEXT_LIMITS.galleryCaptionMaxWords, TEXT_LIMITS.photoCaption)}
-                      onBlur={(e) => {
-                        let val = e.target.value.trim()
-                        if (countWords(val) > TEXT_LIMITS.galleryCaptionMaxWords) {
-                          val = clampWords(val, TEXT_LIMITS.galleryCaptionMaxWords).trim()
-                        }
-                        if (val.length > TEXT_LIMITS.photoCaption) {
-                          val = val.slice(0, TEXT_LIMITS.photoCaption).trim()
-                        }
-                        e.target.value = val
-                        const finalVal = val || null
-                        const prevVal = (item.caption || "").trim() || null
-                        if (finalVal !== prevVal) {
-                          onUpdateMedia(item.id, "caption", finalVal)
-                        }
-                      }}
-                      placeholder="Add caption (optional)"
-                      className="w-full px-3 py-1.5 rounded-lg bg-[#fafafb] border border-black/[0.06] text-xs text-[#181925] placeholder:text-[#aaa] outline-none focus:border-primary/50"
-                    />
-
-                    {/* Row 2: Album (4 words limit) */}
-                    <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#fafafb] border border-black/[0.06] focus-within:border-primary/50 transition-colors">
-                      <Folder className="size-3.5 text-primary/70 shrink-0" />
-                      <input
-                        type="text"
-                        maxLength={TEXT_LIMITS.albumName}
-                        list={`album-list-${item.id}`}
-                        defaultValue={item.album || ""}
-                        onKeyDown={(e) => handleWordKeyDown(e, TEXT_LIMITS.galleryAlbumMaxWords)}
-                        onInput={(e) => handleWordInput(e, TEXT_LIMITS.galleryAlbumMaxWords, TEXT_LIMITS.albumName)}
-                        onPaste={(e) => handleWordPaste(e, TEXT_LIMITS.galleryAlbumMaxWords, TEXT_LIMITS.albumName)}
-                        onBlur={(e) => {
-                          let val = e.target.value.trim()
-                          if (countWords(val) > TEXT_LIMITS.galleryAlbumMaxWords) {
-                            val = clampWords(val, TEXT_LIMITS.galleryAlbumMaxWords).trim()
-                          }
-                          if (val.length > TEXT_LIMITS.albumName) {
-                            val = val.slice(0, TEXT_LIMITS.albumName).trim()
-                          }
-                          e.target.value = val
-                          const finalVal = val || null
-                          const prevVal = (item.album || "").trim() || null
-                          if (finalVal !== prevVal) {
-                            onUpdateMedia(item.id, "album", finalVal)
-                          }
-                        }}
-                        placeholder="Album (e.g. Family, Travels, Leh)"
-                        className="w-full min-w-0 bg-transparent text-xs text-[#181925] placeholder:text-[#aaa] outline-none"
-                      />
-                      <datalist id={`album-list-${item.id}`}>
-                        {existingAlbums.map((alb) => (
-                          <option key={alb} value={alb} />
-                        ))}
-                      </datalist>
-                    </div>
-
-                    {/* Row 3: Location (3 words limit) and Year (max 4 digits) */}
-                    <div className="flex items-center gap-2">
-                      <div className="flex-1 min-w-0 flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#fafafb] border border-black/[0.06] focus-within:border-primary/50 transition-colors">
-                        <MapPin className="size-3 text-[#888] shrink-0" />
+                      {/* Inline Metadata Form */}
+                      <div className="flex flex-col gap-2">
+                        {/* Row 1: Caption (15 words limit) */}
                         <input
                           type="text"
-                          maxLength={TEXT_LIMITS.location}
-                          defaultValue={item.location || ""}
-                          onKeyDown={(e) => handleWordKeyDown(e, TEXT_LIMITS.galleryLocationMaxWords)}
-                          onInput={(e) => handleWordInput(e, TEXT_LIMITS.galleryLocationMaxWords, TEXT_LIMITS.location)}
-                          onPaste={(e) => handleWordPaste(e, TEXT_LIMITS.galleryLocationMaxWords, TEXT_LIMITS.location)}
+                          maxLength={TEXT_LIMITS.photoCaption}
+                          defaultValue={item.caption || ""}
+                          onKeyDown={(e) => handleWordKeyDown(e, TEXT_LIMITS.galleryCaptionMaxWords)}
+                          onInput={(e) => handleWordInput(e, TEXT_LIMITS.galleryCaptionMaxWords, TEXT_LIMITS.photoCaption)}
+                          onPaste={(e) => handleWordPaste(e, TEXT_LIMITS.galleryCaptionMaxWords, TEXT_LIMITS.photoCaption)}
                           onBlur={(e) => {
                             let val = e.target.value.trim()
-                            if (countWords(val) > TEXT_LIMITS.galleryLocationMaxWords) {
-                              val = clampWords(val, TEXT_LIMITS.galleryLocationMaxWords).trim()
+                            if (countWords(val) > TEXT_LIMITS.galleryCaptionMaxWords) {
+                              val = clampWords(val, TEXT_LIMITS.galleryCaptionMaxWords).trim()
                             }
-                            if (val.length > TEXT_LIMITS.location) {
-                              val = val.slice(0, TEXT_LIMITS.location).trim()
+                            if (val.length > TEXT_LIMITS.photoCaption) {
+                              val = val.slice(0, TEXT_LIMITS.photoCaption).trim()
                             }
                             e.target.value = val
                             const finalVal = val || null
-                            const prevVal = (item.location || "").trim() || null
+                            const prevVal = (item.caption || "").trim() || null
                             if (finalVal !== prevVal) {
-                              onUpdateMedia(item.id, "location", finalVal)
+                              onUpdateMedia(item.id, "caption", finalVal)
                             }
                           }}
-                          placeholder="Location"
-                          className="w-full min-w-0 bg-transparent text-xs text-[#181925] placeholder:text-[#aaa] outline-none"
+                          placeholder="Add caption (optional)"
+                          className="w-full px-3 py-1.5 rounded-lg bg-[#fafafb] border border-black/[0.06] text-xs text-[#181925] placeholder:text-[#aaa] outline-none focus:border-primary/50"
                         />
-                      </div>
 
-                      <div className="w-24 shrink-0 flex items-center gap-1 px-2 py-1.5 rounded-lg bg-[#fafafb] border border-black/[0.06] focus-within:border-primary/50 transition-colors">
-                        <Calendar className="size-3 text-[#888] shrink-0" />
-                        <input
-                          type="text"
-                          inputMode="numeric"
-                          pattern="[0-9]*"
-                          maxLength={4}
-                          defaultValue={item.approx_year || ""}
-                          onKeyDown={handleYearKeyDown}
-                          onInput={handleYearInput}
-                          onPaste={handleYearPaste}
-                          onBlur={(e) => {
-                            const digits = e.target.value.replace(/\D/g, "").slice(0, 4)
-                            e.target.value = digits
-                            const finalYear = digits ? Number(digits) : null
-                            const prevYear = item.approx_year ?? null
-                            if (finalYear !== prevYear) {
-                              onUpdateMedia(item.id, "approx_year", finalYear)
-                            }
-                          }}
-                          placeholder="YYYY"
-                          className="w-full min-w-0 bg-transparent text-xs text-[#181925] font-mono text-center placeholder:text-[#aaa] outline-none"
-                        />
+                        {/* Row 2: Album (4 words limit) */}
+                        <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#fafafb] border border-black/[0.06] focus-within:border-primary/50 transition-colors">
+                          <Folder className="size-3.5 text-primary/70 shrink-0" />
+                          <input
+                            type="text"
+                            maxLength={TEXT_LIMITS.albumName}
+                            list={`album-list-${item.id}`}
+                            defaultValue={item.album || ""}
+                            onKeyDown={(e) => handleWordKeyDown(e, TEXT_LIMITS.galleryAlbumMaxWords)}
+                            onInput={(e) => handleWordInput(e, TEXT_LIMITS.galleryAlbumMaxWords, TEXT_LIMITS.albumName)}
+                            onPaste={(e) => handleWordPaste(e, TEXT_LIMITS.galleryAlbumMaxWords, TEXT_LIMITS.albumName)}
+                            onBlur={(e) => {
+                              let val = e.target.value.trim()
+                              if (countWords(val) > TEXT_LIMITS.galleryAlbumMaxWords) {
+                                val = clampWords(val, TEXT_LIMITS.galleryAlbumMaxWords).trim()
+                              }
+                              if (val.length > TEXT_LIMITS.albumName) {
+                                val = val.slice(0, TEXT_LIMITS.albumName).trim()
+                              }
+                              e.target.value = val
+                              const finalVal = val || null
+                              const prevVal = (item.album || "").trim() || null
+                              if (finalVal !== prevVal) {
+                                onUpdateMedia(item.id, "album", finalVal)
+                              }
+                            }}
+                            placeholder="Album (e.g. Family, Travels, Leh)"
+                            className="w-full min-w-0 bg-transparent text-xs text-[#181925] placeholder:text-[#aaa] outline-none"
+                          />
+                          <datalist id={`album-list-${item.id}`}>
+                            {existingAlbums.map((alb) => (
+                              <option key={alb} value={alb} />
+                            ))}
+                          </datalist>
+                        </div>
+
+                        {/* Row 3: Location (3 words limit) and Year (max 4 digits) */}
+                        <div className="flex items-center gap-2">
+                          <div className="flex-1 min-w-0 flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#fafafb] border border-black/[0.06] focus-within:border-primary/50 transition-colors">
+                            <MapPin className="size-3 text-[#888] shrink-0" />
+                            <input
+                              type="text"
+                              maxLength={TEXT_LIMITS.location}
+                              defaultValue={item.location || ""}
+                              onKeyDown={(e) => handleWordKeyDown(e, TEXT_LIMITS.galleryLocationMaxWords)}
+                              onInput={(e) => handleWordInput(e, TEXT_LIMITS.galleryLocationMaxWords, TEXT_LIMITS.location)}
+                              onPaste={(e) => handleWordPaste(e, TEXT_LIMITS.galleryLocationMaxWords, TEXT_LIMITS.location)}
+                              onBlur={(e) => {
+                                let val = e.target.value.trim()
+                                if (countWords(val) > TEXT_LIMITS.galleryLocationMaxWords) {
+                                  val = clampWords(val, TEXT_LIMITS.galleryLocationMaxWords).trim()
+                                }
+                                if (val.length > TEXT_LIMITS.location) {
+                                  val = val.slice(0, TEXT_LIMITS.location).trim()
+                                }
+                                e.target.value = val
+                                const finalVal = val || null
+                                const prevVal = (item.location || "").trim() || null
+                                if (finalVal !== prevVal) {
+                                  onUpdateMedia(item.id, "location", finalVal)
+                                }
+                              }}
+                              placeholder="Location"
+                              className="w-full min-w-0 bg-transparent text-xs text-[#181925] placeholder:text-[#aaa] outline-none"
+                            />
+                          </div>
+
+                          <div className="w-24 shrink-0 flex items-center gap-1 px-2 py-1.5 rounded-lg bg-[#fafafb] border border-black/[0.06] focus-within:border-primary/50 transition-colors">
+                            <Calendar className="size-3 text-[#888] shrink-0" />
+                            <input
+                              type="text"
+                              inputMode="numeric"
+                              pattern="[0-9]*"
+                              maxLength={4}
+                              defaultValue={item.approx_year || ""}
+                              onKeyDown={handleYearKeyDown}
+                              onInput={handleYearInput}
+                              onPaste={handleYearPaste}
+                              onBlur={(e) => {
+                                const digits = e.target.value.replace(/\D/g, "").slice(0, 4)
+                                e.target.value = digits
+                                const finalYear = digits ? Number(digits) : null
+                                const prevYear = item.approx_year ?? null
+                                if (finalYear !== prevYear) {
+                                  onUpdateMedia(item.id, "approx_year", finalYear)
+                                }
+                              }}
+                              placeholder="YYYY"
+                              className="w-full min-w-0 bg-transparent text-xs text-[#181925] font-mono text-center placeholder:text-[#aaa] outline-none"
+                            />
+                          </div>
+                        </div>
                       </div>
                     </div>
-                  </div>
+                  ))}
                 </div>
-              ))}
+              )}
             </div>
-          )}
-        </div>
-      </div>
+          </div>
 
-      <ConfirmDeleteModal
-        isOpen={!!itemToDelete}
-        title={
-          itemToDelete?.media_type === "video"
-            ? "Delete this video clip?"
-            : itemToDelete?.media_type === "audio"
-              ? "Delete this voice recording?"
-              : "Delete this photograph?"
-        }
-        description="This item will be permanently removed from this memorial's gallery. This action cannot be undone."
-        itemPreview={
-          itemToDelete?.caption ||
-          (itemToDelete?.media_type === "video"
-            ? "Video clip"
-            : itemToDelete?.media_type === "audio"
-              ? "Audio recording"
-              : "Photograph")
-        }
-        isDeleting={isDeleting}
-        onConfirm={handleConfirmDelete}
-        onClose={() => !isDeleting && setItemToDelete(null)}
-      />
-    </>
-  )}
+          <ConfirmDeleteModal
+            isOpen={!!itemToDelete}
+            title={
+              itemToDelete?.media_type === "video"
+                ? "Delete this video clip?"
+                : itemToDelete?.media_type === "audio"
+                  ? "Delete this voice recording?"
+                  : "Delete this photograph?"
+            }
+            description="This item will be permanently removed from this memorial's gallery. This action cannot be undone."
+            itemPreview={
+              itemToDelete?.caption ||
+              (itemToDelete?.media_type === "video"
+                ? "Video clip"
+                : itemToDelete?.media_type === "audio"
+                  ? "Audio recording"
+                  : "Photograph")
+            }
+            isDeleting={isDeleting}
+            onConfirm={handleConfirmDelete}
+            onClose={() => !isDeleting && setItemToDelete(null)}
+          />
+        </>
+      )}
 
       {/* FULLSCREEN GALLERY LIGHTBOX VIEWER */}
       {previewMediaItem && (

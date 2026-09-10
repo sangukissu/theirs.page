@@ -30,6 +30,26 @@ const MONTH_NAMES = [
   "July", "August", "September", "October", "November", "December",
 ]
 
+function handleNumericKeyDown(e: React.KeyboardEvent<HTMLInputElement>) {
+  if (
+    e.key === "Backspace" ||
+    e.key === "Delete" ||
+    e.key === "ArrowLeft" ||
+    e.key === "ArrowRight" ||
+    e.key === "Tab" ||
+    e.key === "Enter" ||
+    e.key === "Escape" ||
+    e.ctrlKey ||
+    e.metaKey ||
+    e.altKey
+  ) {
+    return
+  }
+  if (!/^\d$/.test(e.key)) {
+    e.preventDefault()
+  }
+}
+
 interface IdentityTabProps {
   memorialId: string
   fullName: string
@@ -285,9 +305,13 @@ export function IdentityTab({
             )}
           </div>
           <input
-            type="number"
+            type="text"
+            inputMode="numeric"
+            pattern="[0-9]*"
+            maxLength={4}
             value={birthYear}
-            onChange={(e) => onChange("birth_year", e.target.value)}
+            onKeyDown={handleNumericKeyDown}
+            onChange={(e) => onChange("birth_year", e.target.value.replace(/\D/g, "").slice(0, 4))}
             placeholder="1948"
             className="px-3.5 py-2 rounded-xl bg-white border border-black/[0.08] text-xs sm:text-sm text-[#181925] font-mono outline-none focus:border-primary/60 transition-colors"
           />
@@ -314,11 +338,19 @@ export function IdentityTab({
                 </Select>
               </div>
               <input
-                type="number"
-                min={1}
-                max={31}
+                type="text"
+                inputMode="numeric"
+                pattern="[0-9]*"
+                maxLength={2}
                 value={birthDay || ""}
-                onChange={(e) => onChange("birth_day", e.target.value)}
+                onKeyDown={handleNumericKeyDown}
+                onChange={(e) => {
+                  const digits = e.target.value.replace(/\D/g, "").slice(0, 2)
+                  const num = digits ? Number(digits) : null
+                  if (num === null || (num >= 1 && num <= 31)) {
+                    onChange("birth_day", digits)
+                  }
+                }}
                 placeholder="Day"
                 className="w-1/2 h-8.5 px-3 rounded-lg bg-neutral-50 border border-black/[0.08] text-xs text-[#181925] font-mono outline-none focus:border-primary/60"
               />
@@ -355,9 +387,13 @@ export function IdentityTab({
             )}
           </div>
           <input
-            type="number"
+            type="text"
+            inputMode="numeric"
+            pattern="[0-9]*"
+            maxLength={4}
             value={deathYear}
-            onChange={(e) => onChange("death_year", e.target.value)}
+            onKeyDown={handleNumericKeyDown}
+            onChange={(e) => onChange("death_year", e.target.value.replace(/\D/g, "").slice(0, 4))}
             placeholder="2024"
             className="px-3.5 py-2 rounded-xl bg-white border border-black/[0.08] text-xs sm:text-sm text-[#181925] font-mono outline-none focus:border-primary/60 transition-colors"
           />
@@ -384,11 +420,19 @@ export function IdentityTab({
                 </Select>
               </div>
               <input
-                type="number"
-                min={1}
-                max={31}
+                type="text"
+                inputMode="numeric"
+                pattern="[0-9]*"
+                maxLength={2}
                 value={deathDay || ""}
-                onChange={(e) => onChange("death_day", e.target.value)}
+                onKeyDown={handleNumericKeyDown}
+                onChange={(e) => {
+                  const digits = e.target.value.replace(/\D/g, "").slice(0, 2)
+                  const num = digits ? Number(digits) : null
+                  if (num === null || (num >= 1 && num <= 31)) {
+                    onChange("death_day", digits)
+                  }
+                }}
                 placeholder="Day"
                 className="w-1/2 h-8.5 px-3 rounded-lg bg-neutral-50 border border-black/[0.08] text-xs text-[#181925] font-mono outline-none focus:border-primary/60"
               />

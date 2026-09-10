@@ -27,6 +27,26 @@ interface TimelineTabProps {
   onUpdateEvent?: (event: EditorTimelineEvent) => void
 }
 
+function handleNumericKeyDown(e: React.KeyboardEvent<HTMLInputElement>) {
+  if (
+    e.key === "Backspace" ||
+    e.key === "Delete" ||
+    e.key === "ArrowLeft" ||
+    e.key === "ArrowRight" ||
+    e.key === "Tab" ||
+    e.key === "Enter" ||
+    e.key === "Escape" ||
+    e.ctrlKey ||
+    e.metaKey ||
+    e.altKey
+  ) {
+    return
+  }
+  if (!/^\d$/.test(e.key)) {
+    e.preventDefault()
+  }
+}
+
 export function TimelineTab({
   memorialId,
   fullName,
@@ -181,7 +201,7 @@ export function TimelineTab({
 
   const startEditing = (evt: EditorTimelineEvent) => {
     setEditingEventId(evt.id)
-    setEditYear(String(evt.year))
+    setEditYear(String(evt.year).slice(0, 4))
     setEditTitle(evt.title)
     setEditDesc(evt.description || "")
     setEditLocation(evt.location || "")
@@ -230,7 +250,8 @@ export function TimelineTab({
 
   const handleSaveEdit = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!editingEventId || !editYear || !editTitle.trim()) return
+    const sanitizedYear = editYear.replace(/\D/g, "").slice(0, 4)
+    if (!editingEventId || !sanitizedYear || sanitizedYear.length < 4 || !editTitle.trim()) return
 
     setIsSavingEdit(true)
     setEditError(null)
@@ -241,10 +262,10 @@ export function TimelineTab({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           eventId: editingEventId,
-          year: Number(editYear),
-          title: editTitle.trim(),
-          description: editDesc.trim() || null,
-          location: editLocation.trim() || null,
+          year: Number(sanitizedYear),
+          title: editTitle.trim().slice(0, TEXT_LIMITS.timelineTitle),
+          description: editDesc.trim().slice(0, TEXT_LIMITS.timelineDescription) || null,
+          location: editLocation.trim().slice(0, TEXT_LIMITS.location) || null,
           photo_url: editPhotoUrl,
         }),
       })
@@ -267,7 +288,8 @@ export function TimelineTab({
 
   const handleAdd = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!yearInput || !titleInput.trim()) return
+    const sanitizedYear = yearInput.replace(/\D/g, "").slice(0, 4)
+    if (!sanitizedYear || sanitizedYear.length < 4 || !titleInput.trim()) return
 
     setIsSubmitting(true)
     try {
@@ -275,10 +297,10 @@ export function TimelineTab({
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          year: Number(yearInput),
-          title: titleInput.trim(),
-          description: descInput.trim() || null,
-          location: locationInput.trim() || null,
+          year: Number(sanitizedYear),
+          title: titleInput.trim().slice(0, TEXT_LIMITS.timelineTitle),
+          description: descInput.trim().slice(0, TEXT_LIMITS.timelineDescription) || null,
+          location: locationInput.trim().slice(0, TEXT_LIMITS.location) || null,
           photo_url: photoUrl || null,
         }),
       })
@@ -363,16 +385,21 @@ export function TimelineTab({
 
           <div className="flex flex-col sm:flex-row gap-3">
             <input
-              type="number"
+              type="text"
+              inputMode="numeric"
+              pattern="[0-9]*"
+              maxLength={4}
               required
               disabled={!isPaid}
               value={yearInput}
+              onKeyDown={handleNumericKeyDown}
               onChange={(e) => {
-                setYearInput(e.target.value)
-                updateDraft(e.target.value, titleInput, descInput, locationInput)
+                const val = e.target.value.replace(/\D/g, "").slice(0, 4)
+                setYearInput(val)
+                updateDraft(val, titleInput, descInput, locationInput)
               }}
               placeholder="Year (e.g. 1974)"
-              className="w-full sm:w-36 px-3.5 py-2 rounded-xl bg-[#fafafb] border border-black/[0.08] text-xs sm:text-sm text-[#181925] font-mono outline-none focus:border-primary/50 disabled:bg-neutral-100 disabled:text-neutral-500 disabled:cursor-not-allowed"
+              className="w-full sm:w-32 px-3.5 py-2 rounded-xl bg-[#fafafb] border border-black/[0.08] text-xs sm:text-sm text-[#181925] font-mono outline-none focus:border-primary/50 disabled:bg-neutral-100 disabled:text-neutral-500 disabled:cursor-not-allowed"
             />
 
             <input
@@ -382,30 +409,16 @@ export function TimelineTab({
               disabled={!isPaid}
               value={titleInput}
               onChange={(e) => {
-                setTitleInput(e.target.value)
-                updateDraft(yearInput, e.target.value, descInput, locationInput)
+                const val = e.target.value.slice(0, TEXT_LIMITS.timelineTitle)
+                setTitleInput(val)
+                updateDraft(yearInput, val, descInput, locationInput)
               }}
               placeholder={
                 !isPaid
                   ? "Upgrade to Pro to add milestones"
-                  : "What happened? (e.g. Married Meena at St. Jude’s)"
+                  : "Milestone title (e.g. Married Meena at St. Jude’s)"
               }
               className="flex-1 px-3.5 py-2 rounded-xl bg-[#fafafb] border border-black/[0.08] text-xs sm:text-sm text-[#181925] outline-none focus:border-primary/50 disabled:bg-neutral-100 disabled:text-neutral-500 disabled:cursor-not-allowed"
-            />
-          </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <input
-              type="text"
-              maxLength={TEXT_LIMITS.timelineDescription}
-              disabled={!isPaid}
-              value={descInput}
-              onChange={(e) => {
-                setDescInput(e.target.value)
-                updateDraft(yearInput, titleInput, e.target.value, locationInput)
-              }}
-              placeholder="Brief note or detail (optional, e.g. Moved to Devon)"
-              className="px-3.5 py-2 rounded-xl bg-[#fafafb] border border-black/[0.08] text-xs text-[#181925] outline-none focus:border-primary/50 disabled:bg-neutral-100 disabled:text-neutral-500 disabled:cursor-not-allowed"
             />
 
             <input
@@ -414,11 +427,28 @@ export function TimelineTab({
               disabled={!isPaid}
               value={locationInput}
               onChange={(e) => {
-                setLocationInput(e.target.value)
-                updateDraft(yearInput, titleInput, descInput, e.target.value)
+                const val = e.target.value.slice(0, TEXT_LIMITS.location)
+                setLocationInput(val)
+                updateDraft(yearInput, titleInput, descInput, val)
               }}
               placeholder="Location (optional, e.g. Devon, England)"
-              className="px-3.5 py-2 rounded-xl bg-[#fafafb] border border-black/[0.08] text-xs text-[#181925] outline-none focus:border-primary/50 disabled:bg-neutral-100 disabled:text-neutral-500 disabled:cursor-not-allowed"
+              className="w-full sm:w-48 px-3.5 py-2 rounded-xl bg-[#fafafb] border border-black/[0.08] text-xs sm:text-sm text-[#181925] outline-none focus:border-primary/50 disabled:bg-neutral-100 disabled:text-neutral-500 disabled:cursor-not-allowed"
+            />
+          </div>
+
+          <div className="flex flex-col gap-1">
+            <textarea
+              rows={3}
+              maxLength={TEXT_LIMITS.timelineDescription}
+              disabled={!isPaid}
+              value={descInput}
+              onChange={(e) => {
+                const val = e.target.value.slice(0, TEXT_LIMITS.timelineDescription)
+                setDescInput(val)
+                updateDraft(yearInput, titleInput, val, locationInput)
+              }}
+              placeholder="What happened? Share the story, memories, or details of this milestone (optional)..."
+              className="w-full px-3.5 py-2.5 rounded-xl bg-[#fafafb] border border-black/[0.08] text-xs sm:text-sm text-[#181925] placeholder:text-[#aaa] outline-none focus:border-primary/50 resize-y leading-relaxed font-sans disabled:bg-neutral-100 disabled:text-neutral-500 disabled:cursor-not-allowed"
             />
           </div>
 
@@ -539,13 +569,17 @@ export function TimelineTab({
 
                   <div className="flex flex-col sm:flex-row gap-3">
                     <input
-                      type="number"
+                      type="text"
+                      inputMode="numeric"
+                      pattern="[0-9]*"
+                      maxLength={4}
                       required
                       disabled={isSavingEdit}
                       value={editYear}
-                      onChange={(e) => setEditYear(e.target.value)}
+                      onKeyDown={handleNumericKeyDown}
+                      onChange={(e) => setEditYear(e.target.value.replace(/\D/g, "").slice(0, 4))}
                       placeholder="Year (e.g. 1974)"
-                      className="w-full sm:w-36 px-3.5 py-2 rounded-xl bg-[#fafafb] border border-black/[0.08] text-xs sm:text-sm text-[#181925] font-mono outline-none focus:border-primary/50"
+                      className="w-full sm:w-32 px-3.5 py-2 rounded-xl bg-[#fafafb] border border-black/[0.08] text-xs sm:text-sm text-[#181925] font-mono outline-none focus:border-primary/50"
                     />
 
                     <input
@@ -554,21 +588,9 @@ export function TimelineTab({
                       disabled={isSavingEdit}
                       maxLength={TEXT_LIMITS.timelineTitle}
                       value={editTitle}
-                      onChange={(e) => setEditTitle(e.target.value)}
-                      placeholder="What happened? (e.g. Married Meena at St. Jude’s)"
+                      onChange={(e) => setEditTitle(e.target.value.slice(0, TEXT_LIMITS.timelineTitle))}
+                      placeholder="Milestone title (e.g. Married Meena at St. Jude’s)"
                       className="flex-1 px-3.5 py-2 rounded-xl bg-[#fafafb] border border-black/[0.08] text-xs sm:text-sm text-[#181925] outline-none focus:border-primary/50"
-                    />
-                  </div>
-
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    <input
-                      type="text"
-                      disabled={isSavingEdit}
-                      maxLength={TEXT_LIMITS.timelineDescription}
-                      value={editDesc}
-                      onChange={(e) => setEditDesc(e.target.value)}
-                      placeholder="Brief note or detail (optional, e.g. Moved to Devon)"
-                      className="px-3.5 py-2 rounded-xl bg-[#fafafb] border border-black/[0.08] text-xs text-[#181925] outline-none focus:border-primary/50"
                     />
 
                     <input
@@ -576,9 +598,21 @@ export function TimelineTab({
                       disabled={isSavingEdit}
                       maxLength={TEXT_LIMITS.location}
                       value={editLocation}
-                      onChange={(e) => setEditLocation(e.target.value)}
+                      onChange={(e) => setEditLocation(e.target.value.slice(0, TEXT_LIMITS.location))}
                       placeholder="Location (optional, e.g. Devon, England)"
-                      className="px-3.5 py-2 rounded-xl bg-[#fafafb] border border-black/[0.08] text-xs text-[#181925] outline-none focus:border-primary/50"
+                      className="w-full sm:w-48 px-3.5 py-2 rounded-xl bg-[#fafafb] border border-black/[0.08] text-xs sm:text-sm text-[#181925] outline-none focus:border-primary/50"
+                    />
+                  </div>
+
+                  <div className="flex flex-col gap-1">
+                    <textarea
+                      rows={3}
+                      disabled={isSavingEdit}
+                      maxLength={TEXT_LIMITS.timelineDescription}
+                      value={editDesc}
+                      onChange={(e) => setEditDesc(e.target.value.slice(0, TEXT_LIMITS.timelineDescription))}
+                      placeholder="What happened? Share the story, memories, or details of this milestone (optional)..."
+                      className="w-full px-3.5 py-2.5 rounded-xl bg-[#fafafb] border border-black/[0.08] text-xs sm:text-sm text-[#181925] placeholder:text-[#aaa] outline-none focus:border-primary/50 resize-y leading-relaxed font-sans"
                     />
                   </div>
 

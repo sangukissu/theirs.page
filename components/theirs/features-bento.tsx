@@ -280,7 +280,7 @@ export function FeaturesBento() {
             <ul className="list-style-none flex flex-col gap-1.5 mt-1">
               <li className="flex items-center gap-2">
                 <CheckCircle2 className="size-4 text-primary shrink-0" />
-                <span className="text-sm font-medium text-[#181925]">Preserve original files in their original quality</span>
+                <span className="text-sm font-medium text-[#181925]">Repair faded, scratched or damaged photographs</span>
               </li>
               <li className="flex items-center gap-2">
                 <CheckCircle2 className="size-4 text-primary shrink-0" />

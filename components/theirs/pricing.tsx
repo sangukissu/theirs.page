@@ -124,7 +124,7 @@ export function TheirsPricing() {
                     <path d="M4 0v8M0 4h8" />
                   </svg>
                 </span>
-                AI Assisted moderation from Spammers
+                AI Assisted moderation
               </li>
             </ul>
 
@@ -259,14 +259,7 @@ export function TheirsPricing() {
                 </span>
                 Choose the next Owner of Memorial
               </li>
-              <li className="flex items-start gap-2.5 text-sm leading-6 tracking-tight text-[#e5e5e5]">
-                <span aria-hidden="true" className="mt-2.5 block size-2 shrink-0 text-muted-foreground/50">
-                  <svg fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 8 8">
-                    <path d="M4 0v8M0 4h8" />
-                  </svg>
-                </span>
-                Private Messages to owners from Contributors
-              </li>
+
               <li className="flex items-start gap-2.5 text-sm leading-6 tracking-tight text-[#e5e5e5]">
                 <span aria-hidden="true" className="mt-2.5 block size-2 shrink-0 text-muted-foreground/50">
                   <svg fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 8 8">
@@ -274,6 +267,14 @@ export function TheirsPricing() {
                   </svg>
                 </span>
                 Approve contributions before publishing
+              </li>
+              <li className="flex items-start gap-2.5 text-sm leading-6 tracking-tight text-[#e5e5e5]">
+                <span aria-hidden="true" className="mt-2.5 block size-2 shrink-0 text-muted-foreground/50">
+                  <svg fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 8 8">
+                    <path d="M4 0v8M0 4h8" />
+                  </svg>
+                </span>
+                5 photo restorations included
               </li>
               <li className="flex items-start gap-2.5 text-sm leading-6 tracking-tight text-[#e5e5e5]">
                 <span aria-hidden="true" className="mt-2.5 block size-2 shrink-0 text-muted-foreground/50">
