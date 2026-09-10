@@ -22,6 +22,7 @@ interface TheirsScheduledController {
 const schedules: Record<string, string> = {
   "17 * * * *": "/api/cron/cleanup-temp",
   "30 3 * * 1": "/api/cron/blocked-digest",
+  "0 14 * * *": "/api/cron/trustpilot-invites",
 }
 
 async function runScheduledRoute(

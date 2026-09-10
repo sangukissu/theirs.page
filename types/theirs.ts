@@ -117,6 +117,11 @@ export interface Memorial {
   language?: string
   is_paid: boolean
   paid_at: string | null
+  published_at?: string | null
+  review_eligible_at?: string | null
+  review_invite_sent_at?: string | null
+  review_invite_clicked_at?: string | null
+  review_reminder_sent_at?: string | null
   section_settings?: SectionSettings | null
   contribution_settings?: ContributionSettings | null
   theme?: MemorialTheme | null
@@ -349,4 +354,30 @@ export interface SubmitReportInput {
   target_id: string
   reporter_email?: string | null
   reason: string
+}
+
+export type SupportCategory = 'General' | 'Billing' | 'Memorial' | 'Technical'
+
+export interface UserFeedback {
+  id: string
+  user_id: string
+  memorial_id?: string | null
+  rating?: number | null
+  feedback_text?: string | null
+  working_well?: string | null
+  could_be_better?: string | null
+  page_path?: string | null
+  created_at: string
+}
+
+export interface SupportRequest {
+  id: string
+  user_id: string
+  email: string
+  memorial_id?: string | null
+  category: SupportCategory
+  subject: string
+  message: string
+  page_path?: string | null
+  created_at: string
 }

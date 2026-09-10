@@ -1,170 +1,75 @@
-import { useState, useEffect, useCallback } from 'react'
+"use client"
 
-interface FeedbackTracking {
-  total_restorations: number
-  feedback_given: boolean
-  feedback_skipped_count: number
-  first_download_completed: boolean
+import { useState, useCallback } from "react"
+
+export interface FeedbackInput {
+  working_well?: string
+  could_be_better?: string
+  rating?: number
+  memorial_id?: string
+  feedback_text?: string
 }
 
-interface UseFeedbackReturn {
-  shouldShowFeedback: boolean
+export interface UseFeedbackReturn {
+  isModalOpen: boolean
   isLoading: boolean
   showFeedbackModal: () => void
   hideFeedbackModal: () => void
-  submitFeedback: (rating: number, feedback: string) => Promise<void>
+  submitFeedback: (inputOrRating: FeedbackInput | number, maybeFeedback?: string) => Promise<boolean>
   skipFeedback: () => Promise<void>
   trackRestoration: () => Promise<void>
   trackFirstDownload: () => Promise<void>
-  checkFeedbackStatus: () => Promise<void>
-  isModalOpen: boolean
-  tracking: FeedbackTracking | null
 }
 
 export function useFeedback(): UseFeedbackReturn {
-  const [shouldShowFeedback, setShouldShowFeedback] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
   const [isModalOpen, setIsModalOpen] = useState(false)
-  const [tracking, setTracking] = useState<FeedbackTracking | null>(null)
 
-  // Check feedback status from server
-  const checkFeedbackStatus = useCallback(async () => {
-    try {
-      setIsLoading(true)
-      const response = await fetch('/api/feedback')
-      
-      if (response.ok) {
-        const data = await response.json()
-        setShouldShowFeedback(data.shouldShow)
-        setTracking(data.tracking)
-      } else {
-        console.error('Failed to fetch feedback status:', response.status, response.statusText)
-      }
-    } catch (error) {
-      console.error('Error checking feedback status:', error)
-    } finally {
-      setIsLoading(false)
-    }
-  }, [])
-
-  // Track restoration completion
-  const trackRestoration = useCallback(async () => {
-    try {
-      await fetch('/api/feedback/track', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ event: 'restoration_completed' })
-      })
-      
-      // Refresh feedback status after tracking
-      await checkFeedbackStatus()
-    } catch (error) {
-      console.error('Error tracking restoration:', error)
-    }
-  }, [checkFeedbackStatus])
-
-  // Track first download
-  const trackFirstDownload = useCallback(async () => {
-    try {
-      const response = await fetch('/api/feedback/track', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ event: 'first_download' })
-      })
-      
-      if (response.ok) {
-      } else {
-        console.error('Failed to track first download:', response.status, response.statusText)
-      }
-      
-      // Refresh feedback status after tracking
-      await checkFeedbackStatus()
-    } catch (error) {
-      console.error('Error tracking first download:', error)
-    }
-  }, [checkFeedbackStatus])
-
-  // Submit feedback
-  const submitFeedback = useCallback(async (rating: number, feedback: string) => {
-    try {
-      const response = await fetch('/api/feedback', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ 
-          action: 'submit',
-          rating, 
-          feedback_text: feedback 
-        })
-      })
-
-      if (!response.ok) {
-        let serverMessage = 'Failed to submit feedback'
-        try {
-          const body = await response.json()
-          if (body?.error) serverMessage = body.error
-        } catch {}
-        throw new Error(serverMessage)
-      }
-
-      // Update local state
-      setShouldShowFeedback(false)
-      setTracking(prev => prev ? { ...prev, feedback_given: true } : null)
-    } catch (error) {
-      console.error('Error submitting feedback:', error)
-      throw error
-    }
-  }, [])
-
-  // Skip feedback
-  const skipFeedback = useCallback(async () => {
-    try {
-      const response = await fetch('/api/feedback', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'skip' })
-      })
-
-      if (!response.ok) {
-        throw new Error('Failed to skip feedback')
-      }
-
-      // Update local state
-      setShouldShowFeedback(false)
-      setTracking(prev => prev ? { 
-        ...prev, 
-        feedback_skipped_count: prev.feedback_skipped_count + 1 
-      } : null)
-    } catch (error) {
-      console.error('Error skipping feedback:', error)
-      throw error
-    }
-  }, [])
-
-  // Show feedback modal
-  const showFeedbackModal = () => {
+  const showFeedbackModal = useCallback(() => {
     setIsModalOpen(true)
-    // GA4: track feedback promotion when modal opens
-    try {
-      if (typeof window !== 'undefined' && (window as any).gtag) {
-        (window as any).gtag('event', 'view_promotion', {
-          promotion_name: 'Feedback Modal',
-        })
-      }
-    } catch {}
-  }
+  }, [])
 
-  // Hide feedback modal
   const hideFeedbackModal = useCallback(() => {
     setIsModalOpen(false)
   }, [])
 
-  // Initialize feedback status on mount
-  useEffect(() => {
-    checkFeedbackStatus()
-  }, [])
+  const submitFeedback = useCallback(
+    async (inputOrRating: FeedbackInput | number, maybeFeedback?: string) => {
+      try {
+        setIsLoading(true)
+        const payload: Record<string, any> = {
+          page_path: typeof window !== "undefined" ? window.location.pathname : undefined,
+        }
+
+        if (typeof inputOrRating === "number") {
+          payload.rating = inputOrRating
+          if (maybeFeedback) payload.feedback_text = maybeFeedback
+        } else if (typeof inputOrRating === "object" && inputOrRating !== null) {
+          Object.assign(payload, inputOrRating)
+        }
+
+        const response = await fetch("/api/feedback", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+        })
+        return response.ok
+      } catch (error) {
+        console.error("Error submitting feedback:", error)
+        return false
+      } finally {
+        setIsLoading(false)
+      }
+    },
+    []
+  )
+
+  const skipFeedback = useCallback(async () => {}, [])
+  const trackRestoration = useCallback(async () => {}, [])
+  const trackFirstDownload = useCallback(async () => {}, [])
 
   return {
-    shouldShowFeedback,
+    isModalOpen,
     isLoading,
     showFeedbackModal,
     hideFeedbackModal,
@@ -172,8 +77,5 @@ export function useFeedback(): UseFeedbackReturn {
     skipFeedback,
     trackRestoration,
     trackFirstDownload,
-    checkFeedbackStatus,
-    isModalOpen,
-    tracking
   }
 }

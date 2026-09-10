@@ -127,3 +127,63 @@ export async function sendMemorialDeletedEmail(input: {
   })
 }
 
+export async function sendTrustpilotInviteEmail(input: {
+  email: string
+  caretakerName?: string | null
+  memorialId: string
+  memorialName?: string | null
+  reviewUrl: string
+}): Promise<boolean> {
+  const memorialName = input.memorialName?.trim() || "your loved one"
+  return sendTheirsEmail({
+    to: input.email,
+    eventKey: `trustpilot-invite/${input.memorialId}`,
+    subject: "How has Theirs been for your family?",
+    html: renderTheirsEmail({
+      preheader: "We'd be grateful if you shared an honest review of your experience with Theirs.",
+      eyebrow: "Your Experience",
+      title: "How has Theirs been for your family?",
+      bodyHtml: `
+        <p style="margin:0 0 16px">${greeting(input.caretakerName)}</p>
+        <p style="margin:0 0 16px">If you've had time to use the memorial for <strong style="color:#181925">${escapeEmailHtml(memorialName)}</strong>, we'd be grateful if you shared an honest review.</p>
+        <p style="margin:0 0 6px">It helps other families decide whether Theirs is right for them.</p>
+      `,
+      heroAction: {
+        label: "Share your experience",
+        url: input.reviewUrl,
+      },
+      bodyHtmlAfterHero: `<p style="margin:24px 0 0;font-size:13px;color:#71737a">Thank you for taking the time to share your honest thoughts with others.</p>`,
+    }),
+  })
+}
+
+export async function sendTrustpilotReminderEmail(input: {
+  email: string
+  caretakerName?: string | null
+  memorialId: string
+  memorialName?: string | null
+  reviewUrl: string
+}): Promise<boolean> {
+  const memorialName = input.memorialName?.trim() || "your loved one"
+  return sendTheirsEmail({
+    to: input.email,
+    eventKey: `trustpilot-reminder/${input.memorialId}`,
+    subject: "How has Theirs been for your family?",
+    html: renderTheirsEmail({
+      preheader: "A gentle follow-up regarding your experience with Theirs.",
+      eyebrow: "Gentle Follow-Up",
+      title: "How has Theirs been for your family?",
+      bodyHtml: `
+        <p style="margin:0 0 16px">${greeting(input.caretakerName)}</p>
+        <p style="margin:0 0 16px">A gentle follow-up regarding the memorial for <strong style="color:#181925">${escapeEmailHtml(memorialName)}</strong>. If you've had a few moments, we'd still be deeply grateful if you shared an honest review of your experience.</p>
+        <p style="margin:0 0 6px">It helps other families decide whether Theirs is right for them.</p>
+      `,
+      heroAction: {
+        label: "Share your experience",
+        url: input.reviewUrl,
+      },
+      bodyHtmlAfterHero: `<p style="margin:24px 0 0;font-size:13px;color:#71737a">We will not contact you again regarding reviews. Thank you for being part of Theirs.</p>`,
+    }),
+  })
+}
+

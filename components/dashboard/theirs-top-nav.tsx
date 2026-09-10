@@ -8,18 +8,21 @@ import {
   ChevronDown,
   LogOut,
   Heart,
+  HelpCircle,
 } from "lucide-react"
 import Image from "next/image"
+import { HelpFeedbackModal } from "./help-feedback-modal"
 
 interface TheirsTopNavProps {
   userEmail: string
   userId?: string
 }
 
-export function TheirsTopNav({ userEmail }: TheirsTopNavProps) {
+export function TheirsTopNav({ userEmail, userId }: TheirsTopNavProps) {
   const pathname = usePathname()
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false)
   const [isSigningOut, setIsSigningOut] = useState(false)
+  const [isHelpFeedbackOpen, setIsHelpFeedbackOpen] = useState(false)
 
   const userMenuRef = useRef<HTMLDivElement>(null)
 
@@ -112,6 +115,18 @@ export function TheirsTopNav({ userEmail }: TheirsTopNavProps) {
 
               <button
                 type="button"
+                onClick={() => {
+                  setIsUserMenuOpen(false)
+                  setIsHelpFeedbackOpen(true)
+                }}
+                className="w-full flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-medium text-[#181925] hover:bg-neutral-50 transition-colors cursor-pointer text-left"
+              >
+                <HelpCircle className="size-3.5 text-[#71717a]" />
+                <span>Help &amp; feedback</span>
+              </button>
+
+              <button
+                type="button"
                 disabled={isSigningOut}
                 onClick={handleSignOut}
                 className="w-full flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-medium text-rose-600 hover:bg-rose-50 transition-colors cursor-pointer text-left disabled:opacity-50"
@@ -123,6 +138,13 @@ export function TheirsTopNav({ userEmail }: TheirsTopNavProps) {
           )}
         </div>
       </div>
+
+      <HelpFeedbackModal
+        isOpen={isHelpFeedbackOpen}
+        onClose={() => setIsHelpFeedbackOpen(false)}
+        userEmail={userEmail}
+        userId={userId}
+      />
     </header>
   )
 }

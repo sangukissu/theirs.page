@@ -1,3 +1,5 @@
+process.env.NODE_OPTIONS = `${process.env.NODE_OPTIONS || ''} --max-old-space-size=4096`.trim()
+
 let urlPolicy = { retiredKeywordPaths: {}, retiredBlogPaths: {} }
 try {
   urlPolicy = require('./config/url-policy.json')

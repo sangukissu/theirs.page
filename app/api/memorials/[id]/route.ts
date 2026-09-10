@@ -279,7 +279,12 @@ export async function PATCH(req: NextRequest, context: RouteContext) {
     }
 
     if (authCheck.isOwner) {
-      if (body.status !== undefined) updates.status = body.status
+      if (body.status !== undefined) {
+        updates.status = body.status
+        if (body.status === "published" && !authCheck.memorial.published_at) {
+          updates.published_at = new Date().toISOString()
+        }
+      }
       if (body.privacy !== undefined) updates.privacy = body.privacy
       if (body.successor_name !== undefined) updates.successor_name = body.successor_name
       if (body.successor_email !== undefined) updates.successor_email = body.successor_email
