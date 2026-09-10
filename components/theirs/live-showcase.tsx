@@ -84,7 +84,7 @@ export function LiveShowcase() {
 
             <button
               type="submit"
-              className="inline-flex items-center justify-center gap-1.5 whitespace-nowrap !rounded-full font-medium transition-all cursor-pointer border border-[color-mix(in_srgb,var(--primary)_80%,#3a3480)] bg-[color-mix(in_srgb,var(--primary)_90%,#3a3480)] text-primary-foreground hover:bg-primary h-9 px-4 text-xs shrink-0 select-none group"
+              className="inline-flex items-center justify-center gap-1.5 whitespace-nowrap !rounded-full font-medium transition-all cursor-pointer border border-[color-mix(in_srgb,var(--primary)_80%,#8c3a10)] bg-[color-mix(in_srgb,var(--primary)_90%,#8c3a10)] text-primary-foreground hover:bg-primary h-9 px-4 text-xs shrink-0 select-none group"
             >
               <span>Claim Free Memorial</span>
               <ArrowRight className="size-3.5 transition-transform duration-200 group-hover:translate-x-0.5" />

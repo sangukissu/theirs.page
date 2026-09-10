@@ -135,7 +135,7 @@ export function TheirsPricing() {
               data-oa-event="cta_click"
               data-oa-prop-location="pricing_free"
               data-oa-prop-target="create_free_memorial"
-              className="inline-flex items-center justify-center gap-1 whitespace-nowrap !rounded-full font-medium transition-all cursor-pointer border border-[color-mix(in_srgb,var(--primary)_80%,#3a3480)] bg-[color-mix(in_srgb,var(--primary)_90%,#3a3480)] text-primary-foreground shadow-[inset_0_1px_0_rgba(255,255,255,0.22),inset_0_-1px_0_rgba(58,52,128,0.30)] transform-gpu hover:bg-primary hover:border-[color-mix(in_srgb,var(--primary)_70%,#3a3480)] active:translate-y-px active:scale-[0.98] h-10 px-4 text-sm mt-6 w-full"
+              className="inline-flex items-center justify-center gap-1 whitespace-nowrap !rounded-full font-medium transition-all cursor-pointer border border-[color-mix(in_srgb,var(--primary)_80%,#8c3a10)] bg-[color-mix(in_srgb,var(--primary)_90%,#8c3a10)] text-primary-foreground shadow-[inset_0_1px_0_rgba(255,255,255,0.22),inset_0_-1px_0_rgba(140,58,16,0.35)] transform-gpu hover:bg-primary hover:border-[color-mix(in_srgb,var(--primary)_70%,#8c3a10)] active:translate-y-px active:scale-[0.98] h-10 px-4 text-sm mt-6 w-full"
             >
               Create a free memorial
             </Link>
@@ -165,7 +165,7 @@ export function TheirsPricing() {
             </p>
 
             {/* Key Specs Table */}
-            <dl className="mt-5 flex flex-col gap-2 border-t border-dashed border-border pt-4 font-mono text-xs [--primary:#8fb0ff]">
+            <dl className="mt-5 flex flex-col gap-2 border-t border-dashed border-border pt-4 font-mono text-xs [--primary:#f39158]">
               <div className="flex items-baseline justify-between gap-3">
                 <dt className="text-muted-foreground">Photos & media</dt>
                 <dd className="tabular-nums font-medium text-primary">Unlimited & original</dd>
@@ -293,7 +293,7 @@ export function TheirsPricing() {
               data-oa-event="cta_click"
               data-oa-prop-location="pricing_complete"
               data-oa-prop-target="make_memorial_complete"
-              className="inline-flex items-center justify-center gap-1 whitespace-nowrap !rounded-full font-medium transition-all cursor-pointer border border-[color-mix(in_srgb,var(--primary)_80%,#3a3480)] bg-[color-mix(in_srgb,var(--primary)_90%,#3a3480)] text-primary-foreground shadow-[inset_0_1px_0_rgba(255,255,255,0.22),inset_0_-1px_0_rgba(58,52,128,0.30)] transform-gpu hover:bg-primary hover:border-[color-mix(in_srgb,var(--primary)_70%,#3a3480)] active:translate-y-px active:scale-[0.98] h-10 px-4 text-sm mt-6 w-full"
+              className="inline-flex items-center justify-center gap-1 whitespace-nowrap !rounded-full font-medium transition-all cursor-pointer border border-[color-mix(in_srgb,var(--primary)_80%,#8c3a10)] bg-[color-mix(in_srgb,var(--primary)_90%,#8c3a10)] text-primary-foreground shadow-[inset_0_1px_0_rgba(255,255,255,0.22),inset_0_-1px_0_rgba(140,58,16,0.35)] transform-gpu hover:bg-primary hover:border-[color-mix(in_srgb,var(--primary)_70%,#8c3a10)] active:translate-y-px active:scale-[0.98] h-10 px-4 text-sm mt-6 w-full"
             >
               Make their memorial complete
             </Link>

@@ -63,12 +63,12 @@ export function CtaBanner() {
           {/* Subtle Ambient Radial Glow */}
           <div className="absolute inset-0 bg-radial from-white/[0.04] via-transparent to-transparent pointer-events-none" />
 
-          {/* Dither Pattern Background Cover (Brand Primary #305dde at 60% Opacity) */}
+          {/* Dither Pattern Background Cover (Brand Primary #df702b at 60% Opacity) */}
           <div
             aria-hidden="true"
             className="pointer-events-none absolute inset-0 overflow-hidden select-none opacity-60 z-0"
           >
-            <DitherGradient from="#305dde" bloom="aura" direction="down" />
+            <DitherGradient from="#df702b" bloom="aura" direction="down" />
           </div>
 
           {/* Brand SVG Emblem in White Shades */}

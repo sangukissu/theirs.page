@@ -33,7 +33,7 @@ html {
   /* Delicate borders and inputs */
   --border: rgba(41, 41, 41, 0.10);
   --input: rgba(41, 41, 41, 0.12);
-  --ring: #305dde;
+  --ring: #df702b;
   --radius: 0.625rem;
 
   /* Specific color levels from inspector */
@@ -51,7 +51,7 @@ html {
   --card-foreground: #f4f4f5;
   --popover: #181925;
   --popover-foreground: #f4f4f5;
-  --primary: #3875f6;
+  --primary: #f39158;
   --primary-foreground: #ffffff;
   --secondary: #222332;
   --secondary-foreground: #f4f4f5;
@@ -63,7 +63,7 @@ html {
   --destructive-foreground: #ffffff;
   --border: rgba(255, 255, 255, 0.10);
   --input: rgba(255, 255, 255, 0.12);
-  --ring: #3875f6;
+  --ring: #f39158;
 }
 
 @theme inline {

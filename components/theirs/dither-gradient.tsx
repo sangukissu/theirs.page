@@ -20,6 +20,7 @@ const BAYER_4X4 = [
 ].map((row) => row.map((v) => (v + 0.5) / 16))
 
 const PALETTE: Record<string, [number, number, number]> = {
+  terracotta: [223, 112, 43],
   blue: [48, 93, 222],
   cyan: [0, 196, 255],
   green: [51, 199, 88],
@@ -59,7 +60,7 @@ function resolveColor(c: string | number): [number, number, number] {
       ]
     }
   }
-  return PALETTE[c] || [48, 93, 222]
+  return PALETTE[c] || [223, 112, 43]
 }
 
 const BLOOM_PRESETS = {
