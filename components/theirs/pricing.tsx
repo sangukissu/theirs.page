@@ -300,6 +300,23 @@ export function TheirsPricing() {
             <p className="mt-2.5 text-center text-xs text-muted-foreground/80">
               One-time payment per memorial. No monthly fees.
             </p>
+
+            {/* Gift a Memorial Link */}
+            <div className="mt-3.5 pt-3 border-t border-dashed border-white/15 text-center">
+              <Link
+                href="/gift"
+                prefetch={true}
+                data-oa-event="cta_click"
+                data-oa-prop-location="pricing_complete_gift"
+                data-oa-prop-target="gift_a_memorial"
+                className="inline-flex items-center gap-1.5 text-xs text-[#e5e5e5] hover:text-white transition-colors group"
+              >
+                <span>Buying for a family member or friend?</span>
+                <span className="text-[#f39158] font-medium group-hover:underline underline-offset-4">
+                  Gift a memorial →
+                </span>
+              </Link>
+            </div>
           </li>
 
         </ul>

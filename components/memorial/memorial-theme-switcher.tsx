@@ -48,7 +48,7 @@ export function MemorialThemeSwitcher({
   return (
     <aside
       aria-label="Memorial theme and cover switcher"
-      className="fixed bottom-5 right-5 z-50 select-none font-sans"
+      className="fixed bottom-22 right-5 z-50 select-none font-sans"
     >
       <button
         type="button"

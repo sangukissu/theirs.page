@@ -3,6 +3,10 @@ import { supabaseAdmin as supabase } from "@/utils/supabase/admin"
 import { headers } from "next/headers"
 import crypto from "crypto"
 import { getDodoCompleteProductId } from "@/lib/payments"
+import {
+  sendGiftRecipientEmail,
+  sendGiftBuyerReceiptEmail,
+} from "@/lib/email/gift-emails"
 
 function getWebhookSecret(): string {
   return (
@@ -178,7 +182,96 @@ async function handlePaymentSucceeded(webhookData: any, webhookId: string) {
     }
   }
 
-  // 1. Primary path: Theirs Complete memorial activation
+  // 1. Gift path: Theirs Complete memorial gift purchase
+  const giftId = metadata.gift_id || metadata.giftId
+  const isGift = metadata.type === "theirs_gift" || Boolean(giftId)
+
+  if (isGift && giftId) {
+    const { data: gift, error: giftError } = await supabase
+      .from("memorial_gifts")
+      .select("*")
+      .eq("id", giftId)
+      .maybeSingle()
+
+    if (giftError || !gift) {
+      console.warn(`Gift ${giftId} not found for payment ${paymentId}`)
+      await supabase.from("webhook_events").insert({
+        event_id: webhookId,
+        event_type: "gift_payment_orphaned",
+        payment_id: paymentId,
+        processed: true,
+        payload: { error: "Gift not found", metadata, paymentData },
+      })
+      return
+    }
+
+    // Upsert payment record
+    await supabase.from("payments").upsert({
+      payment_id: paymentId,
+      user_id: gift.buyer_user_id || userId || null,
+      memorial_id: null,
+      amount,
+      currency,
+      status: "completed",
+      customer_email: customerEmail || gift.buyer_email,
+      payment_method: paymentMethod,
+      metadata: { ...metadata, type: "theirs_gift", gift_id: giftId },
+    }, { onConflict: "payment_id" })
+
+    // Mark gift as available
+    await supabase
+      .from("memorial_gifts")
+      .update({
+        status: "available",
+        payment_id: paymentId,
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", giftId)
+
+    // Log webhook event
+    await supabase.from("webhook_events").insert({
+      event_id: webhookId,
+      event_type: "payment_succeeded_gift",
+      payment_id: paymentId,
+      processed: true,
+      payload: { gift_id: giftId, paymentData },
+    })
+
+    // Send emails to recipient and buyer
+    const claimToken = metadata.claim_token
+    if (claimToken) {
+      try {
+        await Promise.allSettled([
+          sendGiftRecipientEmail({
+            giftId: gift.id,
+            buyerName: gift.buyer_name,
+            recipientName: gift.recipient_name,
+            recipientEmail: gift.recipient_email,
+            giftMessage: gift.gift_message,
+            claimToken,
+          }),
+          sendGiftBuyerReceiptEmail({
+            giftId: gift.id,
+            buyerName: gift.buyer_name,
+            buyerEmail: gift.buyer_email,
+            recipientName: gift.recipient_name,
+            recipientEmail: gift.recipient_email,
+            giftMessage: gift.gift_message,
+            claimToken,
+            amount,
+            currency,
+          }),
+        ])
+      } catch (emailErr) {
+        console.error("Failed to send gift notification emails:", emailErr)
+      }
+    }
+
+    console.log("Gift successfully activated and notification emails dispatched:", giftId)
+    return
+  }
+
+  // 2. Primary path: Theirs Complete memorial activation
   if (memorialId) {
     // Check if memorial exists
     const { data: memorial, error: memorialError } = await supabase

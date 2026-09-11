@@ -389,3 +389,47 @@ export interface SupportRequest {
   page_path?: string | null
   created_at: string
 }
+
+// ------------------------------------------------------------------------------
+// Memorial Gifts (Purchased as Complete Memorial for someone else)
+// ------------------------------------------------------------------------------
+
+export type MemorialGiftStatus = 'pending_payment' | 'available' | 'redeemed' | 'refunded'
+
+export interface MemorialGift {
+  id: string
+  claim_token_hash: string
+  buyer_name: string
+  buyer_email: string
+  buyer_user_id: string | null
+  recipient_name: string
+  recipient_email: string
+  gift_message: string | null
+  payment_id: string | null
+  amount: number
+  currency: string
+  status: MemorialGiftStatus
+  redeemed_by_user_id: string | null
+  redeemed_memorial_id: string | null
+  redeemed_at: string | null
+  created_at: string
+  updated_at: string
+}
+
+export interface MemorialGiftClaimInfo {
+  id: string
+  buyer_name: string
+  recipient_name: string
+  gift_message: string | null
+  status: MemorialGiftStatus
+  created_at: string
+}
+
+export interface RedeemGiftResult {
+  success: boolean
+  gift_id?: string
+  memorial_id?: string
+  buyer_name?: string
+  recipient_name?: string
+  error?: string
+}
