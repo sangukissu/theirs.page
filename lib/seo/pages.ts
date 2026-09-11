@@ -90,6 +90,94 @@ export const STATIC_PAGES: Record<string, StaticPageEntry> = {
     breadcrumbLabel: "Gift a Memorial",
     updatedAt: "2026-09-11",
   },
+  "/create-online-memorial": {
+    path: "/create-online-memorial",
+    title: "How to Create an Online Memorial Website | Theirs",
+    description:
+      "Learn how to create a lasting online memorial website for someone you love in minutes. Step-by-step guidance on photos, stories, voicemails, and inviting family.",
+    indexable: true,
+    sitemap: true,
+    schemaType: "WebPage",
+    breadcrumbLabel: "Create an Online Memorial",
+    updatedAt: "2026-09-11",
+  },
+  "/free-online-memorial": {
+    path: "/free-online-memorial",
+    title: "Free Online Memorial Websites: What's Included & Free vs Paid | Theirs",
+    description:
+      "Create an ad-free online memorial for your loved one at zero cost. Compare free plans, learn what's truly included, and understand how modern families build lasting tributes.",
+    indexable: true,
+    sitemap: true,
+    schemaType: "WebPage",
+    breadcrumbLabel: "Free Online Memorial",
+    updatedAt: "2026-09-11",
+  },
+  "/memorial-website-examples": {
+    path: "/memorial-website-examples",
+    title: "Online Memorial Website Examples & Design Ideas | Theirs",
+    description:
+      "Explore real online memorial website examples, layouts, and tribute designs. See how families bring photos, stories, audio voicemails, and milestones together.",
+    indexable: true,
+    sitemap: true,
+    schemaType: "WebPage",
+    breadcrumbLabel: "Memorial Website Examples",
+    updatedAt: "2026-09-11",
+  },
+  "/best-online-memorial-websites": {
+    path: "/best-online-memorial-websites",
+    title: "Best Online Memorial Websites: 2026 Comparison & Reviews | Theirs",
+    description:
+      "Compare the best online memorial websites of 2026. Unbiased analysis of features, pricing models, photo limits, guestbook options, and privacy across top memorial platforms.",
+    indexable: true,
+    sitemap: true,
+    schemaType: "WebPage",
+    breadcrumbLabel: "Best Online Memorial Websites",
+    updatedAt: "2026-09-11",
+  },
+  "/memorial-website-cost": {
+    path: "/memorial-website-cost",
+    title: "Memorial Website Cost: Complete 2026 Pricing Comparison | Theirs",
+    description:
+      "How much does an online memorial website cost? Compare free tiers, monthly subscription traps, and one-time fee models across major memorial platforms.",
+    indexable: true,
+    sitemap: true,
+    schemaType: "WebPage",
+    breadcrumbLabel: "Memorial Website Cost",
+    updatedAt: "2026-09-11",
+  },
+  "/private-online-memorial": {
+    path: "/private-online-memorial",
+    title: "Private Online Memorial Websites & Password Protection | Theirs",
+    description:
+      "Create a private, password-protected online memorial for your loved one. Safeguard family memories with unlisted URLs, 4-digit PIN protection, and caretaker moderation.",
+    indexable: true,
+    sitemap: true,
+    schemaType: "WebPage",
+    breadcrumbLabel: "Private Online Memorial",
+    updatedAt: "2026-09-11",
+  },
+  "/online-memorial-vs-obituary": {
+    path: "/online-memorial-vs-obituary",
+    title: "Online Memorial vs Obituary: Key Differences & Comparison | Theirs",
+    description:
+      "Understand the key differences between an obituary and an online memorial website. Compare costs, collaboration, lifespan, media limits, and how families use both.",
+    indexable: true,
+    sitemap: true,
+    schemaType: "WebPage",
+    breadcrumbLabel: "Online Memorial vs Obituary",
+    updatedAt: "2026-09-11",
+  },
+  "/what-to-include-in-online-memorial": {
+    path: "/what-to-include-in-online-memorial",
+    title: "What to Include in an Online Memorial Website: Checklist & Guide | Theirs",
+    description:
+      "A gentle, comprehensive guide on what to include in an online memorial website. Practical checklist for photos, life stories, voicemails, timeline milestones, and family tributes.",
+    indexable: true,
+    sitemap: true,
+    schemaType: "WebPage",
+    breadcrumbLabel: "What to Include in an Online Memorial",
+    updatedAt: "2026-09-11",
+  },
 }
 
 export function getStaticPage(path: string): StaticPageEntry | undefined {

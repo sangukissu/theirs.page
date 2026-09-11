@@ -10,6 +10,7 @@ import { GiftPurchaseForm } from "@/components/gift/gift-purchase-form"
 import { GiftFaqAccordion } from "@/components/gift/gift-faq-accordion"
 import { GIFT_FAQS } from "@/lib/gift-faqs"
 import { JsonLd } from "@/components/seo/json-ld"
+import { SeoResourcesMesh } from "@/components/seo-pages/shared/seo-resources-mesh"
 import {
   ShieldCheck,
   CheckCircle2,
@@ -556,6 +557,9 @@ export default function GiftMemorialPage() {
 
         <GiftFaqAccordion />
       </section>
+
+      {/* Recommended Guides & Resources Mesh */}
+      <SeoResourcesMesh currentPath="/gift-a-memorial" />
 
       {/* ===================================================================== */}
       {/* 8. FINAL DARK CHARCOAL BANNER — MATCHES LANDING PAGE CTA              */}
