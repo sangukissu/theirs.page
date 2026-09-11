@@ -26,7 +26,7 @@ export function TheirsFooter() {
           <Link href="/guidelines" className="hover:text-[#454545] transition-colors">
             Guidelines
           </Link>
-          <Link href="/gift" className="hover:text-[#454545] transition-colors">
+          <Link href="/gift-a-memorial" className="hover:text-[#454545] transition-colors">
             Gift a memorial
           </Link>
           <Link href="/refunds" className="hover:text-[#454545] transition-colors">

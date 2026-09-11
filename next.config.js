@@ -126,7 +126,7 @@ const nextConfig = {
   // by AI Overviews, so a low CTR at a good position means the SERP changed,
   // not that the page is bad. See SEO_URL_REGISTRY.md for the decision log.
   async redirects() {
-    return Object.entries({
+    const policyRedirects = Object.entries({
       ...urlPolicy.retiredKeywordPaths,
       ...urlPolicy.retiredBlogPaths,
     }).map(([source, destination]) => ({
@@ -134,6 +134,15 @@ const nextConfig = {
       destination,
       permanent: true,
     }))
+
+    return [
+      ...policyRedirects,
+      {
+        source: '/gift',
+        destination: '/gift-a-memorial',
+        permanent: true,
+      },
+    ]
   },
 
   // Additional security configurations

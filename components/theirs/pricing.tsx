@@ -304,7 +304,7 @@ export function TheirsPricing() {
             {/* Gift a Memorial Link */}
             <div className="mt-3.5 pt-3 border-t border-dashed border-white/15 text-center">
               <Link
-                href="/gift"
+                href="/gift-a-memorial"
                 prefetch={true}
                 data-oa-event="cta_click"
                 data-oa-prop-location="pricing_complete_gift"

@@ -130,7 +130,7 @@ test("GIFT: All gift UI components have ZERO CSS shadows", () => {
   const filesToCheck = [
     path.join(process.cwd(), "components/gift/gift-purchase-modal.tsx"),
     path.join(process.cwd(), "components/gift/gift-purchase-form.tsx"),
-    path.join(process.cwd(), "app/gift/page.tsx"),
+    path.join(process.cwd(), "app/gift-a-memorial/page.tsx"),
     path.join(process.cwd(), "app/gift/confirmation/page.tsx"),
     path.join(process.cwd(), "app/gift/confirmation/confirmation-client.tsx"),
     path.join(process.cwd(), "app/gift/claim/page.tsx"),

@@ -24,13 +24,13 @@ export const metadata: Metadata = {
   description:
     "Gift a beautiful, Complete online memorial website for a grieving family member or friend. Prepaid in full, private, with zero subscriptions, ready whenever they are.",
   alternates: {
-    canonical: "https://theirs.page/gift",
+    canonical: "https://theirs.page/gift-a-memorial",
   },
   openGraph: {
     title: "Gift an Online Memorial Website for Loved Ones | Theirs",
     description:
       "Gift a beautiful, Complete online memorial website for a grieving family member or friend. Prepaid in full, private, and ready whenever they feel able to remember.",
-    url: "https://theirs.page/gift",
+    url: "https://theirs.page/gift-a-memorial",
     type: "website",
   },
 }
@@ -53,7 +53,7 @@ export default function GiftMemorialPage() {
             "@type": "ListItem",
             position: 2,
             name: "Gift a Memorial",
-            item: "https://theirs.page/gift",
+            item: "https://theirs.page/gift-a-memorial",
           },
         ],
       },
@@ -71,7 +71,7 @@ export default function GiftMemorialPage() {
           price: "179.00",
           priceCurrency: "USD",
           availability: "https://schema.org/InStock",
-          url: "https://theirs.page/gift",
+          url: "https://theirs.page/gift-a-memorial",
         },
       },
       {

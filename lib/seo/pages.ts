@@ -79,6 +79,17 @@ export const STATIC_PAGES: Record<string, StaticPageEntry> = {
     breadcrumbLabel: "Blog",
     updatedAt: "2026-09-09",
   },
+  "/gift-a-memorial": {
+    path: "/gift-a-memorial",
+    title: "Gift an Online Memorial Website for Loved Ones | Theirs",
+    description:
+      "Gift a beautiful, Complete online memorial website for a grieving family member or friend. Prepaid in full, private, with zero subscriptions, ready whenever they are.",
+    indexable: true,
+    sitemap: true,
+    schemaType: "WebPage",
+    breadcrumbLabel: "Gift a Memorial",
+    updatedAt: "2026-09-11",
+  },
 }
 
 export function getStaticPage(path: string): StaticPageEntry | undefined {
