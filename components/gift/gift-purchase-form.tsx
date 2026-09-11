@@ -1,7 +1,7 @@
 "use client"
 
 import React, { useState } from "react"
-import { Loader2, ArrowRight, ShieldCheck, Heart, Sparkles } from "lucide-react"
+import { Loader2, ArrowRight, ShieldCheck, Heart, Sparkles, CheckCircle2 } from "lucide-react"
 
 export function GiftPurchaseForm() {
   const [buyerName, setBuyerName] = useState("")
@@ -68,28 +68,31 @@ export function GiftPurchaseForm() {
   return (
     <form
       onSubmit={handleSubmit}
-      className="w-full rounded-2xl bg-white border border-black/[0.1] p-6 sm:p-8 flex flex-col gap-6"
+      className="w-full max-w-2xl mx-auto rounded-3xl bg-[#f7f7f8] border border-black/[0.06] p-6 sm:p-10 flex flex-col gap-8 text-left"
     >
       {errorMessage && (
-        <div className="rounded-xl border border-red-200 bg-red-50/70 p-3.5 text-xs sm:text-sm text-red-800 leading-relaxed">
+        <div className="rounded-2xl border border-red-200 bg-red-50/80 p-4 text-xs sm:text-sm text-red-800 leading-relaxed">
           {errorMessage}
         </div>
       )}
 
-      {/* Recipient Section */}
-      <div className="flex flex-col gap-3">
-        <div className="flex items-center gap-2 pb-2 border-b border-black/[0.06]">
-          <span className="flex size-6 items-center justify-center rounded-md bg-primary/10 text-primary">
-            <Heart className="size-3.5" />
-          </span>
-          <h3 className="text-sm font-semibold text-[#181925]">
-            1. Who is this gift for?
-          </h3>
+      {/* Step 1: Recipient Details */}
+      <div className="flex flex-col gap-4">
+        <div className="flex items-center justify-between pb-2 border-b border-black/[0.06]">
+          <div className="flex items-center gap-2">
+            <span className="size-6 rounded-md bg-primary/10 text-primary flex items-center justify-center">
+              <Heart className="size-3.5" />
+            </span>
+            <h3 className="text-sm sm:text-base font-medium text-[#181925] tracking-tight">
+              1. Who is this gift for?
+            </h3>
+          </div>
+          <span className="text-[11px] font-mono text-[#888]">Step 1 of 2</span>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-1">
-          <div>
-            <label className="block font-mono text-[11px] uppercase tracking-wider text-[#666] mb-1.5">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+          <div className="flex flex-col rounded-xl bg-white border border-black/[0.08] p-3 sm:p-3.5 focus-within:border-primary/50 transition-colors">
+            <label className="text-[10px] font-mono uppercase tracking-wider text-[#888] font-medium mb-1">
               Recipient's Full Name *
             </label>
             <input
@@ -98,12 +101,12 @@ export function GiftPurchaseForm() {
               value={recipientName}
               onChange={(e) => setRecipientName(e.target.value)}
               placeholder="e.g. Sarah Mitchell"
-              className="w-full rounded-xl border border-black/[0.12] bg-[#fafafb] px-3.5 py-2.5 text-sm text-[#181925] placeholder-[#999] focus:bg-white focus:border-primary focus:outline-none transition-colors"
+              className="w-full bg-transparent font-medium text-sm text-[#181925] outline-none placeholder:text-[#aaa]"
             />
           </div>
 
-          <div>
-            <label className="block font-mono text-[11px] uppercase tracking-wider text-[#666] mb-1.5">
+          <div className="flex flex-col rounded-xl bg-white border border-black/[0.08] p-3 sm:p-3.5 focus-within:border-primary/50 transition-colors">
+            <label className="text-[10px] font-mono uppercase tracking-wider text-[#888] font-medium mb-1">
               Recipient's Email Address *
             </label>
             <input
@@ -112,52 +115,57 @@ export function GiftPurchaseForm() {
               value={recipientEmail}
               onChange={(e) => setRecipientEmail(e.target.value)}
               placeholder="sarah@example.com"
-              className="w-full rounded-xl border border-black/[0.12] bg-[#fafafb] px-3.5 py-2.5 text-sm text-[#181925] placeholder-[#999] focus:bg-white focus:border-primary focus:outline-none transition-colors"
+              className="w-full bg-transparent font-medium text-sm text-[#181925] outline-none placeholder:text-[#aaa]"
             />
-            <p className="mt-1 text-[11px] text-[#777]">
-              Their private claim link and invitation will be sent here upon payment.
-            </p>
           </div>
         </div>
-      </div>
-
-      {/* Personal Message Section */}
-      <div className="flex flex-col gap-2">
-        <div className="flex items-center justify-between">
-          <label className="block font-mono text-[11px] uppercase tracking-wider text-[#666]">
-            Personal Note (Optional)
-          </label>
-          <span className="text-[11px] text-[#888] font-mono">
-            {giftMessage.length}/1000
-          </span>
-        </div>
-        <textarea
-          rows={3}
-          maxLength={1000}
-          value={giftMessage}
-          onChange={(e) => setGiftMessage(e.target.value)}
-          placeholder="e.g. Thinking of you and your family. We hope this gives you a quiet, enduring place to honor your dad's life and stories together."
-          className="w-full rounded-xl border border-black/[0.12] bg-[#fafafb] px-3.5 py-2.5 text-sm text-[#181925] placeholder-[#999] focus:bg-white focus:border-primary focus:outline-none transition-colors resize-none leading-relaxed"
-        />
-        <p className="text-[11px] text-[#777]">
-          Included in their email invitation as a highlighted personal quote card.
+        <p className="text-[11px] text-[#777] leading-relaxed -mt-1">
+          Their private invitation and personalized claim instructions will be emailed here.
         </p>
       </div>
 
-      {/* Buyer Section */}
-      <div className="flex flex-col gap-3 pt-2">
-        <div className="flex items-center gap-2 pb-2 border-b border-black/[0.06]">
-          <span className="flex size-6 items-center justify-center rounded-md bg-primary/10 text-primary">
-            <Sparkles className="size-3.5" />
+      {/* Personal Note */}
+      <div className="flex flex-col gap-2">
+        <div className="flex items-center justify-between">
+          <label className="text-xs font-medium text-[#181925] tracking-tight">
+            Personal Note or Sympathy Message (Optional)
+          </label>
+          <span className="text-[11px] font-mono text-[#888]">
+            {giftMessage.length}/1000
           </span>
-          <h3 className="text-sm font-semibold text-[#181925]">
-            2. Your details
-          </h3>
+        </div>
+        <div className="rounded-xl bg-white border border-black/[0.08] p-3 sm:p-3.5 focus-within:border-primary/50 transition-colors">
+          <textarea
+            rows={3}
+            maxLength={1000}
+            value={giftMessage}
+            onChange={(e) => setGiftMessage(e.target.value)}
+            placeholder="e.g. Thinking of you and your family. We wanted you to have a quiet, lasting place to celebrate your dad's life and gather memories whenever you feel ready."
+            className="w-full bg-transparent font-serif italic text-sm text-[#181925] outline-none placeholder:text-[#aaa] placeholder:font-sans placeholder:not-italic resize-none leading-relaxed"
+          />
+        </div>
+        <p className="text-[11px] text-[#777]">
+          Presented in their invitation as an editorial quote card.
+        </p>
+      </div>
+
+      {/* Step 2: Buyer Details */}
+      <div className="flex flex-col gap-4 pt-2">
+        <div className="flex items-center justify-between pb-2 border-b border-black/[0.06]">
+          <div className="flex items-center gap-2">
+            <span className="size-6 rounded-md bg-primary/10 text-primary flex items-center justify-center">
+              <Sparkles className="size-3.5" />
+            </span>
+            <h3 className="text-sm sm:text-base font-medium text-[#181925] tracking-tight">
+              2. Your details (for greeting & receipt)
+            </h3>
+          </div>
+          <span className="text-[11px] font-mono text-[#888]">Step 2 of 2</span>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-1">
-          <div>
-            <label className="block font-mono text-[11px] uppercase tracking-wider text-[#666] mb-1.5">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+          <div className="flex flex-col rounded-xl bg-white border border-black/[0.08] p-3 sm:p-3.5 focus-within:border-primary/50 transition-colors">
+            <label className="text-[10px] font-mono uppercase tracking-wider text-[#888] font-medium mb-1">
               Your Full Name *
             </label>
             <input
@@ -166,12 +174,12 @@ export function GiftPurchaseForm() {
               value={buyerName}
               onChange={(e) => setBuyerName(e.target.value)}
               placeholder="e.g. David Ross"
-              className="w-full rounded-xl border border-black/[0.12] bg-[#fafafb] px-3.5 py-2.5 text-sm text-[#181925] placeholder-[#999] focus:bg-white focus:border-primary focus:outline-none transition-colors"
+              className="w-full bg-transparent font-medium text-sm text-[#181925] outline-none placeholder:text-[#aaa]"
             />
           </div>
 
-          <div>
-            <label className="block font-mono text-[11px] uppercase tracking-wider text-[#666] mb-1.5">
+          <div className="flex flex-col rounded-xl bg-white border border-black/[0.08] p-3 sm:p-3.5 focus-within:border-primary/50 transition-colors">
+            <label className="text-[10px] font-mono uppercase tracking-wider text-[#888] font-medium mb-1">
               Your Email Address *
             </label>
             <input
@@ -180,58 +188,60 @@ export function GiftPurchaseForm() {
               value={buyerEmail}
               onChange={(e) => setBuyerEmail(e.target.value)}
               placeholder="david@example.com"
-              className="w-full rounded-xl border border-black/[0.12] bg-[#fafafb] px-3.5 py-2.5 text-sm text-[#181925] placeholder-[#999] focus:bg-white focus:border-primary focus:outline-none transition-colors"
+              className="w-full bg-transparent font-medium text-sm text-[#181925] outline-none placeholder:text-[#aaa]"
             />
-            <p className="mt-1 text-[11px] text-[#777]">
-              Your official receipt and backup claim link will be sent here immediately.
-            </p>
           </div>
         </div>
+        <p className="text-[11px] text-[#777] leading-relaxed -mt-1">
+          Your official receipt and backup claim link will be emailed to you immediately upon payment.
+        </p>
       </div>
 
-      {/* Summary Entitlement Card */}
-      <div className="rounded-xl border border-black/[0.08] bg-[#fafafb] p-4 flex flex-col gap-3">
-        <div className="flex items-baseline justify-between pb-2 border-b border-black/[0.06]">
+      {/* Value Summary Card */}
+      <div className="rounded-2xl bg-white border border-black/[0.08] p-5 flex flex-col gap-3.5">
+        <div className="flex items-baseline justify-between pb-2.5 border-b border-black/[0.06]">
           <div>
-            <p className="font-mono text-[11px] uppercase tracking-wider text-primary font-medium">
+            <span className="font-mono text-[11px] uppercase tracking-wider text-primary font-medium">
               Complete Memorial Entitlement
-            </p>
+            </span>
             <p className="text-xs text-[#666] mt-0.5">
-              Prepaid lifetime family archive with limitless contributions
+              Permanent prepaid family archive · Limitless contributors
             </p>
           </div>
-          <p className="font-mono text-xl font-medium text-[#181925] tabular-nums">
-            $179
-            <span className="text-xs text-[#888] font-normal ml-1">one-time</span>
-          </p>
+          <div className="text-right">
+            <span className="text-2xl font-medium tracking-tight text-[#181925] tabular-nums">
+              $179
+            </span>
+            <span className="text-xs text-[#888] ml-1 font-normal">one-time</span>
+          </div>
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs text-[#555]">
           <div className="flex items-center gap-2">
-            <ShieldCheck className="size-4 text-emerald-600 shrink-0" />
+            <CheckCircle2 className="size-3.5 text-emerald-600 shrink-0" />
             <span>Never expires — ready when they are</span>
           </div>
           <div className="flex items-center gap-2">
-            <ShieldCheck className="size-4 text-emerald-600 shrink-0" />
-            <span>Zero subscriptions or hidden costs</span>
+            <CheckCircle2 className="size-3.5 text-emerald-600 shrink-0" />
+            <span>Zero recurring monthly subscriptions</span>
           </div>
           <div className="flex items-center gap-2">
-            <ShieldCheck className="size-4 text-emerald-600 shrink-0" />
+            <CheckCircle2 className="size-3.5 text-emerald-600 shrink-0" />
+            <span>Unlimited original photos & audio notes</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <CheckCircle2 className="size-3.5 text-emerald-600 shrink-0" />
             <span>Full private ownership for recipient</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <ShieldCheck className="size-4 text-emerald-600 shrink-0" />
-            <span>Usable for new or existing memorial</span>
           </div>
         </div>
       </div>
 
-      {/* Action CTA */}
-      <div className="flex flex-col gap-2 pt-1">
+      {/* Action Button */}
+      <div className="flex flex-col gap-2.5">
         <button
           type="submit"
           disabled={isLoading}
-          className="w-full h-12 rounded-full font-medium text-sm transition-all cursor-pointer border border-[color-mix(in_srgb,var(--primary)_80%,#8c3a10)] bg-[color-mix(in_srgb,var(--primary)_90%,#8c3a10)] text-primary-foreground hover:bg-primary hover:border-[color-mix(in_srgb,var(--primary)_70%,#8c3a10)] active:translate-y-px active:scale-[0.99] disabled:opacity-60 flex items-center justify-center gap-2"
+          className="inline-flex items-center justify-center gap-2 whitespace-nowrap !rounded-full font-medium transition-all cursor-pointer border border-[color-mix(in_srgb,var(--primary)_80%,#8c3a10)] bg-[color-mix(in_srgb,var(--primary)_90%,#8c3a10)] text-primary-foreground hover:bg-primary active:scale-[0.98] h-12 px-6 text-sm group select-none w-full disabled:opacity-60"
         >
           {isLoading ? (
             <>
@@ -240,15 +250,16 @@ export function GiftPurchaseForm() {
             </>
           ) : (
             <>
-              <span>Purchase Gift Memorial — $179</span>
-              <ArrowRight className="size-4" />
+              <span>Continue to secure payment — $179</span>
+              <ArrowRight className="size-4 transition-transform group-hover:translate-x-1" />
             </>
           )}
         </button>
 
-        <p className="text-center text-[11px] text-[#737373]">
-          Encrypted 256-bit checkout powered by Dodo Payments. No account registration required to purchase.
-        </p>
+        <div className="flex items-center justify-center gap-2 text-[11px] text-[#888]">
+          <ShieldCheck className="size-3.5 text-[#888]" />
+          <span>Encrypted checkout via Dodo Payments. No account registration needed to purchase.</span>
+        </div>
       </div>
     </form>
   )
