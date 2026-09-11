@@ -4,7 +4,7 @@ import Image from "next/image"
 import { TheirsNav } from "@/components/theirs/nav"
 import { TheirsFooter } from "@/components/theirs/footer"
 import { SectionHeader } from "@/components/theirs/section-header"
-import { DitherGradient } from "@/components/theirs/dither-gradient"
+import { TheirsLogo } from "@/components/theirs/theirs-logo"
 import { GiftPreviewCard } from "@/components/gift/gift-preview-card"
 import { GiftPurchaseForm } from "@/components/gift/gift-purchase-form"
 import { GiftFaqAccordion } from "@/components/gift/gift-faq-accordion"
@@ -17,7 +17,6 @@ import {
   Volume2,
   Image as ImageIcon,
   Users,
-  ArrowRight,
 } from "lucide-react"
 
 export const metadata: Metadata = {
@@ -132,15 +131,46 @@ export default function GiftMemorialPage() {
           <div className="flex flex-col sm:flex-row items-center justify-center gap-3 mb-10 w-full sm:w-auto">
             <a
               href="#purchase"
-              className="inline-flex items-center justify-center gap-2 whitespace-nowrap !rounded-full font-medium transition-all cursor-pointer border border-[color-mix(in_srgb,var(--primary)_80%,#8c3a10)] bg-[color-mix(in_srgb,var(--primary)_90%,#8c3a10)] text-primary-foreground hover:bg-primary active:scale-[0.98] h-11 px-6 text-sm group select-none w-full sm:w-auto"
+              className="inline-flex items-center justify-center gap-1.5 whitespace-nowrap !rounded-full font-medium transition-all cursor-pointer border border-[color-mix(in_srgb,var(--primary)_80%,#8c3a10)] bg-[color-mix(in_srgb,var(--primary)_90%,#8c3a10)] text-primary-foreground hover:bg-primary active:scale-[0.98] h-11 sm:h-10 px-6 text-sm group select-none w-full sm:w-auto"
             >
               <span>Gift a memorial — $179</span>
-              <ArrowRight className="size-4 transition-transform group-hover:translate-x-1" />
+              <span className="relative size-3.5 overflow-hidden inline-flex items-center">
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  width="14"
+                  height="14"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  className="absolute inset-0 size-3.5 transition-transform duration-200 group-hover:translate-x-3 group-hover:opacity-0"
+                >
+                  <path d="M5 12h14" />
+                  <path d="m12 5 7 7-7 7" />
+                </svg>
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  width="14"
+                  height="14"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  className="absolute inset-0 size-3.5 -translate-x-3 opacity-0 transition-transform duration-200 group-hover:translate-x-0 group-hover:opacity-100"
+                >
+                  <path d="M5 12h14" />
+                  <path d="m12 5 7 7-7 7" />
+                </svg>
+              </span>
             </a>
 
             <a
               href="#how-it-works"
-              className="inline-flex items-center justify-center gap-2 whitespace-nowrap !rounded-full font-medium transition-all cursor-pointer border border-black/[0.08] bg-[#f7f7f8] text-[#181925] hover:bg-white active:scale-[0.98] h-11 px-6 text-sm select-none w-full sm:w-auto"
+              className="inline-flex items-center justify-center gap-2 whitespace-nowrap !rounded-full font-medium transition-all cursor-pointer border border-black/[0.08] bg-[#f7f7f8] text-[#181925] hover:bg-white active:scale-[0.98] h-11 sm:h-10 px-6 text-sm select-none w-full sm:w-auto"
             >
               <span>How gifting works</span>
             </a>
@@ -152,7 +182,28 @@ export default function GiftMemorialPage() {
       </section>
 
       {/* ===================================================================== */}
-      {/* 2. COMPARISON SECTION                                                 */}
+      {/* 2. PURCHASE FORM SECTION — MOVED UP FOR IMMEDIATE VISITOR ACTION       */}
+      {/* ===================================================================== */}
+      <section id="purchase" className="py-16 sm:py-24 px-4 sm:px-6 max-w-5xl mx-auto flex flex-col gap-12 border-t border-black/[0.06]">
+        <SectionHeader
+          badge="Purchase Entitlement"
+          title="Send a Complete memorial gift today."
+          description={
+            <>
+              Prepay in full for $179.{" "}
+              <span className="rounded-md bg-primary/10 box-decoration-clone px-1 py-0.5 text-primary">
+                Never expires
+              </span>
+              , no account registration required to purchase, and immediate delivery.
+            </>
+          }
+        />
+
+        <GiftPurchaseForm />
+      </section>
+
+      {/* ===================================================================== */}
+      {/* 3. COMPARISON SECTION                                                 */}
       {/* ===================================================================== */}
       <section className="py-16 sm:py-24 px-5 max-w-5xl mx-auto flex flex-col gap-12 sm:gap-14 border-t border-black/[0.06]">
         <SectionHeader
@@ -231,14 +282,7 @@ export default function GiftMemorialPage() {
           </div>
 
           {/* Card 3: Theirs Memorial Gift */}
-          <div className="flex flex-col rounded-2xl bg-[#181925] p-6 text-white border border-black/[0.1] justify-between relative overflow-hidden">
-            <span
-              aria-hidden="true"
-              className="pointer-events-none absolute inset-0 [mask-image:radial-gradient(125%_115%_at_0%_0%,#000_0%,#000_18%,transparent_66%)]"
-            >
-              <DitherGradient from="orange" bloom="high" />
-            </span>
-
+          <div className="flex flex-col rounded-2xl bg-[#181925] p-6 text-white border border-white/10 justify-between relative overflow-hidden">
             <div className="relative flex flex-col gap-3 z-10">
               <span className="font-mono text-xs text-primary uppercase tracking-wider font-medium">
                 Theirs Memorial Gift
@@ -246,7 +290,7 @@ export default function GiftMemorialPage() {
               <h3 className="text-xl font-medium text-white tracking-tight">
                 Complete Online Memorial
               </h3>
-              <p className="text-sm leading-6 text-[#b0b0b0]">
+              <p className="text-sm leading-6 text-neutral-300">
                 A permanent, collaborative family archive. Unlimited photos, audio voicemails, and memories contributed by everyone who loved them.
               </p>
             </div>
@@ -274,7 +318,7 @@ export default function GiftMemorialPage() {
       </section>
 
       {/* ===================================================================== */}
-      {/* 3. HOW IT WORKS                                                       */}
+      {/* 4. HOW IT WORKS                                                       */}
       {/* ===================================================================== */}
       <section id="how-it-works" className="py-16 sm:py-24 px-4 max-w-5xl mx-auto flex flex-col gap-12 sm:gap-16 border-t border-black/[0.06]">
         <SectionHeader
@@ -294,13 +338,6 @@ export default function GiftMemorialPage() {
         <ul className="grid gap-4 sm:gap-6 lg:grid-cols-3 list-none p-0 m-0">
           {/* Step 01 */}
           <li className="group relative flex flex-col overflow-hidden rounded-2xl bg-[#f6f6f6] pb-6 sm:pb-8 border border-black/[0.06]">
-            <span
-              aria-hidden="true"
-              className="pointer-events-none absolute inset-0 [mask-image:radial-gradient(125%_115%_at_0%_0%,#000_0%,#000_18%,transparent_66%)]"
-            >
-              <DitherGradient from="cyan" bloom="aura" />
-            </span>
-
             <div className="relative flex items-baseline gap-2.5 px-6 py-4 sm:px-8">
               <span className="text-base tabular-nums text-muted-foreground font-medium">01</span>
               <h3 className="text-base font-medium tracking-tight text-[#181925]">You purchase the gift</h3>
@@ -325,13 +362,6 @@ export default function GiftMemorialPage() {
 
           {/* Step 02 */}
           <li className="group relative flex flex-col overflow-hidden rounded-2xl bg-[#f6f6f6] pb-6 sm:pb-8 border border-black/[0.06]">
-            <span
-              aria-hidden="true"
-              className="pointer-events-none absolute inset-0 [mask-image:radial-gradient(125%_115%_at_0%_0%,#000_0%,#000_18%,transparent_66%)]"
-            >
-              <DitherGradient from="green" bloom="aura" />
-            </span>
-
             <div className="relative flex items-baseline gap-2.5 px-6 py-4 sm:px-8">
               <span className="text-base tabular-nums text-muted-foreground font-medium">02</span>
               <h3 className="text-base font-medium tracking-tight text-[#181925]">They receive their invitation</h3>
@@ -356,13 +386,6 @@ export default function GiftMemorialPage() {
 
           {/* Step 03 */}
           <li className="group relative flex flex-col overflow-hidden rounded-2xl bg-[#f6f6f6] pb-6 sm:pb-8 border border-black/[0.06]">
-            <span
-              aria-hidden="true"
-              className="pointer-events-none absolute inset-0 [mask-image:radial-gradient(125%_115%_at_0%_0%,#000_0%,#000_18%,transparent_66%)]"
-            >
-              <DitherGradient from="orange" bloom="high" />
-            </span>
-
             <div className="relative flex items-baseline gap-2.5 px-6 py-4 sm:px-8">
               <span className="text-base tabular-nums text-muted-foreground font-medium">03</span>
               <h3 className="text-base font-medium tracking-tight text-[#181925]">They build it when ready</h3>
@@ -481,27 +504,6 @@ export default function GiftMemorialPage() {
       </section>
 
       {/* ===================================================================== */}
-      {/* 5. PURCHASE FORM SECTION                                              */}
-      {/* ===================================================================== */}
-      <section id="purchase" className="py-16 sm:py-24 px-4 sm:px-6 max-w-5xl mx-auto flex flex-col gap-12 border-t border-black/[0.06]">
-        <SectionHeader
-          badge="Purchase Entitlement"
-          title="Send a Complete memorial gift today."
-          description={
-            <>
-              Prepay in full for $179.{" "}
-              <span className="rounded-md bg-primary/10 box-decoration-clone px-1 py-0.5 text-primary">
-                Never expires
-              </span>
-              , no account registration required to purchase, and immediate delivery.
-            </>
-          }
-        />
-
-        <GiftPurchaseForm />
-      </section>
-
-      {/* ===================================================================== */}
       {/* 6. EDITORIAL DEEP DIVE                                                */}
       {/* ===================================================================== */}
       <section className="py-16 sm:py-24 px-5 max-w-4xl mx-auto flex flex-col gap-10 border-t border-black/[0.06]">
@@ -556,38 +558,76 @@ export default function GiftMemorialPage() {
       </section>
 
       {/* ===================================================================== */}
-      {/* 8. FINAL DARK CHARCOAL BANNER                                          */}
+      {/* 8. FINAL DARK CHARCOAL BANNER — MATCHES LANDING PAGE CTA              */}
       {/* ===================================================================== */}
       <section className="py-16 sm:py-24 px-4 sm:px-6 max-w-5xl mx-auto">
-        <div className="relative rounded-3xl bg-[#181925] p-8 sm:p-14 text-white text-center flex flex-col items-center gap-6 overflow-hidden border border-white/10">
-          <span
-            aria-hidden="true"
-            className="pointer-events-none absolute inset-0 [mask-image:radial-gradient(125%_115%_at_50%_0%,#000_0%,#000_30%,transparent_70%)]"
-          >
-            <DitherGradient from="orange" bloom="high" />
-          </span>
+        <div className="relative z-10 overflow-hidden rounded-[28px] sm:rounded-[36px] bg-[#1a1a1f] p-10 sm:p-16 text-center text-white border border-white/10 flex flex-col items-center justify-center">
+          {/* Subtle Ambient Radial Glow */}
+          <div className="absolute inset-0 bg-radial from-white/[0.04] via-transparent to-transparent pointer-events-none" />
 
-          <div className="relative z-10 max-w-xl flex flex-col items-center gap-3">
-            <span className="font-mono text-xs uppercase tracking-wider text-primary font-medium">
-              Permanent Sympathy Gift
-            </span>
-            <h2 className="text-3xl sm:text-4xl font-medium tracking-tight text-white leading-tight">
-              Give them a place to remember, together.
+          {/* Brand SVG Emblem in White Shades */}
+          <div className="relative z-10 flex items-center justify-center mb-6 select-none">
+            <div className="relative size-16 sm:size-20 flex items-center justify-center">
+              <TheirsLogo themeAware className="size-full text-white" />
+            </div>
+          </div>
+
+          <div className="relative z-10 max-w-2xl flex flex-col items-center gap-3 mb-8">
+            <h2 className="text-balance text-2xl sm:text-4xl md:text-5xl font-medium tracking-tight text-white leading-[1.15]">
+              Give them a place to remember,{" "}
+              <span className="text-neutral-400 font-normal block mt-1 sm:mt-1.5">
+                together and without pressure.
+              </span>
             </h2>
-            <p className="text-base leading-relaxed text-[#b0b0b0]">
+            <p className="text-sm sm:text-base text-neutral-300 max-w-xl mx-auto leading-relaxed">
               $179 one-time payment. Zero subscriptions forever. The recipient owns and controls their memorial completely.
             </p>
           </div>
 
-          <div className="relative z-10 pt-2">
-            <a
-              href="#purchase"
-              className="inline-flex items-center justify-center gap-2 whitespace-nowrap !rounded-full font-medium transition-all cursor-pointer border border-[color-mix(in_srgb,var(--primary)_80%,#8c3a10)] bg-[color-mix(in_srgb,var(--primary)_90%,#8c3a10)] text-primary-foreground hover:bg-primary active:scale-[0.98] h-12 px-8 text-sm group select-none"
-            >
-              <span>Purchase memorial gift entitlement</span>
-              <ArrowRight className="size-4 transition-transform group-hover:translate-x-1" />
-            </a>
-          </div>
+          {/* High-contrast, confident action button matching landing page */}
+          <a
+            href="#purchase"
+            className="relative z-10 inline-flex items-center justify-center gap-1.5 whitespace-nowrap !rounded-full font-medium transition-all cursor-pointer bg-white text-[#181925] hover:bg-neutral-100 active:scale-[0.98] h-12 px-7 text-sm group shrink-0 select-none border border-transparent"
+          >
+            <span>Gift a Complete memorial — $179</span>
+            <span className="relative size-3.5 overflow-hidden inline-flex items-center">
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                width="14"
+                height="14"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                className="absolute inset-0 size-3.5 transition-transform duration-200 group-hover:translate-x-3 group-hover:opacity-0"
+              >
+                <path d="M5 12h14" />
+                <path d="m12 5 7 7-7 7" />
+              </svg>
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                width="14"
+                height="14"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                className="absolute inset-0 size-3.5 -translate-x-3 opacity-0 transition-transform duration-200 group-hover:translate-x-0 group-hover:opacity-100"
+              >
+                <path d="M5 12h14" />
+                <path d="m12 5 7 7-7 7" />
+              </svg>
+            </span>
+          </a>
+
+          {/* Clean Trust Line */}
+          <span className="relative z-10 text-xs text-neutral-400 select-none mt-4">
+            Never expires · Zero subscriptions · 100% private to recipient
+          </span>
         </div>
       </section>
 
