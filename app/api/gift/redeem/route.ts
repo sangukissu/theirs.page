@@ -80,7 +80,8 @@ export async function POST(req: NextRequest) {
 
     // MODE A: Apply to an existing memorial owned by user
     if (mode === "existing_memorial") {
-      const memorialId = typeof body.memorialId === "string" ? body.memorialId.trim() : ""
+      const rawMemorialId = body.memorialId ?? body.memorial_id
+      const memorialId = typeof rawMemorialId === "string" ? rawMemorialId.trim() : ""
       if (!memorialId) {
         return NextResponse.json({ error: "Target memorial is required." }, { status: 400 })
       }
@@ -144,7 +145,7 @@ export async function POST(req: NextRequest) {
     }
 
     // MODE B: Create brand-new prepaid Complete memorial
-    const rawFullName = typeof body.fullName === "string" ? body.fullName : ""
+    const rawFullName = body.fullName ?? body.full_name
     const fullName = cleanDisplayName(rawFullName, TEXT_LIMITS.personFullName)
 
     if (fullName.length < 2) {
@@ -161,9 +162,10 @@ export async function POST(req: NextRequest) {
       .eq("user_id", user.id)
       .maybeSingle()
 
+    const rawCreatorName = body.creatorName ?? body.creator_name
     let caretakerName = cleanDisplayName(profile?.full_name, 100)
-    if (caretakerName.length < 2 && typeof body.creatorName === "string" && body.creatorName.trim().length >= 2) {
-      const cleanCreator = cleanDisplayName(body.creatorName, 100)
+    if (caretakerName.length < 2 && typeof rawCreatorName === "string" && rawCreatorName.trim().length >= 2) {
+      const cleanCreator = cleanDisplayName(rawCreatorName, 100)
       const { error: profUpdateErr } = await db
         .from("user_profiles")
         .update({ full_name: cleanCreator, updated_at: new Date().toISOString() })
@@ -177,12 +179,14 @@ export async function POST(req: NextRequest) {
       caretakerName = cleanDisplayName(gift.recipient_name, 100) || "Caretaker"
     }
 
-    const creatorRelationship = typeof body.creatorRelationship === "string"
-      ? cleanDisplayName(body.creatorRelationship, 80)
+    const rawRelationship = body.creatorRelationship ?? body.creator_relationship
+    const creatorRelationship = typeof rawRelationship === "string"
+      ? cleanDisplayName(rawRelationship, 80)
       : null
 
     // Determine unique slug
-    const desiredSlug = typeof body.desiredSlug === "string" ? body.desiredSlug : ""
+    const rawDesiredSlug = body.desiredSlug ?? body.desired_slug
+    const desiredSlug = typeof rawDesiredSlug === "string" ? rawDesiredSlug : ""
     const rawRequested = desiredSlug.trim() ? desiredSlug : fullName
     let normalized = normalizeMemorialSlug(rawRequested)
     if (normalized.length < 3) {

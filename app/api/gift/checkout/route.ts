@@ -32,11 +32,17 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json().catch(() => ({} as any))
-    const buyerName = typeof body?.buyerName === "string" ? body.buyerName.trim() : ""
-    const buyerEmail = typeof body?.buyerEmail === "string" ? body.buyerEmail.trim().toLowerCase() : ""
-    const recipientName = typeof body?.recipientName === "string" ? body.recipientName.trim() : ""
-    const recipientEmail = typeof body?.recipientEmail === "string" ? body.recipientEmail.trim().toLowerCase() : ""
-    const giftMessage = typeof body?.giftMessage === "string" ? body.giftMessage.trim().slice(0, 1000) : null
+    const rawBuyerName = body?.buyer_name ?? body?.buyerName
+    const rawBuyerEmail = body?.buyer_email ?? body?.buyerEmail
+    const rawRecipientName = body?.recipient_name ?? body?.recipientName
+    const rawRecipientEmail = body?.recipient_email ?? body?.recipientEmail
+    const rawGiftMessage = body?.gift_message ?? body?.giftMessage
+
+    const buyerName = typeof rawBuyerName === "string" ? rawBuyerName.trim() : ""
+    const buyerEmail = typeof rawBuyerEmail === "string" ? rawBuyerEmail.trim().toLowerCase() : ""
+    const recipientName = typeof rawRecipientName === "string" ? rawRecipientName.trim() : ""
+    const recipientEmail = typeof rawRecipientEmail === "string" ? rawRecipientEmail.trim().toLowerCase() : ""
+    const giftMessage = typeof rawGiftMessage === "string" ? rawGiftMessage.trim().slice(0, 1000) : null
 
     if (!buyerName || buyerName.length < 1 || buyerName.length > 100) {
       return NextResponse.json({ error: "Please provide your name (1-100 characters)." }, { status: 400 })

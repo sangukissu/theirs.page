@@ -36,16 +36,27 @@ test("GIFT: SHA-256 token hashing is deterministic and matches expected digest",
 
 function validateGiftCheckoutInput(body: {
   buyer_name?: any
+  buyerName?: any
   buyer_email?: any
+  buyerEmail?: any
   recipient_name?: any
+  recipientName?: any
   recipient_email?: any
+  recipientEmail?: any
   gift_message?: any
+  giftMessage?: any
 }) {
-  const buyerName = typeof body.buyer_name === "string" ? body.buyer_name.trim() : ""
-  const buyerEmail = typeof body.buyer_email === "string" ? body.buyer_email.trim().toLowerCase() : ""
-  const recipientName = typeof body.recipient_name === "string" ? body.recipient_name.trim() : ""
-  const recipientEmail = typeof body.recipient_email === "string" ? body.recipient_email.trim().toLowerCase() : ""
-  const giftMessage = typeof body.gift_message === "string" ? body.gift_message.trim() : null
+  const rawBuyerName = body.buyer_name ?? body.buyerName
+  const rawBuyerEmail = body.buyer_email ?? body.buyerEmail
+  const rawRecipientName = body.recipient_name ?? body.recipientName
+  const rawRecipientEmail = body.recipient_email ?? body.recipientEmail
+  const rawGiftMessage = body.gift_message ?? body.giftMessage
+
+  const buyerName = typeof rawBuyerName === "string" ? rawBuyerName.trim() : ""
+  const buyerEmail = typeof rawBuyerEmail === "string" ? rawBuyerEmail.trim().toLowerCase() : ""
+  const recipientName = typeof rawRecipientName === "string" ? rawRecipientName.trim() : ""
+  const recipientEmail = typeof rawRecipientEmail === "string" ? rawRecipientEmail.trim().toLowerCase() : ""
+  const giftMessage = typeof rawGiftMessage === "string" ? rawGiftMessage.trim() : null
 
   if (!buyerName || buyerName.length < 1 || buyerName.length > 100) {
     return { valid: false, error: "Buyer name must be between 1 and 100 characters." }
@@ -83,17 +94,32 @@ test("GIFT: Input validation rejects missing buyer or recipient details", () => 
   )
 })
 
-test("GIFT: Input validation accepts clean valid inputs", () => {
-  const result = validateGiftCheckoutInput({
+test("GIFT: Input validation accepts clean valid inputs in both snake_case and camelCase", () => {
+  // snake_case
+  const resultSnake = validateGiftCheckoutInput({
     buyer_name: "Alice Ross",
     buyer_email: "Alice@Example.COM",
     recipient_name: "Bob Miller",
     recipient_email: "bob@example.com",
     gift_message: "Thinking of you and your family.",
   })
-  assert.equal(result.valid, true)
-  assert.equal(result.data?.buyerEmail, "alice@example.com")
-  assert.equal(result.data?.giftMessage, "Thinking of you and your family.")
+  assert.equal(resultSnake.valid, true)
+  assert.equal(resultSnake.data?.buyerName, "Alice Ross")
+  assert.equal(resultSnake.data?.buyerEmail, "alice@example.com")
+  assert.equal(resultSnake.data?.giftMessage, "Thinking of you and your family.")
+
+  // camelCase
+  const resultCamel = validateGiftCheckoutInput({
+    buyerName: "Alice Ross",
+    buyerEmail: "Alice@Example.COM",
+    recipientName: "Bob Miller",
+    recipientEmail: "bob@example.com",
+    giftMessage: "Thinking of you and your family.",
+  })
+  assert.equal(resultCamel.valid, true)
+  assert.equal(resultCamel.data?.buyerName, "Alice Ross")
+  assert.equal(resultCamel.data?.buyerEmail, "alice@example.com")
+  assert.equal(resultCamel.data?.giftMessage, "Thinking of you and your family.")
 })
 
 // ---------------------------------------------------------------------------
