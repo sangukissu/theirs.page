@@ -125,14 +125,14 @@ export function GiftPurchaseModal({
                 <span className="flex size-8 items-center justify-center rounded-lg bg-primary/10 text-primary">
                   <Gift className="size-4" />
                 </span>
-                <span className="font-mono text-[11px] uppercase tracking-[0.16em] text-primary font-medium">
+                <span className="font-mono text-xs uppercase tracking-wider text-primary font-medium">
                   Memorial Gift Entitlement
                 </span>
               </div>
-              <h2 className="font-serif text-xl sm:text-2xl text-[#181925] leading-tight font-normal">
+              <h2 className="text-xl sm:text-2xl font-medium tracking-tight text-[#181925]">
                 Gift a Complete memorial
               </h2>
-              <p className="mt-1.5 text-xs sm:text-sm text-[#666] leading-relaxed">
+              <p className="mt-1.5 text-sm leading-6 text-[#666]">
                 Give a loved one or family member the gift of a permanent memorial archive, completely prepaid. They can create a new memorial or upgrade an existing one whenever they feel ready.
               </p>
             </div>
@@ -154,7 +154,7 @@ export function GiftPurchaseModal({
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div>
-                    <label className="block font-mono text-[10px] uppercase tracking-wider text-[#666] mb-1">
+                    <label className="block font-mono text-xs uppercase tracking-wider text-[#666] mb-1">
                       Recipient Name *
                     </label>
                     <input
@@ -168,7 +168,7 @@ export function GiftPurchaseModal({
                   </div>
 
                   <div>
-                    <label className="block font-mono text-[10px] uppercase tracking-wider text-[#666] mb-1">
+                    <label className="block font-mono text-xs uppercase tracking-wider text-[#666] mb-1">
                       Recipient Email *
                     </label>
                     <input
@@ -186,10 +186,10 @@ export function GiftPurchaseModal({
               {/* Personal Message */}
               <div>
                 <div className="flex items-center justify-between mb-1">
-                  <label className="font-mono text-[10px] uppercase tracking-wider text-[#666]">
+                  <label className="font-mono text-xs uppercase tracking-wider text-[#666]">
                     Personal Note (Optional)
                   </label>
-                  <span className="text-[10px] text-[#888]">
+                  <span className="font-mono text-xs text-[#888]">
                     {giftMessage.length}/1000
                   </span>
                 </div>
@@ -212,7 +212,7 @@ export function GiftPurchaseModal({
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div>
-                    <label className="block font-mono text-[10px] uppercase tracking-wider text-[#666] mb-1">
+                    <label className="block font-mono text-xs uppercase tracking-wider text-[#666] mb-1">
                       Your Name *
                     </label>
                     <input
@@ -226,7 +226,7 @@ export function GiftPurchaseModal({
                   </div>
 
                   <div>
-                    <label className="block font-mono text-[10px] uppercase tracking-wider text-[#666] mb-1">
+                    <label className="block font-mono text-xs uppercase tracking-wider text-[#666] mb-1">
                       Your Email *
                     </label>
                     <input
@@ -247,7 +247,7 @@ export function GiftPurchaseModal({
                   <span>Complete Memorial Entitlement</span>
                   <span className="font-mono text-sm text-primary">$179 one-time</span>
                 </div>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-[11px] text-[#666]">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs text-[#666]">
                   <div className="flex items-center gap-1.5">
                     <ShieldCheck className="size-3.5 text-emerald-600 shrink-0" />
                     <span>No subscriptions or hidden fees</span>
@@ -286,7 +286,7 @@ export function GiftPurchaseModal({
                 )}
               </button>
 
-              <p className="text-center text-[11px] text-[#737373]">
+              <p className="text-center text-xs text-[#737373]">
                 Processed securely with Dodo Payments. You will also receive an email receipt with the direct claim link.
               </p>
             </form>

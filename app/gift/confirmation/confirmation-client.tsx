@@ -10,7 +10,7 @@ interface GiftConfirmationClientProps {
 export function GiftConfirmationClient({ buyerEmail }: GiftConfirmationClientProps) {
   return (
     <div className="mt-6 w-full rounded-xl border border-black/[0.08] bg-[#fbfbfc] p-4 text-left flex flex-col gap-2.5 text-xs text-[#666]">
-      <div className="flex items-center gap-2 font-medium text-[#181925]">
+      <div className="flex items-center gap-2 text-sm font-medium text-[#181925]">
         <Mail className="size-4 text-primary" />
         <span>What happens now?</span>
       </div>

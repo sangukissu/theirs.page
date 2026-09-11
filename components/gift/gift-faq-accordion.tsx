@@ -120,7 +120,7 @@ export function GiftFaqAccordion() {
                 aria-expanded={isOpen}
                 className="flex min-h-[54px] w-full items-center gap-4 px-6 py-4 text-left outline-none transition-colors hover:bg-black/[0.02] cursor-pointer select-none"
               >
-                <span className="min-w-0 flex-1 text-[15px] font-medium text-[#181925]">
+                <span className="min-w-0 flex-1 text-base font-medium text-[#181925]">
                   {item.question}
                 </span>
                 <motion.span
@@ -163,7 +163,7 @@ export function GiftFaqAccordion() {
                     }}
                     className="overflow-hidden"
                   >
-                    <div className="px-6 pt-1 pb-5 text-sm leading-relaxed text-[#666]">
+                    <div className="px-6 pt-1 pb-5 text-sm leading-6 text-[#666]">
                       {item.answer}
                     </div>
                   </motion.div>

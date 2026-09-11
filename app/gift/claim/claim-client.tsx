@@ -5,14 +5,11 @@ import Link from "next/link"
 import { useRouter } from "next/navigation"
 import {
   Gift,
-  Heart,
   ShieldCheck,
   Sparkles,
   Loader2,
   ArrowRight,
   UserCheck,
-  CheckCircle2,
-  Building,
 } from "lucide-react"
 
 interface ExistingMemorialOption {
@@ -59,38 +56,38 @@ export function GiftClaimClient({
     const loginRedirect = `/login?next=${encodeURIComponent(`/gift/claim?token=${token}`)}`
 
     return (
-      <div className="w-full max-w-xl rounded-2xl border border-black/[0.1] bg-white p-6 sm:p-8 flex flex-col gap-6 text-left">
+      <div className="w-full max-w-xl rounded-2xl border border-black/[0.08] bg-[#f7f7f8] p-6 sm:p-8 flex flex-col gap-6 text-left">
         {/* Gift Header Card */}
         <div className="flex items-center justify-between pb-4 border-b border-black/[0.06]">
           <div className="flex items-center gap-2.5">
             <span className="flex size-9 items-center justify-center rounded-xl bg-primary/10 text-primary">
-              <Gift className="size-4.5" />
+              <Gift className="size-4" />
             </span>
             <div>
-              <p className="font-mono text-[10px] uppercase tracking-wider text-primary font-medium">
+              <p className="font-mono text-xs uppercase tracking-wider text-primary font-medium">
                 Memorial Gift For
               </p>
-              <h2 className="font-serif text-xl text-[#181925] font-normal">
+              <h2 className="text-xl font-medium text-[#181925] tracking-tight">
                 {claimInfo.recipient_name}
               </h2>
             </div>
           </div>
-          <span className="font-mono text-xs font-semibold text-emerald-700 bg-emerald-50 border border-emerald-200/70 px-2.5 py-1 rounded-full">
+          <span className="font-mono text-xs font-medium text-emerald-700 bg-emerald-50 border border-emerald-200/70 px-2.5 py-1 rounded-full">
             $179 Prepaid
           </span>
         </div>
 
         {/* Buyer Greeting & Message */}
-        <div className="rounded-xl border border-black/[0.07] bg-[#fafafb] p-4 flex flex-col gap-2">
-          <p className="font-mono text-[10px] uppercase tracking-wider text-[#777]">
+        <div className="rounded-xl border border-black/[0.06] bg-white p-4 flex flex-col gap-2">
+          <p className="font-mono text-xs uppercase tracking-wider text-[#888]">
             From {claimInfo.buyer_name}:
           </p>
           {claimInfo.gift_message ? (
-            <p className="font-serif italic text-sm text-[#333] leading-relaxed">
+            <p className="font-serif italic text-sm leading-6 text-[#333]">
               “{claimInfo.gift_message}”
             </p>
           ) : (
-            <p className="font-serif italic text-sm text-[#555] leading-relaxed">
+            <p className="font-serif italic text-sm leading-6 text-[#555]">
               “Thinking of you and your family. We hope this gives you a quiet, enduring place to honor your loved one together.”
             </p>
           )}
@@ -98,8 +95,8 @@ export function GiftClaimClient({
 
         {/* Explanation & Authentication Action */}
         <div className="flex flex-col gap-3">
-          <div className="flex items-start gap-2.5 text-xs text-[#555] leading-relaxed">
-            <ShieldCheck className="size-4 text-emerald-600 shrink-0 mt-0.5" />
+          <div className="flex items-start gap-2.5 text-sm leading-6 text-[#666]">
+            <ShieldCheck className="size-4 text-emerald-600 shrink-0 mt-1" />
             <span>
               This memorial entitlement is paid in full. To ensure that only you control and edit your loved one's memorial, please sign in or create your free account.
             </span>
@@ -107,12 +104,12 @@ export function GiftClaimClient({
 
           <Link
             href={loginRedirect}
-            className="w-full h-11 rounded-full font-medium text-sm transition-all cursor-pointer border border-[color-mix(in_srgb,var(--primary)_80%,#8c3a10)] bg-[color-mix(in_srgb,var(--primary)_90%,#8c3a10)] text-primary-foreground hover:bg-primary hover:border-[color-mix(in_srgb,var(--primary)_70%,#8c3a10)] active:translate-y-px active:scale-[0.99] flex items-center justify-center gap-2 mt-2"
+            className="w-full h-11 rounded-full font-medium text-sm transition-all cursor-pointer border border-[color-mix(in_srgb,var(--primary)_80%,#8c3a10)] bg-[color-mix(in_srgb,var(--primary)_90%,#8c3a10)] text-primary-foreground hover:bg-primary active:scale-[0.98] flex items-center justify-center gap-2 mt-2"
           >
             <span>Sign in or create account to claim</span>
             <ArrowRight className="size-4" />
           </Link>
-          <p className="text-center text-[11px] text-[#737373]">
+          <p className="text-center text-xs text-[#888]">
             No credit card or payment will ever be required from you.
           </p>
         </div>
@@ -170,27 +167,27 @@ export function GiftClaimClient({
   }
 
   return (
-    <div className="w-full max-w-xl rounded-2xl border border-black/[0.1] bg-white p-6 sm:p-8 flex flex-col gap-6 text-left">
+    <div className="w-full max-w-xl rounded-2xl border border-black/[0.08] bg-[#f7f7f8] p-6 sm:p-8 flex flex-col gap-6 text-left">
       {/* Top Banner */}
       <div className="flex items-center justify-between pb-4 border-b border-black/[0.06]">
         <div className="flex items-center gap-2">
           <UserCheck className="size-4 text-emerald-600" />
-          <span className="text-xs text-[#555]">
+          <span className="text-xs text-[#666]">
             Signed in as <strong className="text-[#181925]">{currentUser.email || "Recipient"}</strong>
           </span>
         </div>
-        <span className="font-mono text-xs font-semibold text-emerald-700 bg-emerald-50 border border-emerald-200/70 px-2.5 py-0.5 rounded-full">
+        <span className="font-mono text-xs font-medium text-emerald-700 bg-emerald-50 border border-emerald-200/70 px-2.5 py-0.5 rounded-full">
           $179 Gift Active
         </span>
       </div>
 
       {/* Gift Note Recall */}
-      <div className="rounded-xl border border-black/[0.06] bg-[#fafafb] p-4 text-xs text-[#555] flex flex-col gap-1.5">
-        <p className="font-mono text-[10px] uppercase tracking-wider text-[#777]">
+      <div className="rounded-xl border border-black/[0.06] bg-white p-4 flex flex-col gap-1.5">
+        <p className="font-mono text-xs uppercase tracking-wider text-[#888]">
           Gift from {claimInfo.buyer_name}
         </p>
         {claimInfo.gift_message && (
-          <p className="font-serif italic text-xs text-[#333] leading-relaxed">
+          <p className="font-serif italic text-sm leading-6 text-[#333]">
             “{claimInfo.gift_message}”
           </p>
         )}
@@ -198,13 +195,13 @@ export function GiftClaimClient({
 
       {/* Mode Switcher (if user has existing memorials) */}
       {existingMemorials.length > 0 && (
-        <div className="grid grid-cols-2 gap-2 p-1 rounded-xl bg-[#f4f4f5] border border-black/[0.05]">
+        <div className="grid grid-cols-2 gap-2 p-1 rounded-xl bg-white border border-black/[0.06]">
           <button
             type="button"
             onClick={() => setClaimMode("new")}
             className={`py-2 px-3 rounded-lg text-xs font-medium transition-colors ${
               claimMode === "new"
-                ? "bg-white text-[#181925] border border-black/[0.08]"
+                ? "bg-[#181925] text-white"
                 : "text-[#666] hover:text-[#181925]"
             }`}
           >
@@ -215,7 +212,7 @@ export function GiftClaimClient({
             onClick={() => setClaimMode("existing")}
             className={`py-2 px-3 rounded-lg text-xs font-medium transition-colors ${
               claimMode === "existing"
-                ? "bg-white text-[#181925] border border-black/[0.08]"
+                ? "bg-[#181925] text-white"
                 : "text-[#666] hover:text-[#181925]"
             }`}
           >
@@ -227,7 +224,7 @@ export function GiftClaimClient({
       {/* Form */}
       <form onSubmit={handleRedeem} className="flex flex-col gap-5">
         {errorMessage && (
-          <div className="rounded-xl border border-red-200 bg-red-50/70 p-3 text-xs text-red-800 leading-relaxed">
+          <div className="rounded-xl border border-red-200 bg-red-50/80 p-3.5 text-sm text-red-800 leading-relaxed">
             {errorMessage}
           </div>
         )}
@@ -235,7 +232,7 @@ export function GiftClaimClient({
         {claimMode === "new" ? (
           <>
             <div>
-              <label className="block font-mono text-[11px] uppercase tracking-wider text-[#666] mb-1.5">
+              <label className="block font-mono text-xs uppercase tracking-wider text-[#888] font-medium mb-1.5">
                 Who are you remembering? *
               </label>
               <input
@@ -244,15 +241,15 @@ export function GiftClaimClient({
                 value={fullName}
                 onChange={(e) => setFullName(e.target.value)}
                 placeholder="e.g. Eleanor Vance"
-                className="w-full rounded-xl border border-black/[0.12] bg-[#fafafb] px-3.5 py-2.5 text-sm text-[#181925] placeholder-[#999] focus:bg-white focus:border-primary focus:outline-none transition-colors"
+                className="w-full rounded-xl border border-black/[0.08] bg-white px-3.5 py-2.5 text-sm font-medium text-[#181925] placeholder-[#aaa] focus:border-primary focus:outline-none transition-colors"
               />
-              <p className="mt-1 text-[11px] text-[#777]">
+              <p className="mt-1 text-xs text-[#777]">
                 You can add their birth & death years, stories, and photos immediately after creation.
               </p>
             </div>
 
             <div>
-              <label className="block font-mono text-[11px] uppercase tracking-wider text-[#666] mb-1.5">
+              <label className="block font-mono text-xs uppercase tracking-wider text-[#888] font-medium mb-1.5">
                 Your relationship to them (Optional)
               </label>
               <input
@@ -260,13 +257,13 @@ export function GiftClaimClient({
                 value={relationship}
                 onChange={(e) => setRelationship(e.target.value)}
                 placeholder="e.g. Daughter, Grandson, Lifelong Friend"
-                className="w-full rounded-xl border border-black/[0.12] bg-[#fafafb] px-3.5 py-2.5 text-sm text-[#181925] placeholder-[#999] focus:bg-white focus:border-primary focus:outline-none transition-colors"
+                className="w-full rounded-xl border border-black/[0.08] bg-white px-3.5 py-2.5 text-sm font-medium text-[#181925] placeholder-[#aaa] focus:border-primary focus:outline-none transition-colors"
               />
             </div>
           </>
         ) : (
           <div>
-            <label className="block font-mono text-[11px] uppercase tracking-wider text-[#666] mb-1.5">
+            <label className="block font-mono text-xs uppercase tracking-wider text-[#888] font-medium mb-1.5">
               Select existing memorial to upgrade to Complete:
             </label>
             <div className="flex flex-col gap-2">
@@ -276,7 +273,7 @@ export function GiftClaimClient({
                   className={`flex items-center justify-between p-3 rounded-xl border cursor-pointer transition-colors ${
                     selectedMemorialId === mem.id
                       ? "border-primary bg-primary/5 text-[#181925]"
-                      : "border-black/[0.08] bg-[#fafafb] text-[#555] hover:bg-white"
+                      : "border-black/[0.08] bg-white text-[#555] hover:bg-[#fafafb]"
                   }`}
                 >
                   <div className="flex items-center gap-2.5">
@@ -290,16 +287,16 @@ export function GiftClaimClient({
                     />
                     <div>
                       <p className="font-medium text-sm text-[#181925]">{mem.full_name}</p>
-                      <p className="font-mono text-[11px] text-[#777]">theirs.page/{mem.slug}</p>
+                      <p className="font-mono text-xs text-[#777]">theirs.page/{mem.slug}</p>
                     </div>
                   </div>
 
                   {mem.is_paid ? (
-                    <span className="text-[10px] font-mono text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded">
+                    <span className="text-xs font-mono text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded">
                       Already Complete
                     </span>
                   ) : (
-                    <span className="text-[10px] font-mono text-amber-700 bg-amber-50 px-2 py-0.5 rounded">
+                    <span className="text-xs font-mono text-amber-700 bg-amber-50 px-2 py-0.5 rounded">
                       Free Plan
                     </span>
                   )}
@@ -310,12 +307,12 @@ export function GiftClaimClient({
         )}
 
         {/* Benefits reminder */}
-        <div className="rounded-xl border border-black/[0.07] bg-[#fbfbfc] p-3.5 flex flex-col gap-1.5 text-xs text-[#555]">
-          <div className="flex items-center gap-1.5 font-medium text-[#181925]">
+        <div className="rounded-xl border border-black/[0.06] bg-white p-4 flex flex-col gap-1.5">
+          <div className="flex items-center gap-1.5 font-medium text-sm text-[#181925]">
             <Sparkles className="size-3.5 text-primary" />
             <span>Complete Tier Entitlement Included</span>
           </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-1 text-[11px] text-[#666]">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-1 text-xs text-[#666]">
             <span>• Unlimited original photos & media</span>
             <span>• Audio & voice notes</span>
             <span>• Limitless family contributors</span>
@@ -327,7 +324,7 @@ export function GiftClaimClient({
         <button
           type="submit"
           disabled={isSubmitting}
-          className="w-full h-11 rounded-full font-medium text-sm transition-all cursor-pointer border border-[color-mix(in_srgb,var(--primary)_80%,#8c3a10)] bg-[color-mix(in_srgb,var(--primary)_90%,#8c3a10)] text-primary-foreground hover:bg-primary hover:border-[color-mix(in_srgb,var(--primary)_70%,#8c3a10)] active:translate-y-px active:scale-[0.99] disabled:opacity-60 flex items-center justify-center gap-2"
+          className="w-full h-11 rounded-full font-medium text-sm transition-all cursor-pointer border border-[color-mix(in_srgb,var(--primary)_80%,#8c3a10)] bg-[color-mix(in_srgb,var(--primary)_90%,#8c3a10)] text-primary-foreground hover:bg-primary active:scale-[0.98] disabled:opacity-60 flex items-center justify-center gap-2"
         >
           {isSubmitting ? (
             <>

@@ -2,7 +2,7 @@
 
 import React, { useState } from "react"
 import { motion, AnimatePresence } from "framer-motion"
-import { Gift, Heart, ShieldCheck, Sparkles, Volume2, Image as ImageIcon, Users } from "lucide-react"
+import { Gift, ShieldCheck, Volume2, Image as ImageIcon, Users } from "lucide-react"
 
 export function GiftPreviewCard() {
   const [activeTab, setActiveTab] = useState<"invitation" | "features">("invitation")
@@ -36,7 +36,7 @@ export function GiftPreviewCard() {
           </button>
         </div>
 
-        <span className="font-mono text-[11px] uppercase tracking-wider text-primary font-medium hidden sm:inline-block">
+        <span className="font-mono text-xs uppercase tracking-wider text-primary font-medium hidden sm:inline-block">
           Complete Plan · $179 Value
         </span>
       </div>
@@ -58,31 +58,31 @@ export function GiftPreviewCard() {
                   <Gift className="size-4" />
                 </span>
                 <div>
-                  <p className="font-mono text-[10px] uppercase tracking-[0.14em] text-primary font-medium">
+                  <p className="font-mono text-xs uppercase tracking-wider text-primary font-medium">
                     Prepaid Memorial Entitlement
                   </p>
-                  <h3 className="font-serif text-base sm:text-lg text-[#181925] font-normal leading-tight">
+                  <h3 className="text-base font-medium text-[#181925] leading-snug">
                     For Sarah Mitchell & family
                   </h3>
                 </div>
               </div>
-              <span className="text-[10px] font-mono text-emerald-700 bg-emerald-50 border border-emerald-200/80 px-2 py-0.5 rounded-md shrink-0">
+              <span className="text-xs font-mono text-emerald-700 bg-emerald-50 border border-emerald-200/80 px-2 py-0.5 rounded-md shrink-0">
                 ✓ Ready to Claim
               </span>
             </div>
 
             {/* Sympathy Message Quote Card */}
-            <div className="rounded-lg bg-[#fafafb] border border-black/[0.05] p-3.5 sm:p-4 flex flex-col gap-1.5">
-              <span className="font-mono text-[10px] uppercase tracking-wider text-[#888]">
+            <div className="rounded-lg bg-[#fafafb] border border-black/[0.05] p-4 flex flex-col gap-1.5">
+              <span className="font-mono text-xs uppercase tracking-wider text-[#888]">
                 A note from David Ross:
               </span>
-              <p className="font-serif italic text-xs sm:text-sm text-[#333] leading-relaxed">
+              <p className="font-serif italic text-sm leading-6 text-[#333]">
                 “Thinking of you and your family. We wanted you to have a quiet, lasting place to celebrate your dad's life, listen to his voice, and gather memories from everyone who loved him — whenever you feel ready.”
               </p>
             </div>
 
             {/* Inscription Footer */}
-            <div className="flex items-center justify-between text-[11px] text-[#777] pt-1">
+            <div className="flex items-center justify-between text-xs text-[#777] pt-1">
               <span className="flex items-center gap-1.5">
                 <ShieldCheck className="size-3.5 text-emerald-600" />
                 <span>100% private to recipient</span>
@@ -97,44 +97,44 @@ export function GiftPreviewCard() {
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -4 }}
             transition={{ duration: 0.2 }}
-            className="rounded-xl bg-white border border-black/[0.08] p-5 sm:p-6 grid grid-cols-1 sm:grid-cols-2 gap-3.5 text-xs text-[#555]"
+            className="rounded-xl bg-white border border-black/[0.08] p-5 sm:p-6 grid grid-cols-1 sm:grid-cols-2 gap-3.5"
           >
-            <div className="flex items-start gap-2.5 p-2.5 rounded-lg bg-[#fafafb] border border-black/[0.04]">
+            <div className="flex items-start gap-2.5 p-3 rounded-lg bg-[#fafafb] border border-black/[0.04]">
               <ImageIcon className="size-4 text-primary shrink-0 mt-0.5" />
               <div>
-                <strong className="text-[#181925] block font-medium">Unlimited Media</strong>
-                <span className="text-[11px] text-[#777] leading-tight">Original-resolution photos & video memories</span>
+                <strong className="text-sm font-medium text-[#181925] block">Unlimited Media</strong>
+                <span className="text-xs leading-5 text-[#666] block">Original-resolution photos & video memories</span>
               </div>
             </div>
 
-            <div className="flex items-start gap-2.5 p-2.5 rounded-lg bg-[#fafafb] border border-black/[0.04]">
+            <div className="flex items-start gap-2.5 p-3 rounded-lg bg-[#fafafb] border border-black/[0.04]">
               <Volume2 className="size-4 text-primary shrink-0 mt-0.5" />
               <div>
-                <strong className="text-[#181925] block font-medium">Voice Recordings</strong>
-                <span className="text-[11px] text-[#777] leading-tight">Preserved audio notes & voicemails</span>
+                <strong className="text-sm font-medium text-[#181925] block">Voice Recordings</strong>
+                <span className="text-xs leading-5 text-[#666] block">Preserved audio notes & voicemails</span>
               </div>
             </div>
 
-            <div className="flex items-start gap-2.5 p-2.5 rounded-lg bg-[#fafafb] border border-black/[0.04]">
+            <div className="flex items-start gap-2.5 p-3 rounded-lg bg-[#fafafb] border border-black/[0.04]">
               <Users className="size-4 text-primary shrink-0 mt-0.5" />
               <div>
-                <strong className="text-[#181925] block font-medium">Unlimited Family</strong>
-                <span className="text-[11px] text-[#777] leading-tight">Friends contribute without creating accounts</span>
+                <strong className="text-sm font-medium text-[#181925] block">Unlimited Family</strong>
+                <span className="text-xs leading-5 text-[#666] block">Friends contribute without creating accounts</span>
               </div>
             </div>
 
-            <div className="flex items-start gap-2.5 p-2.5 rounded-lg bg-[#fafafb] border border-black/[0.04]">
+            <div className="flex items-start gap-2.5 p-3 rounded-lg bg-[#fafafb] border border-black/[0.04]">
               <ShieldCheck className="size-4 text-primary shrink-0 mt-0.5" />
               <div>
-                <strong className="text-[#181925] block font-medium">No Subscriptions</strong>
-                <span className="text-[11px] text-[#777] leading-tight">Prepaid forever; no surprise renewals</span>
+                <strong className="text-sm font-medium text-[#181925] block">No Subscriptions</strong>
+                <span className="text-xs leading-5 text-[#666] block">Prepaid forever; no surprise renewals</span>
               </div>
             </div>
           </motion.div>
         )}
       </AnimatePresence>
 
-      <p className="text-center text-[11px] text-[#888]">
+      <p className="text-center text-xs text-[#888]">
         The recipient receives a private invitation link. They can activate a new memorial or apply it to an existing draft.
       </p>
     </div>

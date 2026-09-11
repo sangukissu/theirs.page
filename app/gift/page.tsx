@@ -10,16 +10,12 @@ import { GiftPurchaseForm } from "@/components/gift/gift-purchase-form"
 import { GiftFaqAccordion, GIFT_FAQS } from "@/components/gift/gift-faq-accordion"
 import { JsonLd } from "@/components/seo/json-ld"
 import {
-  Heart,
   ShieldCheck,
   CheckCircle2,
   XCircle,
-  Clock,
-  Sparkles,
   Volume2,
   Image as ImageIcon,
   Users,
-  Lock,
   ArrowRight,
 } from "lucide-react"
 
@@ -101,7 +97,7 @@ export default function GiftMemorialPage() {
       <TheirsNav />
 
       {/* ===================================================================== */}
-      {/* 1. HERO SECTION (Matches TheirsHero Layout & Typography)               */}
+      {/* 1. HERO SECTION                                                       */}
       {/* ===================================================================== */}
       <section className="relative pt-16 sm:pt-14 pb-12 px-4 text-center overflow-hidden flex flex-col items-center bg-white">
         <div className="max-w-5xl mx-auto flex flex-col items-center w-full">
@@ -115,15 +111,15 @@ export default function GiftMemorialPage() {
             </span>
           </div>
 
-          {/* Commanding Two-Line Headline */}
-          <h1 className="text-balance text-4xl sm:text-6xl lg:text-[68px] font-medium tracking-[-0.04em] text-[#181925] leading-[1.04] mb-4">
+          {/* H1 Heading */}
+          <h1 className="text-balance text-4xl sm:text-6xl font-medium tracking-tight text-[#181925] leading-tight mb-4">
             Give a lasting online memorial
             <br />
             <span className="text-primary">for someone they love.</span>
           </h1>
 
-          {/* Subheading with Highlight */}
-          <p className="mx-auto max-w-[680px] text-pretty text-base sm:text-xl leading-relaxed text-[#666] mb-8">
+          {/* Subheading */}
+          <p className="mx-auto max-w-[680px] text-pretty text-base sm:text-lg leading-relaxed text-[#666] mb-8">
             When someone you care about experiences a loss, flowers wilt within days. Gifting a Complete memorial gives them a thoughtful, prepaid family archive{" "}
             <span className="rounded-md bg-primary/10 box-decoration-clone px-1 py-0.5 text-primary font-medium">
               with zero subscriptions
@@ -155,7 +151,7 @@ export default function GiftMemorialPage() {
       </section>
 
       {/* ===================================================================== */}
-      {/* 2. COMPARISON SECTION: Why a Memorial Website vs. Flowers & Cards     */}
+      {/* 2. COMPARISON SECTION                                                 */}
       {/* ===================================================================== */}
       <section className="py-16 sm:py-24 px-5 max-w-5xl mx-auto flex flex-col gap-12 sm:gap-14 border-t border-black/[0.06]">
         <SectionHeader
@@ -176,18 +172,18 @@ export default function GiftMemorialPage() {
           {/* Card 1: Flowers */}
           <div className="flex flex-col rounded-2xl bg-[#f7f7f8] p-6 border border-black/[0.05] justify-between">
             <div className="flex flex-col gap-3">
-              <span className="font-mono text-xs text-[#888] uppercase tracking-wider">
+              <span className="font-mono text-xs text-[#888] uppercase tracking-wider font-medium">
                 Traditional Choice
               </span>
               <h3 className="text-xl font-medium text-[#181925] tracking-tight">
                 Funeral Flowers
               </h3>
-              <p className="text-sm text-[#666] leading-relaxed">
+              <p className="text-sm leading-6 text-[#666]">
                 A classic sympathy gesture, but temporary. They wilt in less than a week, creating an unwanted reminder of decay for a grieving household.
               </p>
             </div>
 
-            <ul className="flex flex-col gap-2 pt-6 border-t border-dashed border-black/[0.08] text-xs text-[#666] mt-6">
+            <ul className="flex flex-col gap-2 pt-6 border-t border-dashed border-black/[0.08] text-xs text-[#666] mt-6 list-none p-0">
               <li className="flex items-center gap-2">
                 <XCircle className="size-4 text-red-500 shrink-0" />
                 <span>Lasts 3 to 5 days</span>
@@ -206,18 +202,18 @@ export default function GiftMemorialPage() {
           {/* Card 2: Sympathy Card */}
           <div className="flex flex-col rounded-2xl bg-[#f7f7f8] p-6 border border-black/[0.05] justify-between">
             <div className="flex flex-col gap-3">
-              <span className="font-mono text-xs text-[#888] uppercase tracking-wider">
+              <span className="font-mono text-xs text-[#888] uppercase tracking-wider font-medium">
                 Sympathy Card
               </span>
               <h3 className="text-xl font-medium text-[#181925] tracking-tight">
                 Paper Greeting Card
               </h3>
-              <p className="text-sm text-[#666] leading-relaxed">
+              <p className="text-sm leading-6 text-[#666]">
                 Meaningful words, but limited to a single note. Usually stored in a keepsake drawer or recycled once funeral week passes.
               </p>
             </div>
 
-            <ul className="flex flex-col gap-2 pt-6 border-t border-dashed border-black/[0.08] text-xs text-[#666] mt-6">
+            <ul className="flex flex-col gap-2 pt-6 border-t border-dashed border-black/[0.08] text-xs text-[#666] mt-6 list-none p-0">
               <li className="flex items-center gap-2">
                 <XCircle className="size-4 text-red-500 shrink-0" />
                 <span>Only holds a short handwritten note</span>
@@ -233,7 +229,7 @@ export default function GiftMemorialPage() {
             </ul>
           </div>
 
-          {/* Card 3: Theirs Memorial Gift (Signature Highlight) */}
+          {/* Card 3: Theirs Memorial Gift */}
           <div className="flex flex-col rounded-2xl bg-[#181925] p-6 text-white border border-black/[0.1] justify-between relative overflow-hidden">
             <span
               aria-hidden="true"
@@ -249,12 +245,12 @@ export default function GiftMemorialPage() {
               <h3 className="text-xl font-medium text-white tracking-tight">
                 Complete Online Memorial
               </h3>
-              <p className="text-sm text-[#b0b0b0] leading-relaxed">
+              <p className="text-sm leading-6 text-[#b0b0b0]">
                 A permanent, collaborative family archive. Unlimited photos, audio voicemails, and memories contributed by everyone who loved them.
               </p>
             </div>
 
-            <ul className="relative flex flex-col gap-2 pt-6 border-t border-dashed border-white/15 text-xs text-[#e0e0e0] mt-6 z-10">
+            <ul className="relative flex flex-col gap-2 pt-6 border-t border-dashed border-white/15 text-xs text-[#e0e0e0] mt-6 z-10 list-none p-0">
               <li className="flex items-center gap-2">
                 <CheckCircle2 className="size-4 text-emerald-400 shrink-0" />
                 <span>Never expires · Lasts forever</span>
@@ -277,7 +273,7 @@ export default function GiftMemorialPage() {
       </section>
 
       {/* ===================================================================== */}
-      {/* 3. HOW IT WORKS: 3 Steps (Matches TheirsSteps Layout & Dither Moves)  */}
+      {/* 3. HOW IT WORKS                                                       */}
       {/* ===================================================================== */}
       <section id="how-it-works" className="py-16 sm:py-24 px-4 max-w-5xl mx-auto flex flex-col gap-12 sm:gap-16 border-t border-black/[0.06]">
         <SectionHeader
@@ -306,22 +302,22 @@ export default function GiftMemorialPage() {
 
             <div className="relative flex items-baseline gap-2.5 px-6 py-4 sm:px-8">
               <span className="text-base tabular-nums text-muted-foreground font-medium">01</span>
-              <h3 className="text-base font-medium tracking-tight text-[#222]">You purchase the gift</h3>
+              <h3 className="text-base font-medium tracking-tight text-[#181925]">You purchase the gift</h3>
             </div>
 
             <div className="relative flex flex-1 items-center justify-center px-4 py-5 sm:px-6 min-h-[170px]">
               <div className="w-full rounded-xl bg-white border border-black/[0.08] p-4 text-left flex flex-col gap-2">
-                <span className="text-[10px] font-mono uppercase tracking-wider text-primary font-medium">
+                <span className="text-xs font-mono uppercase tracking-wider text-primary font-medium">
                   Quick & Simple
                 </span>
-                <p className="text-xs text-[#181925] font-medium leading-snug">
+                <p className="text-xs font-medium text-[#181925] leading-snug">
                   Enter your details and the recipient’s email. No accounts or password setups required from you.
                 </p>
-                <span className="text-[11px] font-mono text-emerald-600">✓ $179 one-time payment</span>
+                <span className="text-xs font-mono text-emerald-600">✓ $179 one-time payment</span>
               </div>
             </div>
 
-            <p className="relative pl-6 pr-6 text-sm leading-6 text-muted-foreground sm:pl-8 sm:pr-8 tracking-tight">
+            <p className="relative pl-6 pr-6 text-sm leading-6 text-[#666] sm:pl-8 sm:pr-8 tracking-tight">
               You don’t need to know the person’s dates, obituary text, or photos today. We keep it entirely pressure-free.
             </p>
           </li>
@@ -337,22 +333,22 @@ export default function GiftMemorialPage() {
 
             <div className="relative flex items-baseline gap-2.5 px-6 py-4 sm:px-8">
               <span className="text-base tabular-nums text-muted-foreground font-medium">02</span>
-              <h3 className="text-base font-medium tracking-tight text-[#222]">They receive their invitation</h3>
+              <h3 className="text-base font-medium tracking-tight text-[#181925]">They receive their invitation</h3>
             </div>
 
             <div className="relative flex flex-1 items-center justify-center px-4 py-5 sm:px-6 min-h-[170px]">
               <div className="w-full rounded-xl bg-white border border-black/[0.08] p-4 text-left flex flex-col gap-2">
-                <span className="text-[10px] font-mono uppercase tracking-wider text-emerald-600 font-medium">
+                <span className="text-xs font-mono uppercase tracking-wider text-emerald-600 font-medium">
                   Dignified Delivery
                 </span>
-                <p className="text-xs text-[#181925] font-medium leading-snug">
+                <p className="text-xs font-medium text-[#181925] leading-snug">
                   The recipient receives a gentle email with your note and a private, direct claim link.
                 </p>
-                <span className="text-[11px] font-mono text-[#888]">Backup link sent to your receipt</span>
+                <span className="text-xs font-mono text-[#888]">Backup link sent to your receipt</span>
               </div>
             </div>
 
-            <p className="relative pl-6 pr-6 text-sm leading-6 text-muted-foreground sm:pl-8 sm:pr-8 tracking-tight">
+            <p className="relative pl-6 pr-6 text-sm leading-6 text-[#666] sm:pl-8 sm:pr-8 tracking-tight">
               If you prefer to write the link into a handwritten sympathy card, your purchase receipt includes the direct link.
             </p>
           </li>
@@ -368,22 +364,22 @@ export default function GiftMemorialPage() {
 
             <div className="relative flex items-baseline gap-2.5 px-6 py-4 sm:px-8">
               <span className="text-base tabular-nums text-muted-foreground font-medium">03</span>
-              <h3 className="text-base font-medium tracking-tight text-[#222]">They build it when ready</h3>
+              <h3 className="text-base font-medium tracking-tight text-[#181925]">They build it when ready</h3>
             </div>
 
             <div className="relative flex flex-1 items-center justify-center px-4 py-5 sm:px-6 min-h-[170px]">
               <div className="w-full rounded-xl bg-white border border-black/[0.08] p-4 text-left flex flex-col gap-2">
-                <span className="text-[10px] font-mono uppercase tracking-wider text-primary font-medium">
+                <span className="text-xs font-mono uppercase tracking-wider text-primary font-medium">
                   Private Custodianship
                 </span>
-                <p className="text-xs text-[#181925] font-medium leading-snug">
+                <p className="text-xs font-medium text-[#181925] leading-snug">
                   They claim the gift, create a new memorial or upgrade an existing one, and invite friends to contribute.
                 </p>
-                <span className="text-[11px] font-mono text-emerald-600">✓ 100% owned by the recipient</span>
+                <span className="text-xs font-mono text-emerald-600">✓ 100% owned by the recipient</span>
               </div>
             </div>
 
-            <p className="relative pl-6 pr-6 text-sm leading-6 text-muted-foreground sm:pl-8 sm:pr-8 tracking-tight">
+            <p className="relative pl-6 pr-6 text-sm leading-6 text-[#666] sm:pl-8 sm:pr-8 tracking-tight">
               The entitlement never expires. The memorial belongs completely to them under full private moderation.
             </p>
           </li>
@@ -391,7 +387,7 @@ export default function GiftMemorialPage() {
       </section>
 
       {/* ===================================================================== */}
-      {/* 4. FEATURES BENTO: What's Included in the Complete Memorial Entitlement */}
+      {/* 4. FEATURES BENTO                                                     */}
       {/* ===================================================================== */}
       <section className="w-full max-w-5xl px-5 mx-auto py-16 sm:py-24 flex flex-col gap-12 border-t border-black/[0.06]">
         <SectionHeader
@@ -409,7 +405,7 @@ export default function GiftMemorialPage() {
         />
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {/* Card 1: Unlimited Original Resolution Media */}
+          {/* Card 1 */}
           <div className="flex flex-col bg-[#f7f7f8] rounded-2xl p-6 sm:p-8 border border-black/[0.04] justify-between min-h-[280px]">
             <div className="flex flex-col gap-3">
               <span className="w-10 h-10 rounded-full bg-white flex items-center justify-center border border-black/[0.06]">
@@ -418,7 +414,7 @@ export default function GiftMemorialPage() {
               <h3 className="text-xl font-medium tracking-tight text-[#181925]">
                 Unlimited Original Photos & Videos
               </h3>
-              <p className="text-sm text-[#666] leading-relaxed">
+              <p className="text-sm leading-6 text-[#666]">
                 We preserve original-resolution media via direct cloud storage without lossy compression. High-resolution family heirlooms remain safe and downloadable by the family forever.
               </p>
             </div>
@@ -427,7 +423,7 @@ export default function GiftMemorialPage() {
             </div>
           </div>
 
-          {/* Card 2: Voice Notes & Audio */}
+          {/* Card 2 */}
           <div className="flex flex-col bg-[#f7f7f8] rounded-2xl p-6 sm:p-8 border border-black/[0.04] justify-between min-h-[280px]">
             <div className="flex flex-col gap-3">
               <span className="w-10 h-10 rounded-full bg-white flex items-center justify-center border border-black/[0.06]">
@@ -436,7 +432,7 @@ export default function GiftMemorialPage() {
               <h3 className="text-xl font-medium tracking-tight text-[#181925]">
                 Preserved Voice & Audio Recordings
               </h3>
-              <p className="text-sm text-[#666] leading-relaxed">
+              <p className="text-sm leading-6 text-[#666]">
                 Photos show how someone looked; voice preserves how they sounded. Families can upload old voicemails, voice memos, and spoken stories that playback directly inside the memorial.
               </p>
             </div>
@@ -445,7 +441,7 @@ export default function GiftMemorialPage() {
             </div>
           </div>
 
-          {/* Card 3: Unlimited Collaborative Contributors */}
+          {/* Card 3 */}
           <div className="flex flex-col bg-[#f7f7f8] rounded-2xl p-6 sm:p-8 border border-black/[0.04] justify-between min-h-[280px]">
             <div className="flex flex-col gap-3">
               <span className="w-10 h-10 rounded-full bg-white flex items-center justify-center border border-black/[0.06]">
@@ -454,7 +450,7 @@ export default function GiftMemorialPage() {
               <h3 className="text-xl font-medium tracking-tight text-[#181925]">
                 Limitless Family Contributions
               </h3>
-              <p className="text-sm text-[#666] leading-relaxed">
+              <p className="text-sm leading-6 text-[#666]">
                 One person shouldn’t have to assemble an entire life alone. Extended family, childhood friends, and colleagues can contribute stories and photos from any phone without creating accounts.
               </p>
             </div>
@@ -463,7 +459,7 @@ export default function GiftMemorialPage() {
             </div>
           </div>
 
-          {/* Card 4: Complete Privacy & Archive Export */}
+          {/* Card 4 */}
           <div className="flex flex-col bg-[#f7f7f8] rounded-2xl p-6 sm:p-8 border border-black/[0.04] justify-between min-h-[280px]">
             <div className="flex flex-col gap-3">
               <span className="w-10 h-10 rounded-full bg-white flex items-center justify-center border border-black/[0.06]">
@@ -472,7 +468,7 @@ export default function GiftMemorialPage() {
               <h3 className="text-xl font-medium tracking-tight text-[#181925]">
                 Private Ownership & Downloadable Archive
               </h3>
-              <p className="text-sm text-[#666] leading-relaxed">
+              <p className="text-sm leading-6 text-[#666]">
                 The memorial belongs 100% to the recipient under strict caretakership. The family can choose public, unlisted, or passcode-protected privacy, and download their complete archive at any time.
               </p>
             </div>
@@ -484,7 +480,7 @@ export default function GiftMemorialPage() {
       </section>
 
       {/* ===================================================================== */}
-      {/* 5. PURCHASE FORM SECTION (Anchored at #purchase)                      */}
+      {/* 5. PURCHASE FORM SECTION                                              */}
       {/* ===================================================================== */}
       <section id="purchase" className="py-16 sm:py-24 px-4 sm:px-6 max-w-5xl mx-auto flex flex-col gap-12 border-t border-black/[0.06]">
         <SectionHeader
@@ -505,7 +501,7 @@ export default function GiftMemorialPage() {
       </section>
 
       {/* ===================================================================== */}
-      {/* 6. EDITORIAL DEEP DIVE (SEO + Emotional Reassurance)                 */}
+      {/* 6. EDITORIAL DEEP DIVE                                                */}
       {/* ===================================================================== */}
       <section className="py-16 sm:py-24 px-5 max-w-4xl mx-auto flex flex-col gap-10 border-t border-black/[0.06]">
         <div className="flex flex-col gap-3 text-center sm:text-left">
@@ -517,20 +513,20 @@ export default function GiftMemorialPage() {
           </h2>
         </div>
 
-        <div className="flex flex-col gap-6 text-sm sm:text-base leading-relaxed text-[#555]">
+        <div className="flex flex-col gap-6 text-base leading-7 text-[#555]">
           <p>
             When a close friend or family member loses someone they love, the initial instinct is often to send sympathy flowers or a paper condolence card. While well-intentioned, these traditional gifts often create unintended burdens: vases must be filled, withered stems must be thrown away, and paper cards pile up on dining tables during the most emotionally overwhelming week of a person's life.
           </p>
 
           <p>
-            Gifting an **online memorial website** through Theirs offers a gentle, enduring alternative. Rather than imposing an immediate demand on the family's attention, a memorial gift entitlement is permanently prepaid and waits patiently. Whether the recipient feels able to begin adding photos tomorrow, after the funeral service, or six months later on a quiet Sunday afternoon, their memorial is ready whenever they are.
+            Gifting an <strong>online memorial website</strong> through Theirs offers a gentle, enduring alternative. Rather than imposing an immediate demand on the family's attention, a memorial gift entitlement is permanently prepaid and waits patiently. Whether the recipient feels able to begin adding photos tomorrow, after the funeral service, or six months later on a quiet Sunday afternoon, their memorial is ready whenever they are.
           </p>
 
           <div className="rounded-2xl bg-[#fafafb] border border-black/[0.06] p-6 sm:p-8 flex flex-col gap-3">
-            <h4 className="font-serif text-lg text-[#181925] font-normal">
+            <h4 className="text-lg font-medium text-[#181925]">
               The Grief-First Caretakership Promise
             </h4>
-            <p className="text-xs sm:text-sm text-[#666] leading-relaxed">
+            <p className="text-sm leading-6 text-[#666]">
               We never fabricate AI chatbots pretending to be the person who passed away, and we never insert grief clichés or funeral ads. Theirs is built on the belief that a memorial should feel like visiting someone’s life, not visiting their obituary. By gifting a Complete memorial, you give a family a safe, beautifully designed home for their memories that will last for decades.
             </p>
           </div>
@@ -559,7 +555,7 @@ export default function GiftMemorialPage() {
       </section>
 
       {/* ===================================================================== */}
-      {/* 8. FINAL DARK CHARCOAL BANNER (Matches CtaBanner Aesthetic)            */}
+      {/* 8. FINAL DARK CHARCOAL BANNER                                          */}
       {/* ===================================================================== */}
       <section className="py-16 sm:py-24 px-4 sm:px-6 max-w-5xl mx-auto">
         <div className="relative rounded-3xl bg-[#181925] p-8 sm:p-14 text-white text-center flex flex-col items-center gap-6 overflow-hidden border border-white/10">
@@ -571,13 +567,13 @@ export default function GiftMemorialPage() {
           </span>
 
           <div className="relative z-10 max-w-xl flex flex-col items-center gap-3">
-            <span className="font-mono text-xs uppercase tracking-widest text-primary font-medium">
+            <span className="font-mono text-xs uppercase tracking-wider text-primary font-medium">
               Permanent Sympathy Gift
             </span>
-            <h2 className="text-3xl sm:text-4xl lg:text-5xl font-medium tracking-tight text-white leading-tight">
+            <h2 className="text-3xl sm:text-4xl font-medium tracking-tight text-white leading-tight">
               Give them a place to remember, together.
             </h2>
-            <p className="text-sm sm:text-base text-[#b0b0b0] leading-relaxed">
+            <p className="text-base leading-relaxed text-[#b0b0b0]">
               $179 one-time payment. Zero subscriptions forever. The recipient owns and controls their memorial completely.
             </p>
           </div>

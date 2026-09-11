@@ -71,7 +71,7 @@ export function GiftPurchaseForm() {
       className="w-full max-w-2xl mx-auto rounded-3xl bg-[#f7f7f8] border border-black/[0.06] p-6 sm:p-10 flex flex-col gap-8 text-left"
     >
       {errorMessage && (
-        <div className="rounded-2xl border border-red-200 bg-red-50/80 p-4 text-xs sm:text-sm text-red-800 leading-relaxed">
+        <div className="rounded-2xl border border-red-200 bg-red-50/80 p-4 text-sm text-red-800 leading-relaxed">
           {errorMessage}
         </div>
       )}
@@ -83,16 +83,16 @@ export function GiftPurchaseForm() {
             <span className="size-6 rounded-md bg-primary/10 text-primary flex items-center justify-center">
               <Heart className="size-3.5" />
             </span>
-            <h3 className="text-sm sm:text-base font-medium text-[#181925] tracking-tight">
+            <h3 className="text-base font-medium text-[#181925] tracking-tight">
               1. Who is this gift for?
             </h3>
           </div>
-          <span className="text-[11px] font-mono text-[#888]">Step 1 of 2</span>
+          <span className="text-xs font-mono text-[#888]">Step 1 of 2</span>
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
           <div className="flex flex-col rounded-xl bg-white border border-black/[0.08] p-3 sm:p-3.5 focus-within:border-primary/50 transition-colors">
-            <label className="text-[10px] font-mono uppercase tracking-wider text-[#888] font-medium mb-1">
+            <label className="text-xs font-mono uppercase tracking-wider text-[#888] font-medium mb-1">
               Recipient's Full Name *
             </label>
             <input
@@ -106,7 +106,7 @@ export function GiftPurchaseForm() {
           </div>
 
           <div className="flex flex-col rounded-xl bg-white border border-black/[0.08] p-3 sm:p-3.5 focus-within:border-primary/50 transition-colors">
-            <label className="text-[10px] font-mono uppercase tracking-wider text-[#888] font-medium mb-1">
+            <label className="text-xs font-mono uppercase tracking-wider text-[#888] font-medium mb-1">
               Recipient's Email Address *
             </label>
             <input
@@ -119,7 +119,7 @@ export function GiftPurchaseForm() {
             />
           </div>
         </div>
-        <p className="text-[11px] text-[#777] leading-relaxed -mt-1">
+        <p className="text-xs text-[#777] leading-relaxed -mt-1">
           Their private invitation and personalized claim instructions will be emailed here.
         </p>
       </div>
@@ -127,10 +127,10 @@ export function GiftPurchaseForm() {
       {/* Personal Note */}
       <div className="flex flex-col gap-2">
         <div className="flex items-center justify-between">
-          <label className="text-xs font-medium text-[#181925] tracking-tight">
+          <label className="text-xs font-mono uppercase tracking-wider text-[#888] font-medium">
             Personal Note or Sympathy Message (Optional)
           </label>
-          <span className="text-[11px] font-mono text-[#888]">
+          <span className="text-xs font-mono text-[#888]">
             {giftMessage.length}/1000
           </span>
         </div>
@@ -144,7 +144,7 @@ export function GiftPurchaseForm() {
             className="w-full bg-transparent font-serif italic text-sm text-[#181925] outline-none placeholder:text-[#aaa] placeholder:font-sans placeholder:not-italic resize-none leading-relaxed"
           />
         </div>
-        <p className="text-[11px] text-[#777]">
+        <p className="text-xs text-[#777]">
           Presented in their invitation as an editorial quote card.
         </p>
       </div>
@@ -156,16 +156,16 @@ export function GiftPurchaseForm() {
             <span className="size-6 rounded-md bg-primary/10 text-primary flex items-center justify-center">
               <Sparkles className="size-3.5" />
             </span>
-            <h3 className="text-sm sm:text-base font-medium text-[#181925] tracking-tight">
+            <h3 className="text-base font-medium text-[#181925] tracking-tight">
               2. Your details (for greeting & receipt)
             </h3>
           </div>
-          <span className="text-[11px] font-mono text-[#888]">Step 2 of 2</span>
+          <span className="text-xs font-mono text-[#888]">Step 2 of 2</span>
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
           <div className="flex flex-col rounded-xl bg-white border border-black/[0.08] p-3 sm:p-3.5 focus-within:border-primary/50 transition-colors">
-            <label className="text-[10px] font-mono uppercase tracking-wider text-[#888] font-medium mb-1">
+            <label className="text-xs font-mono uppercase tracking-wider text-[#888] font-medium mb-1">
               Your Full Name *
             </label>
             <input
@@ -179,7 +179,7 @@ export function GiftPurchaseForm() {
           </div>
 
           <div className="flex flex-col rounded-xl bg-white border border-black/[0.08] p-3 sm:p-3.5 focus-within:border-primary/50 transition-colors">
-            <label className="text-[10px] font-mono uppercase tracking-wider text-[#888] font-medium mb-1">
+            <label className="text-xs font-mono uppercase tracking-wider text-[#888] font-medium mb-1">
               Your Email Address *
             </label>
             <input
@@ -192,7 +192,7 @@ export function GiftPurchaseForm() {
             />
           </div>
         </div>
-        <p className="text-[11px] text-[#777] leading-relaxed -mt-1">
+        <p className="text-xs text-[#777] leading-relaxed -mt-1">
           Your official receipt and backup claim link will be emailed to you immediately upon payment.
         </p>
       </div>
@@ -201,7 +201,7 @@ export function GiftPurchaseForm() {
       <div className="rounded-2xl bg-white border border-black/[0.08] p-5 flex flex-col gap-3.5">
         <div className="flex items-baseline justify-between pb-2.5 border-b border-black/[0.06]">
           <div>
-            <span className="font-mono text-[11px] uppercase tracking-wider text-primary font-medium">
+            <span className="font-mono text-xs uppercase tracking-wider text-primary font-medium">
               Complete Memorial Entitlement
             </span>
             <p className="text-xs text-[#666] mt-0.5">
@@ -256,7 +256,7 @@ export function GiftPurchaseForm() {
           )}
         </button>
 
-        <div className="flex items-center justify-center gap-2 text-[11px] text-[#888]">
+        <div className="flex items-center justify-center gap-2 text-xs text-[#888]">
           <ShieldCheck className="size-3.5 text-[#888]" />
           <span>Encrypted checkout via Dodo Payments. No account registration needed to purchase.</span>
         </div>

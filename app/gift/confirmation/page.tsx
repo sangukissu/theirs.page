@@ -1,7 +1,7 @@
 import { Metadata } from "next"
 import Link from "next/link"
-import Image from "next/image"
 import { getSupabaseAdminSafe } from "@/utils/supabase/admin"
+import { TheirsNav } from "@/components/theirs/nav"
 import { TheirsFooter } from "@/components/theirs/footer"
 import { CheckCircle2, Heart, Mail, Copy, ArrowRight, ShieldCheck } from "lucide-react"
 import { GiftConfirmationClient } from "./confirmation-client"
@@ -39,21 +39,7 @@ export default async function GiftConfirmationPage({ searchParams }: Confirmatio
 
   return (
     <div className="min-h-screen bg-[#fafaf9] text-[#181925] flex flex-col selection:bg-primary/20 selection:text-primary">
-      {/* Header */}
-      <header className="sticky top-0 z-40 w-full border-b border-black/[0.06] bg-white/90 backdrop-blur-md">
-        <div className="max-w-5xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
-          <Link href="/" className="flex items-center group">
-            <Image src="/theirs-logo.svg" alt="Theirs" width={20} height={20} />
-            <span className="font-semibold tracking-tight text-[#181925] text-lg ml-2">
-              Theirs<span className="text-primary">.</span>
-            </span>
-          </Link>
-
-          <Link href="/" className="text-xs sm:text-sm text-[#666] hover:text-[#181925] transition-colors">
-            Return to home
-          </Link>
-        </div>
-      </header>
+      <TheirsNav />
 
       {/* Main Content */}
       <main className="flex-1 py-12 sm:py-16 px-4 sm:px-6 flex flex-col items-center">
@@ -63,15 +49,15 @@ export default async function GiftConfirmationPage({ searchParams }: Confirmatio
             <CheckCircle2 className="size-7" />
           </div>
 
-          <p className="font-mono text-[11px] uppercase tracking-wider text-primary font-medium">
+          <p className="font-mono text-xs uppercase tracking-wider text-primary font-medium">
             Order Complete
           </p>
 
-          <h1 className="font-serif text-3xl sm:text-4xl text-[#181925] mt-1 font-normal">
+          <h1 className="text-3xl sm:text-4xl font-medium tracking-tight text-[#181925] mt-2">
             Thank you. Your gift has been sent.
           </h1>
 
-          <p className="mt-3 text-sm sm:text-base text-[#555] max-w-md leading-relaxed">
+          <p className="mt-3 text-sm leading-6 text-[#666] max-w-md">
             {gift ? (
               <>
                 We have emailed an invitation and personal claim instructions to{" "}
@@ -86,7 +72,7 @@ export default async function GiftConfirmationPage({ searchParams }: Confirmatio
           {/* Card Summary - STRICT ZERO SHADOWS */}
           <div className="mt-8 w-full rounded-2xl border border-black/[0.1] bg-white p-6 text-left flex flex-col gap-4">
             <div className="flex items-center justify-between pb-3 border-b border-black/[0.06]">
-              <span className="font-mono text-[11px] uppercase tracking-wider text-[#777]">
+              <span className="font-mono text-xs uppercase tracking-wider text-[#777]">
                 Gift Entitlement
               </span>
               <span className="font-mono text-xs text-emerald-700 font-medium bg-emerald-50 border border-emerald-200/70 px-2 py-0.5 rounded-md">
@@ -112,10 +98,10 @@ export default async function GiftConfirmationPage({ searchParams }: Confirmatio
 
                 {gift.gift_message && (
                   <div className="mt-2 pt-2 border-t border-black/[0.05] bg-[#fafafb] p-3 rounded-lg border border-black/[0.06]">
-                    <p className="font-mono text-[10px] uppercase tracking-wider text-[#888] mb-1">
+                    <p className="font-mono text-xs uppercase tracking-wider text-[#888] mb-1">
                       Your note to {gift.recipient_name}:
                     </p>
-                    <p className="font-serif italic text-xs text-[#444] leading-relaxed">
+                    <p className="font-serif italic text-sm text-[#444] leading-relaxed">
                       “{gift.gift_message}”
                     </p>
                   </div>
@@ -123,7 +109,7 @@ export default async function GiftConfirmationPage({ searchParams }: Confirmatio
               </div>
             )}
 
-            <div className="pt-3 border-t border-dashed border-black/[0.08] flex items-center justify-between text-[11px] text-[#777]">
+            <div className="pt-3 border-t border-dashed border-black/[0.08] flex items-center justify-between text-xs text-[#777]">
               <span>Never expires</span>
               <span>Unlimited family contributors</span>
               <span>100% private to recipient</span>
