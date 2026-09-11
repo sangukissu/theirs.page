@@ -61,7 +61,7 @@ export default function GiftMemorialPage() {
         "@type": "Product",
         name: "Complete Online Memorial Gift Entitlement",
         description:
-          "A prepaid Complete online memorial entitlement for a grieving loved one or family. Includes unlimited original photos, audio voicemails, interactive life timeline, and limitless family contributions with zero subscriptions.",
+          "A prepaid Complete online memorial entitlement for a grieving loved one or family. Includes original-quality photos, generous media storage, audio voicemails, interactive life timeline, and open family contributions with zero subscriptions.",
         brand: {
           "@type": "Brand",
           name: "Theirs",
@@ -472,7 +472,7 @@ export default function GiftMemorialPage() {
                 <Users className="size-5 text-primary" />
               </span>
               <h3 className="text-xl font-medium tracking-tight text-[#181925]">
-                Limitless Family Contributions
+                Invite Family Contributions
               </h3>
               <p className="text-sm leading-6 text-[#666]">
                 One person shouldn’t have to assemble an entire life alone. Extended family, childhood friends, and colleagues can contribute stories and photos from any phone without creating accounts.

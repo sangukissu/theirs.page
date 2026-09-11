@@ -108,7 +108,7 @@ export function TheirsPricing() {
                     <path d="M4 0v8M0 4h8" />
                   </svg>
                 </span>
-                Full Privacy Control
+                Public or link-only sharing
               </li>
               <li className="flex items-start gap-2.5 text-sm leading-6 tracking-tight text-[#181925]">
                 <span aria-hidden="true" className="mt-2.5 block size-2 shrink-0 text-muted-foreground/50">
@@ -140,7 +140,7 @@ export function TheirsPricing() {
               Create a free memorial
             </Link>
             <p className="mt-2.5 text-center text-xs text-muted-foreground/80">
-              No commitment. Free forever.
+              No credit card. Not a trial.
             </p>
           </li>
 
@@ -168,7 +168,7 @@ export function TheirsPricing() {
             <dl className="mt-5 flex flex-col gap-2 border-t border-dashed border-border pt-4 font-mono text-xs [--primary:#f39158]">
               <div className="flex items-baseline justify-between gap-3">
                 <dt className="text-muted-foreground">Photos & media</dt>
-                <dd className="tabular-nums font-medium text-primary">Unlimited & original</dd>
+                <dd className="tabular-nums font-medium text-primary">Original quality</dd>
               </div>
               <div className="flex items-baseline justify-between gap-3">
                 <dt className="text-muted-foreground">Voice & audio</dt>
@@ -176,7 +176,7 @@ export function TheirsPricing() {
               </div>
               <div className="flex items-baseline justify-between gap-3">
                 <dt className="text-muted-foreground">Family contributors</dt>
-                <dd className="tabular-nums font-medium text-primary">Limitless</dd>
+                <dd className="tabular-nums font-medium text-primary">Invite anytime</dd>
               </div>
               <div className="flex items-baseline justify-between gap-3">
                 <dt className="text-muted-foreground">Charged</dt>
@@ -208,7 +208,15 @@ export function TheirsPricing() {
                     <path d="M4 0v8M0 4h8" />
                   </svg>
                 </span>
-                Generous Media Storage Limits
+                Original-quality photos & media
+              </li>
+              <li className="flex items-start gap-2.5 text-sm leading-6 tracking-tight text-[#e5e5e5]">
+                <span aria-hidden="true" className="mt-2.5 block size-2 shrink-0 text-muted-foreground/50">
+                  <svg fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 8 8">
+                    <path d="M4 0v8M0 4h8" />
+                  </svg>
+                </span>
+                Generous media storage
               </li>
               <li className="flex items-start gap-2.5 text-sm leading-6 tracking-tight text-[#e5e5e5]">
                 <span aria-hidden="true" className="mt-2.5 block size-2 shrink-0 text-muted-foreground/50">
@@ -233,7 +241,7 @@ export function TheirsPricing() {
                     <path d="M4 0v8M0 4h8" />
                   </svg>
                 </span>
-                Unlimited family contributors
+                Invite family contributors
               </li>
               <li className="flex items-start gap-2.5 text-sm leading-6 tracking-tight text-[#e5e5e5]">
                 <span aria-hidden="true" className="mt-2.5 block size-2 shrink-0 text-muted-foreground/50">
@@ -257,7 +265,7 @@ export function TheirsPricing() {
                     <path d="M4 0v8M0 4h8" />
                   </svg>
                 </span>
-                Choose the next Owner of Memorial
+                Choose a successor caretaker
               </li>
 
               <li className="flex items-start gap-2.5 text-sm leading-6 tracking-tight text-[#e5e5e5]">

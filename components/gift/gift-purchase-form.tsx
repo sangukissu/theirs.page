@@ -205,7 +205,7 @@ export function GiftPurchaseForm() {
               Complete Memorial Entitlement
             </span>
             <p className="text-xs text-[#666] mt-0.5">
-              Permanent prepaid family archive · Limitless contributors
+              Prepaid family archive · Invite family & friends
             </p>
           </div>
           <div className="text-right">

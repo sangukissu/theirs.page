@@ -313,9 +313,9 @@ export function GiftClaimClient({
             <span>Complete Tier Entitlement Included</span>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-1 text-xs text-[#666]">
-            <span>• Unlimited original photos & media</span>
+            <span>• Original-quality photos & media</span>
             <span>• Audio & voice notes</span>
-            <span>• Limitless family contributors</span>
+            <span>• Invite family contributors</span>
             <span>• Zero recurring subscriptions</span>
           </div>
         </div>
