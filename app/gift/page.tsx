@@ -7,7 +7,8 @@ import { SectionHeader } from "@/components/theirs/section-header"
 import { DitherGradient } from "@/components/theirs/dither-gradient"
 import { GiftPreviewCard } from "@/components/gift/gift-preview-card"
 import { GiftPurchaseForm } from "@/components/gift/gift-purchase-form"
-import { GiftFaqAccordion, GIFT_FAQS } from "@/components/gift/gift-faq-accordion"
+import { GiftFaqAccordion } from "@/components/gift/gift-faq-accordion"
+import { GIFT_FAQS } from "@/lib/gift-faqs"
 import { JsonLd } from "@/components/seo/json-ld"
 import {
   ShieldCheck,
